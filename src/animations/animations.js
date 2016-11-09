@@ -1,0 +1,5 @@
+/* global TweenLite, Galaxy */
+
+(function () {
+
+})();

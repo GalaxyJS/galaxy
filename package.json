@@ -1,11 +1,24 @@
 {
-  "name":"GalaxyJS",
-  "version":"1.0.0",
-  "keywords":[
-    "util","functional","server","client","browser"
+  "name": "GalaxyJS",
+  "version": "1.0.0",
+  "keywords": [
+    "util",
+    "functional",
+    "server",
+    "client",
+    "browser"
   ],
-  "author":"Eeliya",
-  "contributors":[
-  ],
-  "dependencies":{}
+  "author": "Eeliya",
+  "contributors": [],
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-minify": "0.0.14",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemap": "^1.0.1",
+    "gulp-sourcemaps": "^2.2.0",
+    "path": "^0.12.7",
+    "pump": "^1.0.1"
+  }
 }
