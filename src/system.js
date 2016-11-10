@@ -1,4 +1,4 @@
-/* global Galaxy, nanoajax */
+/* global Galaxy, nanoajax, Node */
 
 (function () {
   Galaxy = new System();
@@ -166,14 +166,17 @@
         html: [],
         imports: [],
         uiView: [],
-        script: []
+        script: ''
       };
     }
+    
     var raw = Galaxy.utility.parseHTML(raw);
     //var scripts = raw.filter("script").remove();
     var html = raw.filter(function (e) {
       if (e.nodeType === Node.ELEMENT_NODE) {
-        e.querySelectorAll('script').forEach(function (tag) {
+        var scriptTags = Array.prototype.slice.call(e.querySelectorAll('script'));
+        
+        scriptTags.forEach(function (tag) {
           scripts.push(tag.innerHTML);
           tag.parentNode.removeChild(tag);
         });
@@ -500,6 +503,12 @@
 
   System.prototype.setParamIfNull = function (param, value) {
     this.app.setParamIfNull(param, value);
+  };
+  
+  System.prototype.loadDependecies = function (dependecies) {
+    for(var key in dependecies) {
+      
+    }
   };
 }());
 
