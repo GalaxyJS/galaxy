@@ -104,6 +104,30 @@
     },
     isNumber: function (o) {
       return !isNaN(o - 0) && o !== null && o !== "" && o !== false;
+    },
+    parseHTML: function (htmlString) {
+      var container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.opacity = '0';
+
+      container.innerHTML = htmlString;
+
+      document.querySelector('body').appendChild(container);
+      document.querySelector('body').removeChild(container);
+
+      return Array.prototype.slice.call(container.childNodes);
+    },
+    serialize: function (obj, prefix) {
+      var str = [], p;
+      for (p in obj) {
+        if (obj.hasOwnProperty(p)) {
+          var k = prefix ? prefix + "[" + p + "]" : p, v = obj[p];
+          str.push((v !== null && typeof v === "object") ?
+                  serialize(v, k) :
+                  encodeURIComponent(k) + "=" + encodeURIComponent(v));
+        }
+      }
+      return str.join("&");
     }
   };
 })(Galaxy);

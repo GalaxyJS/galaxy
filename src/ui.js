@@ -120,6 +120,13 @@
     return height;
   };
 
+  GalaxyUI.prototype.setContent = function (parent, nodes) {
+    parent.innerHTML = '';
+    nodes.forEach(function (item) {
+      parent.appendChild(item);
+    });
+  };
+
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
     for (var i in obj) {
@@ -137,7 +144,6 @@
       left: rect.left + (rect.width / 2),
       top: rect.top + (rect.height / 2)
     };
-
   };
 
   GalaxyUI.prototype.animations = {};
