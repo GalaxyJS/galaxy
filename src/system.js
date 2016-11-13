@@ -19,8 +19,6 @@
     this.services = {};
     this.modulesHashes = {};
     this.hashChecker = null;
-    this.navigation = {};
-    this.params = {};
     this.firstTime = false;
   }
 
