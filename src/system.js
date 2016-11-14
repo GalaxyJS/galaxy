@@ -20,6 +20,7 @@
     this.modulesHashes = {};
     this.hashChecker = null;
     this.firstTime = false;
+    this.scopeServices = [];
   }
 
   System.prototype.state = function (id, handler) {
@@ -219,6 +220,7 @@
   };
 
   System.prototype.load = function (module, onDone) {
+    var _this = this;
     module.id = module.id || (new Date()).valueOf() + '-' + performance.now();
 
     Galaxy.onModuleLoaded['system/' + module.id] = onDone;
@@ -306,7 +308,15 @@
 
       if (imports.length) {
         imports.forEach(function (item) {
-          if (importedLibraries[item.url] && !item.fresh) {
+          var scopeService = Galaxy.getScopeService(item.url);
+          if (scopeService) {
+            importedLibraries[item.url] = {
+              name: item.url,
+              module: scopeService.handler.call(null, parsedContent)
+            };
+
+            doneImporting(module, scope, imports, parsedContent);
+          } else if (importedLibraries[item.url] && !item.fresh) {
             doneImporting(module, scope, imports, parsedContent);
           } else {
             Galaxy.load({
@@ -345,20 +355,22 @@
           scope.imports[asset.name] = asset.module;
         }
       }
-      
+
       var currentComponentScripts = filtered.script;
       delete filtered.script;
 
-      var scopeServices = Galaxy.passToScopeServices(filtered, scope);
-      
-      scopeServices.names.push('Scope');
-      scopeServices.services.push(scope);
+//      var scopeServices = Galaxy.passToScopeServices(filtered, scope);
 
-      var componentScript = new Function(scopeServices.names, currentComponentScripts);
+//      scopeServices.names.push('Scope');
+//      scopeServices.services.push(scope);
 
-      componentScript.apply(null, scopeServices.services);
+//      var componentScript = new Function(scopeServices.names, currentComponentScripts);
 
-//      console.log(componentScript);
+//      componentScript.apply(null, scopeServices.services);
+
+      var componentScript = new Function('Scope', currentComponentScripts);
+
+      componentScript.call(null, scope);
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -521,11 +533,35 @@
     }
   };
 
-  System.prototype.passToScopeServices = function (module) {
-    return {
-      names: [],
-      services: []
-    };
+  System.prototype.getScopeService = function (name) {
+    return this.scopeServices.filter(function (service) {
+      return service.name === name;
+    })[0];
   };
+
+  System.prototype.registerScopeService = function (name, handler) {
+    if (typeof handler !== 'function') {
+      throw 'scope service should be a function';
+    }
+
+    this.scopeServices.push({
+      name: name,
+      handler: handler
+    });
+  };
+
+//  System.prototype.passToScopeServices = function (module) {
+//    var result = {
+//      names: [],
+//      services: []
+//    };
+//
+//    this.scopeServices.forEach(function (service) {
+//      result.names.push(service.name);
+//      result.services.push(service.handler.call(null, module));
+//    });
+//
+//    return result;
+//  };
 }());
 
