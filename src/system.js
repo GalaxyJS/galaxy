@@ -167,13 +167,13 @@
         script: ''
       };
     }
-    
+
     var raw = Galaxy.utility.parseHTML(raw);
     //var scripts = raw.filter("script").remove();
     var html = raw.filter(function (e) {
       if (e.nodeType === Node.ELEMENT_NODE) {
         var scriptTags = Array.prototype.slice.call(e.querySelectorAll('script'));
-        
+
         scriptTags.forEach(function (tag) {
           scripts.push(tag.innerHTML);
           tag.parentNode.removeChild(tag);
@@ -345,8 +345,20 @@
           scope.imports[asset.name] = asset.module;
         }
       }
+      
+      var currentComponentScripts = filtered.script;
+      delete filtered.script;
 
-      (new Function('Scope', filtered.script)).call(null, scope);
+      var scopeServices = Galaxy.passToScopeServices(filtered, scope);
+      
+      scopeServices.names.push('Scope');
+      scopeServices.services.push(scope);
+
+      var componentScript = new Function(scopeServices.names, currentComponentScripts);
+
+      componentScript.apply(null, scopeServices.services);
+
+//      console.log(componentScript);
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -502,11 +514,18 @@
   System.prototype.setParamIfNull = function (param, value) {
     this.app.setParamIfNull(param, value);
   };
-  
+
   System.prototype.loadDependecies = function (dependecies) {
-    for(var key in dependecies) {
-      
+    for (var key in dependecies) {
+
     }
+  };
+
+  System.prototype.passToScopeServices = function (module) {
+    return {
+      names: [],
+      services: []
+    };
   };
 }());
 
