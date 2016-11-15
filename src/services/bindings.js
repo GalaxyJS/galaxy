@@ -1,274 +1,142 @@
 /* global Galaxy, Node */
 
 (function (galaxy) {
-  galaxy.registerScopeService('Bindings', Bindings);
+  galaxy.registerScopeService('Bindings', process);
 
-  var BINDING_NAME_MAP = {
-    html: 'innerHTML',
-    class: 'className'
-  };
+  function process(module) {
+    var data = {}
 
-  var PROPERTY_VALUE_PARSERS = {
-    className: function (data, node) {
-      if (data instanceof Array) {
-        return data.join(' ');
-      }
+    var binds = extractBinds(module.html);
 
-      return data;
-    }
-  };
+    bindToData(binds, data);
+    console.log(data);
+    return data;
+  }
 
-  var PROPERY_BINDERS = {
-    default: function (attributeName, property, parent, nodes) {
-      var oldValue = property.el[attributeName];
-      var originalValue = parent[property.boundTo];
+  function extractBinds(nodes) {
+    var binds = [];
 
-      Object.defineProperty(parent, property.boundTo, {
-        get: function () {
-          return oldValue;
-        },
-        set: function (value) {
-          if (value !== oldValue) {
-            oldValue = value;
+    for (var i = 0, len = nodes.length; i < len; i++) {
+      var node = nodes[i];
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent.match(/\[\[\s*([^\[\]\s]*)\s*\]\]/)) {
+          binds.push(parseBind(node));
+        }
+      } else {
+        var attrs = node.attributes;
+        for (var ai = 0, alen = attrs.length; ai < alen; ai++) {
+          var attr = attrs[ai];
 
-            if (value instanceof Array) {
-              arrayValue(value, nodes);
-            }
-//            attributeName, property, parent, nodes;
-
-//            if (attributeName === 'list') {
-//
-//              var listData = parent[property.boundTo];
-//              var list = [];
-//              listData.forEach(function (item) {
-//                var data = {};
-//                data[property.itemName] = item;
-//                property.el.cloneNode(true)
-//
-//                list.push(bindDataToElement(property.el.cloneNode(true), parent));
-//              });
-//
-//              list.forEach(function (node) {
-//                property.placeholder.parentNode.insertBefore(node, property.placeholder);
-//              });
-// debugger;
-//              return;
-//            }
-           
-            setValueForNodes(value, nodes);
+          if (attr.name.indexOf('bind-') === 0) {
+            binds.push(parseBind(attr));
           }
-        },
-        enumerable: true,
-        configurable: true
-      });
-//debugger;
-      parent[property.boundTo] = originalValue;
-    },
-    list: function (attributeName, property, parent, nodes) {
+        }
 
-//     var listData =  
-      debugger;
+        if (node.hasAttribute('bind-list')) {
+          node._binds_scope = {};
+          continue;
+        }
+
+        binds = binds.concat(extractBinds(node.childNodes));
+      }
     }
-  };
 
-  function Bindings(module) {
-    var properties = [];
-
-    module.html.forEach(function (node) {
-      properties = properties.concat(readProperties(node));
-    });
-
-    var binds = {};
-
-    properties.forEach(function (property) {
-      makeBinding(property, binds);
-    });
-
-    console.log(binds);
     return binds;
   }
 
-  function initBindings(element) {
-    var properties = readProperties(element);
+  function parseBind(item) {
+    var bind = {};
 
-    for (var i = 0, len = element.childNodes.length; i < len; i++) {
-      var node = element.childNodes[i];
-      properties = properties.concat(readProperties(node));
-    }
+    if (item.nodeType === Node.TEXT_NODE) {
+      item.textContent = item.textContent.replace(/\[\[\s*([^\[\]\s]*)\s*\]\]/, function (matches, value) {
 
-    var binds = {};
+        bind.attr = 'textContent';
+        bind.boundTo = value.split('.');
+        bind.el = item;
 
-    properties.forEach(function (property) {
-      makeBinding(property, binds);
-    });
-
-    return properties;
-  }
-
-  function readProperties(node, scoped) {
-    var properties = [];
-
-    if (!node) {
-      return properties;
-    }
-
-    var children = node.childNodes;
-
-//    if (node.nodeType === Node.ELEMENT_NODE && !node._bindingScope && node.hasAttribute('bind-list')) {
-//      node._bindingScope = true;
-//      debugger;
-//      return initBindings(node);
-//    }
-
-    properties = properties.concat(extractProperties(node, scoped));
-
-    for (var i = 0, len = children.length; i < len; i++) {
-      var node = children[i];
-      if (node.childNodes.length) {
-        properties = properties.concat(readProperties(node, node.hasAttribute('bind-list')));
-      }
-    }
-
-    return properties;
-  }
-
-  function extractProperties(node, scoped) {
-    var attrs = node.attributes || [];
-    var properties = [];
-
-    for (var i = 0, len = node.childNodes.length; i < len; i++) {
-      var textNode = node.childNodes[i];
-      if (textNode.nodeType === Node.TEXT_NODE) {
-        textNode.textContent.replace(/\[\[\s*([^\[\]\s]*)\s*\]\]/, function (matches, value) {
-          properties.push({
-            scope: scoped,
-            el: textNode,
-            name: 'textContent',
-            boundTo: value
-          });
-
-          return null;
-        });
-      }
-    }
-
-
-    for (i = 0, len = attrs.length; i < len; i++) {
-      var attr = attrs[i];
-
-      if (attr.name.indexOf('bind-') === 0) {
-        properties.push({
-          el: attr.ownerElement,
-          name: attr.name.substring(5),
-          boundTo: attr.value.replace(/\(|\)/g, '')
-        });
-
-        attr.ownerElement.removeAttribute(attr.name);
-      }
-    }
-
-    return properties;
-  }
-
-  function makeBinding(property, parent) {
-    var boundTo = property.boundTo.split(/\s+/g);
-    var variableName = boundTo.pop();
-    var dotIndex = variableName.indexOf('.');
-    var childName = variableName.substring(0, dotIndex);
-
-    if (dotIndex !== -1 && childName) {
-      var childObject = parent[childName] || {};
-      parent[childName] = childObject;
-
-      property.boundTo = variableName.substring(dotIndex + 1);
-
-      return makeBinding(property, childObject);
-    } else {
-      if (property.name === 'list') {
-        property.itemName = boundTo[0];
-        property.placeholder = document.createComment('list');
-        property.el.parentNode.insertBefore(property.placeholder, property.el);
-        property.el.parentNode.removeChild(property.el);
-      }
-      property.boundTo = variableName;
-
-//      makeBinding(property, parent);
-    }
-
-    applyBinding(property, parent);
-  }
-
-  function applyBinding(property, parent) {
-    var attributeName = BINDING_NAME_MAP[property.name] || property.name;
-
-    var nodes = parent[property.boundTo + '_nodes'];
-
-    if (nodes) {
-      nodes.push({
-        el: property.el,
-        attr: attributeName
+        return '$' + value + '$';
       });
+
+      bind.originalContent = item.textContent;
     } else {
-      nodes = [
-        {
-          el: property.el,
-          attr: attributeName
+      var value = item.value.split(/\s+/g);
+      bind.attr = item.name.substring(5);
+      bind.boundTo = (value.pop() || '').split('.');
+      bind.itemName = value[0] || null;
+      bind.el = item.ownerElement;
+    }
+
+    return bind;
+  }
+
+  function bindToData(binds, data) {
+    binds.forEach(function (item) {
+      console.log(item);
+      makeBinding(item, data);
+    });
+  }
+
+  function makeBinding(bind, data) {
+    var valueName = bind.boundTo[0];
+
+    var scopeData = bind.el._binds_scope;
+    var links = data['_links_of_' + valueName] || [];
+
+    if (!data['_links_of_' + valueName]) {
+      data['_links_of_' + valueName] = links;
+    }
+
+    links.push(bind);
+
+    var oldValue = null;
+    var originalValue = data[valueName];
+
+    Object.defineProperty(data, valueName, {
+      set: function (value) {
+        if (value !== oldValue) {
+          oldValue = value;
+          if (scopeData) {
+            scopeData[valueName] = value;
+          } else {
+            setPropertiesValue(links, value);
+          }
         }
-      ];
+      },
+      get: function () {
+        return oldValue;
+      },
+      configurable: true,
+      enumerable: true
+    });
 
-      parent[property.boundTo + '_nodes'] = nodes;
-    }
-
-    var binder = PROPERY_BINDERS['default'];
-    binder.call(null, attributeName, property, parent, nodes);
-  }
-
-  function setValueForNodes(value, nodes) {
-    for (var i = 0, len = nodes.length; i < len; i++) {
-      var dataParser = PROPERTY_VALUE_PARSERS[nodes[i].attr];
-      nodes[i].el[nodes[i].attr] = dataParser ? dataParser.call(null, value) : value;
-    }
-  }
-
-  function arrayValue(value, nodes) {
-    var arrayProto = Array.prototype;
-    var methods = [
-      'push',
-      'pop',
-      'shift',
-      'unshift',
-      'splice',
-      'sort',
-      'reverse'
-    ];
-
-    methods.forEach(function (method) {
-      var original = arrayProto[method];
-
-      Object.defineProperty(value, method, {
-        value: function () {
-          original.apply(this, arguments);
-          setValueForNodes(value, nodes);
+    if (scopeData) {
+      Object.defineProperty(scopeData, valueName, {
+        set: function (value) {
+          setPropertiesValue(links, value);
         },
-        writable: true,
-        configurable: true
+        get: function () {
+          return oldValue;
+        },
+        configurable: true,
+        enumerable: true
       });
-    });
-  }
-
-  function bindDataToElement(element, data) {
-    var properties = [];
-
-    for (var i = 0, len = element.childNodes.length; i < len; i++) {
-      var node = element.childNodes[i];
-      properties = properties.concat(readProperties(node));
+      
+      bindToData(extractBinds(bind.el.childNodes), scopeData);      
     }
 
+//    data[valueName] = originalValue;
+  }
+
+  function setPropertiesValue(properties, value) {
     properties.forEach(function (property) {
-      makeBinding(property, data);
+      if (property.attr === 'textContent') {
+        property.el['textContent'] = property.originalContent.replace('$' + property.boundTo[0] + '$', value);
+      } else if (property.attr === 'list') {
+        debugger;
+      } else {
+        property.el[property.attr] = value;
+      }
     });
-    debugger;
-    return element;
   }
 
 })(Galaxy);
