@@ -164,7 +164,7 @@
       return {
         html: [],
         imports: [],
-        uiView: [],
+        views: [],
         script: ''
       };
     }
@@ -208,13 +208,13 @@
       html[i] = temp.appendChild(html[i]);
     }
     document.getElementsByTagName('body')[0].appendChild(temp);
-    var uiView = temp.querySelectorAll('system-ui-view,[system-ui-view]');
+    var uiView = temp.querySelectorAll('ui-view,[ui-view]');
     temp.parentNode.removeChild(temp);
 
     return {
       html: html,
       imports: imports,
-      uiView: uiView,
+      views: uiView,
       script: scripts.join('\n')
     };
   };
@@ -240,7 +240,7 @@
     if (moduleExist) {
       //console.log('module exist: ', module.id);
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.html);
+        Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.scope.html);
         delete Galaxy.onModuleLoaded['system/' + module.id];
       }
 
@@ -265,36 +265,34 @@
       }, 1);
     });
 
-    function compile(parsedContent) {
+    function compile(moduleContent) {
       var scopeUIViews = {};
-      Array.prototype.forEach.call(parsedContent.uiView, function (item) {
-        var uiViewName = item.getAttribute('system-ui-view') || item.getAttribute('name');
+      Array.prototype.forEach.call(moduleContent.views, function (node, i) {
+        var uiViewName = node.getAttribute('ui-view');
         var key = uiViewName.replace(/([A-Z])|(\-)|(\s)/g, function ($1) {
           return "_" + (/[A-Z]/.test($1) ? $1.toLowerCase() : '');
         });
 
-        scopeUIViews[key] = item;
+        scopeUIViews[key || 'view_' + i] = node;
       });
 
       var scope = {
         _moduleId: 'system/' + module.id,
         _stateId: module.id,
         parentScope: module.scope || null,
-        uiViews: scopeUIViews,
-        ui: parsedContent.html,
-        html: parsedContent.html,
+        html: moduleContent.html,
         views: scopeUIViews,
         imports: {}
       };
 
 //        console.log(parsedContent.imports);
-      var imports = Array.prototype.slice.call(parsedContent.imports, 0);
+      var imports = Array.prototype.slice.call(moduleContent.imports, 0);
       //var importsOfScope = {};
-      var scriptContent = parsedContent.script || '';
+      var scriptContent = moduleContent.script || '';
 
       // extract imports from the source code
       scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
-      parsedContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         var query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],
@@ -307,17 +305,19 @@
 //       console.log('Libraries to be imported: ', JSON.stringify(imports));
 
       if (imports.length) {
-        imports.forEach(function (item) {
+        var importsCopy = imports.slice(0);
+        imports.forEach(function (item, i) {
+
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
             importedLibraries[item.url] = {
               name: item.url,
-              module: scopeService.handler.call(null, parsedContent)
+              module: scopeService.handler.call(null, moduleContent)
             };
 
-            doneImporting(module, scope, imports, parsedContent);
+            doneImporting(module, scope, importsCopy, moduleContent);
           } else if (importedLibraries[item.url] && !item.fresh) {
-            doneImporting(module, scope, imports, parsedContent);
+            doneImporting(module, scope, importsCopy, moduleContent);
           } else {
             Galaxy.load({
               id: (new Date()).valueOf() + '-' + performance.now(),
@@ -328,7 +328,7 @@
               invokers: invokers,
               temprory: true
             }, function (loaded) {
-              doneImporting(module, scope, imports, parsedContent);
+              doneImporting(module, scope, importsCopy, moduleContent);
             });
           }
         });
@@ -336,15 +336,15 @@
         return false;
       }
 
-      moduleLoaded(module, scope, parsedContent);
+      moduleLoaded(module, scope, moduleContent);
     }
 
-    function doneImporting(module, scope, imports, filtered) {
-      imports.splice(imports.indexOf(module.url), 1);
+    function doneImporting(module, scope, imports, moduleContent) {
+      imports.splice(imports.indexOf(module.url) - 1, 1);
 
       if (imports.length === 0) {
         // This will load the original initilizer
-        moduleLoaded(module, scope, filtered);
+        moduleLoaded(module, scope, moduleContent);
       }
     }
 
@@ -356,21 +356,28 @@
         }
       }
 
+      var html = document.createDocumentFragment();
+      
+      scope.html.forEach(function (item) {
+        html.appendChild(item);
+      });
+
+      scope.html = html;
+      html._scope = scope;
+//      debugger;
+
       var currentComponentScripts = filtered.script;
       delete filtered.script;
-
-//      var scopeServices = Galaxy.passToScopeServices(filtered, scope);
-
-//      scopeServices.names.push('Scope');
-//      scopeServices.services.push(scope);
-
-//      var componentScript = new Function(scopeServices.names, currentComponentScripts);
-
-//      componentScript.apply(null, scopeServices.services);
 
       var componentScript = new Function('Scope', currentComponentScripts);
 
       componentScript.call(null, scope);
+      var htmlNodes = [];
+      
+      for (var i = 0, len = html.childNodes.length; i < len; i++) {
+        htmlNodes.push(html.childNodes[i]);
+      }
+      scope.html = htmlNodes;
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -382,7 +389,6 @@
       } else {
         scope.imports[module.name] = importedLibraries[module.url].module;
       }
-
 //        delete scope.export;
 
       var currentModule = Galaxy.modules['system/' + module.id];
@@ -396,12 +402,11 @@
         currentModule = Galaxy.modules['system/' + module.id] = {};
       }
 
-      currentModule.html = filtered.html;
       currentModule.scope = scope;
 
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
         //console.log('immidiate load: ', currentModule, Galaxy.onModuleLoaded);
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, currentModule.html);
+        Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, scope.html);
         delete Galaxy.onModuleLoaded['system/' + module.id];
       }
 

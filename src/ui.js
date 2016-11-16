@@ -120,17 +120,24 @@
     return height;
   };
 
-  GalaxyUI.prototype.setContent = function (parent, nodes) {    
+  GalaxyUI.prototype.setContent = function (parent, nodes) {
     var children = Array.prototype.slice.call(parent.childNodes);
-    
+
     children.forEach(function (child) {
       parent.removeChild(child);
     });
-    
-    nodes.forEach(function (item) {
+
+    if (!nodes.hasOwnProperty('length')) {
+      nodes = [nodes];
+    }
+
+    for (var i = 0, len = nodes.length; i < len; i++) {
+      var item = nodes[i];
       parent.appendChild(item);
-    });
+    }
   };
+
+
 
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
