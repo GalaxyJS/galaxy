@@ -12,12 +12,16 @@
   "contributors": [],
   "dependencies": {},
   "devDependencies": {
+    "chai": "^3.5.0",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
     "gulp-minify": "0.0.14",
+    "gulp-mocha": "^3.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sourcemap": "^1.0.1",
     "gulp-sourcemaps": "^2.2.0",
+    "karma-jasmine": "^1.0.2",
+    "mocha": "^3.1.2",
     "path": "^0.12.7",
     "pump": "^1.0.1"
   }

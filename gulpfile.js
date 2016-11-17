@@ -39,3 +39,18 @@ gulp.task('start-development', ['build'], function () {
     'site/**/*.html'
   ], ['build']);
 });
+
+//var mocha = require('gulp-mocha');
+//
+//gulp.task('test-mochas', function () {
+//  return gulp.src('src/tests/*.mocha.js', {read: false})
+//          // gulp-mocha needs filepaths so you can't have any plugins before it 
+//          .pipe(mocha());
+//});
+//
+//gulp.task('watch-and-test', ['test-mochas'], function () {
+//  gulp.watch([
+//    'src/**/*.*',
+//    'site/**/*.html'
+//  ], ['test-mochas']);
+//});
