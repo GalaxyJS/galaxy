@@ -11,6 +11,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var minify = require('gulp-minify');
 var pump = require('pump');
 var concat = require('gulp-concat');
+var watch = require('gulp-watch');
 
 gulp.task('default', function () {
   // place code for your default task here
@@ -54,3 +55,13 @@ gulp.task('start-development', ['build'], function () {
 //    'site/**/*.html'
 //  ], ['test-mochas']);
 //});
+
+var jasmineBrowser = require('gulp-jasmine-browser');
+
+gulp.task('jasmine', function () {
+  var filesForTest = ['src/**/*.js', 'test/**/*.js'];
+  return gulp.src(filesForTest)
+          .pipe(watch(filesForTest))
+          .pipe(jasmineBrowser.specRunner())
+          .pipe(jasmineBrowser.server({port: 8888}));
+});

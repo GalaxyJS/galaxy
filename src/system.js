@@ -74,7 +74,7 @@
     return module;
   };
 
-  System.prototype.component = function (scope, handler) {
+  System.prototype.newStateHandler = function (scope, handler) {
     var app = this.getHashParam('app');
 
     if (app.indexOf(scope._stateId) === 0) {

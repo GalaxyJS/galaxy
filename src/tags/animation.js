@@ -1,43 +1,53 @@
-(function () {
-  var Spirit = {
+/* global xtag, Galaxy */
+
+(function (galaxy) {
+  GalaxyAnimation = {
+    CONFIG: {
+      baseDuration: .5,
+      staggerDuration: .05
+    },
+    effects: {}
+  };
+
+  var Animation = {
     lifecycle: {
       created: function () {
         var element = this;
-        element.xtag.animations = [];
+        element.xtag.effects = [];
         element.xtag.registeredAnimations = [];
-        this.xtag.cachedAnimations = this.getAttribute('animations');
+        this.xtag.cachedAnimations = this.getAttribute('effects');
       },
       attributeChanged: function (attrName, oldValue, newValue) {
       },
       inserted: function () {
-        if (this.xtag.cachedAnimations && !this.xtag.animations.length) {
-          this.setAttribute('animations', this.xtag.cachedAnimations)
+        if (this.xtag.cachedAnimations && !this.xtag.effects.length) {
+          this.setAttribute('effects', this.xtag.cachedAnimations);
           this.xtag.cachedAnimations = null;
           this.prepare();
         }
       },
       removed: function () {
-        this.xtag.cachedAnimations = xtag.clone(this.xtag.animations).join(',');
-        this.xtag.animations = [];
+        this.xtag.cachedAnimations = xtag.clone(this.xtag.effects).join(',');
+        this.xtag.effects = [];
         this.prepare();
       }
     },
     accessors: {
-      animations: {
+      effects: {
         attribute: {
         },
         set: function (value) {
           var element = this;
           if (typeof value === 'string') {
-            this.xtag.animations = value.split(/[\s,]+/).filter(Boolean);
+            this.xtag.effects = value.split(/[\s,]+/).filter(Boolean);
           } else {
-            this.xtag.animations = [];
+            this.xtag.effects = [];
           }
 
           element.prepare();
         },
         get: function () {
-          return this.xtag.animations;
+          return this.xtag.effects;
         }
       }
     },
@@ -46,22 +56,22 @@
     methods: {
       prepare: function () {
         var element = this;
-        this.xtag.animations.forEach(function (item) {
+        this.xtag.effects.forEach(function (item) {
           if (element.xtag.registeredAnimations.indexOf(item) !== -1) {
             return null;
           }
 
-          if (!Galaxy.spiritAnimations[item]) {
+          if (!GalaxyAnimation.effects[item]) {
             return console.warn('spirit animation not found:', item);
           }
 
-          Galaxy.spiritAnimations[item].register(element);
+          GalaxyAnimation.effects[item].register(element);
           element.xtag.registeredAnimations.push(item);
         });
 
         this.xtag.registeredAnimations = this.xtag.registeredAnimations.filter(function (item) {
-          if (element.xtag.animations.indexOf(item) === -1) {
-            Galaxy.spiritAnimations[item].deregister(element);
+          if (element.xtag.effects.indexOf(item) === -1) {
+            GalaxyAnimation.effects[item].deregister(element);
             return false;
           }
 
@@ -71,5 +81,5 @@
     }
   };
 
-  xtag.register('system-spirit', Spirit);
-})();
+  xtag.register('galaxy-animation', Animation);
+})(Galaxy);
