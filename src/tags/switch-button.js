@@ -1,3 +1,5 @@
+/* global xtag */
+
 (function () {
   var SwitchButton = {
     lifecycle: {
@@ -24,13 +26,14 @@
           //boolean: true
         },
         set: function (value) {
-          xtag.fireEvent(this, 'switched', {
+          xtag.fireEvent(this, 'switch', {
             detail: {
               active: Boolean(value)
             },
             bubbles: true,
             cancelable: true
           });
+
           this.xtag.active = Boolean(value);
         },
         get: function () {
@@ -49,5 +52,5 @@
     }
   };
 
-  xtag.register('system-button-switch', SwitchButton);
+  xtag.register('galaxy-switch', SwitchButton);
 })();

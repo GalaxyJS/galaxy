@@ -73,5 +73,5 @@
     }
   };
 
-  xtag.register('system-field', Field);
+  xtag.register('galaxy-field', Field);
 })();

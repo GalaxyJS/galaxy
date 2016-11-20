@@ -5,8 +5,8 @@
     lifecycle: {
       created: function () {
         var _this = this;
-        _this.xtag.indicator = _this.querySelector('[indicator]') || _this.getElementsByTagName('div')[0];
-        _this.xtag.actionsContainer = _this.querySelector('[actions]') || _this.getElementsByTagName('div')[1];
+        _this.xtag.indicator = _this.querySelector('[indicator]') || _this.children[0];
+        _this.xtag.actionsContainer = _this.querySelector('[actions]') || _this.children[1];
 
         var expand = function (e) {
           e.stopPropagation();
@@ -90,17 +90,17 @@
           return;
 
         this.expanded = true;
-        Galaxy.ui.utility.addClass(this, 'expand');
+        this.classList.add('expand');
       },
       contract: function () {
         this.expanded = false;
-        Galaxy.ui.utility.removeClass(this, 'expand');
+        this.classList.remove('expand');
       },
-      on: function (flag) {
-        Galaxy.ui.utility.removeClass(this, 'off');
+      on: function () {
+        this.classList.remove('off');
       },
-      off: function (flag) {
-        Galaxy.ui.utility.addClass(this, 'off');
+      off: function () {
+        this.classList.add('off');
       },
       clean: function () {
         this.innerHTML = "";
@@ -109,5 +109,5 @@
     events: {}
   };
 
-  xtag.register('system-float-menu', FloatMenu);
+  xtag.register('galaxy-float-menu', FloatMenu);
 })();

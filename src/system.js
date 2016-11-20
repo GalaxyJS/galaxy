@@ -21,6 +21,8 @@
     this.hashChecker = null;
     this.firstTime = false;
     this.scopeServices = [];
+    this.inited = false;
+    this.app = null;
   }
 
   System.prototype.state = function (id, handler) {
@@ -92,22 +94,19 @@
 
   System.prototype.start = function () {
     var _this = this;
+
+    if (!_this.inited) {
+      throw new Error('Galaxy is not initialized');
+    }
+
     var detect = function () {
-      if (_this.app.oldHash !== window.location.hash/* || self.app.newHandler*/) {
-        var hashValue = window.location.hash;
-        var navigation = {};
-        var params = {};
+      if (_this.app.oldHash !== window.location.hash || _this.app.newListener) {
+        var parsedHash = _this.parseHash(window.location.hash);
 
-        hashValue = hashValue.replace(/^#\/?/igm, '');
-
-        hashValue.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
-          navigation[k] = v.split("/").filter(Boolean);
-          params[k] = v;
-        });
-
-        _this.setModuleHashValue(navigation, params, hashValue);
-        _this.app.hashChanged(navigation, params, hashValue, navigation[_this.app.stateKey]); // Galaxy
-        _this.app.oldHash = '#' + hashValue;
+        _this.setModuleHashValue(parsedHash.navigation, parsedHash.params, parsedHash.hash);
+        _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[_this.app.stateKey]); // Galaxy
+        _this.app.oldHash = '#' + parsedHash.hash;
+        _this.app.newListener = false;
       }
     };
 
@@ -118,58 +117,47 @@
     }, 50);
   };
 
-  System.prototype.setModuleHashValue = function (navigation, parameters, hashValue, init) {
-    var nav = parameters[this.stateKey];
+  System.prototype.parseHash = function (hash) {
+    var navigation = {};
+    var params = {};
+    hash = hash.replace(/^#\/?/igm, '');
 
-    if (!nav) {
-      return;
-    }
-
-    if (Galaxy.modulesHashes[nav] && Galaxy.app.activeModule !== Galaxy.modules["system/" + nav] && Galaxy.app.activeModule && Galaxy.app.activeModule.stateKey === 'app') {
-      //window.location.hash = Galaxy.modulesHashes[nav];
-      // When the navigation path is changed
-      //alert(Galaxy.modulesHashes[nav] + " YES " + nav);
-    } else if (!this.firstTime) {
-      // first time indicates that the page is (re)loaded and the window.location.hash should be set
-      // as the module hash value for the module which is specified by app parameter in the hash value.
-      // Other modules get default hash value
-      Galaxy.modulesHashes[nav] = hashValue;
-      this.firstTime = true;
-      //alert("first time: " + Galaxy.modulesHashes[nav] + " " + hashValue);
-    } else if (!Galaxy.modulesHashes[nav]) {
-      // When the module does not exist 
-      Galaxy.modulesHashes[nav] = "app=" + nav;
-      //alert(Galaxy.modulesHashes[nav] + " default hash");
-    } else if (Galaxy.modulesHashes[nav]) {
-      // When the hash parameters value is changed from the browser url bar or originated from url bar
-      Galaxy.modulesHashes[nav] = hashValue;
-    }
+    hash.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
+      navigation[k] = v.split("/").filter(Boolean);
+      params[k] = v;
+    });
+    
+    return {
+      hash:hash,
+      navigation: navigation,
+      params:params
+    };
   };
 
   System.prototype.init = function (mods) {
+    if (this.inited) {
+      throw new Error('Galaxy is initialized already');
+    }
+
     this.app = Galaxy.utility.extend(true, {}, Galaxy.module.create());
     this.app.domain = this;
     this.app.stateKey = this.stateKey;
     this.app.id = 'system';
     this.app.installModules = mods || [];
     this.app.init({}, {}, 'system');
+    var parsedHash = this.parseHash(window.location.hash);
+    this.app.oldHash = window.location.hash;
+    this.app.params = parsedHash.params;
+    this.inited = true;
   };
 
-  System.prototype.parseContent = function (raw, module) {
+  var CONTENT_PARSERS = {};
+
+  CONTENT_PARSERS['text/html'] = function (content) {
     var scripts = [];
     var imports = [];
-    if (!Galaxy.utility.isHTML(raw)) {
-      console.log('Resource is not a valid html file:', module.url);
 
-      return {
-        html: [],
-        imports: [],
-        views: [],
-        script: ''
-      };
-    }
-
-    var raw = Galaxy.utility.parseHTML(raw);
+    var raw = Galaxy.utility.parseHTML(content);
     //var scripts = raw.filter("script").remove();
     var html = raw.filter(function (e) {
       if (e.nodeType === Node.ELEMENT_NODE) {
@@ -196,13 +184,9 @@
         return false;
       }
 
-//        if (e.tagName && e.tagName.toLowerCase() === 'link') {
-//          return false;
-//        }
-
       return true;
     });
-    var templates = {};
+
     var temp = document.createElement('div');
     for (var i = 0, len = html.length; i < len; i++) {
       html[i] = temp.appendChild(html[i]);
@@ -217,6 +201,31 @@
       views: uiView,
       script: scripts.join('\n')
     };
+  };
+
+  CONTENT_PARSERS['text/javascript'] = function (content) {
+    return {
+      html: [],
+      imports: [],
+      views: [],
+      script: content
+    };
+  };
+
+  System.prototype.parseModuleContent = function (module, content, contentType) {
+    var parser = CONTENT_PARSERS[contentType];
+    if (parser) {
+      return parser(content);
+    } else {
+      console.log('Resource is not a valid html file:', module.url);
+
+      return {
+        html: [],
+        imports: [],
+        views: [],
+        script: ''
+      };
+    }
   };
 
   System.prototype.load = function (module, onDone) {
@@ -257,8 +266,10 @@
       method: 'GET',
       url: module.url,
       body: Galaxy.utility.serialize(module.params || {})
-    }, function (code, response) {
-      var parsedContent = Galaxy.parseContent(response, module);
+    }, function (code, response, meta) {
+      var contentType = meta.getResponseHeader('content-type');
+
+      var parsedContent = _this.parseModuleContent(module, response, contentType);
 
       setTimeout(function () {
         compile(parsedContent);
@@ -269,11 +280,11 @@
       var scopeUIViews = {};
       Array.prototype.forEach.call(moduleContent.views, function (node, i) {
         var uiViewName = node.getAttribute('ui-view');
-        var key = uiViewName.replace(/([A-Z])|(\-)|(\s)/g, function ($1) {
-          return "_" + (/[A-Z]/.test($1) ? $1.toLowerCase() : '');
-        });
+//        var key = uiViewName.replace(/([A-Z])|(\-)|(\s)/g, function ($1) {
+//          return "_" + (/[A-Z]/.test($1) ? $1.toLowerCase() : '');
+//        });
 
-        scopeUIViews[key || 'view_' + i] = node;
+        scopeUIViews[uiViewName || 'view_' + i] = node;
       });
 
       var scope = {
@@ -357,7 +368,7 @@
       }
 
       var html = document.createDocumentFragment();
-      
+
       scope.html.forEach(function (item) {
         html.appendChild(item);
       });
@@ -373,7 +384,7 @@
 
       componentScript.call(null, scope);
       var htmlNodes = [];
-      
+
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
         htmlNodes.push(html.childNodes[i]);
       }
@@ -555,18 +566,15 @@
     });
   };
 
-//  System.prototype.passToScopeServices = function (module) {
-//    var result = {
-//      names: [],
-//      services: []
-//    };
-//
-//    this.scopeServices.forEach(function (service) {
-//      result.names.push(service.name);
-//      result.services.push(service.handler.call(null, module));
-//    });
-//
-//    return result;
-//  };
+  System.prototype.boot = function (bootModule, onDone) {
+    var _this = this;
+    _this.init();
+
+    _this.load(bootModule, function (module) {
+      onDone.call(null, module);
+      _this.start();
+    });
+  };
+
 }());
 

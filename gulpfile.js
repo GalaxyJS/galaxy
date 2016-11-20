@@ -18,21 +18,49 @@ gulp.task('default', function () {
 });
 
 
-gulp.task('build', function (cb) {
+gulp.task('build-galaxy', function () {
   return pump([
     gulp.src([
       'src/system.js',
       'src/ui.js',
-      'src/**/*.js'
+      'src/*.js'
     ]),
-    concat('build.js'),
+    concat('galaxy.js'),
     minify({
       mangle: false
     }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/')
-  ]);
+  ], function (error) {
+    if (error) {
+      console.error('error in: ', error.plugin);
+      console.error(error.message);
+      console.info(error.stack);
+    }
+  });
 });
+
+gulp.task('build-tags', function () {
+  return pump([
+    gulp.src([
+      'src/tags/*.js'
+    ]),
+    concat('galaxy-tags.js'),
+    minify({
+      mangle: false
+    }),
+    gulp.dest('dist/'),
+    gulp.dest('site/galaxyjs/')
+  ], function (error) {
+    if (error) {
+      console.error('error in: ', error.plugin);
+      console.error(error.message);
+      console.info(error.stack);
+    }
+  });
+});
+
+gulp.task('build', ['build-galaxy', 'build-tags']);
 
 gulp.task('start-development', ['build'], function () {
   gulp.watch([
@@ -57,9 +85,17 @@ gulp.task('start-development', ['build'], function () {
 //});
 
 var jasmineBrowser = require('gulp-jasmine-browser');
+var open = require('opn');
 
 gulp.task('jasmine', function () {
-  var filesForTest = ['src/**/*.js', 'test/**/*.js'];
+  var filesForTest = [
+    'dist/build-min.js',
+    'spec/mocks/*.js',
+    'spec/*-spec.js'
+  ];
+
+  open('http://127.0.0.1:8888');
+
   return gulp.src(filesForTest)
           .pipe(watch(filesForTest))
           .pipe(jasmineBrowser.specRunner())

@@ -121,10 +121,19 @@
   };
 
   GalaxyUI.prototype.setContent = function (parent, nodes) {
-    var children = Array.prototype.slice.call(parent.childNodes);
+    var parentNode = parent;
+    if (typeof parent === 'string') {
+      parentNode = document.querySelector(parent);
+    }
+
+    if (!parentNode) {
+      throw new Error('parent element can not be null: ' + parent+'\r\n try to set ui-view on your target element and refrence it via Scope.views');
+    }
+    
+    var children = Array.prototype.slice.call(parentNode.childNodes);
 
     children.forEach(function (child) {
-      parent.removeChild(child);
+      parentNode.removeChild(child);
     });
 
     if (!nodes.hasOwnProperty('length')) {
@@ -133,7 +142,7 @@
 
     for (var i = 0, len = nodes.length; i < len; i++) {
       var item = nodes[i];
-      parent.appendChild(item);
+      parentNode.appendChild(item);
     }
   };
 

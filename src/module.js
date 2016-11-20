@@ -20,6 +20,7 @@
       html: "",
       installModules: [],
       binds: {},
+      newListener: false,
       installModulesOnInit: function (modules) {
         this.installModules = modules;
       },
@@ -81,6 +82,7 @@
        */
       on: function (id, handler) {
         this.hashListeners.push({id: id, handler: handler});
+        this.newListener = true;
       },
       /** Register an state handler globaly with the specified id.
        * Global state handlers will be called even if the mudole is not active
