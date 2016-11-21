@@ -126,11 +126,11 @@
       navigation[k] = v.split("/").filter(Boolean);
       params[k] = v;
     });
-    
+
     return {
-      hash:hash,
+      hash: hash,
       navigation: navigation,
-      params:params
+      params: params
     };
   };
 
@@ -249,8 +249,10 @@
     if (moduleExist) {
       //console.log('module exist: ', module.id);
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.scope.html);
-        delete Galaxy.onModuleLoaded['system/' + module.id];
+        window.requestAnimationFrame(function () {
+          Galaxy.onModuleLoaded['system/' + module.id].call(this, moduleExist, moduleExist.scope.html);
+          delete Galaxy.onModuleLoaded['system/' + module.id];
+        });
       }
 
       return;
@@ -271,9 +273,9 @@
 
       var parsedContent = _this.parseModuleContent(module, response, contentType);
 
-      setTimeout(function () {
+      window.requestAnimationFrame(function () {
         compile(parsedContent);
-      }, 1);
+      });
     });
 
     function compile(moduleContent) {
