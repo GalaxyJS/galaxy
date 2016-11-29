@@ -203,7 +203,7 @@
     };
   };
 
-  CONTENT_PARSERS['text/javascript'] = function (content) {
+  var javascriptParser = function (content) {
     return {
       html: [],
       imports: [],
@@ -212,12 +212,15 @@
     };
   };
 
+  CONTENT_PARSERS['text/javascript'] = javascriptParser;
+  CONTENT_PARSERS['application/javascript'] = javascriptParser;
+
   System.prototype.parseModuleContent = function (module, content, contentType) {
-    var parser = CONTENT_PARSERS[contentType];
+    var parser = CONTENT_PARSERS[contentType.toLowerCase()];
     if (parser) {
       return parser(content);
     } else {
-      console.log('Resource is not a valid html file:', module.url);
+      console.log('Resource is not a valid html file:', module.url, contentType);
 
       return {
         html: [],
@@ -269,7 +272,7 @@
       url: module.url,
       body: Galaxy.utility.serialize(module.params || {})
     }, function (code, response, meta) {
-      var contentType = meta.getResponseHeader('content-type');
+      var contentType = (meta.getResponseHeader('content-type').split(';')[0] + '').trim() || 'text/html';
 
       var parsedContent = _this.parseModuleContent(module, response, contentType);
 
