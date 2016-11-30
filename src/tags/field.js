@@ -12,6 +12,11 @@
 
         element.xtag._input = this.querySelectorAll('input, textarea, select')[0];
 
+        element.xtag._label = this.querySelectorAll('label')[0];
+        if (element.xtag._label) {
+          element.xtag._label.addEventListener('click', element.xtag._input.focus.bind(element.xtag._input));
+        }
+
 //        element.setEmptiness = function () {
 //          if (element.xtag._input.value || element.xtag._input.type === 'file') {
 //            element.removeAttribute('empty');

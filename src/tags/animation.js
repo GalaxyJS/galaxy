@@ -1,6 +1,6 @@
 /* global xtag, Galaxy */
 
-(function (galaxy) {
+(function () {
   GalaxyAnimation = {
     CONFIG: {
       baseDuration: .5,
@@ -82,4 +82,4 @@
   };
 
   xtag.register('galaxy-animation', Animation);
-})(Galaxy);
+})();
