@@ -46,14 +46,14 @@
     }
 
     if (typeof (handler) === "function") {
-      module = Galaxy.utility.extend(true, {}, Galaxy.module.create());
+      module = new Galaxy.GalaxyModule();
       module.domain = domain;
       module.id = id;
       module.stateId = id.replace('system/', '');
 
       handler.call(null, module);
     } else {
-      module = Galaxy.utility.extend(true, {}, Galaxy.module.create(), handler || {});
+      module = Galaxy.utility.extend(new Galaxy.GalaxyModule(), handler || {});
       module.domain = domain;
       module.id = id;
       module.stateId = id.replace('system/', '');
@@ -138,16 +138,17 @@
     if (this.inited) {
       throw new Error('Galaxy is initialized already');
     }
-
-    this.app = Galaxy.utility.extend(true, {}, Galaxy.module.create());
-    this.app.domain = this;
-    this.app.stateKey = this.stateKey;
-    this.app.id = 'system';
-    this.app.installModules = mods || [];
-    this.app.init({}, {}, 'system');
-    var parsedHash = this.parseHash(window.location.hash);
-    this.app.oldHash = window.location.hash;
-    this.app.params = parsedHash.params;
+    
+    var app = new Galaxy.GalaxyModule();    
+    this.app =  app;
+    
+    app.domain = this;
+    app.stateKey = this.stateKey;
+    app.id = 'system';
+    app.installModules = mods || [];
+    app.init({}, {}, 'system');
+    app.oldHash = window.location.hash;
+    app.params = this.parseHash(window.location.hash).params;
     this.inited = true;
   };
 
