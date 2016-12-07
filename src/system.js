@@ -25,6 +25,28 @@
     this.app = null;
   }
 
+  System.prototype.createState = function (id) {
+    var module;
+    var domain = this;
+    if (!domain) {
+      throw 'Domain can NOT be null';
+    }
+    id = this.app.id + '/' + id;
+
+    if (domain.modules[id]) {
+      return domain.modules[id];
+    }
+
+    module = new Galaxy.GalaxyModule();
+    module.domain = domain;
+    module.id = id;
+    module.stateId = id.replace('system/', '');    
+
+    domain.modules[id] = module;
+
+    return module;
+  };
+
   System.prototype.state = function (id, handler) {
     //return this.app.module(id, object, false);
     var module, modulePath, moduleNavigation;
@@ -138,10 +160,10 @@
     if (this.inited) {
       throw new Error('Galaxy is initialized already');
     }
-    
-    var app = new Galaxy.GalaxyModule();    
-    this.app =  app;
-    
+
+    var app = new Galaxy.GalaxyModule();
+    this.app = app;
+
     app.domain = this;
     app.stateKey = this.stateKey;
     app.id = 'system';
@@ -302,9 +324,9 @@
         imports: {}
       };
 
-//        console.log(parsedContent.imports);
+      module.scopeServices = [];
+
       var imports = Array.prototype.slice.call(moduleContent.imports, 0);
-      //var importsOfScope = {};
       var scriptContent = moduleContent.script || '';
 
       // extract imports from the source code
@@ -327,10 +349,13 @@
 
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
+            var scopeService = scopeService.handler.call(null, scope);
             importedLibraries[item.url] = {
               name: item.url,
-              module: scopeService.handler.call(null, moduleContent)
+              module: scopeService.pre()
             };
+
+            module.scopeServices.push(scopeService);
 
             doneImporting(module, scope, importsCopy, moduleContent);
           } else if (importedLibraries[item.url] && !item.fresh) {
@@ -389,6 +414,11 @@
       var componentScript = new Function('Scope', currentComponentScripts);
 
       componentScript.call(null, scope);
+
+      module.scopeServices.forEach(function (item) {
+        item.post();
+      });
+
       var htmlNodes = [];
 
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
