@@ -9,7 +9,7 @@
     this.inited = false;
     this.started = false;
     this.active = false;
-    this.stateKey = 'app';
+    this.stateKey = '#';
     this.navigation = {};
     this.params = {};
     this.html = '';
@@ -98,7 +98,7 @@
   };
 
   GalaxyModule.prototype.setNav = function (value, key) {
-    var pathKey = key || 'app';
+    var pathKey = key || '#';
     var pathValue = value === null || value === undefined ? '' : value;
 
     this.setParam(pathKey, (this.id + '/').replace('system/', '') + pathValue);

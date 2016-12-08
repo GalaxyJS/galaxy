@@ -2,7 +2,7 @@
 
 (function (galaxy) {
   galaxy.registerScopeService('state', function (scope) {
-    var module = galaxy.createState(scope._stateId);
+    var module = galaxy.createState(scope.stateId);
     return {
       pre: function () {
         return module;
