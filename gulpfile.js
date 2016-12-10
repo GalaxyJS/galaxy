@@ -43,6 +43,7 @@ gulp.task('build-galaxy', function () {
 gulp.task('build-tags', function () {
   return pump([
     gulp.src([
+      'src/tags/x-tag-core.js',
       'src/tags/*.js'
     ]),
     concat('galaxy-tags.js'),
