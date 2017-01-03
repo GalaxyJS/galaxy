@@ -1,5 +1,5 @@
 {
-  "name":"GalaxyJS",
+  "name":"galaxyjs",
   "version":"0.9.0",
   "keywords":[
     "modular",
@@ -10,6 +10,11 @@
     "name":"Eeliya Rasta",
     "email":"eeliya.rasta@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GalaxyJS/galaxy.git"
+  },
+  "license": "MIT",
   "contributors":[
   ],
   "dependencies":{},
