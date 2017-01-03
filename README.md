@@ -2,7 +2,7 @@
 
 GalaxyJS is library to help you to implement your web application into isolated modules.
 
-**This library is still under construction**
+**Version 0.9.0 is out:** [Download here](https://github.com/GalaxyJS/galaxy/releases/tag/v0.9.0)
 
 ##Get started
 
