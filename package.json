@@ -1,41 +1,41 @@
 {
-  "name":"galaxyjs",
-  "version":"0.9.0",
-  "keywords":[
+  "name": "galaxyjs",
+  "version": "0.9.0",
+  "keywords": [
     "modular",
     "web components",
     "frontend library"
   ],
-  "author":{
-    "name":"Eeliya Rasta",
-    "email":"eeliya.rasta@gmail.com"
+  "author": {
+    "name": "Eeliya Rasta",
+    "email": "eeliya.rasta@gmail.com"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/GalaxyJS/galaxy.git"
   },
   "license": "MIT",
-  "contributors":[
-  ],
-  "dependencies":{},
-  "devDependencies":{
-    "chai":"^3.5.0",
-    "gulp":"^3.9.1",
-    "gulp-concat":"^2.6.0",
-    "gulp-jasmine-browser":"^1.7.1",
-    "gulp-minify":"0.0.14",
-    "gulp-mocha":"^3.0.1",
-    "gulp-open":"^2.0.0",
-    "gulp-rename":"^1.2.2",
-    "gulp-sourcemap":"^1.0.1",
-    "gulp-sourcemaps":"^2.2.0",
-    "gulp-watch":"^4.3.10",
-    "jasmine":"^2.5.2",
-    "karma-jasmine":"^1.0.2",
-    "mocha":"^3.1.2",
-    "opn":"^4.0.2",
-    "path":"^0.12.7",
-    "phantomjs":"^2.1.7",
-    "pump":"^1.0.1"
+  "contributors": [],
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-documentation": "^3.1.0",
+    "gulp-jasmine-browser": "^1.7.1",
+    "gulp-minify": "0.0.14",
+    "gulp-mocha": "^3.0.1",
+    "gulp-open": "^2.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemap": "^1.0.1",
+    "gulp-sourcemaps": "^2.2.0",
+    "gulp-watch": "^4.3.10",
+    "jasmine": "^2.5.2",
+    "karma-jasmine": "^1.0.2",
+    "mocha": "^3.1.2",
+    "opn": "^4.0.2",
+    "path": "^0.12.7",
+    "phantomjs": "^2.1.7",
+    "pump": "^1.0.1"
   }
 }

@@ -9,9 +9,22 @@ var path = require('path');
 var rename = require('gulp-rename');
 var sourcemaps = require('gulp-sourcemaps');
 var minify = require('gulp-minify');
+var gulpDocumentation = require('gulp-documentation');
 var pump = require('pump');
 var concat = require('gulp-concat');
 var watch = require('gulp-watch');
+
+var sources = {
+  galaxy: [
+    'src/system.js',
+    'src/ui.js',
+    'src/*.js'
+  ],
+  galaxyTags: [
+    'src/tags/x-tag-core.js',
+    'src/tags/*.js'
+  ]
+};
 
 gulp.task('default', function () {
   // place code for your default task here
@@ -20,11 +33,7 @@ gulp.task('default', function () {
 
 gulp.task('build-galaxy', function () {
   return pump([
-    gulp.src([
-      'src/system.js',
-      'src/ui.js',
-      'src/*.js'
-    ]),
+    gulp.src(sources.galaxy),
     concat('galaxy.js'),
     minify({
       mangle: false
@@ -42,10 +51,7 @@ gulp.task('build-galaxy', function () {
 
 gulp.task('build-tags', function () {
   return pump([
-    gulp.src([
-      'src/tags/x-tag-core.js',
-      'src/tags/*.js'
-    ]),
+    gulp.src(sources.galaxyTags),
     concat('galaxy-tags.js'),
     minify({
       mangle: false
@@ -101,4 +107,12 @@ gulp.task('jasmine', function () {
           .pipe(watch(filesForTest))
           .pipe(jasmineBrowser.specRunner())
           .pipe(jasmineBrowser.server({port: 8888}));
+});
+
+gulp.task('generate-docs', function () {
+  return gulp.src(sources.galaxy)
+          .pipe(gulpDocumentation('html', {
+            filename: 'galaxy-doc.html'
+          }))
+          .pipe(gulp.dest('docs'));
 });

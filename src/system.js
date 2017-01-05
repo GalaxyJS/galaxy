@@ -1,11 +1,18 @@
 /* global Galaxy, nanoajax, Node */
 
 (function () {
+
   Galaxy = new System();
+  
+  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
+   * 
+   * @returns {Galaxy.GalaxySystem}
+   */
   Galaxy.GalaxySystem = System;
 
   var entities = {};
   var importedLibraries = {};
+  
   function System() {
     this.stateKey = '#';
     this.registry = {};
@@ -519,9 +526,9 @@
 
   /** Set parameters for app/nav. if app/nav was not in parameters, then set paraters for current app/nav
    * 
-   * @param {type} parameters
-   * @param {type} replace if true it overwrites last url history otherwise it create new url history
-   * @param {type} clean clean all the existing parameters
+   * @param {Object} parameters
+   * @param {Boolean} replace if true it overwrites last url history otherwise it create new url history
+   * @param {Boolean} clean clean all the existing parameters
    * @returns {undefined}
    */
   System.prototype.setHashParameters = function (parameters, replace, clean) {

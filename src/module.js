@@ -1,8 +1,12 @@
 /* global Galaxy */
 
-(function (galaxy) {
-  galaxy.GalaxyModule = GalaxyModule;
-  galaxy.module = new galaxy.GalaxyModule();
+(function () {
+  /** 
+   *  
+   * @returns {Galaxy.GalaxyModule}
+   */
+  Galaxy.GalaxyModule = GalaxyModule;    
+  Galaxy.module = new Galaxy.GalaxyModule();
 
   function GalaxyModule() {
     this.domain = null;
@@ -47,7 +51,7 @@
       console.log(this.domain.app.params[this.stateKey]);
       throw new Error('Could not find module `' + this.id + '` by state key `' + this.stateKey + '`');
     }
-    var newNav = galaxy.utility.extend(true, {}, this.domain.app.navigation);
+    var newNav = Galaxy.utility.extend(true, {}, this.domain.app.navigation);
     var st = 'system/' + this.domain.app.params[this.stateKey];
     var napPath = st.indexOf(this.id) === 0 ? st.substr(this.id.length).split('/').filter(Boolean) : [];
 
@@ -120,6 +124,12 @@
     this.domain.setHashParameters(paramObject, replace);
   };
 
+  /** Set value for param if the parameter does not exist in hash
+   * 
+   * @param {String} param
+   * @param {String} value
+   * @returns {undefined}
+   */
   GalaxyModule.prototype.setParamIfNull = function (param, value) {
     if (!this.domain.getHashParam(param)) {
       var paramObject = {};
@@ -128,6 +138,12 @@
     }
   };
 
+  /** Set value for param if the current value of param is not equal to the passed value
+   * 
+   * @param {staring} param
+   * @param {staring} value
+   * @returns {undefined}
+   */
   GalaxyModule.prototype.setParamIfNot = function (param, value) {
     if (this.domain.getHashParam(param) !== value) {
       var paramObject = {};
@@ -185,7 +201,7 @@
     }
 
     this.hashHandler.call(this, navigation, params);
-    var allNavigations = galaxy.utility.extend({}, this.navigation, navigation);
+    var allNavigations = Galaxy.utility.extend({}, this.navigation, navigation);
 
     var tempNav = _this.navigation;
 
@@ -213,7 +229,7 @@
             if (navigationValue) {
               parameters[0] = navigationValue.join('/');
               for (var i = 0; i < navigationValue.length; i++) {
-                var arg = galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
+                var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
 
                 parameters.push(arg);
               }
@@ -273,7 +289,7 @@
           if (navigationValue) {
             parameters[0] = navigationValue.join('/');
             for (var i = 0; i < navigationValue.length; i++) {
-              var arg = galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
+              var arg = Galaxy.utility.isNumber(navigationValue[i]) ? parseFloat(navigationValue[i]) : navigationValue[i];
 
               parameters.push(arg);
             }
@@ -294,7 +310,7 @@
     if (this.activeModule && this.activeModule.id === this.id + '/' + navigation[this.stateKey][0])
     {
       // Remove first part of navigation in order to force activeModule to only react to events at its level and higher 
-      moduleNavigation = galaxy.utility.extend(true, {}, navigation);
+      moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
       moduleNavigation[this.stateKey] = fullNav.slice(this.activeModule.id.split('/').length - 1);
       // Call module level events handlers
       this.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
@@ -302,9 +318,9 @@
   };
 
   GalaxyModule.prototype.loadModule = function (module, onDone) {
-    galaxy.loadModule(module, onDone, this.scope);
+    Galaxy.loadModule(module, onDone, this.scope);
   };
 
   GalaxyModule.prototype.hashHandler = function (nav, params) {};
 
-})(Galaxy);
+})();
