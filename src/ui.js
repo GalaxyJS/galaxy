@@ -120,6 +120,19 @@
     return height;
   };
 
+  GalaxyUI.prototype.utility.findParent = function (node, name) {
+    var parent = node.parentNode;
+    if (parent) {
+      if (parent.nodeName.toUpperCase() === name.toUpperCase()) {
+        return parent;
+      }
+
+      return GalaxyUI.prototype.utility.findParent(parent, name);
+    }
+
+    return null;
+  };
+
   GalaxyUI.prototype.setContent = function (parent, nodes) {
     var parentNode = parent;
     if (typeof parent === 'string') {
@@ -127,9 +140,9 @@
     }
 
     if (!parentNode) {
-      throw new Error('parent element can not be null: ' + parent+'\r\n try to set ui-view on your target element and refrence it via Scope.views');
+      throw new Error('parent element can not be null: ' + parent + '\r\n try to set ui-view on your target element and refrence it via Scope.views');
     }
-    
+
     var children = Array.prototype.slice.call(parentNode.childNodes);
 
     children.forEach(function (child) {
