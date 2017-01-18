@@ -31,22 +31,15 @@
         element.xtag.animations = {};
         element.xtag.effects = [];
         element.xtag.registeredAnimations = [];
-        this.xtag.cachedAnimations = this.getAttribute('effects') || '';
-      },
-      attributeChanged: function (attrName, oldValue, newValue) {
       },
       inserted: function () {
-//        console.log(this.xtag.cachedAnimations, !this.xtag.effects.length , !this.__ui_neutral, this);
-        if (this.xtag.cachedAnimations && !this.xtag.effects.length && !this.__ui_neutral) {
-          this.setAttribute('effects', this.xtag.cachedAnimations);
-          this.xtag.cachedAnimations = null;
-
+        this.xtag.effects = this.getAttribute('effects').split(/[\s,]+/).filter(Boolean);
+        if (this.xtag.effects.length && !this.__ui_neutral) {
           this.prepare();
-        }        
+        }
       },
       removed: function () {
-        this.xtag.cachedAnimations = this.getAttribute('effects');
-        if (!this.__ui_neutral) {          
+        if (!this.__ui_neutral) {
           this.xtag.effects = [];
           this.prepare();
         }
@@ -56,7 +49,11 @@
       effects: {
         attribute: {
         },
-        set: function (value) {
+        set: function (value, oldValue) {
+          if (value === oldValue) {
+            return;
+          }
+
           var element = this;
           if (typeof value === 'string') {
             this.xtag.effects = value.split(/[\s,]+/).filter(Boolean);
@@ -82,7 +79,7 @@
           }
 
           if (!GalaxyAnimation.effects[item]) {
-            return console.warn('spirit animation not found:', item);
+            return console.warn('effect not found:', item);
           }
 
           var animation = GalaxyAnimation.effects[item].register(element);
@@ -93,7 +90,7 @@
           }
           element.xtag.registeredAnimations.push(item);
         });
-//console.log(element.xtag.effects);
+
         this.xtag.registeredAnimations = this.xtag.registeredAnimations.filter(function (item) {
           if (element.xtag.effects.indexOf(item) === -1) {
             GalaxyAnimation.effects[item].deregister(element);
