@@ -5,7 +5,7 @@
    *  
    * @returns {Galaxy.GalaxyModule}
    */
-  Galaxy.GalaxyModule = GalaxyModule;    
+  Galaxy.GalaxyModule = GalaxyModule;
   Galaxy.module = new Galaxy.GalaxyModule();
 
   function GalaxyModule() {
@@ -186,19 +186,18 @@
   GalaxyModule.prototype.hashChanged = function (navigation, params, hashValue, fullNav) {
     var _this = this;
     var moduleNavigation = navigation;
-
     var fullNavPath = params[_this.stateKey];
 
-    if (this.id === 'system/' + fullNavPath/* && Galaxy.app.activeModule !== this*/) {
-      this.domain.app.activeModule = this;
-      this.domain.app.activeModule.active = true;
-    } else if (!this.solo) {
-      if (this.domain.app.activeModule && this.domain.app.activeModule.active) {
-        this.domain.app.activeModule.trigger('onStop');
+    for (var id in this.domain.modules) {
+      var module = this.domain.modules[id];
+      if (module.id !== 'system/' + fullNavPath && module.active) {
+        module.trigger('onStop');
+        module.active = false;
+      } else if (module.id === 'system/' + fullNavPath && module.active) {
+        this.domain.app.activeModule = module;
       }
-      this.domain.app.activeModule = null;
-      this.active = false;
     }
+//    console.log(this.id);
 
     this.hashHandler.call(this, navigation, params);
     var allNavigations = Galaxy.utility.extend({}, this.navigation, navigation);
@@ -209,23 +208,23 @@
     _this.params = params;
 
     if (this.domain.app.activeModule && this.active && this.domain.app.activeModule.id === _this.id) {
-      for (var key in allNavigations) {
-        if (allNavigations.hasOwnProperty(key)) {
+      for (var id in allNavigations) {
+        if (allNavigations.hasOwnProperty(id)) {
           var stateHandlers = _this.hashListeners.filter(function (item) {
-            return item.id === key;
+            return item.id === id;
           });
 
           if (stateHandlers.length) {
-            if (tempNav[key]) {
-              var currentKeyValue = tempNav[key].join('/');
-              if (navigation[key] && currentKeyValue === navigation[key].join('/')) {
+            if (tempNav[id]) {
+              var currentKeyValue = tempNav[id].join('/');
+              if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
                 continue;
               }
             }
 
             var parameters = [];
             parameters.push(null);
-            var navigationValue = navigation[key];
+            var navigationValue = navigation[id];
             if (navigationValue) {
               parameters[0] = navigationValue.join('/');
               for (var i = 0; i < navigationValue.length; i++) {
@@ -268,16 +267,16 @@
       }
     }
 
-    for (var key in allNavigations) {
-      if (allNavigations.hasOwnProperty(key)) {
+    for (var id in allNavigations) {
+      if (allNavigations.hasOwnProperty(id)) {
         var globalStateHandlers = _this.globalHashListeners.filter(function (item) {
-          return item.id === key;
+          return item.id === id;
         });
 
         if (globalStateHandlers.length) {
-          if (tempNav[key]) {
-            var currentKeyValue = tempNav[key].join('/');
-            if (navigation[key] && currentKeyValue === navigation[key].join('/')) {
+          if (tempNav[id]) {
+            var currentKeyValue = tempNav[id].join('/');
+            if (navigation[id] && currentKeyValue === navigation[id].join('/')) {
               continue;
             }
           }
@@ -285,7 +284,7 @@
           parameters = [];
           parameters.push(null);
 
-          navigationValue = navigation[key];
+          navigationValue = navigation[id];
           if (navigationValue) {
             parameters[0] = navigationValue.join('/');
             for (var i = 0; i < navigationValue.length; i++) {
@@ -304,16 +303,15 @@
 
     // Set the app.activeModule according to the current navigation path
     if (navigation[this.stateKey] && this.domain.modules[this.id + '/' + navigation[this.stateKey][0]]) {
-      this.activeModule = this.domain.modules[this.id + '/' + navigation[this.stateKey][0]];
+      this.domain.app.activeModule = this.domain.modules[this.id + '/' + navigation[this.stateKey][0]];
     }
 
-    if (this.activeModule && this.activeModule.id === this.id + '/' + navigation[this.stateKey][0])
-    {
+    if (this.domain.app.activeModule && this.domain.app.activeModule.id === this.id + '/' + navigation[this.stateKey][0]) {
       // Remove first part of navigation in order to force activeModule to only react to events at its level and higher 
       moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
-      moduleNavigation[this.stateKey] = fullNav.slice(this.activeModule.id.split('/').length - 1);
+      moduleNavigation[this.stateKey] = fullNav.slice(this.domain.app.activeModule.id.split('/').length - 1);
       // Call module level events handlers
-      this.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
+      this.domain.app.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
     }
   };
 
