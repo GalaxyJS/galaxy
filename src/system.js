@@ -129,7 +129,7 @@
     }
 
     var detect = function () {
-      if (_this.app.oldHash !== window.location.hash || _this.app.newListener) {
+      if (_this.app.oldHash !== window.location.hash || _this.app.newListenerAdded) {
         var oldParesedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
@@ -151,7 +151,7 @@
 
         _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[_this.app.stateKey]); // Galaxy
         _this.app.oldHash = parsedHash.hash;
-        _this.app.newListener = false;
+        _this.app.newListenerAdded = false;
       }
     };
 

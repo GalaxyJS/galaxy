@@ -19,7 +19,7 @@
     this.html = '';
     this.installModules = [];
     this.binds = {};
-    this.newListener = false;
+    this.newListenerAdded = false;
     this.onInit = null;
     this.onStart = null;
     this.onStop = null;
@@ -84,7 +84,7 @@
    */
   GalaxyModule.prototype.on = function (id, handler) {
     this.hashListeners.push({id: id, handler: handler});
-    this.newListener = true;
+    this.newListenerAdded = true;
   };
 
   /** Register an state handler globaly with the specified id.
