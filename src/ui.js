@@ -3,6 +3,7 @@
 (function (galaxy) {
   galaxy.GalaxyUI = GalaxyUI;
   galaxy.ui = new galaxy.GalaxyUI();
+  var positions = ['fixed', 'absolute', 'relative'];
 
   function GalaxyUI() {
     this.DEFAULTS = {
@@ -39,7 +40,7 @@
 
   GalaxyUI.prototype.utility.hasClass = function (element, className) {
     if (element.classList)
-      return  element.classList.contains(className);
+      return element.classList.contains(className);
     else
       return new RegExp('(^| )' + className + '( |$)', 'gi').test(element.className);
   };
@@ -94,6 +95,11 @@
     var height = 0;
     var logs = [];
     var children = element.children;
+    var elementCSS = window.getComputedStyle(element, null);
+
+    if (positions.indexOf(elementCSS.position) === -1) {
+      element.style.position = 'relative';
+    }
 
     for (var index = 0, length = children.length; index < length; index++) {
       if (children[index].__ui_neutral) {
@@ -106,7 +112,6 @@
         continue;
       }
 
-      //var dimension = children[index].getBoundingClientRect();
       var dimension = children[index].offsetTop + children[index].offsetHeight;
       var marginBottom = parseInt(cs.marginBottom || 0);
 
@@ -116,6 +121,8 @@
     if (withPaddings) {
       height += parseInt(window.getComputedStyle(element).paddingBottom || 0);
     }
+
+    element.style.position = '';
 
     return height;
   };
@@ -160,12 +167,10 @@
   };
 
 
-
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
     for (var i in obj) {
-      if (obj.hasOwnProperty(i))
-      {
+      if (obj.hasOwnProperty(i)) {
         target[i] = obj[i];
       }
     }
@@ -174,7 +179,7 @@
 
   GalaxyUI.prototype.getCenterPoint = function (rect) {
     var pos = document.activeElement.getBoundingClientRect();
-    return         {
+    return {
       left: rect.left + (rect.width / 2),
       top: rect.top + (rect.height / 2)
     };

@@ -1,11 +1,11 @@
 /* global Galaxy, nanoajax, Node */
 
-(function () {
+(function (root) {
 
-  Galaxy = new System();
+  root.Galaxy = new System();
 
   /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
-   * 
+   *
    * @returns {Galaxy.GalaxySystem}
    */
   Galaxy.GalaxySystem = System;
@@ -59,7 +59,7 @@
     var module, modulePath, moduleNavigation;
     var domain = this;
     if (!domain) {
-      throw "Domain can NOT be null";
+      throw 'Domain can NOT be null';
     }
     id = this.app.id + '/' + id;
 
@@ -74,7 +74,7 @@
       return domain.modules[id];
     }
 
-    if (typeof (handler) === "function") {
+    if (typeof (handler) === 'function') {
       module = new Galaxy.GalaxyModule();
       module.domain = domain;
       module.id = id;
@@ -143,7 +143,7 @@
           delete temp['#'];
 
           if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
-            return  Galaxy.app.setParam('#', parsedHash.params['#']);
+            return Galaxy.app.setParam('#', parsedHash.params['#']);
           } else {
             Galaxy.modulesHashes[parsedHash.params['#']] = parsedHash.hash;
           }
@@ -328,7 +328,6 @@
     }
 
     if (moduleExist) {
-      //console.log('module exist: ', module.id);
       var ol = Galaxy.onModuleLoaded['system/' + module.id];
       if ('function' === typeof (ol)) {
         window.requestAnimationFrame(function () {
@@ -340,11 +339,11 @@
       return;
     }
 
-    if (Galaxy.onLoadQueue["system/" + module.id]) {
+    if (Galaxy.onLoadQueue['system/' + module.id]) {
       return;
     }
 
-    Galaxy.onLoadQueue["system/" + module.id] = true;
+    Galaxy.onLoadQueue['system/' + module.id] = true;
 
     nanoajax.ajax({
       method: 'GET',
@@ -364,10 +363,6 @@
       var scopeUIViews = {};
       Array.prototype.forEach.call(moduleContent.views, function (node, i) {
         var uiViewName = node.getAttribute('ui-view');
-//        var key = uiViewName.replace(/([A-Z])|(\-)|(\s)/g, function ($1) {
-//          return "_" + (/[A-Z]/.test($1) ? $1.toLowerCase() : '');
-//        });
-
         scopeUIViews[uiViewName || 'view_' + i] = node;
       });
 
@@ -396,8 +391,6 @@
 
         return "Scope.imports['" + query[query.length - 1] + "']";
       });
-
-//       console.log('Libraries to be imported: ', JSON.stringify(imports));
 
       if (imports.length) {
         var importsCopy = imports.slice(0);
@@ -502,7 +495,6 @@
       currentModule.scope = scope;
 
       if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
-        //console.log('immidiate load: ', currentModule, Galaxy.onModuleLoaded);
         Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, scope.html);
         delete Galaxy.onModuleLoaded['system/' + module.id];
       }
@@ -512,9 +504,7 @@
   };
 
   System.prototype.setURLHash = function (hash) {
-    //var hash = hash;
     hash = hash.replace(/^#\/?/igm, '');
-
     var navigation = {};
     var params = {};
     hash.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
@@ -530,12 +520,11 @@
   };
 
   System.prototype.getHashNav = function (key, hashName) {
-    return this.app.navigation[key] || [
-    ];
+    return this.app.navigation[key] || [];
   };
 
   /** Set parameters for app/nav. if app/nav was not in parameters, then set paraters for current app/nav
-   * 
+   *
    * @param {Object} parameters
    * @param {Boolean} replace if true it overwrites last url history otherwise it create new url history
    * @param {Boolean} clean clean all the existing parameters
@@ -554,10 +543,8 @@
       hashValue = Galaxy.modulesHashes[nav];
 
     }
-    //console.log(parameters, nav, Galaxy.modulesHashes[nav]);
 
     var newHash = '';
-
     hashValue = hashValue.replace(/^#([^&]*)\/?/igm, function (m, v) {
       if (newParams['#'] !== null && typeof newParams['#'] !== 'undefined') {
         newHash += '#' + newParams['#'] + '&';
@@ -579,13 +566,12 @@
         newHash += '&';
       }
     });
-    // New keys
+
     for (var key in newParams) {
       if (newParams.hasOwnProperty(key)) {
         var value = newParams[key];
-
         if (key && value) {
-          newHash += key + "=" + value + "&";
+          newHash += key + '=' + value + '&';
         }
       }
     }
@@ -636,5 +622,5 @@
     });
   };
 
-}());
+}(this));
 
