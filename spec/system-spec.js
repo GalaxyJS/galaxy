@@ -36,40 +36,42 @@ describe('Galaxy life cycle', function () {
 });
 
 describe('Galaxy boot', function () {
+  var MockGalaxy = null;
 
   beforeEach(function () {
     jasmine.clock().install();
     jasmine.Ajax.install();
-    this.MockGalaxy = new Galaxy.GalaxySystem();
+    MockGalaxy = new Galaxy.GalaxySystem();
   });
 
   afterEach(function () {
     jasmine.clock().uninstall();
     jasmine.Ajax.uninstall();
-    this.MockGalaxy = null;
+    MockGalaxy = null;
   });
 
-  it('Calling Galaxy.init will fail if its called already', function () {    
-    expect(this.MockGalaxy.init.bind(this.MockGalaxy)).not.toThrow();    
-    expect(this.MockGalaxy.init.bind(this.MockGalaxy)).toThrowError('Galaxy is initialized already');
+  it('Calling Galaxy.init will fail if its called already', function () {
+    expect(MockGalaxy.init.bind(MockGalaxy)).not.toThrow();
+    expect(MockGalaxy.init.bind(MockGalaxy)).toThrowError('Galaxy is initialized already');
   });
 
   it('Calling Galaxy.start will fail when init has not been called', function () {
-    expect(this.MockGalaxy.start.bind(this.MockGalaxy)).toThrowError();
+    expect(MockGalaxy.start.bind(MockGalaxy)).toThrowError();
   });
 
   it('Main module is loaded', function () {
-    expect(this.MockGalaxy.app).toBeNull();
+    expect(MockGalaxy.app).toBeNull();
 
     var doneFn = jasmine.createSpy('success');
-    this.MockGalaxy.boot({
+    MockGalaxy.boot({
       id: 'main',
       url: 'main.html'
     }, function (module) {
+      console.log(module.scope.html[0].innerHTML);
       doneFn(module.scope.html[0].innerHTML);
     });
 
-    expect(this.MockGalaxy.app).toBeDefined();
+    expect(MockGalaxy.app).toBeDefined();
 
     expect(jasmine.Ajax.requests.mostRecent().url).toBe('main.html');
     expect(doneFn).not.toHaveBeenCalled();
@@ -80,8 +82,9 @@ describe('Galaxy boot', function () {
       "contentType": 'text/html'
     });
 
-    jasmine.clock().tick(101);
-    expect(doneFn).toHaveBeenCalledWith('main module');
+    setTimeout(function () {
+      expect(doneFn).toHaveBeenCalledWith('main module');
+    }, 100);
   });
 });
 

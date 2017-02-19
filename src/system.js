@@ -351,9 +351,7 @@
       body: Galaxy.utility.serialize(module.params || {})
     }, function (code, response, meta) {
       var contentType = (meta.getResponseHeader('content-type').split(';')[0] + '').trim() || 'text/html';
-
       var parsedContent = _this.parseModuleContent(module, response, contentType);
-
       window.requestAnimationFrame(function () {
         compile(parsedContent);
       });
@@ -398,13 +396,12 @@
 
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
-            var scopeService = scopeService.handler.call(null, scope);
+            var scopeServiceHandler = scopeService.handler.call(null, scope);
             importedLibraries[item.url] = {
               name: item.url,
-              module: scopeService.pre()
+              module: scopeServiceHandler.pre()
             };
-
-            module.scopeServices.push(scopeService);
+            module.scopeServices.push(scopeServiceHandler);
 
             doneImporting(module, scope, importsCopy, moduleContent);
           } else if (importedLibraries[item.url] && !item.fresh) {

@@ -5,10 +5,9 @@
   Galaxy.helpers = new Galaxy.GalaxyHelpers();
 
   function Helpers() {
-
   }
 
-  Helpers.prototype.loadModuleInto = function (module, element) {   
+  Helpers.prototype.loadModuleInto = function (module, element) {
     Galaxy.load(module, function (module) {
       Galaxy.ui.setContent(element, module.scope.html);
 

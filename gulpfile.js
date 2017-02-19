@@ -96,7 +96,7 @@ var open = require('opn');
 
 gulp.task('jasmine', function () {
   var filesForTest = [
-    'dist/build-min.js',
+    'dist/galaxy-min.js',
     'spec/mocks/*.js',
     'spec/*-spec.js'
   ];
