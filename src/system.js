@@ -345,15 +345,13 @@
 
     Galaxy.onLoadQueue['system/' + module.id] = true;
 
-    nanoajax.ajax({
-      method: 'GET',
-      url: module.url,
-      body: Galaxy.utility.serialize(module.params || {})
-    }, function (code, response, meta) {
-      var contentType = (meta.getResponseHeader('content-type').split(';')[0] + '').trim() || 'text/html';
-      var parsedContent = _this.parseModuleContent(module, response, contentType);
-      window.requestAnimationFrame(function () {
-        compile(parsedContent);
+    fetch(module.url + '?' + Galaxy.utility.serialize(module.params || {})).then(function (response) {
+      var contentType = response.headers.get('content-type').split(';')[0] || 'text/html';
+      response.text().then(function (htmlText) {
+        var parsedContent = _this.parseModuleContent(module, htmlText, contentType);
+        window.requestAnimationFrame(function () {
+          compile(parsedContent);
+        });
       });
     });
 

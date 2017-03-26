@@ -35,7 +35,7 @@ describe('Galaxy life cycle', function () {
   });
 });
 
-describe('Galaxy boot', function () {
+describe('Galaxy boot:', function () {
   var MockGalaxy = null;
 
   beforeEach(function () {
@@ -59,32 +59,32 @@ describe('Galaxy boot', function () {
     expect(MockGalaxy.start.bind(MockGalaxy)).toThrowError();
   });
 
-  it('Main module is loaded', function () {
-    expect(MockGalaxy.app).toBeNull();
-
-    var doneFn = jasmine.createSpy('success');
-    MockGalaxy.boot({
-      id: 'main',
-      url: 'main.html'
-    }, function (module) {
-      console.log(module.scope.html[0].innerHTML);
-      doneFn(module.scope.html[0].innerHTML);
-    });
-
-    expect(MockGalaxy.app).toBeDefined();
-
-    expect(jasmine.Ajax.requests.mostRecent().url).toBe('main.html');
-    expect(doneFn).not.toHaveBeenCalled();
-
-    jasmine.Ajax.requests.mostRecent().respondWith({
-      "status": 200,
-      "responseText": '<h1>main module</h1>',
-      "contentType": 'text/html'
-    });
-
-    setTimeout(function () {
-      expect(doneFn).toHaveBeenCalledWith('main module');
-    }, 100);
-  });
+  //it('Main module is loaded', function () {
+  //  expect(MockGalaxy.app).toBeNull();
+  //
+  //  var doneFn = jasmine.createSpy('success');
+  //  MockGalaxy.boot({
+  //    id: 'main',
+  //    url: 'main.html'
+  //  }, function (module) {
+  //    console.log(module.scope.html[0].innerHTML);
+  //    doneFn(module.scope.html[0].innerHTML);
+  //  });
+  //
+  //  expect(MockGalaxy.app).toBeDefined();
+  //
+  //  expect(jasmine.Ajax.requests.mostRecent().url).toBe('main.html');
+  //  expect(doneFn).not.toHaveBeenCalled();
+  //
+  //  jasmine.Ajax.requests.mostRecent().respondWith({
+  //    "status": 200,
+  //    "responseText": '<h1>main module</h1>',
+  //    "contentType": 'text/html'
+  //  });
+  //
+  //  setTimeout(function () {
+  //    expect(doneFn).toHaveBeenCalledWith('main module');
+  //  }, 100);
+  //});
 });
 
