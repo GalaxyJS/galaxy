@@ -13,7 +13,7 @@
   var entities = {};
   var importedLibraries = {};
 
-  function System() {
+  function System () {
     this.stateKey = '#';
     this.registry = {};
     this.modules = {};
@@ -40,8 +40,8 @@
     }
     id = this.app.id + '/' + id;
 
-    if (domain.modules[id]) {
-      return domain.modules[id];
+    if (domain.modules[ id ]) {
+      return domain.modules[ id ];
     }
 
     module = new Galaxy.GalaxyModule();
@@ -49,7 +49,7 @@
     module.id = id;
     module.stateId = id.replace('system/', '');
 
-    domain.modules[id] = module;
+    domain.modules[ id ] = module;
 
     return module;
   };
@@ -67,11 +67,11 @@
     if (!handler/* && this.modules[id]*/) {
       // Add the module to notYetStarted list so it can be started by startLastLoadedModule method
       domain.notYetStarted.push(id);
-      return domain.modules[id];
+      return domain.modules[ id ];
     }
 
-    if (domain.modules[id]) {
-      return domain.modules[id];
+    if (domain.modules[ id ]) {
+      return domain.modules[ id ];
     }
 
     if (typeof (handler) === 'function') {
@@ -88,11 +88,11 @@
       module.stateId = id.replace('system/', '');
     }
 
-    modulePath = domain.app.navigation[module.stateKey] ? domain.app.navigation[module.stateKey] : [];
+    modulePath = domain.app.navigation[ module.stateKey ] ? domain.app.navigation[ module.stateKey ] : [];
     moduleNavigation = Galaxy.utility.extend(true, {}, domain.app.navigation);
-    moduleNavigation[module.stateKey] = modulePath.slice(id.split("/").length - 1);
+    moduleNavigation[ module.stateKey ] = modulePath.slice(id.split("/").length - 1);
 
-    domain.modules[id] = module;
+    domain.modules[ id ] = module;
     domain.notYetStarted.push(id);
 
     // Set module hash for this module when its inited
@@ -137,19 +137,19 @@
         // If the user changes only the app(#) parameter in the url, 
         // then the old hash of the requested module would be considered instead of the value of the url
         // if user make more changes, then the old hash of the requested module will be ignored and url value will be taken
-        if (oldParesedHash.params['#'] !== parsedHash.params['#']) {
+        if (oldParesedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
           var temp = Galaxy.utility.clone(parsedHash.params);
-          delete oldParesedHash.params['#'];
-          delete temp['#'];
+          delete oldParesedHash.params[ '#' ];
+          delete temp[ '#' ];
 
           if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
-            return Galaxy.app.setParam('#', parsedHash.params['#']);
+            return Galaxy.app.setParam('#', parsedHash.params[ '#' ]);
           } else {
-            Galaxy.modulesHashes[parsedHash.params['#']] = parsedHash.hash;
+            Galaxy.modulesHashes[ parsedHash.params[ '#' ] ] = parsedHash.hash;
           }
         }
 
-        _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[_this.app.stateKey]); // Galaxy
+        _this.app.hashChanged(parsedHash.navigation, parsedHash.params, parsedHash.hash, parsedHash.navigation[ _this.app.stateKey ]); // Galaxy
         _this.app.oldHash = parsedHash.hash;
         _this.app.newListenerAdded = false;
       }
@@ -163,29 +163,30 @@
   };
 
   System.prototype.setModuleHashValue = function (navigation, parameters, hashValue, init) {
-    var nav = parameters['#'];
+    var nav = parameters[ '#' ];
 
     if (!nav) {
       return hashValue;
     }
 
-    if (Galaxy.modulesHashes[nav] && Galaxy.app.activeModule !== Galaxy.modules['system/' + nav] && Galaxy.app.activeModule && Galaxy.app.activeModule.stateKey === '#') {
-      return Galaxy.modulesHashes[nav];
+    if (Galaxy.modulesHashes[ nav ] && Galaxy.app.activeModule !== Galaxy.modules[ 'system/' + nav ] &&
+      Galaxy.app.activeModule && Galaxy.app.activeModule.stateKey === '#') {
+      return Galaxy.modulesHashes[ nav ];
       // When the navigation path is changed
     } else if (!this.firstTime) {
       // first time indicates that the page is (re)loaded and the window.location.hash should be set
       // as the module hash value for the module which is specified by app parameter in the hash value.
       // Other modules get default hash value
-      Galaxy.modulesHashes[nav] = hashValue;
+      Galaxy.modulesHashes[ nav ] = hashValue;
       this.firstTime = true;
-      return Galaxy.modulesHashes[nav];
-    } else if (!Galaxy.modulesHashes[nav]) {
+      return Galaxy.modulesHashes[ nav ];
+    } else if (!Galaxy.modulesHashes[ nav ]) {
       // When the module does not exist 
-      Galaxy.modulesHashes[nav] = '#' + nav;
-      return Galaxy.modulesHashes[nav];
-    } else if (Galaxy.modulesHashes[nav]) {
+      Galaxy.modulesHashes[ nav ] = '#' + nav;
+      return Galaxy.modulesHashes[ nav ];
+    } else if (Galaxy.modulesHashes[ nav ]) {
       // When the hash parameters value is changed from the browser url bar or originated from url bar
-      Galaxy.modulesHashes[nav] = hashValue;
+      Galaxy.modulesHashes[ nav ] = hashValue;
     }
     return hashValue;
   };
@@ -194,14 +195,14 @@
     var navigation = {};
     var params = {};
     var paramters = hash.replace(/^#([^&]*)\/?/igm, function (m, v) {
-      navigation['#'] = v.split('/').filter(Boolean);
-      params['#'] = v;
+      navigation[ '#' ] = v.split('/').filter(Boolean);
+      params[ '#' ] = v;
       return '';
     });
 
     paramters.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
-      navigation[k] = v.split('/').filter(Boolean);
-      params[k] = v;
+      navigation[ k ] = v.split('/').filter(Boolean);
+      params[ k ] = v;
     });
 
     return {
@@ -231,7 +232,7 @@
 
   var CONTENT_PARSERS = {};
 
-  CONTENT_PARSERS['text/html'] = function (content) {
+  CONTENT_PARSERS[ 'text/html' ] = function (content) {
     var scripts = [];
     var imports = [];
 
@@ -267,9 +268,9 @@
 
     var temp = document.createElement('div');
     for (var i = 0, len = html.length; i < len; i++) {
-      html[i] = temp.appendChild(html[i]);
+      html[ i ] = temp.appendChild(html[ i ]);
     }
-    document.getElementsByTagName('body')[0].appendChild(temp);
+    document.getElementsByTagName('body')[ 0 ].appendChild(temp);
     var uiView = temp.querySelectorAll('ui-view,[ui-view]');
     temp.parentNode.removeChild(temp);
 
@@ -290,11 +291,11 @@
     };
   };
 
-  CONTENT_PARSERS['text/javascript'] = javascriptParser;
-  CONTENT_PARSERS['application/javascript'] = javascriptParser;
+  CONTENT_PARSERS[ 'text/javascript' ] = javascriptParser;
+  CONTENT_PARSERS[ 'application/javascript' ] = javascriptParser;
 
   System.prototype.parseModuleContent = function (module, content, contentType) {
-    var parser = CONTENT_PARSERS[contentType.toLowerCase()];
+    var parser = CONTENT_PARSERS[ contentType.toLowerCase() ];
     if (parser) {
       return parser(content);
     } else {
@@ -311,12 +312,12 @@
 
   System.prototype.load = function (module, onDone) {
     var _this = this;
-    module.id = module.id || (new Date()).valueOf() + '-' + performance.now();
+    module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
 
-    Galaxy.onModuleLoaded['system/' + module.id] = onDone;
-    var moduleExist = Galaxy.modules['system/' + module.id];
+    Galaxy.onModuleLoaded[ 'system/' + module.id ] = onDone;
+    var moduleExist = Galaxy.modules[ 'system/' + module.id ];
 
-    var invokers = [module.url];
+    var invokers = [ module.url ];
 
     if (module.invokers) {
       if (module.invokers.indexOf(module.url) !== -1) {
@@ -328,25 +329,25 @@
     }
 
     if (moduleExist) {
-      var ol = Galaxy.onModuleLoaded['system/' + module.id];
+      var ol = Galaxy.onModuleLoaded[ 'system/' + module.id ];
       if ('function' === typeof (ol)) {
         window.requestAnimationFrame(function () {
           ol.call(_this, moduleExist, moduleExist.scope.html);
-          delete Galaxy.onModuleLoaded['system/' + module.id];
+          delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
         });
       }
 
       return;
     }
 
-    if (Galaxy.onLoadQueue['system/' + module.id]) {
+    if (Galaxy.onLoadQueue[ 'system/' + module.id ]) {
       return;
     }
 
-    Galaxy.onLoadQueue['system/' + module.id] = true;
+    Galaxy.onLoadQueue[ 'system/' + module.id ] = true;
 
     fetch(module.url + '?' + Galaxy.utility.serialize(module.params || {})).then(function (response) {
-      var contentType = response.headers.get('content-type').split(';')[0] || 'text/html';
+      var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
       response.text().then(function (htmlText) {
         var parsedContent = _this.parseModuleContent(module, htmlText, contentType);
         window.requestAnimationFrame(function () {
@@ -355,11 +356,11 @@
       });
     });
 
-    function compile(moduleContent) {
+    function compile (moduleContent) {
       var scopeUIViews = {};
       Array.prototype.forEach.call(moduleContent.views, function (node, i) {
         var uiViewName = node.getAttribute('ui-view');
-        scopeUIViews[uiViewName || 'view_' + i] = node;
+        scopeUIViews[ uiViewName || 'view_' + i ] = node;
       });
 
       var scope = {
@@ -381,11 +382,11 @@
       moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         var query = path.match(/([\S]+)/gm);
         imports.push({
-          url: query[query.length - 1],
+          url: query[ query.length - 1 ],
           fresh: query.indexOf('new') !== -1
         });
 
-        return "Scope.imports['" + query[query.length - 1] + "']";
+        return "Scope.imports['" + query[ query.length - 1 ] + "']";
       });
 
       if (imports.length) {
@@ -395,14 +396,14 @@
           var scopeService = Galaxy.getScopeService(item.url);
           if (scopeService) {
             var scopeServiceHandler = scopeService.handler.call(null, scope);
-            importedLibraries[item.url] = {
+            importedLibraries[ item.url ] = {
               name: item.url,
               module: scopeServiceHandler.pre()
             };
             module.scopeServices.push(scopeServiceHandler);
 
             doneImporting(module, scope, importsCopy, moduleContent);
-          } else if (importedLibraries[item.url] && !item.fresh) {
+          } else if (importedLibraries[ item.url ] && !item.fresh) {
             doneImporting(module, scope, importsCopy, moduleContent);
           } else {
             Galaxy.load({
@@ -425,7 +426,7 @@
       moduleLoaded(module, scope, moduleContent);
     }
 
-    function doneImporting(module, scope, imports, moduleContent) {
+    function doneImporting (module, scope, imports, moduleContent) {
       imports.splice(imports.indexOf(module.url) - 1, 1);
 
       if (imports.length === 0) {
@@ -434,11 +435,11 @@
       }
     }
 
-    function moduleLoaded(module, scope, filtered) {
+    function moduleLoaded (module, scope, filtered) {
       for (var item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
-          var asset = importedLibraries[item];
-          scope.imports[asset.name] = asset.module;
+          var asset = importedLibraries[ item ];
+          scope.imports[ asset.name ] = asset.module;
         }
       }
 
@@ -462,39 +463,39 @@
 
       var htmlNodes = [];
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
-        htmlNodes.push(html.childNodes[i]);
+        htmlNodes.push(html.childNodes[ i ]);
       }
 
       scope.html = htmlNodes;
-      if (!importedLibraries[module.url]) {
-        importedLibraries[module.url] = {
+      if (!importedLibraries[ module.url ]) {
+        importedLibraries[ module.url ] = {
           name: module.name || module.url,
           module: scope.export
         };
       } else if (module.fresh) {
-        importedLibraries[module.url].module = scope.export;
+        importedLibraries[ module.url ].module = scope.export;
       } else {
-        scope.imports[module.name] = importedLibraries[module.url].module;
+        scope.imports[ module.name ] = importedLibraries[ module.url ].module;
       }
 //        delete scope.export;
 
-      var currentModule = Galaxy.modules['system/' + module.id];
+      var currentModule = Galaxy.modules[ 'system/' + module.id ];
 
       if (module.temprory || scope._doNotRegister) {
         delete scope._doNotRegister;
         currentModule = {};
       } else if (!currentModule) {
-        currentModule = Galaxy.modules['system/' + module.id] = {};
+        currentModule = Galaxy.modules[ 'system/' + module.id ] = {};
       }
 
       currentModule.scope = scope;
 
-      if ('function' === typeof (Galaxy.onModuleLoaded['system/' + module.id])) {
-        Galaxy.onModuleLoaded['system/' + module.id].call(this, currentModule, scope.html);
-        delete Galaxy.onModuleLoaded['system/' + module.id];
+      if ('function' === typeof (Galaxy.onModuleLoaded[ 'system/' + module.id ])) {
+        Galaxy.onModuleLoaded[ 'system/' + module.id ].call(this, currentModule, scope.html);
+        delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
       }
 
-      delete Galaxy.onLoadQueue['system/' + module.id];
+      delete Galaxy.onLoadQueue[ 'system/' + module.id ];
     }
   };
 
@@ -503,19 +504,19 @@
     var navigation = {};
     var params = {};
     hash.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
-      navigation[k] = v.split('/').filter(Boolean);
-      params[k] = v;
+      navigation[ k ] = v.split('/').filter(Boolean);
+      params[ k ] = v;
     });
 
   };
 
   System.prototype.getHashParam = function (key, hashName) {
-    var asNumber = parseFloat(this.app.params[key]);
-    return asNumber || this.app.params[key] || null;
+    var asNumber = parseFloat(this.app.params[ key ]);
+    return asNumber || this.app.params[ key ] || null;
   };
 
   System.prototype.getHashNav = function (key, hashName) {
-    return this.app.navigation[key] || [];
+    return this.app.navigation[ key ] || [];
   };
 
   /** Set parameters for app/nav. if app/nav was not in parameters, then set paraters for current app/nav
@@ -529,33 +530,33 @@
     var newParams = Galaxy.utility.clone(parameters);
     this.lastHashParams = parameters;
     var hashValue = window.location.hash;
-    var nav = parameters['#'];
+    var nav = parameters[ '#' ];
 
-    if (nav && !Galaxy.modulesHashes[nav]) {
-      Galaxy.modulesHashes[nav] = hashValue = '#' + nav;
+    if (nav && !Galaxy.modulesHashes[ nav ]) {
+      Galaxy.modulesHashes[ nav ] = hashValue = '#' + nav;
 
-    } else if (nav && Galaxy.modulesHashes[nav]) {
-      hashValue = Galaxy.modulesHashes[nav];
+    } else if (nav && Galaxy.modulesHashes[ nav ]) {
+      hashValue = Galaxy.modulesHashes[ nav ];
 
     }
 
     var newHash = '';
     hashValue = hashValue.replace(/^#([^&]*)\/?/igm, function (m, v) {
-      if (newParams['#'] !== null && typeof newParams['#'] !== 'undefined') {
-        newHash += '#' + newParams['#'] + '&';
+      if (newParams[ '#' ] !== null && typeof newParams[ '#' ] !== 'undefined') {
+        newHash += '#' + newParams[ '#' ] + '&';
 
-        delete newParams['#'];
+        delete newParams[ '#' ];
       } else if (!newParams.hasOwnProperty('#') && !clean) {
         newHash += '#' + v + '&';
       }
     });
 
     hashValue.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
-      if (newParams[k] !== null && typeof newParams[k] !== 'undefined') {
-        newHash += k + "=" + newParams[k];
+      if (newParams[ k ] !== null && typeof newParams[ k ] !== 'undefined') {
+        newHash += k + "=" + newParams[ k ];
         newHash += '&';
 
-        delete newParams[k];
+        delete newParams[ k ];
       } else if (!newParams.hasOwnProperty(k) && !clean) {
         newHash += k + "=" + v;
         newHash += '&';
@@ -564,7 +565,7 @@
 
     for (var key in newParams) {
       if (newParams.hasOwnProperty(key)) {
-        var value = newParams[key];
+        var value = newParams[ key ];
         if (key && value) {
           newHash += key + '=' + value + '&';
         }
@@ -574,7 +575,7 @@
     newHash = newHash.replace(/\&$/, '');
 
     if (replace) {
-      window.location.replace(('' + window.location).split('#')[0] + newHash);
+      window.location.replace(('' + window.location).split('#')[ 0 ] + newHash);
     } else {
       window.location.hash = newHash.replace(/\&$/, '');
     }
@@ -593,7 +594,7 @@
   System.prototype.getScopeService = function (name) {
     return this.scopeServices.filter(function (service) {
       return service.name === name;
-    })[0];
+    })[ 0 ];
   };
 
   System.prototype.registerScopeService = function (name, handler) {
