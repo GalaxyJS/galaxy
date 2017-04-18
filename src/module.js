@@ -5,7 +5,7 @@
    */
   Galaxy.GalaxyModule = GalaxyModule;
 
-  function GalaxyModule (module, scope) {
+  function GalaxyModule(module, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.url = module.url || null;
@@ -13,7 +13,6 @@
     this.domain = module.domain;
     this.scope = scope;
     this.installModules = [];
-    this.eventHandlers = [];
   }
 
   GalaxyModule.prototype.init = function (installLibs) {
@@ -23,22 +22,14 @@
     _this.installModules.forEach(function (lib) {
       _this.domain.loadModule(lib);
     });
-  }
-
-  GalaxyModule.prototype.on = function (event, handler) {
-    this.eventHandlers.push({
-      event: event,
-      handler: handler
-    });
   };
 
-  GalaxyModule.prototype.trigger = function (event) {
-    var handlers = this.eventHandlers.filter(function (item) {
-      return item.event === event;
-    });
-
-    handlers.forEach(function (item) {
-      item.handler();
-    });
+  GalaxyModule.prototype.start = function () {
+    for (var key in this.services) {
+      var service = this.services[key];
+      if (typeof service.start === 'function') {
+        service.start();
+      }
+    }
   };
 }());

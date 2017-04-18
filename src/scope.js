@@ -18,7 +18,7 @@
     Galaxy.load(module, function (module) {
       Galaxy.ui.setContent(view, module.scope.html);
 
-      module.trigger('start');
+      module.start();
     });
   };
 

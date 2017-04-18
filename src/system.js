@@ -148,16 +148,16 @@
       throw new Error('Galaxy is initialized already');
     }
 
-    var app = new Galaxy.GalaxyModule({
+    var appModule = new Galaxy.GalaxyModule({
       id: 'system',
       systemId: 'system',
       domain: this
     }, null);
 
-    this.app = new Galaxy.GalaxyStateHandler(app);
-    app.oldHash = window.location.hash;
-    app.params = this.parseHash(window.location.hash).params;
-    app.init(mods);
+    this.app = new Galaxy.GalaxyStateHandler(appModule);
+    this.app.oldHash = window.location.hash;
+    this.app.params = this.parseHash(window.location.hash).params;
+    this.app.init(mods);
     this.inited = true;
   };
 
@@ -310,7 +310,7 @@
         onDone(module, scope, moduleContent);
       }
     }
-  }
+  };
 
   System.prototype.load = function (module, onDone) {
     var _this = this;
@@ -387,6 +387,8 @@
       module.scopeServices.forEach(function (item) {
         item.post();
       });
+
+      delete module.scopeServices;
 
       var htmlNodes = [];
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
