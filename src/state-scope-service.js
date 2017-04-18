@@ -1,18 +1,51 @@
 /* global Galaxy */
 
 (function (galaxy) {
-  galaxy.registerScopeService('state', function (scope) {
-    var module = galaxy.createState(scope.stateId);
+  galaxy.registerScopeService('galaxy/scope-state', function (scope, module) {
+    module.domain = module.domain || Galaxy;
+    // if (!domain) {
+    //   throw 'Domain can NOT be null';
+    // }
+    //
+    // if (domain.modules[ module.systemId ]) {
+    //   return domain.modules[  module.systemId ];
+    // }
+
+    var stateModule = module.services[ 'galaxy/scope-state' ] || new Galaxy.GalaxyStateHandler(module);
+    // var stateModule = galaxy.createState(scope.systemId);
+    // stateModule.scope = scope;
+    // debugger;
+    // module.services['galaxy/scope-state'] = stateModule;
+    // debugger;
+    // var stateModule;
+    // var domain = Galaxy;
+    // if (!domain) {
+    //   throw 'Domain can NOT be null';
+    // }
+    // var id = scope.systemId;
+    // if (domain.modules[ id ]) {
+    //   return domain.modules[ id ];
+    // }
+    //
+    // stateModule = new Galaxy.GalaxyModule();
+    // stateModule.domain = domain;
+    // stateModule.systemId = id;
+    // stateModule.id = id.replace('system/', '');
+    //
+    // module.services[ 'galaxy/scope-state' ] = stateModule;
+
     return {
       pre: function () {
-        return module;
+        return stateModule;
       },
       post: function () {
-        var modulePath = module.domain.app.navigation[module.stateKey] ? module.domain.app.navigation[module.stateKey] : [];
-        var moduleNavigation = Galaxy.utility.extend(true, {}, module.domain.app.navigation);
-        moduleNavigation[module.stateKey] = modulePath.slice(module.id.split('/').length - 1);
+        var modulePath = stateModule.domain.app.navigation[ stateModule.stateKey ] ?
+          stateModule.domain.app.navigation[ stateModule.stateKey ] :
+          [];
+        var moduleNavigation = Galaxy.utility.extend(true, {}, stateModule.domain.app.navigation);
+        moduleNavigation[ stateModule.stateKey ] = modulePath.slice(stateModule.id.split('/').length - 1);
 
-        module.init(moduleNavigation, module.domain.app.params);
+        stateModule.init();
       }
     };
   });
