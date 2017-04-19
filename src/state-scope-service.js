@@ -10,11 +10,11 @@
         return stateModule;
       },
       post: function () {
-        var modulePath = stateModule.domain.app.navigation[ stateModule.stateKey ] ?
-          stateModule.domain.app.navigation[ stateModule.stateKey ] :
-          [];
-        var moduleNavigation = Galaxy.utility.extend(true, {}, stateModule.domain.app.navigation);
-        moduleNavigation[ stateModule.stateKey ] = modulePath.slice(stateModule.id.split('/').length - 1);
+        // var modulePath = stateModule.domain.app.navigation[ stateModule.stateKey ] ?
+        //   stateModule.domain.app.navigation[ stateModule.stateKey ] :
+        //   [];
+        // var moduleNavigation = Galaxy.utility.extend(true, {}, stateModule.domain.app.navigation);
+        // moduleNavigation[ stateModule.stateKey ] = modulePath.slice(stateModule.id.split('/').length - 1);
 
         stateModule.init();
       }

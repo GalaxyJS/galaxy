@@ -14,6 +14,7 @@
 
   function System () {
     this.stateKey = '#';
+    this.bootModule = null;
     this.modules = {};
     this.onLoadQueue = [];
     this.notYetStarted = [];
@@ -25,28 +26,6 @@
     this.inited = false;
     this.app = null;
   }
-
-  // System.prototype.createState = function (id) {
-  //   var module;
-  //   var domain = this;
-  //   if (!domain) {
-  //     throw 'Domain can NOT be null';
-  //   }
-  //
-  //   if (domain.modules[ id ]) {
-  //     return domain.modules[ id ];
-  //   }
-  //
-  //   module = new Galaxy.GalaxyStateHandler({
-  //     id: id.replace('system/', ''),
-  //     systemId: id,
-  //     domain: domain
-  //   });
-  //
-  //   // domain.modules[ id ] = module;
-  //
-  //   return module;
-  // };
 
   System.prototype.on = function (id, handler) {
     this.app.on.call(this.app, id, handler);
@@ -61,19 +40,19 @@
 
     var detect = function () {
       if (_this.app.oldHash !== window.location.hash || _this.app.newListenerAdded) {
-        var oldParesedHash = _this.parseHash(_this.app.oldHash);
+        var oldParsedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
         _this.setModuleHashValue(parsedHash.navigation, parsedHash.params, parsedHash.hash);
         // If the user changes only the app(#) parameter in the url, 
         // then the old hash of the requested module would be considered instead of the value of the url
         // if user make more changes, then the old hash of the requested module will be ignored and url value will be taken
-        if (oldParesedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
+        if (oldParsedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
           var temp = Galaxy.utility.clone(parsedHash.params);
-          delete oldParesedHash.params[ '#' ];
+          delete oldParsedHash.params[ '#' ];
           delete temp[ '#' ];
 
-          if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
+          if (JSON.stringify(temp) === JSON.stringify(oldParsedHash.params) && JSON.stringify(temp) !== '{}') {
             return Galaxy.app.setParam('#', parsedHash.params[ '#' ]);
           } else {
             Galaxy.modulesHashes[ parsedHash.params[ '#' ] ] = parsedHash.hash;
@@ -141,24 +120,6 @@
       navigation: navigation,
       params: params
     };
-  };
-
-  System.prototype.init = function (mods) {
-    if (this.inited) {
-      throw new Error('Galaxy is initialized already');
-    }
-
-    var appModule = new Galaxy.GalaxyModule({
-      id: 'system',
-      systemId: 'system',
-      domain: this
-    }, null);
-
-    this.app = new Galaxy.GalaxyStateHandler(appModule);
-    this.app.oldHash = window.location.hash;
-    this.app.params = this.parseHash(window.location.hash).params;
-    this.app.init(mods);
-    this.inited = true;
   };
 
   var CONTENT_PARSERS = {};
@@ -414,16 +375,6 @@
           id: module.id,
           scope: scope
         };
-      } else if (!currentModule) {
-        // currentModule = new Galaxy.GalaxyModule(module, scope);
-        // Galaxy.modules[ module.systemId ] = currentModule;
-        // Galaxy.modules[ module.systemId ] = {
-        //   id: module.id,
-        //   systemId: module.systemId,
-        //   url: module.url,
-        //   scope: scope
-        //   // services: module.services
-        // };
       }
 
       if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
@@ -521,12 +472,6 @@
     this.app.setParamIfNull(param, value);
   };
 
-  System.prototype.loadDependecies = function (dependecies) {
-    for (var key in dependecies) {
-
-    }
-  };
-
   System.prototype.getScopeService = function (name) {
     return this.scopeServices.filter(function (service) {
       return service.name === name;
@@ -544,6 +489,25 @@
     });
   };
 
+  System.prototype.init = function (mods) {
+    if (this.inited) {
+      throw new Error('Galaxy is initialized already');
+    }
+
+    this.bootModule = new Galaxy.GalaxyModule({
+      id: 'system',
+      systemId: 'system',
+      domain: this
+    }, null);
+
+    this.app = new Galaxy.GalaxyStateHandler(this.bootModule);
+    this.app.oldHash = window.location.hash;
+    this.app.params = this.parseHash(window.location.hash).params;
+    this.app.init(mods);
+    this.app.started = true;
+    this.inited = true;
+  };
+
   System.prototype.boot = function (bootModule, onDone) {
     var _this = this;
     _this.init();
@@ -552,8 +516,13 @@
     bootModule.id = 'system';
 
     _this.load(bootModule, function (module) {
+      // Replace galaxy temporary  bootModule with user specified bootModule
+      _this.bootModule = module;
       onDone.call(null, module);
+      // Start galaxy
       _this.start();
+      _this.bootModule.start();
+      _this.app = _this.bootModule.services[ 'galaxy/scope-state' ] || _this.app;
     });
   };
 

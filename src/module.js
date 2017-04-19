@@ -12,23 +12,22 @@
     this.services = module.services || {};
     this.domain = module.domain;
     this.scope = scope;
-    this.installModules = [];
   }
 
-  GalaxyModule.prototype.init = function (installLibs) {
-    var _this = this;
-
-    _this.installModules = installLibs || [];
-    _this.installModules.forEach(function (lib) {
-      _this.domain.loadModule(lib);
-    });
+  GalaxyModule.prototype.init = function () {
+    for (var key in this.services) {
+      var service = this.services[key];
+      if (typeof service.onModuleInit === 'function') {
+        service.onModuleInit();
+      }
+    }
   };
 
   GalaxyModule.prototype.start = function () {
     for (var key in this.services) {
       var service = this.services[key];
-      if (typeof service.start === 'function') {
-        service.start();
+      if (typeof service.onModuleStart === 'function') {
+        service.onModuleStart();
       }
     }
   };
