@@ -13,9 +13,13 @@
     this.imports = {};
   }
 
-  GalaxyScope.prototype.loadModuleInto = function (module, view) {
+  GalaxyScope.prototype.load = function (module, onDone) {
     module.parentScope = this;
-    Galaxy.load(module, function (module) {
+    Galaxy.load(module, onDone);
+  };
+
+  GalaxyScope.prototype.loadModuleInto = function (module, view) {
+    this.load(module, function (module) {
       Galaxy.ui.setContent(view, module.scope.html);
 
       module.start();

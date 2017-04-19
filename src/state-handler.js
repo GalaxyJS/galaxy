@@ -9,7 +9,6 @@
 
   function GalaxyStateHandler (module) {
     this.module = module;
-    this.module.services[ 'galaxy/scope-state' ] = this;
     this.id = module.id;
     this.systemId = module.systemId;
     this.domain = module.domain;
@@ -30,6 +29,8 @@
     this.onInit = null;
     this.onStart = null;
     this.onStop = null;
+
+    this.module.registerAddOn('galaxy/scope-state', this);
   }
 
   GalaxyStateHandler.prototype.onModuleStart = function () {
@@ -176,7 +177,7 @@
 
     for (var id in this.domain.modules) {
       var module = this.domain.modules[ id ];
-      var service = module.services[ 'galaxy/scope-state' ] || {};
+      var service = module.addOns[ 'galaxy/scope-state' ] || {};
       if (('system/' + fullNavPath).indexOf(module.systemId) !== 0 &&
         service.active) {
         service.trigger('onStop');
@@ -298,8 +299,8 @@
       var path = 'system';
       for (var i = 0, len = navigation[ _this.stateKey ].length; i < len; i++) {
         path += '/' + navigation[ _this.stateKey ][ i ];
-        if (_this.domain.modules[ path ] && _this.domain.modules[ path ].services[ 'galaxy/scope-state' ]) {
-          _this.domain.app.activeModule = _this.domain.modules[ path ].services[ 'galaxy/scope-state' ];
+        if (_this.domain.modules[ path ] && _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ]) {
+          _this.domain.app.activeModule = _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ];
           _this.domain.app.activeModule.active = true;
           moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
           moduleNavigation[ _this.stateKey ] = fullNav.slice(_this.domain.app.activeModule.systemId.split('/').length -
@@ -308,7 +309,8 @@
           _this.domain.app.activeModule.hashChanged(moduleNavigation, this.params, hashValue, fullNav);
         }
       }
-    } else if (this.domain.app.activeModule && this.domain.app.activeModule.systemId === this.systemId + '/' + navigation[ this.stateKey ][ 0 ]) {
+    } else if (this.domain.app.activeModule &&
+      this.domain.app.activeModule.systemId === this.systemId + '/' + navigation[ this.stateKey ][ 0 ]) {
       moduleNavigation = Galaxy.utility.extend(true, {}, navigation);
       moduleNavigation[ _this.stateKey ] = fullNav.slice(_this.domain.app.activeModule.systemId.split('/').length - 1);
       // Call module level events handlers

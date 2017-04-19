@@ -9,26 +9,30 @@
     this.id = module.id;
     this.systemId = module.systemId;
     this.url = module.url || null;
-    this.services = module.services || {};
+    this.addOns = module.addOns || {};
     this.domain = module.domain;
     this.scope = scope;
   }
 
   GalaxyModule.prototype.init = function () {
-    for (var key in this.services) {
-      var service = this.services[key];
-      if (typeof service.onModuleInit === 'function') {
-        service.onModuleInit();
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleInit === 'function') {
+        addOn.onModuleInit();
       }
     }
   };
 
   GalaxyModule.prototype.start = function () {
-    for (var key in this.services) {
-      var service = this.services[key];
-      if (typeof service.onModuleStart === 'function') {
-        service.onModuleStart();
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleStart === 'function') {
+        addOn.onModuleStart();
       }
     }
   };
+
+  GalaxyModule.prototype.registerAddOn = function (id, object) {
+    this.addOns[id] = object;
+  }
 }());

@@ -228,7 +228,7 @@
       return "Scope.imports['" + query[ query.length - 1 ] + "']";
     });
 
-    module.services = module.services || {};
+    // module.services = module.services || {};
     if (imports.length) {
       var importsCopy = imports.slice(0);
       imports.forEach(function (item, i) {
@@ -522,7 +522,7 @@
       // Start galaxy
       _this.start();
       _this.bootModule.start();
-      _this.app = _this.bootModule.services[ 'galaxy/scope-state' ] || _this.app;
+      _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
     });
   };
 
