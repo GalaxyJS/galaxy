@@ -4,7 +4,7 @@
   galaxy.GalaxyUI = GalaxyUI;
   galaxy.ui = new galaxy.GalaxyUI();
 
-  function GalaxyUI() {
+  function GalaxyUI () {
   }
 
   GalaxyUI.prototype.setContent = function (parent, nodes) {
@@ -14,7 +14,8 @@
     }
 
     if (!parentNode) {
-      throw new Error('parent element can not be null: ' + parent + '\r\n try to set ui-view on your target element and refrence it via Scope.views');
+      throw new Error('parent element can not be null: ' + parent +
+        '\r\n try to set ui-view on your target element and refrence it via Scope.views');
     }
 
     var children = Array.prototype.slice.call(parentNode.childNodes);
@@ -24,21 +25,20 @@
     });
 
     if (!nodes.hasOwnProperty('length')) {
-      nodes = [nodes];
+      nodes = [ nodes ];
     }
 
     for (var i = 0, len = nodes.length; i < len; i++) {
-      var item = nodes[i];
+      var item = nodes[ i ];
       parentNode.appendChild(item);
     }
   };
-
 
   GalaxyUI.prototype.clone = function (obj) {
     var target = {};
     for (var i in obj) {
       if (obj.hasOwnProperty(i)) {
-        target[i] = obj[i];
+        target[ i ] = obj[ i ];
       }
     }
     return target;
@@ -69,16 +69,16 @@
     };
     var indexIndicator = {};
     for (var index in element.childNodes) {
-      var node = element.childNodes[index];
+      var node = element.childNodes[ index ];
 
       if (node.nodeType === Node.ELEMENT_NODE) {
         var key = node.nodeName.toLowerCase();
-        if (indexIndicator[key]) {
-          indexIndicator[key]++;
-          jsTree[key + '_' + indexIndicator[key]] = galaxy.ui.utility.toTreeObject(node);
+        if (indexIndicator[ key ]) {
+          indexIndicator[ key ]++;
+          jsTree[ key + '_' + indexIndicator[ key ] ] = galaxy.ui.utility.toTreeObject(node);
         } else {
-          indexIndicator[key] = 1;
-          jsTree[node.nodeName.toLowerCase()] = galaxy.ui.utility.toTreeObject(node);
+          indexIndicator[ key ] = 1;
+          jsTree[ node.nodeName.toLowerCase() ] = galaxy.ui.utility.toTreeObject(node);
         }
 
         jsTree._children.push(node);
@@ -99,17 +99,17 @@
     }
 
     for (var index = 0, length = children.length; index < length; index++) {
-      if (children[index].__ui_neutral) {
+      if (children[ index ].__ui_neutral) {
         continue;
       }
 
-      var cs = window.getComputedStyle(children[index], null);
+      var cs = window.getComputedStyle(children[ index ], null);
 
       if (cs.position === 'absolute') {
         continue;
       }
 
-      var dimension = children[index].offsetTop + children[index].offsetHeight;
+      var dimension = children[ index ].offsetTop + children[ index ].offsetHeight;
       var marginBottom = parseInt(cs.marginBottom || 0);
 
       height = dimension + marginBottom > height ? dimension + marginBottom : height;
