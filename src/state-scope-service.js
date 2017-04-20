@@ -1,18 +1,16 @@
 /* global Galaxy */
 
 (function (galaxy) {
-  galaxy.registerScopeService('state', function (scope) {
-    var module = galaxy.createState(scope.stateId);
+  var addOnId = 'galaxy/scope-state';
+  galaxy.registerAddOnProvider(addOnId, function (scope, module) {
+    var stateModule = module.addOns[ addOnId ] || new Galaxy.GalaxyStateHandler(module);
+
     return {
       pre: function () {
-        return module;
+        return stateModule;
       },
       post: function () {
-        var modulePath = module.domain.app.navigation[module.stateKey] ? module.domain.app.navigation[module.stateKey] : [];
-        var moduleNavigation = Galaxy.utility.extend(true, {}, module.domain.app.navigation);
-        moduleNavigation[module.stateKey] = modulePath.slice(module.id.split('/').length - 1);
-
-        module.init(moduleNavigation, module.domain.app.params);
+        stateModule.init();
       }
     };
   });

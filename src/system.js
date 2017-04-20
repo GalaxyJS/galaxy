@@ -10,112 +10,22 @@
    */
   Galaxy.GalaxySystem = System;
 
-  var entities = {};
   var importedLibraries = {};
 
   function System () {
     this.stateKey = '#';
-    this.registry = {};
+    this.bootModule = null;
     this.modules = {};
-    this.activities = {};
-    this.uiTemplates = {};
     this.onLoadQueue = [];
     this.notYetStarted = [];
-    this.activeRequests = {};
     this.onModuleLoaded = {};
-    this.services = {};
     this.modulesHashes = {};
     this.hashChecker = null;
     this.firstTime = false;
-    this.scopeServices = [];
+    this.addOnProviders = [];
     this.inited = false;
     this.app = null;
   }
-
-  System.prototype.createState = function (id) {
-    var module;
-    var domain = this;
-    if (!domain) {
-      throw 'Domain can NOT be null';
-    }
-    id = this.app.id + '/' + id;
-
-    if (domain.modules[ id ]) {
-      return domain.modules[ id ];
-    }
-
-    module = new Galaxy.GalaxyModule();
-    module.domain = domain;
-    module.id = id;
-    module.stateId = id.replace('system/', '');
-
-    domain.modules[ id ] = module;
-
-    return module;
-  };
-
-  System.prototype.state = function (id, handler) {
-    //return this.app.module(id, object, false);
-    var module, modulePath, moduleNavigation;
-    var domain = this;
-    if (!domain) {
-      throw 'Domain can NOT be null';
-    }
-    id = this.app.id + '/' + id;
-
-    //if forceReload is true, then init the module again
-    if (!handler/* && this.modules[id]*/) {
-      // Add the module to notYetStarted list so it can be started by startLastLoadedModule method
-      domain.notYetStarted.push(id);
-      return domain.modules[ id ];
-    }
-
-    if (domain.modules[ id ]) {
-      return domain.modules[ id ];
-    }
-
-    if (typeof (handler) === 'function') {
-      module = new Galaxy.GalaxyModule();
-      module.domain = domain;
-      module.id = id;
-      module.stateId = id.replace('system/', '');
-
-      handler.call(null, module);
-    } else {
-      module = Galaxy.utility.extend(new Galaxy.GalaxyModule(), handler || {});
-      module.domain = domain;
-      module.id = id;
-      module.stateId = id.replace('system/', '');
-    }
-
-    modulePath = domain.app.navigation[ module.stateKey ] ? domain.app.navigation[ module.stateKey ] : [];
-    moduleNavigation = Galaxy.utility.extend(true, {}, domain.app.navigation);
-    moduleNavigation[ module.stateKey ] = modulePath.slice(id.split("/").length - 1);
-
-    domain.modules[ id ] = module;
-    domain.notYetStarted.push(id);
-
-    // Set module hash for this module when its inited
-    // module hash will be set in the hashChanged method as well
-    // if current navigation path is equal to this module id
-    //module.hash = Galaxy.modulesHashes[id.replace("system/", "")] = module.stateKey + "=" + id.replace("system/", "");
-
-    module.init(moduleNavigation, domain.app.params);
-
-    return module;
-  };
-
-  System.prototype.newStateHandler = function (scope, handler) {
-    var app = this.getHashParam('#');
-
-    if (app.indexOf(scope.stateId) === 0) {
-      return this.state(scope.stateId, handler);
-    } else {
-      scope._doNotRegister = true;
-    }
-
-    return null;
-  };
 
   System.prototype.on = function (id, handler) {
     this.app.on.call(this.app, id, handler);
@@ -130,19 +40,19 @@
 
     var detect = function () {
       if (_this.app.oldHash !== window.location.hash || _this.app.newListenerAdded) {
-        var oldParesedHash = _this.parseHash(_this.app.oldHash);
+        var oldParsedHash = _this.parseHash(_this.app.oldHash);
         var parsedHash = _this.parseHash(window.location.hash);
 
         _this.setModuleHashValue(parsedHash.navigation, parsedHash.params, parsedHash.hash);
         // If the user changes only the app(#) parameter in the url, 
         // then the old hash of the requested module would be considered instead of the value of the url
         // if user make more changes, then the old hash of the requested module will be ignored and url value will be taken
-        if (oldParesedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
+        if (oldParsedHash.params[ '#' ] !== parsedHash.params[ '#' ]) {
           var temp = Galaxy.utility.clone(parsedHash.params);
-          delete oldParesedHash.params[ '#' ];
+          delete oldParsedHash.params[ '#' ];
           delete temp[ '#' ];
 
-          if (JSON.stringify(temp) === JSON.stringify(oldParesedHash.params) && JSON.stringify(temp) !== '{}') {
+          if (JSON.stringify(temp) === JSON.stringify(oldParsedHash.params) && JSON.stringify(temp) !== '{}') {
             return Galaxy.app.setParam('#', parsedHash.params[ '#' ]);
           } else {
             Galaxy.modulesHashes[ parsedHash.params[ '#' ] ] = parsedHash.hash;
@@ -210,24 +120,6 @@
       navigation: navigation,
       params: params
     };
-  };
-
-  System.prototype.init = function (mods) {
-    if (this.inited) {
-      throw new Error('Galaxy is initialized already');
-    }
-
-    var app = new Galaxy.GalaxyModule();
-    this.app = app;
-
-    app.domain = this;
-    app.stateKey = this.stateKey;
-    app.id = 'system';
-    app.installModules = mods || [];
-    app.init({}, {}, 'system');
-    app.oldHash = window.location.hash;
-    app.params = this.parseHash(window.location.hash).params;
-    this.inited = true;
   };
 
   var CONTENT_PARSERS = {};
@@ -310,15 +202,88 @@
     }
   };
 
+  System.prototype.compileModuleContent = function (module, moduleContent, invokers, onDone) {
+    var scopeUIViews = {};
+    Array.prototype.forEach.call(moduleContent.views, function (node, i) {
+      scopeUIViews[ node.getAttribute('ui-view') || 'view_' + i ] = node;
+    });
+
+    var scope = new Galaxy.GalaxyScope(module, moduleContent.html, scopeUIViews);
+    module = new Galaxy.GalaxyModule(module, scope);
+    Galaxy.modules[ module.systemId ] = module;
+    module.addOnProviders = [];
+
+    var imports = Array.prototype.slice.call(moduleContent.imports, 0);
+    var scriptContent = moduleContent.script || '';
+
+    // extract imports from the source code
+    scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
+    moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      var query = path.match(/([\S]+)/gm);
+      imports.push({
+        url: query[ query.length - 1 ],
+        fresh: query.indexOf('new') !== -1
+      });
+
+      return "Scope.imports['" + query[ query.length - 1 ] + "']";
+    });
+
+    if (imports.length) {
+      var importsCopy = imports.slice(0);
+      imports.forEach(function (item, i) {
+        var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+        if (moduleAddOnProvider) {
+          var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+          var addOnInstance = providerStages.pre();
+          importedLibraries[ item.url ] = {
+            name: item.url,
+            module: addOnInstance
+          };
+
+          module.registerAddOn(item.url, addOnInstance);
+          module.addOnProviders.push(providerStages);
+
+          doneImporting(module, scope, importsCopy, moduleContent);
+        } else if (importedLibraries[ item.url ] && !item.fresh) {
+          doneImporting(module, scope, importsCopy, moduleContent);
+        } else {
+          Galaxy.load({
+            name: item.name,
+            url: item.url,
+            fresh: item.fresh,
+            parentScope: scope,
+            invokers: invokers,
+            temporary: true
+          }, function (loaded) {
+            doneImporting(module, scope, importsCopy, moduleContent);
+          });
+        }
+      });
+
+      return false;
+    }
+
+    onDone(module, scope, moduleContent);
+
+    function doneImporting (module, scope, imports, moduleContent) {
+      imports.splice(imports.indexOf(module.url) - 1, 1);
+
+      if (imports.length === 0) {
+        // This will load the original initilizer
+        onDone(module, scope, moduleContent);
+      }
+    }
+  };
+
   System.prototype.load = function (module, onDone) {
     var _this = this;
     module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+    module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
-    Galaxy.onModuleLoaded[ 'system/' + module.id ] = onDone;
-    var moduleExist = Galaxy.modules[ 'system/' + module.id ];
+    Galaxy.onModuleLoaded[ module.systemId ] = onDone;
+    var moduleExist = Galaxy.modules[ module.systemId ];
 
     var invokers = [ module.url ];
-
     if (module.invokers) {
       if (module.invokers.indexOf(module.url) !== -1) {
         throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
@@ -329,117 +294,40 @@
     }
 
     if (moduleExist) {
-      var ol = Galaxy.onModuleLoaded[ 'system/' + module.id ];
+      var ol = Galaxy.onModuleLoaded[ module.systemId ];
       if ('function' === typeof (ol)) {
         window.requestAnimationFrame(function () {
           ol.call(_this, moduleExist, moduleExist.scope.html);
-          delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
+          delete Galaxy.onModuleLoaded[ module.systemId ];
         });
       }
 
       return;
     }
 
-    if (Galaxy.onLoadQueue[ 'system/' + module.id ]) {
+    if (Galaxy.onLoadQueue[ module.systemId ]) {
       return;
     }
 
-    Galaxy.onLoadQueue[ 'system/' + module.id ] = true;
+    Galaxy.onLoadQueue[ module.systemId ] = true;
 
     fetch(module.url + '?' + Galaxy.utility.serialize(module.params || {})).then(function (response) {
       var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
       response.text().then(function (htmlText) {
         var parsedContent = _this.parseModuleContent(module, htmlText, contentType);
         window.requestAnimationFrame(function () {
-          compile(parsedContent);
+          _this.compileModuleContent(module, parsedContent, invokers, moduleLoaded);
         });
       });
     });
-
-    function compile (moduleContent) {
-      var scopeUIViews = {};
-      Array.prototype.forEach.call(moduleContent.views, function (node, i) {
-        var uiViewName = node.getAttribute('ui-view');
-        scopeUIViews[ uiViewName || 'view_' + i ] = node;
-      });
-
-      var scope = {
-        moduleId: 'system/' + module.id,
-        stateId: module.id,
-        parentScope: module.scope || null,
-        html: moduleContent.html,
-        views: scopeUIViews,
-        imports: {}
-      };
-
-      module.scopeServices = [];
-
-      var imports = Array.prototype.slice.call(moduleContent.imports, 0);
-      var scriptContent = moduleContent.script || '';
-
-      // extract imports from the source code
-      scriptContent = scriptContent.replace(/\/\*[\s\S]*?\*\/|([^:]|^)\/\/.*$/gm, '');
-      moduleContent.script = scriptContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        var query = path.match(/([\S]+)/gm);
-        imports.push({
-          url: query[ query.length - 1 ],
-          fresh: query.indexOf('new') !== -1
-        });
-
-        return "Scope.imports['" + query[ query.length - 1 ] + "']";
-      });
-
-      if (imports.length) {
-        var importsCopy = imports.slice(0);
-        imports.forEach(function (item, i) {
-
-          var scopeService = Galaxy.getScopeService(item.url);
-          if (scopeService) {
-            var scopeServiceHandler = scopeService.handler.call(null, scope);
-            importedLibraries[ item.url ] = {
-              name: item.url,
-              module: scopeServiceHandler.pre()
-            };
-            module.scopeServices.push(scopeServiceHandler);
-
-            doneImporting(module, scope, importsCopy, moduleContent);
-          } else if (importedLibraries[ item.url ] && !item.fresh) {
-            doneImporting(module, scope, importsCopy, moduleContent);
-          } else {
-            Galaxy.load({
-              id: (new Date()).valueOf() + '-' + performance.now(),
-              name: item.name,
-              url: item.url,
-              fresh: item.fresh,
-              scope: scope,
-              invokers: invokers,
-              temprory: true
-            }, function (loaded) {
-              doneImporting(module, scope, importsCopy, moduleContent);
-            });
-          }
-        });
-
-        return false;
-      }
-
-      moduleLoaded(module, scope, moduleContent);
-    }
-
-    function doneImporting (module, scope, imports, moduleContent) {
-      imports.splice(imports.indexOf(module.url) - 1, 1);
-
-      if (imports.length === 0) {
-        // This will load the original initilizer
-        moduleLoaded(module, scope, moduleContent);
-      }
-    }
 
     function moduleLoaded (module, scope, filtered) {
       for (var item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           var asset = importedLibraries[ item ];
-          scope.imports[ asset.name ] = asset.module;
+          if (asset.module) {
+            scope.imports[ asset.name ] = asset.module;
+          }
         }
       }
 
@@ -454,12 +342,16 @@
       var currentComponentScripts = filtered.script;
       delete filtered.script;
 
+      module.scope = scope;
+
       var componentScript = new Function('Scope', currentComponentScripts);
       componentScript.call(null, scope);
 
-      module.scopeServices.forEach(function (item) {
+      module.addOnProviders.forEach(function (item) {
         item.post();
       });
+
+      delete module.addOnProviders;
 
       var htmlNodes = [];
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
@@ -477,25 +369,22 @@
       } else {
         scope.imports[ module.name ] = importedLibraries[ module.url ].module;
       }
-//        delete scope.export;
 
-      var currentModule = Galaxy.modules[ 'system/' + module.id ];
-
-      if (module.temprory || scope._doNotRegister) {
+      var currentModule = Galaxy.modules[ module.systemId ];
+      if (module.temporary || scope._doNotRegister) {
         delete scope._doNotRegister;
-        currentModule = {};
-      } else if (!currentModule) {
-        currentModule = Galaxy.modules[ 'system/' + module.id ] = {};
+        currentModule = {
+          id: module.id,
+          scope: scope
+        };
       }
 
-      currentModule.scope = scope;
-
-      if ('function' === typeof (Galaxy.onModuleLoaded[ 'system/' + module.id ])) {
-        Galaxy.onModuleLoaded[ 'system/' + module.id ].call(this, currentModule, scope.html);
-        delete Galaxy.onModuleLoaded[ 'system/' + module.id ];
+      if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
+        Galaxy.onModuleLoaded[ module.systemId ].call(this, currentModule, scope.html);
+        delete Galaxy.onModuleLoaded[ module.systemId ];
       }
 
-      delete Galaxy.onLoadQueue[ 'system/' + module.id ];
+      delete Galaxy.onLoadQueue[ module.systemId ];
     }
   };
 
@@ -585,36 +474,74 @@
     this.app.setParamIfNull(param, value);
   };
 
-  System.prototype.loadDependecies = function (dependecies) {
-    for (var key in dependecies) {
-
-    }
-  };
-
-  System.prototype.getScopeService = function (name) {
-    return this.scopeServices.filter(function (service) {
+  System.prototype.getModuleAddOnProvider = function (name) {
+    return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[ 0 ];
   };
 
-  System.prototype.registerScopeService = function (name, handler) {
-    if (typeof handler !== 'function') {
-      throw 'scope service should be a function';
+  System.prototype.getModulesByAddOnId = function (addOnId) {
+    var modules = [];
+    var module;
+
+    for (var moduleId in this.modules) {
+      module = this.modules[ moduleId ];
+      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
+        modules.push({
+          addOn: module.addOns[ addOnId ],
+          module: module
+        });
+      }
     }
 
-    this.scopeServices.push({
+    return modules;
+  }
+
+  System.prototype.registerAddOnProvider = function (name, handler) {
+    if (typeof handler !== 'function') {
+      throw 'Addon provider should be a function';
+    }
+
+    this.addOnProviders.push({
       name: name,
       handler: handler
     });
+  };
+
+  System.prototype.init = function (mods) {
+    if (this.inited) {
+      throw new Error('Galaxy is initialized already');
+    }
+
+    this.bootModule = new Galaxy.GalaxyModule({
+      id: 'system',
+      systemId: 'system',
+      domain: this
+    }, null);
+
+    this.app = new Galaxy.GalaxyStateHandler(this.bootModule);
+    this.app.oldHash = window.location.hash;
+    this.app.params = this.parseHash(window.location.hash).params;
+    this.app.init(mods);
+    this.app.started = true;
+    this.app.active = true;
+    this.inited = true;
   };
 
   System.prototype.boot = function (bootModule, onDone) {
     var _this = this;
     _this.init();
 
+    bootModule.domain = this;
+    bootModule.id = 'system';
+
     _this.load(bootModule, function (module) {
+      // Replace galaxy temporary  bootModule with user specified bootModule
+      _this.bootModule = module;
       onDone.call(null, module);
+      // Start galaxy
       _this.start();
+      _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
     });
   };
 
