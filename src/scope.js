@@ -15,6 +15,7 @@
 
   GalaxyScope.prototype.load = function (module, onDone) {
     module.parentScope = this;
+    module.domain = module.domain || Galaxy;
     Galaxy.load(module, onDone);
   };
 

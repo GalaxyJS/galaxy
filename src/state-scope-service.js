@@ -1,9 +1,9 @@
 /* global Galaxy */
 
 (function (galaxy) {
-  galaxy.registerScopeService('galaxy/scope-state', function (scope, module) {
-    module.domain = module.domain || Galaxy;
-    var stateModule = module.addOns[ 'galaxy/scope-state' ] || new Galaxy.GalaxyStateHandler(module);
+  var addOnId = 'galaxy/scope-state';
+  galaxy.registerAddOnProvider(addOnId, function (scope, module) {
+    var stateModule = module.addOns[ addOnId ] || new Galaxy.GalaxyStateHandler(module);
 
     return {
       pre: function () {

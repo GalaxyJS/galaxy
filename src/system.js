@@ -22,7 +22,7 @@
     this.modulesHashes = {};
     this.hashChecker = null;
     this.firstTime = false;
-    this.scopeServices = [];
+    this.addOnProviders = [];
     this.inited = false;
     this.app = null;
   }
@@ -211,7 +211,7 @@
     var scope = new Galaxy.GalaxyScope(module, moduleContent.html, scopeUIViews);
     module = new Galaxy.GalaxyModule(module, scope);
     Galaxy.modules[ module.systemId ] = module;
-    module.scopeServices = [];
+    module.addOnProviders = [];
 
     var imports = Array.prototype.slice.call(moduleContent.imports, 0);
     var scriptContent = moduleContent.script || '';
@@ -228,18 +228,20 @@
       return "Scope.imports['" + query[ query.length - 1 ] + "']";
     });
 
-    // module.services = module.services || {};
     if (imports.length) {
       var importsCopy = imports.slice(0);
       imports.forEach(function (item, i) {
-        var scopeService = Galaxy.getScopeService(item.url);
-        if (scopeService) {
-          var scopeServiceHandler = scopeService.handler.call(null, scope, module);
+        var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+        if (moduleAddOnProvider) {
+          var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+          var addOnInstance = providerStages.pre();
           importedLibraries[ item.url ] = {
             name: item.url,
-            module: scopeServiceHandler.pre()
+            module: addOnInstance
           };
-          module.scopeServices.push(scopeServiceHandler);
+
+          module.registerAddOn(item.url, addOnInstance);
+          module.addOnProviders.push(providerStages);
 
           doneImporting(module, scope, importsCopy, moduleContent);
         } else if (importedLibraries[ item.url ] && !item.fresh) {
@@ -345,11 +347,11 @@
       var componentScript = new Function('Scope', currentComponentScripts);
       componentScript.call(null, scope);
 
-      module.scopeServices.forEach(function (item) {
+      module.addOnProviders.forEach(function (item) {
         item.post();
       });
 
-      delete module.scopeServices;
+      delete module.addOnProviders;
 
       var htmlNodes = [];
       for (var i = 0, len = html.childNodes.length; i < len; i++) {
@@ -472,18 +474,35 @@
     this.app.setParamIfNull(param, value);
   };
 
-  System.prototype.getScopeService = function (name) {
-    return this.scopeServices.filter(function (service) {
+  System.prototype.getModuleAddOnProvider = function (name) {
+    return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[ 0 ];
   };
 
-  System.prototype.registerScopeService = function (name, handler) {
-    if (typeof handler !== 'function') {
-      throw 'scope service should be a function';
+  System.prototype.getModulesByAddOnId = function (addOnId) {
+    var modules = [];
+    var module;
+
+    for (var moduleId in this.modules) {
+      module = this.modules[ moduleId ];
+      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
+        modules.push({
+          addOn: module.addOns[ addOnId ],
+          module: module
+        });
+      }
     }
 
-    this.scopeServices.push({
+    return modules;
+  }
+
+  System.prototype.registerAddOnProvider = function (name, handler) {
+    if (typeof handler !== 'function') {
+      throw 'Addon provider should be a function';
+    }
+
+    this.addOnProviders.push({
       name: name,
       handler: handler
     });
@@ -505,6 +524,7 @@
     this.app.params = this.parseHash(window.location.hash).params;
     this.app.init(mods);
     this.app.started = true;
+    this.app.active = true;
     this.inited = true;
   };
 
@@ -521,7 +541,6 @@
       onDone.call(null, module);
       // Start galaxy
       _this.start();
-      _this.bootModule.start();
       _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
     });
   };
