@@ -15,12 +15,17 @@
 
     if (!parentNode) {
       throw new Error('parent element can not be null: ' + parent +
-        '\r\n try to set ui-view on your target element and refrence it via Scope.views');
+        '\r\n try to set ui-view on your target element and reference it via Scope.views');
     }
 
     var children = Array.prototype.slice.call(parentNode.childNodes);
-
+    var tweens = [];
     children.forEach(function (child) {
+      tweens = TweenLite.getTweensOf(child);
+      tweens.forEach(function (item) {
+        item.progress(1);
+      });
+
       parentNode.removeChild(child);
     });
 

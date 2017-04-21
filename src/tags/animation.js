@@ -19,7 +19,6 @@
       Array.prototype.forEach.call(tags, function (tag) {
         tag.__ui_neutral = false;
         delete tag.__ui_neutral;
-//        tag.prepare();
       });
     }
   };
@@ -47,8 +46,7 @@
     },
     accessors: {
       effects: {
-        attribute: {
-        },
+        attribute: {},
         set: function (value, oldValue) {
           if (value === oldValue) {
             return;
@@ -68,8 +66,7 @@
         }
       }
     },
-    events: {
-    },
+    events: {},
     methods: {
       prepare: function () {
         var element = this;
@@ -78,23 +75,23 @@
             return null;
           }
 
-          if (!GalaxyAnimation.effects[item]) {
+          if (!GalaxyAnimation.effects[ item ]) {
             return console.warn('effect not found:', item);
           }
 
-          var animation = GalaxyAnimation.effects[item].register(element);
+          var animation = GalaxyAnimation.effects[ item ].install(element);
           if (!animation) {
-            return console.warn('effect registerer should return and object', item, element);
+            return console.warn('effect.install should return and object', item, element);
           } else {
-            element.xtag.animations[item] = animation;
+            element.xtag.animations[ item ] = animation;
           }
           element.xtag.registeredAnimations.push(item);
         });
 
         this.xtag.registeredAnimations = this.xtag.registeredAnimations.filter(function (item) {
           if (element.xtag.effects.indexOf(item) === -1) {
-            GalaxyAnimation.effects[item].deregister(element);
-            delete element.xtag.animations[item];
+            GalaxyAnimation.effects[ item ].uninstall(element, element.xtag.animations[ item ]);
+            delete element.xtag.animations[ item ];
             return false;
           }
 
