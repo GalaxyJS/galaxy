@@ -1,12 +1,12 @@
-/* global Galaxy, xtag */
+/* global xtag */
 
 (function () {
   var FloatMenu = {
     lifecycle: {
       created: function () {
         var _this = this;
-        _this.xtag.indicator = _this.querySelector('[indicator]') || _this.children[0];
-        _this.xtag.actionsContainer = _this.querySelector('[actions]') || _this.children[1];
+        _this.xtag.indicator = _this.querySelector('[indicator]') || _this.children[ 0 ];
+        _this.xtag.actionsContainer = _this.querySelector('[actions]') || _this.children[ 1 ];
 
         var expand = function (e) {
           e.stopPropagation();
@@ -103,7 +103,7 @@
         this.classList.add('off');
       },
       clean: function () {
-        this.innerHTML = "";
+        this.innerHTML = '';
       }
     },
     events: {}

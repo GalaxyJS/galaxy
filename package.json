@@ -19,9 +19,13 @@
   "dependencies": {},
   "devDependencies": {
     "chai": "^3.5.0",
+    "eslint": "^3.19.0",
+    "eslint-plugin-jasmine": "^2.2.0",
+    "fetch-mock": "^5.10.0",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
     "gulp-documentation": "^3.1.0",
+    "gulp-jasmine": "^2.4.2",
     "gulp-jasmine-browser": "^1.7.1",
     "gulp-minify": "0.0.14",
     "gulp-mocha": "^3.0.1",

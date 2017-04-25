@@ -1,7 +1,7 @@
-/* global xtag, Galaxy */
+/* global xtag, GalaxyAnimation */
 
 (function () {
-  GalaxyAnimation = {
+  window.GalaxyAnimation = {
     CONFIG: {
       baseDuration: .5,
       staggerDuration: .05

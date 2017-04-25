@@ -1,13 +1,11 @@
-/* 
+/* global require */
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
 
 var gulp = require('gulp');
-var path = require('path');
-var rename = require('gulp-rename');
-var sourcemaps = require('gulp-sourcemaps');
 var minify = require('gulp-minify');
 var gulpDocumentation = require('gulp-documentation');
 var pump = require('pump');
@@ -29,7 +27,6 @@ var sources = {
 gulp.task('default', function () {
   // place code for your default task here
 });
-
 
 gulp.task('build-galaxy', function () {
   return pump([
@@ -67,13 +64,13 @@ gulp.task('build-tags', function () {
   });
 });
 
-gulp.task('build', ['build-galaxy', 'build-tags']);
+gulp.task('build', [ 'build-galaxy', 'build-tags' ]);
 
-gulp.task('start-development', ['build'], function () {
+gulp.task('start-development', [ 'build' ], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], ['build']);
+  ], [ 'build' ]);
 });
 
 //var mocha = require('gulp-mocha');
@@ -96,23 +93,24 @@ var open = require('opn');
 
 gulp.task('jasmine', function () {
   var filesForTest = [
+    'node_modules/fetch-mock/es5/client-browserified.js',
+    'src/promise-polyfill.js',
     'dist/galaxy-min.js',
-    'spec/mocks/*.js',
     'spec/*-spec.js'
   ];
 
   open('http://127.0.0.1:8888');
 
   return gulp.src(filesForTest)
-          .pipe(watch(filesForTest))
-          .pipe(jasmineBrowser.specRunner())
-          .pipe(jasmineBrowser.server({port: 8888}));
+    .pipe(watch(filesForTest))
+    .pipe(jasmineBrowser.specRunner())
+    .pipe(jasmineBrowser.server({port: 8888}));
 });
 
 gulp.task('generate-docs', function () {
   return gulp.src(sources.galaxy)
-          .pipe(gulpDocumentation('html', {
-            filename: 'galaxy-doc.html'
-          }))
-          .pipe(gulp.dest('docs'));
+    .pipe(gulpDocumentation('html', {
+      filename: 'galaxy-doc.html'
+    }))
+    .pipe(gulp.dest('docs'));
 });

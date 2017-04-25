@@ -1,4 +1,4 @@
-/* global Galaxy, nanoajax, Node */
+/* global Galaxy, Node */
 
 (function (root) {
 
@@ -12,6 +12,10 @@
 
   var importedLibraries = {};
 
+  /**
+   *
+   * @constructor
+   */
   function System () {
     this.stateKey = '#';
     this.bootModule = null;
@@ -191,7 +195,7 @@
     if (parser) {
       return parser(content);
     } else {
-      console.log('Resource is not a valid html file:', module.url, contentType);
+      console.error('Resource is not a valid html file:', module.url, contentType);
 
       return {
         html: [],
@@ -225,7 +229,7 @@
         fresh: query.indexOf('new') !== -1
       });
 
-      return "Scope.imports['" + query[ query.length - 1 ] + "']";
+      return 'Scope.imports[\'' + query[ query.length - 1 ] + '\']';
     });
 
     if (imports.length) {
@@ -442,12 +446,12 @@
 
     hashValue.replace(/([^&]*)=([^&]*)/g, function (m, k, v) {
       if (newParams[ k ] !== null && typeof newParams[ k ] !== 'undefined') {
-        newHash += k + "=" + newParams[ k ];
+        newHash += k + '=' + newParams[ k ];
         newHash += '&';
 
         delete newParams[ k ];
       } else if (!newParams.hasOwnProperty(k) && !clean) {
-        newHash += k + "=" + v;
+        newHash += k + '=' + v;
         newHash += '&';
       }
     });
@@ -495,7 +499,7 @@
     }
 
     return modules;
-  }
+  };
 
   System.prototype.registerAddOnProvider = function (name, handler) {
     if (typeof handler !== 'function') {

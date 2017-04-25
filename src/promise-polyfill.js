@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * @link https://github.com/taylorhakes/promise-polyfill
  */

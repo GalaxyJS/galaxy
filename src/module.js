@@ -1,10 +1,18 @@
+/* global Galaxy */
+
 (function () {
   /**
    *
-   * @returns {Galaxy.GalaxyStateHandler}
+   * @returns {Galaxy.GalaxyModule}
    */
   Galaxy.GalaxyModule = GalaxyModule;
 
+  /**
+   *
+   * @param {Object} module
+   * @param {Galaxy.GalaxyScope} scope
+   * @constructor
+   */
   function GalaxyModule(module, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
@@ -34,5 +42,5 @@
 
   GalaxyModule.prototype.registerAddOn = function (id, object) {
     this.addOns[id] = object;
-  }
+  };
 }());

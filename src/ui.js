@@ -50,7 +50,7 @@
   };
 
   GalaxyUI.prototype.getCenterPoint = function (rect) {
-    var pos = document.activeElement.getBoundingClientRect();
+    // var pos = document.activeElement.getBoundingClientRect();
     return {
       left: rect.left + (rect.width / 2),
       top: rect.top + (rect.height / 2)
@@ -95,7 +95,6 @@
 
   GalaxyUI.prototype.utility.getContentHeight = function (element, withPaddings) {
     var height = 0;
-    var logs = [];
     var children = element.children;
     var elementCSS = window.getComputedStyle(element, null);
 

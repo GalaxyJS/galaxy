@@ -7,6 +7,11 @@
    */
   Galaxy.GalaxyStateHandler = GalaxyStateHandler;
 
+  /**
+   *
+   * @param {Galaxy.GalaxyModule} module
+   * @constructor
+   */
   function GalaxyStateHandler (module) {
     this.module = module;
     this.id = module.id;
@@ -195,14 +200,16 @@
     _this.navigation = navigation;
     _this.params = params;
 
+    var currentNav = null, i = 0, len = 0, id = null;
+
     if (this.domain.app.activeModule && this.domain.app.activeModule.systemId === _this.systemId && this.active) {
-      for (var id in allNavigation) {
+      for (id in allNavigation) {
         var stateHandlers = _this.hashListeners.filter(function (item) {
           return item.id === id;
         });
 
         if (stateHandlers.length) {
-          var currentNav = navigation[ id ];
+          currentNav = navigation[ id ];
           if (tempNav[ id ]) {
             if (currentNav && currentNav.join('/') === tempNav[ id ].join('/')) {
               continue;
@@ -213,7 +220,7 @@
           parameters.push(null);
           if (currentNav) {
             parameters[ 0 ] = currentNav.join('/');
-            for (var i = 0, len = currentNav.length; i < len; i++) {
+            for (i = 0, len = currentNav.length; i < len; i++) {
               parameters.push(Galaxy.utility.isNumber(currentNav[ i ]) ?
                 parseFloat(currentNav[ i ]) :
                 currentNav[ i ]);
@@ -239,7 +246,7 @@
           var args = [];
           args.push(stateKeyNavigationValue);
 
-          for (var i = 0, len = stateKeyNavigationValue.length; i < len; ++i) {
+          for (i = 0, len = stateKeyNavigationValue.length; i < len; ++i) {
             //i is always valid index in the arguments object
             args.push(stateKeyNavigationValue[ i ]);
           }
@@ -253,13 +260,13 @@
       this.domain.app.activeModule = null;
     }
 
-    for (var id in allNavigation) {
+    for (id in allNavigation) {
       var globalStateHandlers = _this.globalHashListeners.filter(function (item) {
         return item.id === id;
       });
 
       if (globalStateHandlers.length) {
-        var currentNav = navigation[ id ];
+        currentNav = navigation[ id ];
         if (tempNav[ id ]) {
           if (currentNav && currentNav.join('/') === tempNav[ id ].join('/')) {
             continue;
@@ -270,7 +277,7 @@
         parameters.push(null);
         if (currentNav) {
           parameters[ 0 ] = currentNav.join('/');
-          for (var i = 0; i < currentNav.length; i++) {
+          for (i = 0; i < currentNav.length; i++) {
             parameters.push(Galaxy.utility.isNumber(currentNav[ i ]) ?
               parseFloat(currentNav[ i ]) :
               currentNav[ i ]);
@@ -286,7 +293,7 @@
     var domainActiveModule = this.domain.app.activeModule;
     if (!domainActiveModule && navigation[ _this.stateKey ] && navigation[ _this.stateKey ].length) {
       var path = 'system';
-      for (var i = 0, len = navigation[ _this.stateKey ].length; i < len; i++) {
+      for (i = 0, len = navigation[ _this.stateKey ].length; i < len; i++) {
         path += '/' + navigation[ _this.stateKey ][ i ];
         if (_this.domain.modules[ path ] && _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ]) {
           domainActiveModule = _this.domain.app.activeModule = _this.domain.modules[ path ].addOns[ 'galaxy/scope-state' ];
@@ -311,11 +318,20 @@
     }
   };
 
+  /**
+   *
+   * @param {Object} module
+   * @callback {callback} onDone
+   */
   GalaxyStateHandler.prototype.loadModule = function (module, onDone) {
     Galaxy.loadModule(module, onDone, this.scope);
   };
 
-  GalaxyStateHandler.prototype.hashHandler = function (nav, params) {
-  };
+  /**
+   *
+   * @param {Object} nav
+   * @param {Object} params
+   */
+  GalaxyStateHandler.prototype.hashHandler = function (nav, params) { };
 
 })();
