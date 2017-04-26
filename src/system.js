@@ -167,7 +167,7 @@
       html[ i ] = temp.appendChild(html[ i ]);
     }
     document.getElementsByTagName('body')[ 0 ].appendChild(temp);
-    var uiView = temp.querySelectorAll('ui-view,[ui-view]');
+    var uiView = temp.querySelectorAll('ui-view-outlet,[ui-view]');
     temp.parentNode.removeChild(temp);
 
     return {
@@ -206,10 +206,17 @@
     }
   };
 
+  System.prototype.uiViewDecorator = function (node) {
+    return node;
+  };
+
   System.prototype.compileModuleContent = function (module, moduleContent, invokers, onDone) {
+    var _this = this;
     var scopeUIViews = {};
     Array.prototype.forEach.call(moduleContent.views, function (node, i) {
-      scopeUIViews[ node.getAttribute('ui-view') || 'view_' + i ] = node;
+
+      scopeUIViews[ node.getAttribute('ui-view') || node.getAttribute('name') ||
+      'view_' + i ] = _this.uiViewDecorator(node);
     });
 
     var scope = new Galaxy.GalaxyScope(module, moduleContent.html, scopeUIViews);
