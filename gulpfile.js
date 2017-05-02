@@ -33,7 +33,7 @@ gulp.task('build-galaxy', function () {
     gulp.src(sources.galaxy),
     concat('galaxy.js'),
     minify({
-      mangle: false
+      mangle: true
     }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/')
@@ -51,7 +51,7 @@ gulp.task('build-tags', function () {
     gulp.src(sources.galaxyTags),
     concat('galaxy-tags.js'),
     minify({
-      mangle: false
+      mangle: true
     }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/')
