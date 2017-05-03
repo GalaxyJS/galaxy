@@ -20,6 +20,7 @@
     this.addOns = module.addOns || {};
     this.domain = module.domain;
     this.scope = scope;
+    this.addOnProviders = [];
   }
 
   GalaxyModule.prototype.init = function () {

@@ -1,7 +1,7 @@
 /* global Galaxy */
 
 (function (root) {
-  root.Galaxy = new System();
+  root.Galaxy = new Core();
 
   /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
    *
