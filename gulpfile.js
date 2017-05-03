@@ -41,7 +41,7 @@ gulp.task('start-development', ['build-galaxy'], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], ['build']);
+  ], ['build-galaxy']);
 });
 
 gulp.task('generate-docs', function () {

@@ -7,10 +7,9 @@
    */
   Galaxy.GalaxyScope = GalaxyScope;
 
-  function GalaxyScope (module, source) {
+  function GalaxyScope (module) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
-    this.source = source;
     this.imports = {};
 
     var urlParser = document.createElement('a');
