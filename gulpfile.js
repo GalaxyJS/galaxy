@@ -18,6 +18,10 @@ var sources = {
     'src/ui.js',
     'src/*.js'
   ],
+  galaxy_v3: [
+    'src/new/system.js',
+    'src/new/*.js'
+  ],
   galaxyTags: [
     'src/tags/x-tag-core.js',
     'src/tags/*.js'
@@ -64,13 +68,31 @@ gulp.task('build-tags', function () {
   });
 });
 
-gulp.task('build', [ 'build-galaxy', 'build-tags' ]);
+gulp.task('build', ['build-galaxy', 'build-tags']);
 
-gulp.task('start-development', [ 'build' ], function () {
+gulp.task('start-development', ['build'], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], [ 'build' ]);
+  ], ['build']);
+});
+
+gulp.task('build-galaxy-v3', function () {
+  return pump([
+    gulp.src(sources.galaxy_v3),
+    concat('galaxy.js'),
+    minify({
+      mangle: true
+    }),
+    gulp.dest('dist/v3/'),
+    gulp.dest('site/galaxyjs_v3/')
+  ], function (error) {
+    if (error) {
+      console.error('error in: ', error.plugin);
+      console.error(error.message);
+      console.info(error.stack);
+    }
+  });
 });
 
 //var mocha = require('gulp-mocha');
