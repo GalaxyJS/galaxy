@@ -12,11 +12,6 @@
     this.parentScope = module.parentScope || null;
     this.element = element || null;
     this.imports = {};
-    this.properties = {
-      bound: {},
-      hosts:{},
-      values: {}
-    };
 
     var urlParser = document.createElement('a');
     urlParser.href = module.url;

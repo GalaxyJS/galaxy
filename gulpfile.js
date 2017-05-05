@@ -10,12 +10,11 @@ var minify = require('gulp-minify');
 var gulpDocumentation = require('gulp-documentation');
 var pump = require('pump');
 var concat = require('gulp-concat');
-var watch = require('gulp-watch');
 
 var sources = {
   galaxy: [
     'src/system.js',
-    'src/*.js'
+    'src/**/*.js'
   ]
 };
 
@@ -37,11 +36,11 @@ gulp.task('build-galaxy', function () {
   });
 });
 
-gulp.task('start-development', ['build-galaxy'], function () {
+gulp.task('start-development', [ 'build-galaxy' ], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], ['build-galaxy']);
+  ], [ 'build-galaxy' ]);
 });
 
 gulp.task('generate-docs', function () {
