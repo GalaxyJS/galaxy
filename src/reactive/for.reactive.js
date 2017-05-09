@@ -14,7 +14,7 @@
       node._galaxy_view.placeholder.nodeValue = JSON.stringify(nodeSchema, null, 2);
       this.makeBinding(node, nodeDataScope, 'reactive_for', matches[ 2 ]);
     },
-    onApply: function (node, nodeSchema, value, matches) {
+    onApply: function (node, nodeSchema, value, matches, scopeData) {
       var oldItems = node._galaxy_view.forItems || [];
       var newItems = [];
       oldItems.forEach(function (node) {
@@ -27,7 +27,7 @@
       var parentNode = node._galaxy_view.placeholder.parentNode;
 
       for (var index in value) {
-        var itemDataScope = {};
+        var itemDataScope = Object.assign({}, scopeData);
         itemDataScope[ matches[ 1 ] ] = value[ index ];
 
         newItems.push(this.append(newNodeSchema, itemDataScope, parentNode));
