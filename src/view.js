@@ -24,7 +24,14 @@
       type: 'attr'
     },
     class: {
-      type: 'attr'
+      type: 'attr',
+      parser: function (value) {
+        if (value instanceof Array) {
+          return value.join(' ');
+        }
+
+        return value || '';
+      }
     },
     title: {
       type: 'attr'
@@ -75,26 +82,45 @@
       nodeSchema.forEach(function (nodeSchema) {
         _this.append(nodeSchema, nodeDataScope, parentNode);
       });
-    } else if (typeof(nodeSchema) === 'object' && nodeSchema !== null) {
+    } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       var node = document.createElement(nodeSchema.t || 'div');
       var nodePlaceholder = document.createComment(node.tagName);
       node._galaxy_view = {
         asTemplate: false,
         placeholder: nodePlaceholder,
-        hosts: [],
+        _hosts: [],
+        addHost: function (item) {
+          this._hosts.push(item);
+        },
+        _inDOM: true,
+        setInDOM: function (flag) {
+          this._inDOM = flag;
+          if (flag && !node.parentNode) {
+            node._galaxy_view.placeholder.parentNode.insertBefore(node, node._galaxy_view.placeholder.nextSibling);
+          } else if (!flag && node.parentNode) {
+            node.parentNode.removeChild(node);
+          }
+        },
         destroy: function () {
-          node.parentNode.removeChild(this.placeholder);
-          node.parentNode.removeChild(node);
+          if (this._inDOM) {
+            node.parentNode.removeChild(this.placeholder);
+            node.parentNode.removeChild(node);
+          } else {
+            this.placeholder.parentNode.removeChild(this.placeholder);
+          }
 
-          this.hosts.forEach(function (host) {
-            if (host.indexOf(node) !== -1) {
-              host.splice(host.indexOf(node), 1);
+          var nodeIndexInTheHost = -1;
+          this._hosts.forEach(function (host) {
+            nodeIndexInTheHost = host.indexOf(node);
+            if (nodeIndexInTheHost !== -1) {
+              host.splice(nodeIndexInTheHost, 1);
             }
           });
 
-          this.hosts = [];
+          this._hosts = [];
         }
       };
+
       parentNode.appendChild(node._galaxy_view.placeholder);
 
       for (var attributeName in nodeSchema) {
@@ -120,7 +146,7 @@
         }
       }
 
-      if (!node._galaxy_view.asTemplate) {
+      if (!node._galaxy_view.asTemplate && node._galaxy_view._inDOM) {
         parentNode.appendChild(node);
       }
       _this.append(nodeSchema.children, nodeDataScope, node);
@@ -136,9 +162,13 @@
       if (behavior) {
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
-        node._galaxy_view.reactive[ key ] = function (inNode, value, a) {
-          return behavior.onApply.call(this, inNode, nodeSchema, value, matches);
-        };
+
+        node._galaxy_view.reactive[ key ] = (function (BEHAVIOR, MATCHES, NODE_SCHEMA) {
+          return function (_node, _value) {
+            return BEHAVIOR.onApply.call(this, _node, NODE_SCHEMA, _value, MATCHES);
+          };
+        })(behavior, matches, nodeSchema);
+
         behavior.bind.call(this, node, nodeSchema, nodeDataScope, matches);
       }
     }
@@ -150,7 +180,7 @@
     if (attributeName.indexOf('reactive_') === 0) {
       var reactiveBehaviorName = attributeName.substring(9);
       if (node._galaxy_view.reactive[ reactiveBehaviorName ]) {
-        node._galaxy_view.reactive[ reactiveBehaviorName ].call(this, node, value, reactiveBehaviorName);
+        node._galaxy_view.reactive[ reactiveBehaviorName ].call(this, node, value);
       }
 
       return;
@@ -160,6 +190,8 @@
     if (!property) {
       return;
     }
+
+    value = property.parser ? property.parser(value) : value;
 
     switch (property.type) {
       case 'attr':
@@ -216,13 +248,15 @@
 
     if (dataHostObject._binds[ propertyName ].hosts.indexOf(node) === -1 && !childProperty) {
       dataHostObject._binds[ propertyName ].hosts.push(node);
-      node._galaxy_view.hosts.push(dataHostObject._binds[ propertyName ].hosts);
+      node._galaxy_view.addHost(dataHostObject._binds[ propertyName ].hosts);
       node._galaxy_view.binds = dataHostObject._binds[ propertyName ];
     }
 
-    if (typeof(initValue) !== 'undefined') {
-      dataHostObject[ propertyName ] = initValue;
-    }
+    // if (typeof(initValue) !== 'undefined') {
+    //   dataHostObject[ propertyName ] = initValue;
+    // }
+    dataHostObject._binds[ propertyName ].value = initValue;
+    _this.setValueFor(dataHostObject, attributeName, propertyName, initValue);
 
     if (childProperty) {
       _this.makeBinding(node, dataHostObject[ propertyName ], attributeName, childProperty);
@@ -271,7 +305,7 @@
             hostObject._binds[ propertyName ].hosts.forEach(function (node) {
               _this.setPropertyForNode(node, attributeName, value);
             });
-          }, 1);
+          }, 0);
         },
         writable: true,
         configurable: true

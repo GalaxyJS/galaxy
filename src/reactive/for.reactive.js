@@ -24,11 +24,13 @@
       var newNodeSchema = Object.assign({}, nodeSchema);
       delete newNodeSchema.reactive.for;
 
+      var parentNode = node._galaxy_view.placeholder.parentNode;
+
       for (var index in value) {
         var itemDataScope = {};
         itemDataScope[ matches[ 1 ] ] = value[ index ];
 
-        newItems.push(this.append(newNodeSchema, itemDataScope, node._galaxy_view.placeholder.parentNode));
+        newItems.push(this.append(newNodeSchema, itemDataScope, parentNode));
       }
 
       node._galaxy_view.forItems = newItems;
