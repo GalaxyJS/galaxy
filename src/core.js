@@ -28,7 +28,6 @@
 
     ctor.prototype = parent.prototype;
     child.prototype = new ctor();
-    child.__super__ = parent.prototype;
     return child;
   };
 
