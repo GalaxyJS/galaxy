@@ -4,17 +4,14 @@
 
   Galaxy.GalaxyView.REACTIVE_BEHAVIORS[ 'if' ] = {
     regex: null,
-    getScopeData: function (scopeData) {
-      return scopeData;
+    bind: function (galaxyView, nodeScopeData, matches) {
+      this.makeBinding(galaxyView.node, nodeScopeData, 'reactive_if', matches);
     },
-    bind: function (node, nodeSchema, nodeScopeData, matches) {
-      this.makeBinding(node, nodeScopeData, 'reactive_if', matches);
-    },
-    onApply: function (node, nodeSchema, value) {
+    onApply: function (galaxyView, value) {
       if (value) {
-        node._galaxy_view.setInDOM(true);
+        galaxyView.setInDOM(true);
       } else {
-        node._galaxy_view.setInDOM(false);
+        galaxyView.setInDOM(false);
       }
     }
   };

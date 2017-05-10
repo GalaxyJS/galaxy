@@ -12,7 +12,7 @@
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyView (scope) {
+  function GalaxyView(scope) {
     this.scope = scope;
     this.element = scope.element;
   }
@@ -85,11 +85,12 @@
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       var node = document.createElement(nodeSchema.t || 'div');
       var nodePlaceholder = document.createComment(node.tagName);
-      node._galaxy_view = {
-        _nodeSchema: nodeSchema,
+      node.__galaxyView__ = {
+        node: node,
+        nodeSchema: nodeSchema,
         _template: false,
         toTemplate: function () {
-          this.placeholder.nodeValue = JSON.stringify(this._nodeSchema, null, 2);
+          this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
           this._template = true;
         },
         placeholder: nodePlaceholder,
@@ -101,7 +102,7 @@
         setInDOM: function (flag) {
           this._inDOM = flag;
           if (flag && !node.parentNode && !this._template) {
-            node._galaxy_view.placeholder.parentNode.insertBefore(node, node._galaxy_view.placeholder.nextSibling);
+            node.__galaxyView__.placeholder.parentNode.insertBefore(node, node.__galaxyView__.placeholder.nextSibling);
           } else if (!flag && node.parentNode) {
             node.parentNode.removeChild(node);
           }
@@ -126,10 +127,10 @@
         }
       };
 
-      parentNode.appendChild(node._galaxy_view.placeholder);
+      parentNode.appendChild(node.__galaxyView__.placeholder);
 
-      if (!node._galaxy_view.hasOwnProperty('reactive')) {
-        Object.defineProperty(node._galaxy_view, 'reactive', {
+      if (!node.__galaxyView__.hasOwnProperty('reactive')) {
+        Object.defineProperty(node.__galaxyView__, 'reactive', {
           enumerable: true,
           configurable: false,
           value: {}
@@ -148,7 +149,18 @@
         }
 
         var attributeValue = nodeSchema[ attributeName ];
-        var bind = typeof(attributeValue) === 'string' ? attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/) : null;
+        var bind = null;
+
+        switch (typeof(attributeValue)) {
+          case 'string':
+            bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
+            break;
+          case 'function':
+            bind = [ 0, attributeValue ];
+            break;
+          default:
+            bind = null;
+        }
 
         if (bind) {
           _this.makeBinding(node, nodeScopeData, attributeName, bind[ 1 ]);
@@ -157,7 +169,7 @@
         }
       }
 
-      if (!node._galaxy_view._template && node._galaxy_view._inDOM) {
+      if (!node.__galaxyView__._template && node.__galaxyView__._inDOM) {
         parentNode.appendChild(node);
       }
       _this.append(nodeSchema.children, parentScopeData, node);
@@ -176,13 +188,13 @@
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
 
-        node._galaxy_view.reactive[ key ] = (function (BEHAVIOR, MATCHES, NODE_SCHEMA, BEHAVIOR_SCOPE_DATA) {
-          return function (_node, _value) {
-            return BEHAVIOR.onApply.call(this, _node, NODE_SCHEMA, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
+        node.__galaxyView__.reactive[ key ] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+          return function (_galaxyView, _value) {
+            return BEHAVIOR.onApply.call(this, _galaxyView, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
           };
-        })(behavior, matches, nodeSchema, allScopeData);
+        })(behavior, matches, allScopeData);
 
-        behavior.bind.call(this, node, nodeSchema, nodeScopeData, matches);
+        behavior.bind.call(this, node.__galaxyView__, nodeScopeData, matches);
       }
     }
 
@@ -192,8 +204,8 @@
   GalaxyView.prototype.setPropertyForNode = function (node, attributeName, value) {
     if (attributeName.indexOf('reactive_') === 0) {
       var reactiveBehaviorName = attributeName.substring(9);
-      if (node._galaxy_view.reactive[ reactiveBehaviorName ]) {
-        node._galaxy_view.reactive[ reactiveBehaviorName ].call(this, node, value);
+      if (node.__galaxyView__.reactive[ reactiveBehaviorName ]) {
+        node.__galaxyView__.reactive[ reactiveBehaviorName ].call(this, node.__galaxyView__, value);
       }
 
       return;
@@ -224,6 +236,10 @@
       return;
     }
 
+    if (typeof propertyPath === 'function') {
+      debugger;
+    }
+
     var items = propertyPath.split('.');
     var propertyName = propertyPath;
     var childProperty = null;
@@ -244,11 +260,18 @@
     }
 
     if (!dataHostObject._binds[ propertyName ]) {
+      var enumerable = true;
+
+      if (propertyName === 'length' && dataHostObject instanceof Array) {
+        propertyName = '_length';
+        enumerable = false;
+      }
+
+
       dataHostObject._binds[ propertyName ] = {
         hosts: []
       };
 
-      // if(dataHostObject.isDefined())
       Object.defineProperty(dataHostObject, propertyName, {
         get: function () {
           return dataHostObject._binds[ propertyName ].value;
@@ -260,16 +283,17 @@
 
           dataHostObject._binds[ propertyName ].value = newValue;
         },
-        enumerable: true,
+        enumerable: enumerable,
         configurable: true
       });
+
     }
 
     if (dataHostObject._binds[ propertyName ]) {
       if (dataHostObject._binds[ propertyName ].hosts.indexOf(node) === -1 && !childProperty) {
         dataHostObject._binds[ propertyName ].hosts.push(node);
-        node._galaxy_view.addHost(dataHostObject._binds[ propertyName ].hosts);
-        node._galaxy_view.binds = dataHostObject._binds[ propertyName ];
+        node.__galaxyView__.addHost(dataHostObject._binds[ propertyName ].hosts);
+        node.__galaxyView__.binds = dataHostObject._binds[ propertyName ];
       }
 
       // if (typeof(initValue) !== 'undefined') {
@@ -324,6 +348,7 @@
       var original = arrayProto[ method ];
       Object.defineProperty(value, method, {
         value: function () {
+          var arr = this;
           var i = arguments.length;
           var args = new Array(i);
           while (i--) {
@@ -331,9 +356,13 @@
           }
           var result = original.apply(this, args);
 
+
           clearTimeout(throttle);
           throttle = setTimeout(function () {
-            console.log(propertyName)
+            if (arr.hasOwnProperty('_length')) {
+              arr._length = arr.length;
+            }
+
             propertyBind.hosts.forEach(function (node) {
               _this.setPropertyForNode(node, attributeName, value);
             });

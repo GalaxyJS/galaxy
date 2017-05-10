@@ -3,23 +3,20 @@
 (function () {
   Galaxy.GalaxyView.REACTIVE_BEHAVIORS[ 'for' ] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    getScopeData: function (scopeData) {
-      return scopeData;
+    bind: function (galaxyView, nodeScopeData, matches) {
+      galaxyView.toTemplate();
+      this.makeBinding(galaxyView.node, nodeScopeData, 'reactive_for', matches[ 2 ]);
     },
-    bind: function (node, nodeSchema, nodeScopeData, matches) {
-      node._galaxy_view.toTemplate();
-      this.makeBinding(node, nodeScopeData, 'reactive_for', matches[ 2 ]);
-    },
-    onApply: function (node, nodeSchema, value, matches, nodeScopeData) {
-      var oldItems = node._galaxy_view.forItems || [];
+    onApply: function (galaxyView, value, matches, nodeScopeData) {
+      var oldItems = galaxyView.forItems || [];
       var newItems = [];
       oldItems.forEach(function (node) {
-        node._galaxy_view.destroy();
+        node.__galaxyView__.destroy();
       });
 
-      var newNodeSchema = JSON.parse(JSON.stringify(nodeSchema));
+      var newNodeSchema = JSON.parse(JSON.stringify(galaxyView.nodeSchema));
       delete newNodeSchema.reactive.for;
-      var parentNode = node._galaxy_view.placeholder.parentNode;
+      var parentNode = galaxyView.placeholder.parentNode;
 
       for (var index in value) {
         var itemDataScope = Object.assign({}, nodeScopeData);
@@ -27,7 +24,7 @@
         newItems.push(this.append(newNodeSchema, itemDataScope, parentNode));
       }
 
-      node._galaxy_view.forItems = newItems;
+      galaxyView.forItems = newItems;
     }
   };
 })();
