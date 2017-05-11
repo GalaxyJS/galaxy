@@ -21,14 +21,28 @@
     this.rootElement = null;
   }
 
-  Core.prototype.extends = function (child, parent) {
-    var hasProp = {}.hasOwnProperty;
-    for (var key in parent) { if (hasProp.call(parent, key)) child[ key ] = parent[ key ]; }
-    function ctor () { this.constructor = child; }
+  Core.prototype.extend = function (out) {
+    out = out || {};
 
-    ctor.prototype = parent.prototype;
-    child.prototype = new ctor();
-    return child;
+    for (var i = 1; i < arguments.length; i++) {
+      var obj = arguments[ i ];
+
+      if (!obj)
+        continue;
+
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (obj[ key ] instanceof Array)
+            out[ key ] = this.extend(out[ key ] || [], obj[ key ]);
+          else if (typeof obj[ key ] === 'object' && obj[ key ] !== null)
+            out[ key ] = this.extend(out[ key ] || {}, obj[ key ]);
+          else
+            out[ key ] = obj[ key ];
+        }
+      }
+    }
+
+    return out;
   };
 
   Core.prototype.boot = function (bootModule, rootElement) {

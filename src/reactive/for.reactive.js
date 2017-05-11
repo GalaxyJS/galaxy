@@ -14,7 +14,10 @@
         node.__galaxyView__.destroy();
       });
 
-      var newNodeSchema = JSON.parse(JSON.stringify(galaxyView.nodeSchema));
+      // var newNodeSchema2 = JSON.parse(JSON.stringify(galaxyView.nodeSchema));
+      var newNodeSchema = Galaxy.extend({}, galaxyView.nodeSchema);
+
+
       delete newNodeSchema.reactive.for;
       var parentNode = galaxyView.placeholder.parentNode;
 

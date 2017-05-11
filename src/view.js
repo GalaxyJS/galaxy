@@ -1,6 +1,24 @@
 /* global Galaxy */
 
 (function () {
+
+  function BoundProperty (view) {
+    this.view = view;
+    this.hosts = [];
+    this.value = null;
+  }
+
+  BoundProperty.prototype.setValue = function (attributeName, value) {
+    var _this = this;
+    _this.hosts.forEach(function (node) {
+      if (_this.view.mutator[ attributeName ]) {
+        _this.view.root.setPropertyForNode(node, attributeName, _this.view.mutator[ attributeName ].call(node, value));
+      } else {
+        _this.view.root.setPropertyForNode(node, attributeName, value);
+      }
+    });
+  };
+
   /**
    *
    * @returns {Galaxy.GalaxyView}
@@ -12,7 +30,7 @@
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyView(scope) {
+  function GalaxyView (scope) {
     this.scope = scope;
     this.element = scope.element;
   }
@@ -75,9 +93,8 @@
    * @param {Object} nodeScopeData
    * @param {Element} parentNode
    */
-  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode) {
+  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode, n2) {
     var _this = this;
-
     if (nodeSchema instanceof Array) {
       nodeSchema.forEach(function (nodeSchema) {
         _this.append(nodeSchema, nodeScopeData, parentNode);
@@ -86,6 +103,9 @@
       var node = document.createElement(nodeSchema.t || 'div');
       var nodePlaceholder = document.createComment(node.tagName);
       node.__galaxyView__ = {
+        root: _this,
+        scope: {},
+        mutator: {},
         node: node,
         nodeSchema: nodeSchema,
         _template: false,
@@ -139,6 +159,10 @@
 
       var parentScopeData = nodeScopeData;
 
+      if (nodeSchema[ 'mutator' ]) {
+        node.__galaxyView__.mutator = nodeSchema[ 'mutator' ];
+      }
+
       if (nodeSchema[ 'reactive' ]) {
         parentScopeData = _this.addReactiveBehaviors(node, nodeSchema, nodeScopeData, nodeSchema[ 'reactive' ]);
       }
@@ -169,10 +193,13 @@
         }
       }
 
-      if (!node.__galaxyView__._template && node.__galaxyView__._inDOM) {
-        parentNode.appendChild(node);
+      if (!node.__galaxyView__._template) {
+        if (node.__galaxyView__._inDOM) {
+          parentNode.appendChild(node);
+        }
+
+        _this.append(nodeSchema.children, parentScopeData, node);
       }
-      _this.append(nodeSchema.children, parentScopeData, node);
 
       return node;
     }
@@ -185,6 +212,7 @@
       var behavior = GalaxyView.REACTIVE_BEHAVIORS[ key ];
 
       if (behavior) {
+        node.__galaxyView__.scope[ key ] = allScopeData;
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
 
@@ -229,77 +257,79 @@
     }
   };
 
-  GalaxyView.prototype.makeBinding = function (node, dataHostObject, attributeName, propertyPath) {
+  GalaxyView.prototype.makeBinding = function (node, dataHostObject, attributeName, propertyValue) {
     var _this = this;
 
     if (typeof dataHostObject !== 'object') {
       return;
     }
 
-    if (typeof propertyPath === 'function') {
-      debugger;
+    var propertyName = propertyValue;
+    var childProperty = null;
+
+    if (typeof propertyValue === 'function') {
+      propertyName = '[mutator]';
+      dataHostObject[ propertyName ] = dataHostObject[ propertyName ] || [];
+      dataHostObject[ propertyName ].push({
+        for: attributeName,
+        action: propertyValue
+      });
+      return;
+    } else {
+      var items = propertyValue.split('.');
+      if (items.length > 1) {
+        propertyName = items.shift();
+        childProperty = items.join('.');
+      }
     }
 
-    var items = propertyPath.split('.');
-    var propertyName = propertyPath;
-    var childProperty = null;
-    if (items.length > 1) {
-      propertyName = items.shift();
-      // dataHostObject[ propertyName ] = dataHostObject[ propertyName ] || {};
-      childProperty = items.join('.');
+    var referenceName = '[' + propertyName + ']';
+    if (!dataHostObject.hasOwnProperty(referenceName)) {
+      Object.defineProperty(dataHostObject, referenceName, {
+        enumerable: false,
+        configurable: false,
+        value: new BoundProperty(node.__galaxyView__)
+      });
     }
 
     var initValue = dataHostObject[ propertyName ];
 
-    if (!dataHostObject.hasOwnProperty('_binds')) {
-      Object.defineProperty(dataHostObject, '_binds', {
-        enumerable: false,
-        configurable: false,
-        value: {}
-      });
+    // if (!dataHostObject[ referenceName ]) {
+    var enumerable = true;
+
+    if (propertyName === 'length' && dataHostObject instanceof Array) {
+      propertyName = '_length';
+      enumerable = false;
     }
 
-    if (!dataHostObject._binds[ propertyName ]) {
-      var enumerable = true;
+    Object.defineProperty(dataHostObject, propertyName, {
+      get: function () {
+        return dataHostObject[ referenceName ].value;
+      },
+      set: function (newValue) {
+        if (dataHostObject[ referenceName ].value !== newValue) {
+          _this.setValueFor(dataHostObject, attributeName, propertyName, newValue);
+        }
 
-      if (propertyName === 'length' && dataHostObject instanceof Array) {
-        propertyName = '_length';
-        enumerable = false;
-      }
+        dataHostObject[ referenceName ].value = newValue;
+      },
+      enumerable: enumerable,
+      configurable: true
+    });
 
+    // }
 
-      dataHostObject._binds[ propertyName ] = {
-        hosts: []
-      };
-
-      Object.defineProperty(dataHostObject, propertyName, {
-        get: function () {
-          return dataHostObject._binds[ propertyName ].value;
-        },
-        set: function (newValue) {
-          if (dataHostObject._binds[ propertyName ].value !== newValue) {
-            _this.setValueFor(dataHostObject, attributeName, propertyName, newValue);
-          }
-
-          dataHostObject._binds[ propertyName ].value = newValue;
-        },
-        enumerable: enumerable,
-        configurable: true
-      });
-
-    }
-
-    if (dataHostObject._binds[ propertyName ]) {
-      if (dataHostObject._binds[ propertyName ].hosts.indexOf(node) === -1 && !childProperty) {
-        dataHostObject._binds[ propertyName ].hosts.push(node);
-        node.__galaxyView__.addHost(dataHostObject._binds[ propertyName ].hosts);
-        node.__galaxyView__.binds = dataHostObject._binds[ propertyName ];
+    if (dataHostObject[ referenceName ]) {
+      if (dataHostObject[ referenceName ].hosts.indexOf(node) === -1 && !childProperty) {
+        dataHostObject[ referenceName ].hosts.push(node);
+        node.__galaxyView__.addHost(dataHostObject[ referenceName ].hosts);
+        // node.__galaxyView__.binds = dataHostObject._binds[ propertyName ];
       }
 
       // if (typeof(initValue) !== 'undefined') {
       //   dataHostObject[ propertyName ] = initValue;
       // }
-      dataHostObject._binds[ propertyName ].value = initValue;
+      dataHostObject[ referenceName ].value = initValue;
     }
 
     if (childProperty) {
@@ -318,17 +348,13 @@
   };
 
   GalaxyView.prototype.setSingleValue = function (hostObject, attributeName, propertyName, value) {
-    var _this = this;
-
-    if (hostObject._binds[ propertyName ]) {
-      hostObject._binds[ propertyName ].hosts.forEach(function (node) {
-        _this.setPropertyForNode(node, attributeName, value);
-      });
+    var boundProperty = hostObject[ '[' + propertyName + ']' ];
+    if (boundProperty) {
+      boundProperty.setValue(attributeName, value);
     }
   };
 
   GalaxyView.prototype.setArrayValue = function (hostObject, attributeName, propertyName, value) {
-    var _this = this;
     var arrayProto = Array.prototype;
     var methods = [
       'push',
@@ -342,7 +368,7 @@
 
     var throttle = null;
 
-    var propertyBind = hostObject._binds[ propertyName ];
+    var boundProperty = hostObject[ '[' + propertyName + ']' ];
 
     methods.forEach(function (method) {
       var original = arrayProto[ method ];
@@ -356,16 +382,13 @@
           }
           var result = original.apply(this, args);
 
-
           clearTimeout(throttle);
           throttle = setTimeout(function () {
             if (arr.hasOwnProperty('_length')) {
               arr._length = arr.length;
             }
 
-            propertyBind.hosts.forEach(function (node) {
-              _this.setPropertyForNode(node, attributeName, value);
-            });
+            boundProperty.setValue(attributeName, value);
           }, 0);
 
           return result;
@@ -375,8 +398,7 @@
       });
     });
 
-    hostObject._binds[ propertyName ].hosts.forEach(function (node) {
-      _this.setPropertyForNode(node, attributeName, value);
-    });
+    boundProperty.setValue(attributeName, value);
+
   };
 }());
