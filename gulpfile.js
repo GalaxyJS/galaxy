@@ -13,8 +13,11 @@ var concat = require('gulp-concat');
 
 var sources = {
   galaxy: [
-    'src/system.js',
-    'src/**/*.js'
+    'src/polyfills/*.js',
+    'src/core.js',
+    'src/*.js',
+    'src/view/view.js',
+    'src/view/**/*.js'
   ]
 };
 

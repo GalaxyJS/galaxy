@@ -1,11 +1,13 @@
 /* global Galaxy */
 
-(function () {
+(function (root, G) {
+
+  root.Galaxy = G;
   /**
    *
    * @returns {Galaxy.GalaxyModule}
    */
-  Galaxy.GalaxyModule = GalaxyModule;
+  G.GalaxyModule = GalaxyModule;
 
   /**
    *
@@ -13,7 +15,7 @@
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyModule (module, source, scope, view) {
+  function GalaxyModule(module, source, scope, view) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
@@ -47,4 +49,4 @@
   GalaxyModule.prototype.registerAddOn = function (id, object) {
     this.addOns[ id ] = object;
   };
-}());
+}(this, Galaxy || {}));

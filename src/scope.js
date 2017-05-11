@@ -1,13 +1,14 @@
 /* global Galaxy */
 
-(function () {
+(function (root, G) {
+  root.Galaxy = G;
   /**
    *
    * @returns {Galaxy.GalaxyScope}
    */
-  Galaxy.GalaxyScope = GalaxyScope;
+  G.GalaxyScope = GalaxyScope;
 
-  function GalaxyScope (module, element) {
+  function GalaxyScope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
@@ -24,7 +25,7 @@
   GalaxyScope.prototype.load = function (module, onDone) {
     module.parentScope = this;
     module.domain = module.domain || Galaxy;
-    Galaxy.load(module, onDone);
+    G.load(module, onDone);
   };
 
   GalaxyScope.prototype.loadModuleInto = function (module, view) {
@@ -33,10 +34,10 @@
     }
 
     this.load(module, function (module) {
-      Galaxy.ui.setContent(view, module.scope.html);
+      G.ui.setContent(view, module.scope.html);
 
       module.start();
     });
   };
 
-}());
+}(this, Galaxy || {}));

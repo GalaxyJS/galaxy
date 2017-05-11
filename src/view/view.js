@@ -1,36 +1,19 @@
 /* global Galaxy */
 
-(function () {
-
-  function BoundProperty (view) {
-    this.view = view;
-    this.hosts = [];
-    this.value = null;
-  }
-
-  BoundProperty.prototype.setValue = function (attributeName, value) {
-    var _this = this;
-    _this.hosts.forEach(function (node) {
-      if (_this.view.mutator[ attributeName ]) {
-        _this.view.root.setPropertyForNode(node, attributeName, _this.view.mutator[ attributeName ].call(node, value));
-      } else {
-        _this.view.root.setPropertyForNode(node, attributeName, value);
-      }
-    });
-  };
-
+(function (root, G) {
+  root.Galaxy = G;
   /**
    *
    * @returns {Galaxy.GalaxyView}
    */
-  Galaxy.GalaxyView = GalaxyView;
+  G.GalaxyView = GalaxyView;
 
   /**
    *
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyView (scope) {
+  function GalaxyView(scope) {
     this.scope = scope;
     this.element = scope.element;
   }
@@ -93,64 +76,19 @@
    * @param {Object} nodeScopeData
    * @param {Element} parentNode
    */
-  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode, n2) {
+  GalaxyView.prototype.append = function (nodeSchema, nodeScopeData, parentNode) {
     var _this = this;
     if (nodeSchema instanceof Array) {
       nodeSchema.forEach(function (nodeSchema) {
         _this.append(nodeSchema, nodeScopeData, parentNode);
       });
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      var node = document.createElement(nodeSchema.t || 'div');
-      var nodePlaceholder = document.createComment(node.tagName);
-      node.__galaxyView__ = {
-        root: _this,
-        scope: {},
-        mutator: {},
-        node: node,
-        nodeSchema: nodeSchema,
-        _template: false,
-        toTemplate: function () {
-          this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
-          this._template = true;
-        },
-        placeholder: nodePlaceholder,
-        _hosts: [],
-        addHost: function (item) {
-          this._hosts.push(item);
-        },
-        _inDOM: true,
-        setInDOM: function (flag) {
-          this._inDOM = flag;
-          if (flag && !node.parentNode && !this._template) {
-            node.__galaxyView__.placeholder.parentNode.insertBefore(node, node.__galaxyView__.placeholder.nextSibling);
-          } else if (!flag && node.parentNode) {
-            node.parentNode.removeChild(node);
-          }
-        },
-        destroy: function () {
-          if (this._inDOM) {
-            node.parentNode.removeChild(this.placeholder);
-            node.parentNode.removeChild(node);
-          } else {
-            this.placeholder.parentNode.removeChild(this.placeholder);
-          }
+      var viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
 
-          var nodeIndexInTheHost = -1;
-          this._hosts.forEach(function (host) {
-            nodeIndexInTheHost = host.indexOf(node);
-            if (nodeIndexInTheHost !== -1) {
-              host.splice(nodeIndexInTheHost, 1);
-            }
-          });
+      parentNode.appendChild(viewNode.placeholder);
 
-          this._hosts = [];
-        }
-      };
-
-      parentNode.appendChild(node.__galaxyView__.placeholder);
-
-      if (!node.__galaxyView__.hasOwnProperty('reactive')) {
-        Object.defineProperty(node.__galaxyView__, 'reactive', {
+      if (!viewNode.hasOwnProperty('reactive')) {
+        Object.defineProperty(viewNode, 'reactive', {
           enumerable: true,
           configurable: false,
           value: {}
@@ -160,11 +98,11 @@
       var parentScopeData = nodeScopeData;
 
       if (nodeSchema[ 'mutator' ]) {
-        node.__galaxyView__.mutator = nodeSchema[ 'mutator' ];
+        viewNode.mutator = nodeSchema[ 'mutator' ];
       }
 
       if (nodeSchema[ 'reactive' ]) {
-        parentScopeData = _this.addReactiveBehaviors(node, nodeSchema, nodeScopeData, nodeSchema[ 'reactive' ]);
+        parentScopeData = _this.addReactiveBehaviors(viewNode, nodeSchema, nodeScopeData, nodeSchema[ 'reactive' ]);
       }
 
       for (var attributeName in nodeSchema) {
@@ -187,53 +125,53 @@
         }
 
         if (bind) {
-          _this.makeBinding(node, nodeScopeData, attributeName, bind[ 1 ]);
+          _this.makeBinding(viewNode, nodeScopeData, attributeName, bind[ 1 ]);
         } else {
-          _this.setPropertyForNode(node, attributeName, decodeURI(attributeValue));
+          _this.setPropertyForNode(viewNode, attributeName, decodeURI(attributeValue));
         }
       }
 
-      if (!node.__galaxyView__._template) {
-        if (node.__galaxyView__._inDOM) {
-          parentNode.appendChild(node);
+      if (!viewNode.template) {
+        if (viewNode.inDOM) {
+          parentNode.appendChild(viewNode.node);
         }
 
-        _this.append(nodeSchema.children, parentScopeData, node);
+        _this.append(nodeSchema.children, parentScopeData, viewNode.node);
       }
 
-      return node;
+      return viewNode;
     }
   };
 
-  GalaxyView.prototype.addReactiveBehaviors = function (node, nodeSchema, nodeScopeData, behaviors) {
+  GalaxyView.prototype.addReactiveBehaviors = function (viewNode, nodeSchema, nodeScopeData, behaviors) {
     var allScopeData = Object.assign({}, nodeScopeData);
 
     for (var key in behaviors) {
       var behavior = GalaxyView.REACTIVE_BEHAVIORS[ key ];
 
       if (behavior) {
-        node.__galaxyView__.scope[ key ] = allScopeData;
+        viewNode.scope[ key ] = allScopeData;
         var value = behaviors[ key ];
         var matches = behavior.regex ? value.match(behavior.regex) : value;
 
-        node.__galaxyView__.reactive[ key ] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
-          return function (_galaxyView, _value) {
-            return BEHAVIOR.onApply.call(this, _galaxyView, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
+        viewNode.reactive[ key ] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+          return function (_viewNode, _value) {
+            return BEHAVIOR.onApply.call(this, _viewNode, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
           };
         })(behavior, matches, allScopeData);
 
-        behavior.bind.call(this, node.__galaxyView__, nodeScopeData, matches);
+        behavior.bind.call(this, viewNode, nodeScopeData, matches);
       }
     }
 
     return allScopeData;
   };
 
-  GalaxyView.prototype.setPropertyForNode = function (node, attributeName, value) {
+  GalaxyView.prototype.setPropertyForNode = function (viewNode, attributeName, value) {
     if (attributeName.indexOf('reactive_') === 0) {
       var reactiveBehaviorName = attributeName.substring(9);
-      if (node.__galaxyView__.reactive[ reactiveBehaviorName ]) {
-        node.__galaxyView__.reactive[ reactiveBehaviorName ].call(this, node.__galaxyView__, value);
+      if (viewNode.reactive[ reactiveBehaviorName ]) {
+        viewNode.reactive[ reactiveBehaviorName ].call(this, viewNode, value);
       }
 
       return;
@@ -248,16 +186,23 @@
 
     switch (property.type) {
       case 'attr':
-        node.setAttribute(attributeName, value);
+        viewNode.node.setAttribute(attributeName, value);
         break;
 
       case 'prop':
-        node[ property.name ] = value;
+        viewNode.node[ property.name ] = value;
         break;
     }
   };
 
-  GalaxyView.prototype.makeBinding = function (node, dataHostObject, attributeName, propertyValue) {
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @param {Object} dataHostObject
+   * @param {String} attributeName
+   * @param propertyValue
+   */
+  GalaxyView.prototype.makeBinding = function (viewNode, dataHostObject, attributeName, propertyValue) {
     var _this = this;
 
     if (typeof dataHostObject !== 'object') {
@@ -284,17 +229,19 @@
     }
 
     var referenceName = '[' + propertyName + ']';
+    var boundProperty = dataHostObject[referenceName];
     if (!dataHostObject.hasOwnProperty(referenceName)) {
+      boundProperty = new GalaxyView.BoundProperty();
+
       Object.defineProperty(dataHostObject, referenceName, {
         enumerable: false,
         configurable: false,
-        value: new BoundProperty(node.__galaxyView__)
+        value: boundProperty
       });
     }
 
     var initValue = dataHostObject[ propertyName ];
 
-    // if (!dataHostObject[ referenceName ]) {
     var enumerable = true;
 
     if (propertyName === 'length' && dataHostObject instanceof Array) {
@@ -317,23 +264,19 @@
       configurable: true
     });
 
-    // }
 
     if (dataHostObject[ referenceName ]) {
-      if (dataHostObject[ referenceName ].hosts.indexOf(node) === -1 && !childProperty) {
-        dataHostObject[ referenceName ].hosts.push(node);
-        node.__galaxyView__.addHost(dataHostObject[ referenceName ].hosts);
-        // node.__galaxyView__.binds = dataHostObject._binds[ propertyName ];
+      if (dataHostObject[ referenceName ].hosts.indexOf(viewNode) === -1 && !childProperty) {
+        dataHostObject[ referenceName ].hosts.push(viewNode);
+        viewNode.addHostNode(dataHostObject[ referenceName ].hosts);
+        boundProperty.addNode(viewNode);
       }
 
-      // if (typeof(initValue) !== 'undefined') {
-      //   dataHostObject[ propertyName ] = initValue;
-      // }
       dataHostObject[ referenceName ].value = initValue;
     }
 
     if (childProperty) {
-      _this.makeBinding(node, dataHostObject[ propertyName ] || {}, attributeName, childProperty);
+      _this.makeBinding(viewNode, dataHostObject[ propertyName ] || {}, attributeName, childProperty);
     } else if (typeof dataHostObject === 'object') {
       _this.setValueFor(dataHostObject, attributeName, propertyName, initValue);
     }
@@ -401,4 +344,4 @@
     boundProperty.setValue(attributeName, value);
 
   };
-}());
+}(this, Galaxy || {}));
