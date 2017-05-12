@@ -11,7 +11,7 @@
 
   var importedLibraries = {};
 
-  function Core () {
+  function Core() {
     this.bootModule = null;
     this.modules = {};
     this.onLoadQueue = [];
@@ -25,19 +25,19 @@
     out = out || {};
 
     for (var i = 1; i < arguments.length; i++) {
-      var obj = arguments[ i ];
+      var obj = arguments[i];
 
       if (!obj)
         continue;
 
       for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
-          if (obj[ key ] instanceof Array)
-            out[ key ] = this.extend(out[ key ] || [], obj[ key ]);
-          else if (typeof obj[ key ] === 'object' && obj[ key ] !== null)
-            out[ key ] = this.extend(out[ key ] || {}, obj[ key ]);
+          if (obj[key] instanceof Array)
+            out[key] = this.extend(out[key] || [], obj[key]);
+          else if (typeof obj[key] === 'object' && obj[key] !== null)
+            out[key] = this.extend(out[key] || {}, obj[key]);
           else
-            out[ key ] = obj[ key ];
+            out[key] = obj[key];
         }
       }
     }
@@ -57,8 +57,6 @@
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
         resolve(module);
-        // Start galaxy
-        // _this.app = _this.bootModule.addOns[ 'galaxy/scope-state' ] || _this.app;
       });
     });
 
@@ -70,7 +68,7 @@
     var str = [], p;
     for (p in obj) {
       if (obj.hasOwnProperty(p)) {
-        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[ p ];
+        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
         str.push((v !== null && typeof v === 'object') ?
           _this.convertToURIString(v, k) :
           encodeURIComponent(k) + '=' + encodeURIComponent(v));
@@ -86,10 +84,10 @@
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
       module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
-      root.Galaxy.onModuleLoaded[ module.systemId ] = resolve;
-      var moduleExist = Galaxy.modules[ module.systemId ];
+      root.Galaxy.onModuleLoaded[module.systemId] = resolve;
+      var moduleExist = Galaxy.modules[module.systemId];
 
-      var invokers = [ module.url ];
+      var invokers = [module.url];
       if (module.invokers) {
         if (module.invokers.indexOf(module.url) !== -1) {
           throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
@@ -100,20 +98,20 @@
       }
 
       if (moduleExist) {
-        var ol = Galaxy.onModuleLoaded[ module.systemId ];
+        var ol = Galaxy.onModuleLoaded[module.systemId];
         if ('function' === typeof (ol)) {
           ol(moduleExist);
-          delete Galaxy.onModuleLoaded[ module.systemId ];
+          delete Galaxy.onModuleLoaded[module.systemId];
         }
 
         return;
       }
 
-      if (Galaxy.onLoadQueue[ module.systemId ]) {
+      if (Galaxy.onLoadQueue[module.systemId]) {
         return;
       }
 
-      Galaxy.onLoadQueue[ module.systemId ] = true;
+      Galaxy.onLoadQueue[module.systemId] = true;
 
       fetch(module.url + '?' + _this.convertToURIString(module.params || {})).then(function (response) {
         // var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
@@ -146,11 +144,11 @@
       moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         var query = path.match(/([\S]+)/gm);
         imports.push({
-          url: query[ query.length - 1 ],
+          url: query[query.length - 1],
           fresh: query.indexOf('new') !== -1
         });
 
-        return 'Scope.imports[\'' + query[ query.length - 1 ] + '\']';
+        return 'Scope.imports[\'' + query[query.length - 1] + '\']';
       });
 
       var scope = new Galaxy.GalaxyScope(moduleMetaData,
@@ -158,7 +156,7 @@
       var view = new Galaxy.GalaxyView(scope);
       // Create module from moduleMetaData
       var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope, view);
-      Galaxy.modules[ module.systemId ] = module;
+      Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
         var importsCopy = imports.slice(0);
@@ -167,7 +165,7 @@
           if (moduleAddOnProvider) {
             var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
             var addOnInstance = providerStages.pre();
-            importedLibraries[ item.url ] = {
+            importedLibraries[item.url] = {
               name: item.url,
               module: addOnInstance
             };
@@ -176,7 +174,7 @@
             module.addOnProviders.push(providerStages);
 
             doneImporting(module, importsCopy);
-          } else if (importedLibraries[ item.url ] && !item.fresh) {
+          } else if (importedLibraries[item.url] && !item.fresh) {
             doneImporting(module, importsCopy);
           } else {
             Galaxy.load({
@@ -204,9 +202,9 @@
   Core.prototype.executeCompiledModule = function (module) {
     for (var item in importedLibraries) {
       if (importedLibraries.hasOwnProperty(item)) {
-        var asset = importedLibraries[ item ];
+        var asset = importedLibraries[item];
         if (asset.module) {
-          module.scope.imports[ asset.name ] = asset.module;
+          module.scope.imports[asset.name] = asset.module;
         }
       }
     }
@@ -222,18 +220,18 @@
 
     delete module.addOnProviders;
 
-    if (!importedLibraries[ module.url ]) {
-      importedLibraries[ module.url ] = {
+    if (!importedLibraries[module.url]) {
+      importedLibraries[module.url] = {
         name: module.name || module.url,
         module: module.scope.export
       };
     } else if (module.fresh) {
-      importedLibraries[ module.url ].module = module.scope.export;
+      importedLibraries[module.url].module = module.scope.export;
     } else {
-      module.scope.imports[ module.name ] = importedLibraries[ module.url ].module;
+      module.scope.imports[module.name] = importedLibraries[module.url].module;
     }
 
-    var currentModule = Galaxy.modules[ module.systemId ];
+    var currentModule = Galaxy.modules[module.systemId];
     if (module.temporary || module.scope._doNotRegister) {
       delete module.scope._doNotRegister;
       currentModule = {
@@ -242,18 +240,18 @@
       };
     }
 
-    if ('function' === typeof (Galaxy.onModuleLoaded[ module.systemId ])) {
-      Galaxy.onModuleLoaded[ module.systemId ](currentModule);
-      delete Galaxy.onModuleLoaded[ module.systemId ];
+    if ('function' === typeof (Galaxy.onModuleLoaded[module.systemId])) {
+      Galaxy.onModuleLoaded[module.systemId](currentModule);
+      delete Galaxy.onModuleLoaded[module.systemId];
     }
 
-    delete Galaxy.onLoadQueue[ module.systemId ];
+    delete Galaxy.onLoadQueue[module.systemId];
   };
 
   Core.prototype.getModuleAddOnProvider = function (name) {
     return this.addOnProviders.filter(function (service) {
       return service.name === name;
-    })[ 0 ];
+    })[0];
   };
 
   Core.prototype.getModulesByAddOnId = function (addOnId) {
@@ -261,10 +259,10 @@
     var module;
 
     for (var moduleId in this.modules) {
-      module = this.modules[ moduleId ];
+      module = this.modules[moduleId];
       if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
         modules.push({
-          addOn: module.addOns[ addOnId ],
+          addOn: module.addOns[addOnId],
           module: module
         });
       }

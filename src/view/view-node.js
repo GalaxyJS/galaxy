@@ -1,4 +1,9 @@
+/* global Galaxy */
 (function (GV) {
+  /**
+   *
+   * @returns {Galaxy.GalaxyView.ViewNode}
+   */
   GV.ViewNode = ViewNode;
 
   /**
@@ -9,6 +14,11 @@
    * @constructor
    */
   function ViewNode(root, nodeSchema) {
+    /**
+     *
+     * @public
+     * @type {Galaxy.GalaxyView}
+     */
     this.root = root;
     this.node = document.createElement(nodeSchema.t || 'div');
     this.nodeSchema = nodeSchema;
@@ -16,11 +26,18 @@
     this.mutator = {};
     this.template = false;
     this.placeholder = document.createComment(this.node.tagName);
-    this.parents = [];
-    this.inDOM = true;
+    this.properties = {};
+    this.values = {};
+    this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
 
     this.node.__galaxyView__ = this;
   }
+
+  ViewNode.prototype.cloneSchema = function () {
+    return Galaxy.extend({
+      mother: this
+    }, this.nodeSchema);
+  };
 
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
@@ -36,10 +53,18 @@
     }
   };
 
-  ViewNode.prototype.addHostNode = function (item) {
-    if (this.parents.indexOf(item) === -1) {
-      this.parents.push(item);
-    }
+  /**
+   *
+   * @param {Galaxy.GalaxyView.BoundProperty} property
+   */
+  ViewNode.prototype.addProperty = function (property) {
+    // if (this.properties.indexOf(item) === -1) {
+    //   this.properties.push(item);
+    // }
+
+    // if (this.properties[property.name] !== property) {
+    this.properties[property.name] = property;
+    // }
   };
 
   ViewNode.prototype.destroy = function () {
@@ -52,15 +77,17 @@
       _this.placeholder.parentNode.removeChild(_this.placeholder);
     }
 
-    var nodeIndexInTheHost = -1;
-    _this.parents.forEach(function (host) {
-      nodeIndexInTheHost = host.indexOf(_this);
-      if (nodeIndexInTheHost !== -1) {
-        host.splice(nodeIndexInTheHost, 1);
-      }
-    });
+    var nodeIndexInTheHost, property;
 
-    _this.parents = [];
-  }
+    for (var propertyName in _this.properties) {
+      property = _this.properties[propertyName];
+      nodeIndexInTheHost = property.nodes.indexOf(_this);
+      if (nodeIndexInTheHost !== -1) {
+        property.nodes.splice(nodeIndexInTheHost, 1);
+      }
+    }
+
+    _this.properties = [];
+  };
 
 })(Galaxy.GalaxyView);
