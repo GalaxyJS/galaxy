@@ -7,53 +7,71 @@
       viewNode.toTemplate();
       this.makeBinding(viewNode, nodeScopeData, 'reactive_for', matches[2]);
     },
-    onApply: function (viewNode, value, matches, nodeScopeData) {
-      // var oldItems = viewNode.forItems || [];
-      // var newItems = [];
-
-
-      // debugger;
-      // oldItems.forEach(function (node) {
-      //   node.destroy();
-      // });
-// debugger;
+    onApply: function (viewNode, changes, matches, nodeScopeData) {
+      var _this = this;
       var propName = matches[1];
       var newNodeSchema = viewNode.cloneSchema();
-//       // newNodeSchema.inDOM = false;
       newNodeSchema.reactive.for = null;
       var parentNode = viewNode.placeholder.parentNode;
-      // var predefined = Object.assign({}, nodeScopeData);
-      // predefined[propName] = null;
+      var position = null;
+      var newItems = [];
+      var forCachedItems = [];
 
-      // var itemDataScope;
-
-      if (value instanceof Array) {
-        for (var i = 0, len = value.length; i < len; i++) {
-          var valueEntity = value[i];
-          if (valueEntity.__schemas__ && valueEntity.__schemas__.indexOf(viewNode) !== -1) {
-            continue;
-          }
-
-          var itemDataScope =  nodeScopeData;
-          itemDataScope[propName] = valueEntity;
-          // debugger;
-          // console.info(i , itemDataScope)
-          this.append(newNodeSchema, itemDataScope, parentNode);
-        }
+      if (!viewNode.cache.for) {
+        viewNode.cache.for = forCachedItems;
       } else {
-        for (var index in value) {
-          var valueEntity = value[index];
-          if (valueEntity.__schemas__ && valueEntity.__schemas__.length/* && valueEntity.__schemas__.filter(filter).length*/) {
-            continue;
-          }
-
-          itemDataScope = nodeScopeData;
-          itemDataScope[propName] = valueEntity;
-          this.append(newNodeSchema, itemDataScope, parentNode);
-        }
+        forCachedItems = viewNode.cache.for;
       }
 
-      // viewNode.forItems = newItems;
+      var action = forCachedItems.push;
+
+      if (changes.type === 'push') {
+        newItems = changes.params;
+      } else if (changes.type === 'unshift') {
+        position = forCachedItems[0] ? forCachedItems[0].node : null;
+        newItems = changes.params;
+        action = forCachedItems.unshift;
+      } else if (changes.type === 'splice') {
+        var removedItems = Array.prototype.splice.apply(forCachedItems, changes.params.slice(0, 2));
+        newItems = changes.params.slice(2);
+        removedItems.forEach(function (viewNode) {
+          viewNode.destroy();
+        });
+      } else if (changes.type === 'pop') {
+        forCachedItems.pop().destroy();
+      } else if (changes.type === 'shift') {
+        forCachedItems.shift().destroy();
+      } else if (changes.type === 'sort' || changes.type === 'reverse') {
+        forCachedItems.forEach(function (viewNode) {
+          viewNode.destroy();
+        });
+
+        forCachedItems = [];
+        newItems = changes.original;
+      }
+
+      var valueEntity;
+      if (newItems instanceof Array) {
+        for (var i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+
+          var itemDataScope = Object.assign({}, nodeScopeData);
+          itemDataScope[propName] = valueEntity;
+
+          action.call(forCachedItems, _this.append(newNodeSchema, itemDataScope, parentNode, position));
+        }
+      } else {
+        // for (var index in value) {
+        //   valueEntity = value[index];
+        //   if (valueEntity.__schemas__ && valueEntity.__schemas__.length/* && valueEntity.__schemas__.filter(filter).length*/) {
+        //     continue;
+        //   }
+        //
+        //   itemDataScope = nodeScopeData;
+        //   itemDataScope[propName] = valueEntity;
+        //   this.append(newNodeSchema, itemDataScope, parentNode);
+        // }
+      }
     }
   };
 })(Galaxy.GalaxyView);

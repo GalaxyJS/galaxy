@@ -34,16 +34,18 @@
     }
   };
 
-  BoundProperty.prototype.setValue = function (attributeName, value, changes) {
+  BoundProperty.prototype.setValue = function (attributeName, value) {
     this.value = value;
-    if (changes) {
-      for (var i = 0, len = this.nodes.length; i < len; i++) {
-        this.setMutatedValueFor(this.nodes[i], attributeName, changes);
-      }
-    } else {
-      for (var i = 0, len = this.nodes.length; i < len; i++) {
-        this.setValueFor(this.nodes[i], attributeName, value);
-      }
+    var i = 0, len = 0;
+    for (i = 0, len = this.nodes.length; i < len; i++) {
+      this.setValueFor(this.nodes[i], attributeName, value);
+    }
+  };
+
+  BoundProperty.prototype.updateValue = function (attributeName, value) {
+    var i = 0, len = 0;
+    for (i = 0, len = this.nodes.length; i < len; i++) {
+      this.setUpdateFor(this.nodes[i], attributeName, value);
     }
   };
 
@@ -59,8 +61,8 @@
     node.root.setPropertyForNode(node, attributeName, newValue);
   };
 
-  BoundProperty.prototype.setMutatedValueFor = function (node, attributeName, changes) {
-    node.root.setPropertyForNode(node, attributeName, changes);
+  BoundProperty.prototype.setUpdateFor = function (node, attributeName, value) {
+    node.root.setPropertyForNode(node, attributeName, value);
   };
 
 })(Galaxy.GalaxyView);

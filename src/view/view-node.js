@@ -22,14 +22,14 @@
     this.root = root;
     this.node = document.createElement(nodeSchema.t || 'div');
     this.nodeSchema = nodeSchema;
-    this.scope = {};
+    this.data = {};
     this.mutator = {};
     this.template = false;
     this.placeholder = document.createComment(this.node.tagName);
     this.properties = {};
     this.values = {};
     this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
-
+    this.cache = {};
     this.node.__galaxyView__ = this;
   }
 
