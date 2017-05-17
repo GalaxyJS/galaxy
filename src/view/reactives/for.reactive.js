@@ -5,48 +5,45 @@
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
     bind: function (viewNode, nodeScopeData, matches) {
       viewNode.toTemplate();
-      this.makeBinding(viewNode, nodeScopeData, 'reactive_for', matches[2]);
+      viewNode.root.makeBinding(viewNode, nodeScopeData, 'reactive_for', matches[2]);
     },
-    onApply: function (viewNode, changes, matches, nodeScopeData) {
-      var _this = this;
-      var propName = matches[1];
-      var newNodeSchema = viewNode.cloneSchema();
-      newNodeSchema.reactive.for = null;
+    getCache: function (matches) {
+      return {
+        propName: matches[1],
+        clonedNodeSchema: null,
+        nodes: []
+      };
+    },
+    onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
+      cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
+      cache.clonedNodeSchema.reactive.for = null;
       var parentNode = viewNode.placeholder.parentNode;
       var position = null;
       var newItems = [];
-      var forCachedItems = [];
-
-      if (!viewNode.cache.for) {
-        viewNode.cache.for = forCachedItems;
-      } else {
-        forCachedItems = viewNode.cache.for;
-      }
-
-      var action = forCachedItems.push;
+      var action = Array.prototype.push;
 
       if (changes.type === 'push') {
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = forCachedItems[0] ? forCachedItems[0].node : null;
+        position = cache.nodes[0] ? cache.nodes[0].node : null;
         newItems = changes.params;
-        action = forCachedItems.unshift;
+        action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
-        var removedItems = Array.prototype.splice.apply(forCachedItems, changes.params.slice(0, 2));
+        var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
         removedItems.forEach(function (viewNode) {
           viewNode.destroy();
         });
       } else if (changes.type === 'pop') {
-        forCachedItems.pop().destroy();
+        cache.nodes.pop().destroy();
       } else if (changes.type === 'shift') {
-        forCachedItems.shift().destroy();
+        cache.nodes.shift().destroy();
       } else if (changes.type === 'sort' || changes.type === 'reverse') {
-        forCachedItems.forEach(function (viewNode) {
+        cache.nodes.forEach(function (viewNode) {
           viewNode.destroy();
         });
 
-        forCachedItems = [];
+        cache.nodes = [];
         newItems = changes.original;
       }
 
@@ -56,9 +53,9 @@
           valueEntity = newItems[i];
 
           var itemDataScope = Object.assign({}, nodeScopeData);
-          itemDataScope[propName] = valueEntity;
+          itemDataScope[cache.propName] = valueEntity;
 
-          action.call(forCachedItems, _this.append(newNodeSchema, itemDataScope, parentNode, position));
+          action.call(cache.nodes, viewNode.root.append(cache.clonedNodeSchema, itemDataScope, parentNode, position));
         }
       } else {
         // for (var index in value) {

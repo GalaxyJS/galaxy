@@ -29,8 +29,8 @@
     this.properties = {};
     this.values = {};
     this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
-    this.cache = {};
-    this.node.__galaxyView__ = this;
+    this.setters = {};
+    this.reactive = {};
   }
 
   ViewNode.prototype.cloneSchema = function () {
@@ -57,14 +57,9 @@
    *
    * @param {Galaxy.GalaxyView.BoundProperty} property
    */
-  ViewNode.prototype.addProperty = function (property) {
-    // if (this.properties.indexOf(item) === -1) {
-    //   this.properties.push(item);
-    // }
-
-    // if (this.properties[property.name] !== property) {
+  ViewNode.prototype.addProperty = function (property, attributeName) {
     this.properties[property.name] = property;
-    // }
+    this.setters[attributeName] = this.root.getPropertySetter(this, attributeName);
   };
 
   ViewNode.prototype.destroy = function () {

@@ -28,23 +28,22 @@
    * @param {Galaxy.GalaxyView.ViewNode} node
    * @public
    */
-  BoundProperty.prototype.addNode = function (node) {
+  BoundProperty.prototype.addNode = function (node, attributeName) {
     if (this.nodes.indexOf(node) === -1) {
+      node.addProperty(this, attributeName);
       this.nodes.push(node);
     }
   };
 
   BoundProperty.prototype.setValue = function (attributeName, value) {
     this.value = value;
-    var i = 0, len = 0;
-    for (i = 0, len = this.nodes.length; i < len; i++) {
+    for (var i = 0, len = this.nodes.length; i < len; i++) {
       this.setValueFor(this.nodes[i], attributeName, value);
     }
   };
 
   BoundProperty.prototype.updateValue = function (attributeName, value) {
-    var i = 0, len = 0;
-    for (i = 0, len = this.nodes.length; i < len; i++) {
+    for (var i = 0, len = this.nodes.length; i < len; i++) {
       this.setUpdateFor(this.nodes[i], attributeName, value);
     }
   };
@@ -58,11 +57,11 @@
     }
 
     node.values[attributeName] = newValue;
-    node.root.setPropertyForNode(node, attributeName, newValue);
+    node.setters[attributeName](newValue);
   };
 
   BoundProperty.prototype.setUpdateFor = function (node, attributeName, value) {
-    node.root.setPropertyForNode(node, attributeName, value);
+    node.setters[attributeName](value);
   };
 
 })(Galaxy.GalaxyView);

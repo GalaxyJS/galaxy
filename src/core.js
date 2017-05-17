@@ -22,10 +22,9 @@
   }
 
   Core.prototype.extend = function (out) {
-    out = out || {};
-
+    var result = out || {}, obj;
     for (var i = 1; i < arguments.length; i++) {
-      var obj = arguments[i];
+      obj = arguments[i];
 
       if (!obj)
         continue;
@@ -33,16 +32,16 @@
       for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
           if (obj[key] instanceof Array)
-            out[key] = this.extend(out[key] || [], obj[key]);
+            result[key] = this.extend(result[key] || [], obj[key]);
           else if (typeof obj[key] === 'object' && obj[key] !== null)
-            out[key] = this.extend(out[key] || {}, obj[key]);
+            result[key] = this.extend(result[key] || {}, obj[key]);
           else
-            out[key] = obj[key];
+            result[key] = obj[key];
         }
       }
     }
 
-    return out;
+    return result;
   };
 
   Core.prototype.boot = function (bootModule, rootElement) {
