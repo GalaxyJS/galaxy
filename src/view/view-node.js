@@ -48,7 +48,9 @@
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
       this.placeholder.parentNode.insertBefore(this.node, this.placeholder.nextSibling);
+      this.placeholder.parentNode.removeChild(this.placeholder);
     } else if (!flag && this.node.parentNode) {
+      this.node.parentNode.insertBefore(this.placeholder, this.node);
       this.node.parentNode.removeChild(this.node);
     }
   };
@@ -82,7 +84,7 @@
       }
     }
 
-    _this.properties = [];
+    _this.properties = {};
   };
 
 })(Galaxy.GalaxyView);

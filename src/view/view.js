@@ -1,6 +1,8 @@
 /* global Galaxy */
 
 (function (root, G) {
+  var defineProp = Object.defineProperty;
+
   root.Galaxy = G;
   /**
    *
@@ -58,7 +60,7 @@
     },
     text: {
       type: 'prop',
-      name: 'innerText'
+      name: 'textContent'
     },
     value: {
       type: 'prop',
@@ -136,7 +138,8 @@
         _this.append(nodeSchema.children, parentScopeData, viewNode.node);
 
         if (viewNode.inDOM) {
-          parentNode.insertBefore(viewNode.node, position);
+          // parentNode.insertBefore(viewNode.node, position);
+          viewNode.setInDOM(true);
         }
       }
 
@@ -186,9 +189,7 @@
         break;
 
       case 'reactive':
-        // if (viewNode.reactive[property.name]) {
-        viewNode.reactive[property.name].call(this, viewNode, newValue);
-        // }
+        viewNode.reactive[property.name](viewNode, newValue);
         break;
     }
   };
@@ -210,13 +211,15 @@
       case 'prop':
         return function (value) {
           var newValue = property.parser ? property.parser(value) : value;
+          // requestAnimationFrame(function (p1) {
           viewNode.node[property.name] = newValue;
+          // });
         };
 
       case 'reactive':
         return function (value) {
           var newValue = property.parser ? property.parser(value) : value;
-          viewNode.reactive[property.name].call(this, viewNode, newValue);
+          viewNode.reactive[property.name](viewNode, newValue);
         };
     }
   };
@@ -254,20 +257,12 @@
       }
     }
 
-    if (typeof dataHostObject.__schemas__ === 'undefined') {
-      Object.defineProperty(dataHostObject, '__schemas__', {
-        enumerable: false,
-        configurable: false,
-        value: []
-      });
-    }
-
     var referenceName = '[' + propertyName + ']';
     var boundProperty = dataHostObject[referenceName];
-    if (typeof dataHostObject[referenceName] === 'undefined') {
+    if (typeof boundProperty === 'undefined') {
       boundProperty = new GalaxyView.BoundProperty(propertyName);
 
-      Object.defineProperty(dataHostObject, referenceName, {
+      defineProp(dataHostObject, referenceName, {
         enumerable: false,
         configurable: false,
         value: boundProperty
@@ -282,7 +277,7 @@
       enumerable = false;
     }
 
-    Object.defineProperty(dataHostObject, propertyName, {
+    defineProp(dataHostObject, propertyName, {
       get: function () {
         return boundProperty.value;
       },
@@ -300,10 +295,6 @@
       boundProperty.value = initValue;
       if (!childProperty) {
         boundProperty.addNode(viewNode, attributeName);
-
-        if (viewNode.nodeSchema.mother && dataHostObject.__schemas__.indexOf(viewNode.nodeSchema.mother) === -1) {
-          dataHostObject.__schemas__.push(viewNode.nodeSchema.mother);
-        }
       }
     }
 
