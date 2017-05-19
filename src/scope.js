@@ -18,7 +18,7 @@
     urlParser.href = module.url;
     var myRegexp = /([^\t\n]+)\//g;
     var match = myRegexp.exec(urlParser.pathname);
-    this.path = match[ 0 ];
+    this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
   }
 

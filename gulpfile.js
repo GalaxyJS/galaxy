@@ -10,6 +10,7 @@ var minify = require('gulp-minify');
 var gulpDocumentation = require('gulp-documentation');
 var pump = require('pump');
 var concat = require('gulp-concat');
+var Server = require('karma').Server;
 
 var sources = {
   galaxy: [
@@ -39,11 +40,11 @@ gulp.task('build-galaxy', function () {
   });
 });
 
-gulp.task('start-development', [ 'build-galaxy' ], function () {
+gulp.task('start-development', ['build-galaxy'], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], [ 'build-galaxy' ]);
+  ], ['build-galaxy']);
 });
 
 gulp.task('generate-docs', function () {
@@ -52,4 +53,10 @@ gulp.task('generate-docs', function () {
       filename: 'galaxy-doc.html'
     }))
     .pipe(gulp.dest('docs'));
+});
+
+gulp.task('tdd', function (done) {
+  new Server({
+    configFile: __dirname + '/karma.config.js'
+  }, done).start();
 });

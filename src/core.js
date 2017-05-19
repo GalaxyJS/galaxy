@@ -44,12 +44,21 @@
     return result;
   };
 
+  /**
+   *
+   * @param bootModule
+   * @param {Element} rootElement
+   */
   Core.prototype.boot = function (bootModule, rootElement) {
     var _this = this;
     _this.rootElement = rootElement;
 
     bootModule.domain = this;
     bootModule.id = 'system';
+
+    if(!rootElement) {
+      throw new Error('Second argument is mandatory');
+    }
 
     var promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
@@ -210,6 +219,8 @@
 
     var moduleSource = new Function('Scope', 'View', module.source);
     moduleSource.call(null, module.scope, module.view);
+
+    // console.info(moduleSource.toString());
 
     delete module.source;
 

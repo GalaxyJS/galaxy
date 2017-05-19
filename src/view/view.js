@@ -73,7 +73,11 @@
     reactive_if: {
       type: 'reactive',
       name: 'if'
-    }
+    },
+    // t: {
+    //   type: 'reactive',
+    //   name: 'tag'
+    // }
   };
 
   GalaxyView.prototype.init = function (schema) {
@@ -103,6 +107,12 @@
         viewNode.mutator = nodeSchema['mutator'];
       }
 
+      var behaviors = Object.keys(nodeSchema).filter(function (key) {
+        return key.indexOf('$') === 0;
+      });
+
+      debugger;
+
       if (nodeSchema['reactive']) {
         parentScopeData = _this.addReactiveBehaviors(viewNode, nodeSchema, nodeScopeData, nodeSchema['reactive']);
       }
@@ -118,6 +128,8 @@
         attributeValue = nodeSchema[attributeName];
         bind = null;
         type = typeof(attributeValue);
+
+        // register behavior if the attributeName refer to a behavior
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
