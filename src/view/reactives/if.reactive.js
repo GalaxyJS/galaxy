@@ -1,12 +1,13 @@
 /* global Galaxy */
 
 (function (GV) {
-  GV.REACTIVE_BEHAVIORS[ '$if' ] = {
+  GV.REACTIVE_BEHAVIORS['$if'] = {
     regex: null,
     bind: function (viewNode, nodeScopeData, matches) {
-      viewNode.root.makeBinding(viewNode, nodeScopeData, '$if', matches);
+      // debugger;
     },
-    onApply: function (viewNode, value) {
+    onApply: function (cache, viewNode, value) {
+      // console.info('apply $if', value);
       if (value) {
         viewNode.setInDOM(true);
       } else {

@@ -39,12 +39,12 @@
      * @type {Galaxy.GalaxyView}
      */
     this.root = root;
-    this.node = createElem(nodeSchema.t || 'div');
+    this.node = createElem(nodeSchema.tag || 'div');
     this.nodeSchema = nodeSchema;
     this.data = {};
     this.mutator = {};
     this.template = false;
-    this.placeholder = createComment(nodeSchema.t || 'div');
+    this.placeholder = createComment(nodeSchema.tag || 'div');
     this.properties = {};
     this.values = {};
     this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
@@ -53,9 +53,15 @@
   }
 
   ViewNode.prototype.cloneSchema = function () {
-    return Galaxy.extend({
-      mother: this
-    }, this.nodeSchema);
+    var clone = Object.assign({}, this.nodeSchema);
+    Object.defineProperty(clone, 'mother', {
+      value: this.nodeSchema,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+
+    return clone;
   };
 
   ViewNode.prototype.toTemplate = function () {
@@ -81,6 +87,12 @@
   ViewNode.prototype.addProperty = function (property, attributeName) {
     this.properties[property.name] = property;
     this.setters[attributeName] = this.root.getPropertySetter(this, attributeName);
+    if (!this.setters[attributeName]) {
+      var _this = this;
+      this.setters[attributeName] = function () {
+        console.error('No setter for property :', attributeName, '\nNode:', _this);
+      };
+    }
   };
 
   ViewNode.prototype.destroy = function () {

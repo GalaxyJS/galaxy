@@ -16,7 +16,7 @@
     },
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
       cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
-      cache.clonedNodeSchema.$for = null;
+      delete cache.clonedNodeSchema.$for;
       var parentNode = viewNode.placeholder.parentNode;
       var position = null;
       var newItems = [];
@@ -47,7 +47,7 @@
         newItems = changes.original;
       }
 
-      var valueEntity, itemDataScope = Object.assign({}, nodeScopeData);
+      var valueEntity, itemDataScope =  nodeScopeData;
       var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns = cache.clonedNodeSchema;
 
       // Galaxy.GalaxyView.nextTick(function () {
