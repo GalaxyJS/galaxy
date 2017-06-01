@@ -1,11 +1,11 @@
 /* global Galaxy */
 
 (function (GV) {
-  GV.REACTIVE_BEHAVIORS['for'] = {
+  GV.REACTIVE_BEHAVIORS['$for'] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
     bind: function (viewNode, nodeScopeData, matches) {
       viewNode.toTemplate();
-      viewNode.root.makeBinding(viewNode, nodeScopeData, 'reactive_for', matches[2]);
+      viewNode.root.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
     },
     getCache: function (matches) {
       return {
@@ -16,7 +16,7 @@
     },
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
       cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
-      cache.clonedNodeSchema.reactive.for = null;
+      cache.clonedNodeSchema.$for = null;
       var parentNode = viewNode.placeholder.parentNode;
       var position = null;
       var newItems = [];
@@ -47,15 +47,17 @@
         newItems = changes.original;
       }
 
-      var valueEntity;
+      var valueEntity, itemDataScope = Object.assign({}, nodeScopeData);
+      var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns = cache.clonedNodeSchema;
+
+      // Galaxy.GalaxyView.nextTick(function () {
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
 
-          var itemDataScope = Object.assign({}, nodeScopeData);
-          itemDataScope[cache.propName] = valueEntity;
+          itemDataScope[p] = valueEntity;
 
-          action.call(cache.nodes, viewNode.root.append(cache.clonedNodeSchema, itemDataScope, parentNode, position));
+          action.call(n, vr.append(cns, itemDataScope, parentNode, position));
         }
       } else {
         // for (var index in value) {
@@ -69,6 +71,7 @@
         //   this.append(newNodeSchema, itemDataScope, parentNode);
         // }
       }
+      // });
     }
   };
 })(Galaxy.GalaxyView);

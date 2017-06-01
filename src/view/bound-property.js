@@ -26,6 +26,7 @@
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {String} attributeName
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName) {

@@ -1,10 +1,10 @@
 /* global Galaxy */
 
 (function (GV) {
-  GV.REACTIVE_BEHAVIORS[ 'if' ] = {
+  GV.REACTIVE_BEHAVIORS[ '$if' ] = {
     regex: null,
     bind: function (viewNode, nodeScopeData, matches) {
-      viewNode.root.makeBinding(viewNode, nodeScopeData, 'reactive_if', matches);
+      viewNode.root.makeBinding(viewNode, nodeScopeData, '$if', matches);
     },
     onApply: function (viewNode, value) {
       if (value) {

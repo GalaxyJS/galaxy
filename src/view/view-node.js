@@ -1,5 +1,24 @@
 /* global Galaxy */
 (function (GV) {
+
+  function createElem(t) {
+    return document.createElement(t);
+  }
+
+  var commentNode = document.createComment('');
+
+  function createComment(t) {
+    return commentNode.cloneNode();
+  }
+
+  function insertBefore(parentNode, newNode, referenceNode) {
+    parentNode.insertBefore(newNode, referenceNode);
+  }
+
+  function removeChild(node, child) {
+    node.removeChild(child);
+  }
+
   /**
    *
    * @returns {Galaxy.GalaxyView.ViewNode}
@@ -20,12 +39,12 @@
      * @type {Galaxy.GalaxyView}
      */
     this.root = root;
-    this.node = document.createElement(nodeSchema.t || 'div');
+    this.node = createElem(nodeSchema.t || 'div');
     this.nodeSchema = nodeSchema;
     this.data = {};
     this.mutator = {};
     this.template = false;
-    this.placeholder = document.createComment(this.node.tagName);
+    this.placeholder = createComment(nodeSchema.t || 'div');
     this.properties = {};
     this.values = {};
     this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
@@ -47,11 +66,11 @@
   ViewNode.prototype.setInDOM = function (flag) {
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
-      this.placeholder.parentNode.insertBefore(this.node, this.placeholder.nextSibling);
-      this.placeholder.parentNode.removeChild(this.placeholder);
+      insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
+      removeChild(this.placeholder.parentNode, this.placeholder);
     } else if (!flag && this.node.parentNode) {
-      this.node.parentNode.insertBefore(this.placeholder, this.node);
-      this.node.parentNode.removeChild(this.node);
+      insertBefore(this.node.parentNode, this.placeholder, this.node);
+      removeChild(this.node.parentNode, this.node);
     }
   };
 
@@ -68,10 +87,10 @@
     var _this = this;
 
     if (_this.inDOM) {
-      _this.node.parentNode.removeChild(_this.placeholder);
-      _this.node.parentNode.removeChild(_this.node);
+      removeChild(_this.node.parentNode, _this.placeholder);
+      removeChild(_this.node.parentNode, _this.node);
     } else {
-      _this.placeholder.parentNode.removeChild(_this.placeholder);
+      removeChild(_this.placeholder.parentNode, _this.placeholder);
     }
 
     var nodeIndexInTheHost, property;
