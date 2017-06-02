@@ -7,7 +7,7 @@
       viewNode.toTemplate();
       viewNode.root.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
     },
-    getCache: function (matches) {
+    getCache: function (viewNode, matches) {
       return {
         propName: matches[1],
         clonedNodeSchema: null,
@@ -47,7 +47,7 @@
         newItems = changes.original;
       }
 
-      var valueEntity, itemDataScope =  nodeScopeData;
+      var valueEntity, itemDataScope = nodeScopeData;
       var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns = cache.clonedNodeSchema;
 
       // Galaxy.GalaxyView.nextTick(function () {
@@ -56,8 +56,9 @@
           valueEntity = newItems[i];
 
           itemDataScope[p] = valueEntity;
-
-          action.call(n, vr.append(cns, itemDataScope, parentNode, position));
+          var vn = vr.append(cns, itemDataScope, parentNode, position);
+          vn.data[p] = valueEntity;
+          action.call(n, vn);
         }
       } else {
         // for (var index in value) {

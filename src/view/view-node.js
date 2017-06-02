@@ -118,4 +118,8 @@
     _this.properties = {};
   };
 
+  ViewNode.prototype.empty = function () {
+    this.node.innerHTML = '';
+  };
+
 })(Galaxy.GalaxyView);

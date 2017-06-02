@@ -22,21 +22,23 @@
     this.parsedURL = urlParser.href;
   }
 
-  GalaxyScope.prototype.load = function (module, onDone) {
+  GalaxyScope.prototype.load = function (module) {
     module.parentScope = this;
     module.domain = module.domain || Galaxy;
-    G.load(module, onDone);
+    return G.load(module);
   };
 
-  GalaxyScope.prototype.loadModuleInto = function (module, view) {
-    if (module.url.indexOf('./') === 0) {
-      module.url = this.path + module.url.substr(2);
+  GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, element) {
+    var newModuleMetaData = Object.assign({}, moduleMetaData);
+    if (newModuleMetaData.url.indexOf('./') === 0) {
+      newModuleMetaData.url = this.path + moduleMetaData.url.substr(2);
     }
 
-    this.load(module, function (module) {
-      G.ui.setContent(view, module.scope.html);
-
+    newModuleMetaData.element = element;
+    return this.load(newModuleMetaData).then(function (module) {
       module.start();
+
+      return module;
     });
   };
 
