@@ -28,13 +28,13 @@
     return G.load(module);
   };
 
-  GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, element) {
+  GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, viewNode) {
     var newModuleMetaData = Object.assign({}, moduleMetaData);
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMetaData.url.substr(2);
     }
 
-    newModuleMetaData.element = element;
+    newModuleMetaData.element = viewNode.node;
     return this.load(newModuleMetaData).then(function (module) {
       module.start();
 

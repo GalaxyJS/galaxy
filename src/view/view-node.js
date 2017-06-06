@@ -8,7 +8,7 @@
   var commentNode = document.createComment('');
 
   function createComment(t) {
-    return commentNode.cloneNode();
+    return commentNode.cloneNode(t);
   }
 
   function insertBefore(parentNode, newNode, referenceNode) {
@@ -49,7 +49,7 @@
     this.values = {};
     this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
     this.setters = {};
-    this.reactive = {};
+    this.parent = null;
   }
 
   ViewNode.prototype.cloneSchema = function () {
@@ -78,6 +78,10 @@
       insertBefore(this.node.parentNode, this.placeholder, this.node);
       removeChild(this.node.parentNode, this.node);
     }
+  };
+
+  ViewNode.prototype.render = function () {
+
   };
 
   /**

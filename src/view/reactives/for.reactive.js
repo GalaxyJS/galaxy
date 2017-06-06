@@ -17,7 +17,7 @@
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
       cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
       delete cache.clonedNodeSchema.$for;
-      var parentNode = viewNode.placeholder.parentNode;
+      var parentNode = viewNode.parent;
       var position = null;
       var newItems = [];
       var action = Array.prototype.push;

@@ -30,7 +30,7 @@
 
   GalaxyModule.prototype.init = function () {
     for (var key in this.addOns) {
-      var addOn = this.addOns[ key ];
+      var addOn = this.addOns[key];
       if (typeof addOn.onModuleInit === 'function') {
         addOn.onModuleInit();
       }
@@ -39,7 +39,7 @@
 
   GalaxyModule.prototype.start = function () {
     for (var key in this.addOns) {
-      var addOn = this.addOns[ key ];
+      var addOn = this.addOns[key];
       if (typeof addOn.onModuleStart === 'function') {
         addOn.onModuleStart();
       }
@@ -47,6 +47,6 @@
   };
 
   GalaxyModule.prototype.registerAddOn = function (id, object) {
-    this.addOns[ id ] = object;
+    this.addOns[id] = object;
   };
 }(this, Galaxy || {}));

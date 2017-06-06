@@ -14,12 +14,16 @@
     onApply: function (cache, viewNode, value, matches, scopeData) {
       if (!viewNode.template && value && value.url && value !== cache.module) {
         viewNode.empty();
-        cache.module = value;
-        cache.scope.loadModuleInto(value, viewNode.node).then(function (module) {
+        cache.scope.loadModuleInto(value, viewNode).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
-          viewNode.root.append(viewNode.nodeSchema.children, scopeData, viewNode.node);
+          viewNode.root.append(viewNode.nodeSchema.children, scopeData, viewNode);
         });
+      } else if(!value) {
+        viewNode.empty();
       }
+      // debugger;
+
+      cache.module = value;
     }
   };
 })(Galaxy.GalaxyView);

@@ -237,8 +237,6 @@
       var moduleSource = new Function('Scope', 'View', module.source);
       moduleSource.call(null, module.scope, module.view);
 
-      // console.info(moduleSource.toString());
-
       delete module.source;
 
       module.addOnProviders.forEach(function (item) {
