@@ -11,19 +11,20 @@
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, value, matches, scopeData) {
-      if (!viewNode.template && value && value.url && value !== cache.module) {
+    onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
+      if (!viewNode.template && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
         viewNode.empty();
-        cache.scope.loadModuleInto(value, viewNode).then(function (module) {
+        cache.scope.load(moduleMeta, {
+          element: viewNode
+        }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
-          viewNode.root.append(viewNode.nodeSchema.children, scopeData, viewNode);
+          viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
         });
-      } else if(!value) {
+      } else if (!moduleMeta) {
         viewNode.empty();
       }
-      // debugger;
 
-      cache.module = value;
+      cache.module = moduleMeta;
     }
   };
 })(Galaxy.GalaxyView);

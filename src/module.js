@@ -15,7 +15,7 @@
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
    */
-  function GalaxyModule(module, source, scope, view) {
+  function GalaxyModule(module, source, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
@@ -23,9 +23,7 @@
     this.addOns = module.addOns || {};
     this.domain = module.domain;
     this.addOnProviders = [];
-
     this.scope = scope;
-    this.view = view;
   }
 
   GalaxyModule.prototype.init = function () {

@@ -49,15 +49,15 @@
    * @param bootModule
    * @param {Element} rootElement
    */
-  Core.prototype.boot = function (bootModule, rootElement) {
+  Core.prototype.boot = function (bootModule) {
     var _this = this;
-    _this.rootElement = rootElement;
+    _this.rootElement = bootModule.element;
 
     bootModule.domain = this;
     bootModule.id = 'system';
 
-    if (!rootElement) {
-      throw new Error('Second argument is mandatory');
+    if (!bootModule.element) {
+      throw new Error('element property is mandatory');
     }
 
     var promise = new Promise(function (resolve, reject) {
@@ -177,9 +177,9 @@
       });
 
       var scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
-      var view = new Galaxy.GalaxyView(scope);
+      // var view = new Galaxy.GalaxyView(scope);
       // Create module from moduleMetaData
-      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope, view);
+      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
@@ -188,7 +188,7 @@
           var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
           if (moduleAddOnProvider) {
             var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-            var addOnInstance = providerStages.pre();
+            var addOnInstance = providerStages.create();
             importedLibraries[item.url] = {
               name: item.url,
               module: addOnInstance
@@ -234,13 +234,13 @@
         }
       }
 
-      var moduleSource = new Function('Scope', 'View', module.source);
-      moduleSource.call(null, module.scope, module.view);
+      var moduleSource = new Function('Scope', module.source);
+      moduleSource.call(null, module.scope);
 
       delete module.source;
 
       module.addOnProviders.forEach(function (item) {
-        item.post();
+        item.finalize();
       });
 
       delete module.addOnProviders;
@@ -266,10 +266,6 @@
       }
 
       resolve(currentModule);
-      // if ('function' === typeof (Galaxy.onModuleLoaded[module.systemId])) {
-      //   Galaxy.onModuleLoaded[module.systemId](currentModule);
-      //   delete Galaxy.onModuleLoaded[module.systemId];
-      // }
 
       delete Galaxy.onLoadQueue[module.systemId];
     });

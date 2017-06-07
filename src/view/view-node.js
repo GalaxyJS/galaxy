@@ -29,33 +29,33 @@
    *
    * @param {Galaxy.GalaxyView} root
    * @param node
-   * @param nodeSchema
+   * @param schema
    * @constructor
    */
-  function ViewNode(root, nodeSchema) {
+  function ViewNode(root, schema) {
     /**
      *
      * @public
      * @type {Galaxy.GalaxyView}
      */
     this.root = root;
-    this.node = createElem(nodeSchema.tag || 'div');
-    this.nodeSchema = nodeSchema;
+    this.node = schema.node || createElem(schema.tag || 'div');
+    this.schema = schema;
     this.data = {};
     this.mutator = {};
     this.template = false;
-    this.placeholder = createComment(nodeSchema.tag || 'div');
+    this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.values = {};
-    this.inDOM = typeof nodeSchema.inDOM === 'undefined' ? true : nodeSchema.inDOM;
+    this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
   }
 
   ViewNode.prototype.cloneSchema = function () {
-    var clone = Object.assign({}, this.nodeSchema);
+    var clone = Object.assign({}, this.schema);
     Object.defineProperty(clone, 'mother', {
-      value: this.nodeSchema,
+      value: this.schema,
       writable: false,
       enumerable: false,
       configurable: false
@@ -65,7 +65,7 @@
   };
 
   ViewNode.prototype.toTemplate = function () {
-    this.placeholder.nodeValue = JSON.stringify(this.nodeSchema, null, 2);
+    this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.template = true;
   };
 
@@ -80,8 +80,9 @@
     }
   };
 
-  ViewNode.prototype.render = function () {
-
+  ViewNode.prototype.append = function (viewNode, position) {
+    viewNode.parent = this;
+    this.node.insertBefore(viewNode.placeholder, position);
   };
 
   /**

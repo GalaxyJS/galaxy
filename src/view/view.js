@@ -75,8 +75,17 @@
    */
   function GalaxyView(scope) {
     this.scope = scope;
-    var rootElement = new GalaxyView.ViewNode(this, {});
-    rootElement.node = scope.element;
+    var rootElement;
+
+    if (scope.element instanceof GalaxyView.ViewNode) {
+      rootElement = scope.element;
+    } else {
+      rootElement = new GalaxyView.ViewNode(this, {
+        tag: scope.element.tagName,
+        node: scope.element
+      });
+    }
+
     this.container = rootElement;
   }
 
@@ -174,8 +183,7 @@
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       var viewNode = new GalaxyView.ViewNode(_this, nodeSchema);
-      viewNode.parent = parentViewNode;
-      parentViewNode.node.insertBefore(viewNode.placeholder, position);
+      parentViewNode.append(viewNode, position);
 
       if (nodeSchema['mutator']) {
         viewNode.mutator = nodeSchema['mutator'];
