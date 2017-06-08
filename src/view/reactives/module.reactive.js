@@ -1,6 +1,11 @@
 /* global Galaxy */
 
 (function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+    type: 'reactive',
+    name: 'module'
+  };
+
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
     bind: function (viewNode, nodeScopeData, matches) {

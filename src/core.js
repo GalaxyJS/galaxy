@@ -44,6 +44,39 @@
     return result;
   };
 
+  Core.prototype.resetObjectTo = function (out, value) {
+    if (value !== null && typeof value !== 'object') {
+      return value;
+    }
+
+    if (value === null) {
+      for (var k in out) {
+        if (typeof out[k] === 'object') {
+          out[k] = this.resetObjectTo(out[k], null);
+        }
+        else {
+          out[k] = null;
+        }
+      }
+
+      return out;
+    }
+
+    for (var key in out) {
+      if (value.hasOwnProperty(key)) {
+        out[key] = this.resetObjectTo(out[key], value[key]);
+      }
+      else if (typeof out[key] === 'object') {
+        this.resetObjectTo(out[key], null);
+      }
+      else {
+        out[key] = null;
+      }
+    }
+
+    return out;
+  };
+
   /**
    *
    * @param bootModule
@@ -165,7 +198,7 @@
 
       var imports = [];
       // extract imports from the source code
-      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:]|^)\n?\/\/.*\n?$/gm, '');
+      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
       moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         var query = path.match(/([\S]+)/gm);
         imports.push({
