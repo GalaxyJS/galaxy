@@ -24,6 +24,7 @@
         }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
           viewNode.root.append(viewNode.schema.children, scopeData, viewNode);
+          module.start();
         });
       } else if (!moduleMeta) {
         viewNode.empty();

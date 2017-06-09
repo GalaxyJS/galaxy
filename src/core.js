@@ -163,14 +163,21 @@
       // var fetcher = root.Galaxy.onModuleLoaded[url];
       var fetcherContent = root.Galaxy.moduleContents[url];
 
-      if (!fetcherContent) {
+      if (!fetcherContent || module.fresh) {
+        // root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
+        //   return response.text();
+        // }).then(function (moduleContent) {
+        //   return _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
+        //     return _this.executeCompiledModule(module);
+        //   });
+        // });
+
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
-          // debugger;
-          // var contentType = response.headers.get('content-type').split(';')[ 0 ] || 'text/html';
           return response.text();
         });
       }
 
+      // fetcherContent.then(resolve);
       fetcherContent.then(function (moduleContent) {
         _this.moduleContents[module.systemId] = moduleContent;
         _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {

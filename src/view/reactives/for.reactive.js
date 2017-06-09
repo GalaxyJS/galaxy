@@ -59,7 +59,7 @@
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
-
+          GV.cleanProperty(itemDataScope, p);
           itemDataScope[p] = valueEntity;
           var vn = vr.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;

@@ -75,6 +75,7 @@
    */
   function GalaxyView(scope) {
     this.scope = scope;
+    this.dataRepos = {};
     var rootElement;
 
     if (scope.element instanceof GalaxyView.ViewNode) {
@@ -90,6 +91,10 @@
   }
 
   GalaxyView.nextTick = nextTick;
+
+  GalaxyView.cleanProperty = function (obj, key) {
+    delete obj[key];
+  };
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
@@ -150,6 +155,10 @@
       type: 'event',
       name: 'click'
     }
+  };
+
+  GalaxyView.prototype.setupRepos = function (repos) {
+    this.dataRepos = repos;
   };
 
   GalaxyView.prototype.init = function (schema) {
@@ -376,15 +385,15 @@
                 return visible.indexOf(key) === -1;
               });
 
-              // newVisible.forEach(function (key) {
-              //   if (hidden.indexOf('[' + key + ']') !== -1) {
-              //     descriptors['[' + key + ']'].value.value = newValue[key];
-              //     // descriptors['[' + key + ']'].value.setValue(newValue[key]);
-              //     debugger;
-              //     defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
-              //     defineProp(newValue, key, descriptors[key]);
-              //   }
-              // });
+              newVisible.forEach(function (key) {
+                if (hidden.indexOf('[' + key + ']') !== -1) {
+                  descriptors['[' + key + ']'].value.value = newValue[key];
+                  descriptors['[' + key + ']'].value.setValue(newValue[key]);
+
+                  defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
+                  defineProp(newValue, key, descriptors[key]);
+                }
+              });
             }
 
             boundProperty.setValue(newValue);
@@ -440,8 +449,8 @@
     var arr = value;
     var i = 0;
     var args;
-    var updateValue = function (attr, changes) {
-      boundProperty.updateValue(attr, changes);
+    var updateValue = function (changes) {
+      boundProperty.updateValue(changes);
     };
 
     methods.forEach(function (method) {
@@ -463,7 +472,7 @@
           changes.type = method;
           changes.params = args;
 
-          updateValue(attributeName, changes);
+          updateValue(changes);
 
           return result;
         },
