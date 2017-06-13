@@ -61,6 +61,7 @@
           valueEntity = newItems[i];
           GV.cleanProperty(itemDataScope, p);
           itemDataScope[p] = valueEntity;
+          cns.node = cns.node.cloneNode();
           var vn = vr.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);

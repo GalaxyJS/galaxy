@@ -25,6 +25,11 @@
    */
   GV.ViewNode = ViewNode;
 
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'none'
+  };
+
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -50,6 +55,7 @@
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
+    this.schema.node = this.node;
   }
 
   ViewNode.prototype.cloneSchema = function () {
@@ -123,8 +129,20 @@
     _this.properties = {};
   };
 
+  var empty = function (nodes) {
+    if (nodes instanceof Array) {
+      nodes.forEach(function (node) {
+        empty(node);
+      });
+    } else if (nodes) {
+      nodes.node = null;
+      empty(nodes.children);
+    }
+  };
+
   ViewNode.prototype.empty = function () {
     this.node.innerHTML = '';
+    // empty(this.schema);
   };
 
 })(Galaxy.GalaxyView);

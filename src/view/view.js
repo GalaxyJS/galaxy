@@ -198,7 +198,6 @@
 
         bind = null;
         type = typeof(attributeValue);
-        // register behavior if the attributeName refer to a behavior
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
