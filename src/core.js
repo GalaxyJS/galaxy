@@ -1,6 +1,18 @@
 /* global Galaxy, Promise */
 
 (function (root) {
+  Array.prototype.unique = function () {
+    var a = this.concat();
+    for (var i = 0; i < a.length; ++i) {
+      for (var j = i + 1; j < a.length; ++j) {
+        if (a[i] === a[j])
+          a.splice(j--, 1);
+      }
+    }
+
+    return a;
+  };
+
   root.Galaxy = root.Galaxy || new Core();
 
   /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
@@ -62,7 +74,10 @@
       return out;
     }
 
-    for (var key in out) {
+    var outKeys = Object.keys(out);
+    var keys = outKeys.concat(Object.keys(value)).unique();
+    for (var i = 0, len = keys.length; i < len; i++) {
+      var key = keys[i];
       if (value.hasOwnProperty(key)) {
         out[key] = this.resetObjectTo(out[key], value[key]);
       }
