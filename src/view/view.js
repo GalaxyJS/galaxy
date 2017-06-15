@@ -96,6 +96,17 @@
     delete obj[key];
   };
 
+  GalaxyView.createMirror = function (obj) {
+    var result = {};
+
+    defineProp(result, '__parent__', {
+      enumerable: false,
+      value: obj
+    });
+
+    return result;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -146,10 +157,6 @@
     text: {
       type: 'prop',
       name: 'textContent'
-    },
-    value: {
-      type: 'prop',
-      name: 'value'
     },
     click: {
       type: 'event',
@@ -325,10 +332,10 @@
    * @param {String} attributeName
    * @param propertyValue
    */
-  GalaxyView.prototype.makeBinding = function (viewNode, dataHostObject, attributeName, propertyValue) {
+  GalaxyView.prototype.makeBinding = function (viewNode, hostObject, attributeName, propertyValue) {
     var _this = this;
-
-    if (typeof dataHostObject !== 'object') {
+    var hostDataObject = hostObject;
+    if (typeof hostDataObject !== 'object') {
       return;
     }
 
@@ -337,8 +344,8 @@
 
     if (typeof propertyValue === 'function') {
       propertyName = '[mutator]';
-      dataHostObject[propertyName] = dataHostObject[propertyName] || [];
-      dataHostObject[propertyName].push({
+      hostDataObject[propertyName] = hostDataObject[propertyName] || [];
+      hostDataObject[propertyName].push({
         for: attributeName,
         action: propertyValue
       });
@@ -351,20 +358,24 @@
       }
     }
 
-    var initValue = dataHostObject[propertyName];
+    if (!hostDataObject.hasOwnProperty(propertyName) && hostDataObject.__parent__ && hostDataObject.__parent__.hasOwnProperty(propertyName)) {
+      hostDataObject = hostDataObject.__parent__;
+    }
+
+    var initValue = hostDataObject[propertyName];
     var enumerable = true;
-    if (propertyName === 'length' && dataHostObject instanceof Array) {
+    if (propertyName === 'length' && hostDataObject instanceof Array) {
       propertyName = '_length';
       enumerable = false;
     }
 
     var referenceName = '[' + propertyName + ']';
-    var boundProperty = dataHostObject[referenceName];
+    var boundProperty = hostDataObject[referenceName];
 
     if (typeof boundProperty === 'undefined') {
       boundProperty = new GalaxyView.BoundProperty(propertyName);
       boundPropertyReference.value = boundProperty;
-      defineProp(dataHostObject, referenceName, boundPropertyReference);
+      defineProp(hostDataObject, referenceName, boundPropertyReference);
 
       setterAndGetter.enumerable = enumerable;
       setterAndGetter.get = function () {
@@ -406,7 +417,7 @@
         };
       }
 
-      defineProp(dataHostObject, propertyName, setterAndGetter);
+      defineProp(hostDataObject, propertyName, setterAndGetter);
     }
 
     if (boundProperty) {
@@ -417,8 +428,8 @@
     }
 
     if (childProperty) {
-      _this.makeBinding(viewNode, dataHostObject[propertyName] || {}, attributeName, childProperty);
-    } else if (typeof dataHostObject === 'object') {
+      _this.makeBinding(viewNode, hostDataObject[propertyName] || {}, attributeName, childProperty);
+    } else if (typeof hostDataObject === 'object') {
       if (initValue instanceof Array) {
         this.setArrayValue(boundProperty, attributeName, initValue, viewNode);
       } else {

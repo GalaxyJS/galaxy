@@ -60,6 +60,8 @@
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
+    empty(clone);
+    clone.node = this.node.cloneNode();
     Object.defineProperty(clone, 'mother', {
       value: this.schema,
       writable: false,

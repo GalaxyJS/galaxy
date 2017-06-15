@@ -15,13 +15,13 @@
     getCache: function (viewNode, matches) {
       return {
         propName: matches[1],
-        clonedNodeSchema: null,
+        // clonedNodeSchema: null,
         nodes: []
       };
     },
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
-      cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
-      delete cache.clonedNodeSchema.$for;
+      // cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
+      // delete cache.clonedNodeSchema.$for;
       var parentNode = viewNode.parent;
       var position = null;
       var newItems = [];
@@ -53,15 +53,17 @@
       }
 
       var valueEntity, itemDataScope = nodeScopeData;
-      var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns = cache.clonedNodeSchema;
+      var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns;
 
       // Galaxy.GalaxyView.nextTick(function () {
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
-          GV.cleanProperty(itemDataScope, p);
+          // GV.cleanProperty(itemDataScope, p);
+          itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
-          cns.node = cns.node.cloneNode();
+          cns = viewNode.cloneSchema();
+          delete cns.$for;
           var vn = vr.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);
