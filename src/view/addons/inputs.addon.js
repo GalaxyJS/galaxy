@@ -4,16 +4,41 @@
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
     type: 'custom',
     name: 'inputs',
-    handler: function (viewNode, attr, value) {
+    handler: function (viewNode, attr, value, scopeData) {
       if (typeof value !== 'object' || value === null) {
         throw new Error('Inputs must be an object');
       }
 
+      var keys = Object.keys(value);
+      var bind = null;
+      var attributeName;
+      var attributeValue;
+      var type;
+      var clone = Object.assign({} , value);
+      for (var i = 0, len = keys.length; i < len; i++) {
+        attributeName = keys[i];
+        attributeValue = value[attributeName];
+        bind = null;
+        type = typeof(attributeValue);
+
+        if (type === 'string') {
+          bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
+        } else if (type === 'function') {
+
+        } else {
+          bind = null;
+        }
+
+        if (bind) {
+          viewNode.root.makeBinding(clone, scopeData, attributeName, bind[1]);
+        }
+      }
+
       if (viewNode.hasOwnProperty('__inputs__') && value !== viewNode.__inputs__) {
-        Galaxy.resetObjectTo(viewNode.__inputs__, value);
+        Galaxy.resetObjectTo(viewNode.__inputs__, clone);
       } else if (!viewNode.hasOwnProperty('__inputs__')) {
         Object.defineProperty(viewNode, '__inputs__', {
-          value: value,
+          value: clone,
           enumerable: false
         });
       }

@@ -188,8 +188,13 @@
         // });
 
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
+          if (response.status !== 200) {
+            reject(response);
+            return '';
+          }
+
           return response.text();
-        });
+        }).catch(reject);
       }
 
       // fetcherContent.then(resolve);
@@ -200,7 +205,7 @@
         });
 
         return moduleContent;
-      });
+      }).catch(reject);
     });
 
     return promise;
@@ -244,11 +249,6 @@
           if (moduleAddOnProvider) {
             var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
             var addOnInstance = providerStages.create();
-            importedLibraries[item.url] = {
-              name: item.url,
-              module: addOnInstance
-            };
-
             module.registerAddOn(item.url, addOnInstance);
             module.addOnProviders.push(providerStages);
 
@@ -278,9 +278,17 @@
     return promise;
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyModule}  module
+   */
   Core.prototype.executeCompiledModule = function (module) {
     var promise = new Promise(function (resolve, reject) {
-      for (var item in importedLibraries) {
+      for (var item in module.addOns) {
+        module.scope.imports[item] = module.addOns[item];
+      }
+
+      for (item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           var asset = importedLibraries[item];
           if (asset.module) {
@@ -300,6 +308,7 @@
 
       delete module.addOnProviders;
 
+
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
           name: module.name || module.url,
@@ -308,7 +317,7 @@
       } else if (module.fresh) {
         importedLibraries[module.url].module = module.scope.export;
       } else {
-        module.scope.imports[module.name] = importedLibraries[module.url].module;
+        // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }
 
       var currentModule = Galaxy.modules[module.systemId];

@@ -24,6 +24,8 @@
         }).then(function (module) {
           viewNode.node.setAttribute('module', module.systemId);
           module.start();
+        }).catch(function (response) {
+          console.error(response);
         });
       } else if (!moduleMeta) {
         viewNode.empty();

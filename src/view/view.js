@@ -217,7 +217,7 @@
         if (bind) {
           _this.makeBinding(viewNode, parentScopeData, attributeName, bind[1]);
         } else {
-          _this.setPropertyForNode(viewNode, attributeName, attributeValue);
+          _this.setPropertyForNode(viewNode, attributeName, attributeValue, parentScopeData);
         }
       }
 
@@ -240,7 +240,7 @@
     if (behavior) {
       var matches = behavior.regex ? value.match(behavior.regex) : value;
 
-      viewNode.properties[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+      viewNode.properties['re_' + key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
         if (BEHAVIOR.getCache) {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
@@ -255,7 +255,7 @@
     }
   };
 
-  GalaxyView.prototype.setPropertyForNode = function (viewNode, attributeName, value) {
+  GalaxyView.prototype.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
     var property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
     var newValue = value;
 
@@ -271,7 +271,7 @@
         break;
 
       case 'reactive':
-        viewNode.properties[property.name](viewNode, newValue);
+        viewNode.properties['re_' + property.name](viewNode, newValue);
         break;
 
       case 'event':
@@ -279,7 +279,7 @@
         break;
 
       case 'custom':
-        property.handler(viewNode, attributeName, value);
+        property.handler(viewNode, attributeName, value, scopeData);
         break;
     }
   };
@@ -288,7 +288,9 @@
     var property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
-      return null;
+      return function (value) {
+        debugger;
+      };
     }
 
     var parser = property.parser;
@@ -307,7 +309,7 @@
         };
 
       case 'reactive':
-        var reactiveFunction = viewNode.properties[property.name];
+        var reactiveFunction = viewNode.properties['re_' + property.name];
         return function (value) {
           reactiveFunction(viewNode, value);
         };

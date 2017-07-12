@@ -32,7 +32,9 @@
    */
   BoundProperty.prototype.addNode = function (node, attributeName) {
     if (this.nodes.indexOf(node) === -1) {
-      node.addProperty(this, attributeName);
+      if (node instanceof Galaxy.GalaxyView.ViewNode) {
+        node.addProperty(this, attributeName);
+      }
       this.props.push(attributeName);
       this.nodes.push(node);
     }
@@ -52,20 +54,25 @@
   };
 
   BoundProperty.prototype.setValueFor = function (node, attributeName, value) {
-    var mutator = node.mutator[attributeName];
     var newValue = value;
 
-    if (mutator) {
-      newValue = mutator.call(node, value, node.values[attributeName]);
-    }
+    if (node instanceof Galaxy.GalaxyView.ViewNode) {
+      var mutator = node.mutator[attributeName];
 
-    node.values[attributeName] = newValue;
-    if (!node.setters[attributeName]) {
-      console.info(node, attributeName, newValue);
-      debugger
-    }
+      if (mutator) {
+        newValue = mutator.call(node, value, node.values[attributeName]);
+      }
 
-    node.setters[attributeName](newValue);
+      node.values[attributeName] = newValue;
+      if (!node.setters[attributeName]) {
+        console.info(node, attributeName, newValue);
+        debugger
+      }
+
+      node.setters[attributeName](newValue);
+    } else {
+      node[attributeName] = newValue;
+    }
   };
 
   BoundProperty.prototype.setUpdateFor = function (node, attributeName, value) {
