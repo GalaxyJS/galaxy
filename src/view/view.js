@@ -107,6 +107,20 @@
     return result;
   };
 
+  GalaxyView.createClone = function (source) {
+    var cloned = Object.assign({}, source);
+
+    for (var key in source) {
+      if (source.hasOwnProperty('[' + key + ']')) {
+        boundPropertyReference.value = source['[' + key + ']'];
+        defineProp(cloned, '[' + key + ']', boundPropertyReference);
+        defineProp(cloned, key, Object.getOwnPropertyDescriptor(source, key));
+      }
+    }
+
+    return cloned;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -315,8 +329,8 @@
         };
 
       case 'custom':
-        return function (value) {
-          property.handler(viewNode, attributeName, value);
+        return function (value, scopeData) {
+          property.handler(viewNode, attributeName, value, scopeData);
         };
 
       default:
@@ -388,7 +402,7 @@
         }
       };
 
-      return defineProp(target,  targetKeyName, setterAndGetter);
+      return defineProp(target, targetKeyName, setterAndGetter);
     }
 
     if (typeof boundProperty === 'undefined') {
@@ -452,7 +466,7 @@
       if (initValue instanceof Array) {
         this.setArrayValue(boundProperty, targetKeyName, initValue, target);
       } else {
-        boundProperty.setValueFor(target, targetKeyName, initValue);
+        boundProperty.setValueFor(target, targetKeyName, initValue, data);
       }
     }
   };

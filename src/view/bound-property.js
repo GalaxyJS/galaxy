@@ -53,7 +53,7 @@
     }
   };
 
-  BoundProperty.prototype.setValueFor = function (node, attributeName, value) {
+  BoundProperty.prototype.setValueFor = function (node, attributeName, value, scopeData) {
     var newValue = value;
 
     if (node instanceof Galaxy.GalaxyView.ViewNode) {
@@ -69,7 +69,7 @@
         debugger
       }
 
-      node.setters[attributeName](newValue);
+      node.setters[attributeName](newValue, scopeData);
     } else {
       node[attributeName] = newValue;
     }

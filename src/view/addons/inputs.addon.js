@@ -5,6 +5,10 @@
     type: 'custom',
     name: 'inputs',
     handler: function (viewNode, attr, value, scopeData) {
+      if (viewNode.template) {
+        return;
+      }
+
       if (typeof value !== 'object' || value === null) {
         throw new Error('Inputs must be an object');
       }
@@ -14,7 +18,7 @@
       var attributeName;
       var attributeValue;
       var type;
-      var clone = Object.assign({} , value);
+      var clone = G.GalaxyView.createClone(value);
       for (var i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = value[attributeName];
@@ -34,7 +38,7 @@
         }
       }
 
-      if (viewNode.hasOwnProperty('__inputs__') && value !== viewNode.__inputs__) {
+      if (viewNode.hasOwnProperty('__inputs__') && clone !== viewNode.__inputs__) {
         Galaxy.resetObjectTo(viewNode.__inputs__, clone);
       } else if (!viewNode.hasOwnProperty('__inputs__')) {
         Object.defineProperty(viewNode, '__inputs__', {
