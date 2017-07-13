@@ -329,55 +329,72 @@
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @param {Galaxy.GalaxyView.ViewNode | Object} target
    * @param {Object} dataHostObject
-   * @param {String} attributeName
-   * @param propertyValue
+   * @param {String} targetKeyName
+   * @param dataValueKey
    */
-  GalaxyView.prototype.makeBinding = function (viewNode, hostObject, attributeName, propertyValue) {
+  GalaxyView.prototype.makeBinding = function (target, data, targetKeyName, dataValueKey) {
     var _this = this;
-    var hostDataObject = hostObject;
-    if (typeof hostDataObject !== 'object') {
+    var dataObject = data;
+    if (typeof dataObject !== 'object') {
       return;
     }
 
-    var propertyName = propertyValue;
+    var propertyName = dataValueKey;
     var childProperty = null;
 
-    if (typeof propertyValue === 'function') {
+    if (typeof dataValueKey === 'function') {
       propertyName = '[mutator]';
-      hostDataObject[propertyName] = hostDataObject[propertyName] || [];
-      hostDataObject[propertyName].push({
-        for: attributeName,
-        action: propertyValue
+      dataObject[propertyName] = dataObject[propertyName] || [];
+      dataObject[propertyName].push({
+        for: targetKeyName,
+        action: dataValueKey
       });
       return;
     } else {
-      var items = propertyValue.split('.');
+      var items = dataValueKey.split('.');
       if (items.length > 1) {
         propertyName = items.shift();
         childProperty = items.join('.');
       }
     }
 
-    if (!hostDataObject.hasOwnProperty(propertyName) && hostDataObject.__parent__ && hostDataObject.__parent__.hasOwnProperty(propertyName)) {
-      hostDataObject = hostDataObject.__parent__;
+    if (!dataObject.hasOwnProperty(propertyName) && dataObject.__parent__ && dataObject.__parent__.hasOwnProperty(propertyName)) {
+      dataObject = dataObject.__parent__;
     }
 
-    var initValue = hostDataObject[propertyName];
+    var initValue = dataObject[propertyName];
     var enumerable = true;
-    if (propertyName === 'length' && hostDataObject instanceof Array) {
+    if (propertyName === 'length' && dataObject instanceof Array) {
       propertyName = '_length';
       enumerable = false;
     }
 
     var referenceName = '[' + propertyName + ']';
-    var boundProperty = hostDataObject[referenceName];
+    var boundProperty = dataObject[referenceName];
+
+    if (!(target instanceof Galaxy.GalaxyView.ViewNode) && boundProperty && !childProperty) {
+      boundPropertyReference.value = boundProperty;
+      defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
+
+      setterAndGetter.enumerable = enumerable;
+      setterAndGetter.get = function () {
+        return boundProperty.value;
+      };
+      setterAndGetter.set = function (newValue) {
+        if (boundProperty.value !== newValue) {
+          boundProperty.setValue(newValue);
+        }
+      };
+
+      return defineProp(target,  targetKeyName, setterAndGetter);
+    }
 
     if (typeof boundProperty === 'undefined') {
       boundProperty = new GalaxyView.BoundProperty(propertyName);
       boundPropertyReference.value = boundProperty;
-      defineProp(hostDataObject, referenceName, boundPropertyReference);
+      defineProp(dataObject, referenceName, boundPropertyReference);
 
       setterAndGetter.enumerable = enumerable;
       setterAndGetter.get = function () {
@@ -419,23 +436,23 @@
         };
       }
 
-      defineProp(hostDataObject, propertyName, setterAndGetter);
+      defineProp(dataObject, propertyName, setterAndGetter);
     }
 
     if (boundProperty) {
       boundProperty.value = initValue;
       if (!childProperty) {
-        boundProperty.addNode(viewNode, attributeName);
+        boundProperty.addNode(target, targetKeyName);
       }
     }
 
     if (childProperty) {
-      _this.makeBinding(viewNode, hostDataObject[propertyName] || {}, attributeName, childProperty);
-    } else if (typeof hostDataObject === 'object') {
+      _this.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty);
+    } else if (typeof dataObject === 'object') {
       if (initValue instanceof Array) {
-        this.setArrayValue(boundProperty, attributeName, initValue, viewNode);
+        this.setArrayValue(boundProperty, targetKeyName, initValue, target);
       } else {
-        boundProperty.setValueFor(viewNode, attributeName, initValue);
+        boundProperty.setValueFor(target, targetKeyName, initValue);
       }
     }
   };
