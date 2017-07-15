@@ -374,8 +374,17 @@
       }
     }
 
-    if (!dataObject.hasOwnProperty(propertyName) && dataObject.__parent__ && dataObject.__parent__.hasOwnProperty(propertyName)) {
-      dataObject = dataObject.__parent__;
+    if (!dataObject.hasOwnProperty(propertyName)) {
+      var tempData = dataObject;
+
+      while (tempData.__parent__) {
+        if (tempData.__parent__.hasOwnProperty(propertyName)) {
+          dataObject = tempData.__parent__;
+          break;
+        }
+
+        tempData = dataObject.__parent__;
+      }
     }
 
     var initValue = dataObject[propertyName];
@@ -387,23 +396,6 @@
 
     var referenceName = '[' + propertyName + ']';
     var boundProperty = dataObject[referenceName];
-
-    if (!(target instanceof Galaxy.GalaxyView.ViewNode) && boundProperty && !childProperty) {
-      boundPropertyReference.value = boundProperty;
-      defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
-
-      setterAndGetter.enumerable = enumerable;
-      setterAndGetter.get = function () {
-        return boundProperty.value;
-      };
-      setterAndGetter.set = function (newValue) {
-        if (boundProperty.value !== newValue) {
-          boundProperty.setValue(newValue);
-        }
-      };
-
-      return defineProp(target, targetKeyName, setterAndGetter);
-    }
 
     if (typeof boundProperty === 'undefined') {
       boundProperty = new GalaxyView.BoundProperty(propertyName);
@@ -453,11 +445,27 @@
       defineProp(dataObject, propertyName, setterAndGetter);
     }
 
-    if (boundProperty) {
-      boundProperty.value = initValue;
-      if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName);
-      }
+    if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
+      boundPropertyReference.value = boundProperty;
+      defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
+
+      setterAndGetter.enumerable = enumerable;
+      setterAndGetter.get = function () {
+        return boundProperty.value;
+      };
+      setterAndGetter.set = function (newValue) {
+        if (boundProperty.value !== newValue) {
+          boundProperty.setValue(newValue);
+        }
+      };
+
+      defineProp(target, targetKeyName, setterAndGetter);
+    }
+
+
+    boundProperty.value = initValue;
+    if (!childProperty) {
+      boundProperty.addNode(target, targetKeyName);
     }
 
     if (childProperty) {

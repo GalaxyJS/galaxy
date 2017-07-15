@@ -81,9 +81,9 @@
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
       insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
-      removeChild(this.placeholder.parentNode, this.placeholder);
+      // removeChild(this.placeholder.parentNode, this.placeholder);
     } else if (!flag && this.node.parentNode) {
-      insertBefore(this.node.parentNode, this.placeholder, this.node);
+      // insertBefore(this.node.parentNode, this.placeholder, this.node);
       removeChild(this.node.parentNode, this.node);
     }
   };
@@ -128,6 +128,7 @@
       }
     }
 
+    _this.inDOM = false;
     _this.properties = {};
   };
 
@@ -145,6 +146,14 @@
   ViewNode.prototype.empty = function () {
     this.node.innerHTML = '';
     // empty(this.schema);
+  };
+
+  ViewNode.prototype.getPlaceholder = function () {
+    if (this.inDOM) {
+      return this.node;
+    }
+
+    return this.placeholder;
   };
 
 })(Galaxy.GalaxyView);

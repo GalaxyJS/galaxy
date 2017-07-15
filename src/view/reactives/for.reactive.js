@@ -15,22 +15,26 @@
     getCache: function (viewNode, matches) {
       return {
         propName: matches[1],
-        // clonedNodeSchema: null,
         nodes: []
       };
     },
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
-      // cache.clonedNodeSchema = cache.clonedNodeSchema || viewNode.cloneSchema();
-      // delete cache.clonedNodeSchema.$for;
       var parentNode = viewNode.parent;
       var position = null;
       var newItems = [];
       var action = Array.prototype.push;
 
       if (changes.type === 'push') {
+        var length = cache.nodes.length;
+        if (length) {
+          position = cache.nodes[length - 1].getPlaceholder().nextSibling;
+        } else {
+          position = viewNode.placeholder.nextSibling;
+        }
+
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = cache.nodes[0] ? cache.nodes[0].node : null;
+        position = cache.nodes[0] ? cache.nodes[0].placeholder : null;
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
@@ -55,11 +59,9 @@
       var valueEntity, itemDataScope = nodeScopeData;
       var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns;
 
-      // Galaxy.GalaxyView.nextTick(function () {
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
-          // GV.cleanProperty(itemDataScope, p);
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
@@ -68,19 +70,7 @@
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }
-      } else {
-        // for (var index in value) {
-        //   valueEntity = value[index];
-        //   if (valueEntity.__schemas__ && valueEntity.__schemas__.length/* && valueEntity.__schemas__.filter(filter).length*/) {
-        //     continue;
-        //   }
-        //
-        //   itemDataScope = nodeScopeData;
-        //   itemDataScope[propName] = valueEntity;
-        //   this.append(newNodeSchema, itemDataScope, parentNode);
-        // }
       }
-      // });
     }
   };
 })(Galaxy.GalaxyView);

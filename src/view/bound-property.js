@@ -66,7 +66,6 @@
       node.values[attributeName] = newValue;
       if (!node.setters[attributeName]) {
         console.info(node, attributeName, newValue);
-        debugger
       }
 
       node.setters[attributeName](newValue, scopeData);
