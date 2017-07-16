@@ -19,6 +19,7 @@
       var attributeValue;
       var type;
       var clone = G.GalaxyView.createClone(value);
+
       for (var i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = value[attributeName];
@@ -46,6 +47,7 @@
           enumerable: false
         });
       }
+
     }
   };
 

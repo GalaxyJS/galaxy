@@ -51,6 +51,11 @@
     this.template = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
+    Object.defineProperty(this.properties, '__reactive__', {
+      value: {},
+      enumerable: false,
+      writable: false
+    });
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};

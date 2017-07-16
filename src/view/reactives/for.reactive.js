@@ -23,6 +23,15 @@
       var position = null;
       var newItems = [];
       var action = Array.prototype.push;
+      if (changes.type === 'reset') {
+        cache.nodes.forEach(function (viewNode) {
+          viewNode.destroy();
+        });
+
+        cache.nodes = [];
+        changes = Object.assign({}, changes);
+        changes.type = 'push';
+      }
 
       if (changes.type === 'push') {
         var length = cache.nodes.length;

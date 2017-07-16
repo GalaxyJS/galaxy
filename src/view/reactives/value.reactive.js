@@ -24,7 +24,7 @@
         return;
       }
 
-      viewNode.node.value = value;
+      viewNode.node.value = value || '';
     }
   };
 })(Galaxy.GalaxyView);
