@@ -141,7 +141,11 @@
       type: 'attr'
     },
     style: {
-      type: 'attr'
+      type: 'prop'
+    },
+    css: {
+      type: 'attr',
+      name: 'style'
     },
     html: {
       type: 'prop',
@@ -150,6 +154,9 @@
     text: {
       type: 'prop',
       name: 'textContent'
+    },
+    checked: {
+      type: 'prop'
     },
     click: {
       type: 'event',
@@ -304,7 +311,7 @@
 
     if (!property) {
       return function (value) {
-        debugger;
+        setAttr.call(viewNode.node, attributeName, value);
       };
     }
 
