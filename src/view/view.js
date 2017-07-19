@@ -100,6 +100,22 @@
     return cloned;
   };
 
+  GalaxyView.getPropertyContainer = function (data, propertyName) {
+    var container = data;
+    var tempData = data.hasOwnProperty(propertyName);
+
+    while (tempData.__parent__) {
+      if (tempData.__parent__.hasOwnProperty(propertyName)) {
+        container = tempData.__parent__;
+        break;
+      }
+
+      tempData = data.__parent__;
+    }
+
+    return container;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -152,8 +168,17 @@
       name: 'innerHTML'
     },
     text: {
-      type: 'prop',
-      name: 'textContent'
+      type: 'custom',
+      handler: function (viewNode, attr, value) {
+        var textNode = viewNode.node['[textNode]'];
+        var textValue = typeof value === 'undefined' ? '' : value;
+        if (textNode) {
+          textNode.textContent = textValue;
+        } else {
+          viewNode.node['[textNode]'] = document.createTextNode(textValue);
+          viewNode.node.insertBefore(viewNode.node['[textNode]'], viewNode.node.firstChild);
+        }
+      }
     },
     checked: {
       type: 'prop'
@@ -332,6 +357,11 @@
 
       case 'reactive':
         var reactiveFunction = viewNode.properties.__reactive__[property.name];
+
+        if (!reactiveFunction) {
+          console.error('Reactive handler not found for: ' + property.name);
+        }
+
         return function (value) {
           reactiveFunction(viewNode, value);
         };

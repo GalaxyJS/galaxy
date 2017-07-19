@@ -86,9 +86,9 @@
     this.inDOM = flag;
     if (flag && !this.node.parentNode && !this.template) {
       insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
-      // removeChild(this.placeholder.parentNode, this.placeholder);
+      removeChild(this.placeholder.parentNode, this.placeholder);
     } else if (!flag && this.node.parentNode) {
-      // insertBefore(this.node.parentNode, this.placeholder, this.node);
+      insertBefore(this.node.parentNode, this.placeholder, this.node);
       removeChild(this.node.parentNode, this.node);
     }
   };
@@ -123,10 +123,20 @@
       removeChild(_this.placeholder.parentNode, _this.placeholder);
     }
 
-    var nodeIndexInTheHost, property;
+    var nodeIndexInTheHost, property, properties = _this.properties;
 
-    for (var propertyName in _this.properties) {
-      property = _this.properties[propertyName];
+    for (var propertyName in properties) {
+      property = properties[propertyName];
+      nodeIndexInTheHost = property.nodes.indexOf(_this);
+      if (nodeIndexInTheHost !== -1) {
+        property.nodes.splice(nodeIndexInTheHost, 1);
+      }
+    }
+
+    properties = _this.properties.__reactive__;
+
+    for (propertyName in properties) {
+      property = properties[propertyName];
       nodeIndexInTheHost = property.nodes.indexOf(_this);
       if (nodeIndexInTheHost !== -1) {
         property.nodes.splice(nodeIndexInTheHost, 1);
