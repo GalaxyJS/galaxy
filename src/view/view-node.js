@@ -37,14 +37,14 @@
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema) {
+  function ViewNode(root, schema,node) {
     /**
      *
      * @public
      * @type {Galaxy.GalaxyView}
      */
     this.root = root;
-    this.node = schema.node || createElem(schema.tag || 'div');
+    this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
     this.mutator = {};
@@ -60,13 +60,28 @@
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
-    this.schema.node = this.node;
+    // this.schema.node = this.node;
+
+    Object.defineProperty(this.schema, '__node__', {
+      value: this.node,
+      configurable: false,
+      enumerable: false
+    });
+
+    var referenceToThis = {
+      value: this,
+      configurable: false,
+      enumerable: false
+    };
+
+    Object.defineProperty(this.node, '__viewNode__', referenceToThis);
+    Object.defineProperty(this.placeholder, '__viewNode__', referenceToThis);
   }
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
     empty(clone);
-    clone.node = this.node.cloneNode();
+    clone.node = this.node.cloneNode(false);
     Object.defineProperty(clone, 'mother', {
       value: this.schema,
       writable: false,
@@ -80,6 +95,7 @@
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.template = true;
+    this.setInDOM(false);
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
@@ -117,11 +133,10 @@
     var _this = this;
 
     if (_this.inDOM) {
-      removeChild(_this.node.parentNode, _this.placeholder);
       removeChild(_this.node.parentNode, _this.node);
-    } else {
-      removeChild(_this.placeholder.parentNode, _this.placeholder);
     }
+
+    _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
 
     var nodeIndexInTheHost, property, properties = _this.properties;
 
@@ -130,18 +145,20 @@
       nodeIndexInTheHost = property.nodes.indexOf(_this);
       if (nodeIndexInTheHost !== -1) {
         property.nodes.splice(nodeIndexInTheHost, 1);
+        property.props.splice(nodeIndexInTheHost, 1);
       }
     }
 
-    properties = _this.properties.__reactive__;
-
-    for (propertyName in properties) {
-      property = properties[propertyName];
-      nodeIndexInTheHost = property.nodes.indexOf(_this);
-      if (nodeIndexInTheHost !== -1) {
-        property.nodes.splice(nodeIndexInTheHost, 1);
-      }
-    }
+    // properties = _this.properties.__reactive__;
+    //
+    // for (propertyName in properties) {
+    //   property = properties[propertyName];
+    //   nodeIndexInTheHost = property.nodes ? property.nodes.indexOf(_this) : -1;
+    //   if (nodeIndexInTheHost !== -1) {
+    //     property.nodes.splice(nodeIndexInTheHost, 1);
+    //     property.props.splice(nodeIndexInTheHost, 1);
+    //   }
+    // }
 
     _this.inDOM = false;
     _this.properties = {};
@@ -159,8 +176,19 @@
   };
 
   ViewNode.prototype.empty = function () {
-    this.node.innerHTML = '';
-    // empty(this.schema);
+    var toBeRemoved = [], node;
+    for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
+      node = this.node.childNodes[i];
+      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
+
+      if (node.hasOwnProperty('__viewNode__')) {
+        toBeRemoved.push(node.__viewNode__);
+      }
+    }
+
+    toBeRemoved.forEach(function (viewNode) {
+      viewNode.destroy();
+    });
   };
 
   ViewNode.prototype.getPlaceholder = function () {

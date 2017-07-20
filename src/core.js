@@ -243,6 +243,7 @@
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
+
         var importsCopy = imports.slice(0);
         imports.forEach(function (item) {
           var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
@@ -284,6 +285,7 @@
    */
   Core.prototype.executeCompiledModule = function (module) {
     var promise = new Promise(function (resolve, reject) {
+
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
