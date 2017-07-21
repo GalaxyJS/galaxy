@@ -187,13 +187,13 @@
     text: {
       type: 'custom',
       handler: function (viewNode, attr, value) {
-        var textNode = viewNode.node['[textNode]'];
+        var textNode = viewNode.node['[text]'];
         var textValue = typeof value === 'undefined' ? '' : value;
         if (textNode) {
           textNode.textContent = textValue;
         } else {
-          viewNode.node['[textNode]'] = document.createTextNode(textValue);
-          viewNode.node.insertBefore(viewNode.node['[textNode]'], viewNode.node.firstChild);
+          viewNode.node['[text]'] = document.createTextNode(textValue);
+          viewNode.node.insertBefore(viewNode.node['[text]'], viewNode.node.firstChild);
         }
       }
     },

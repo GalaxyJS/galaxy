@@ -24,6 +24,7 @@
 
         allContent.forEach(function (content) {
           if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
+            content.__node__.__viewNode__.refreshBinds(scopeData);
             parentNode.insertBefore(content.__node__, viewNode.placeholder);
           }
         });

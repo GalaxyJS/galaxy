@@ -37,7 +37,7 @@
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema,node) {
+  function ViewNode(root, schema, node) {
     /**
      *
      * @public
@@ -81,7 +81,7 @@
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
     empty(clone);
-    clone.node = this.node.cloneNode(false);
+
     Object.defineProperty(clone, 'mother', {
       value: this.schema,
       writable: false,
@@ -149,19 +149,21 @@
       }
     }
 
-    // properties = _this.properties.__reactive__;
-    //
-    // for (propertyName in properties) {
-    //   property = properties[propertyName];
-    //   nodeIndexInTheHost = property.nodes ? property.nodes.indexOf(_this) : -1;
-    //   if (nodeIndexInTheHost !== -1) {
-    //     property.nodes.splice(nodeIndexInTheHost, 1);
-    //     property.props.splice(nodeIndexInTheHost, 1);
-    //   }
-    // }
-
     _this.inDOM = false;
-    _this.properties = {};
+    // _this.properties = {};
+    // _this.node = null;
+    // _this.placeholder = null;
+  };
+
+  ViewNode.prototype.refreshBinds = function (data) {
+    var property;
+    for (var propertyName in this.properties) {
+      property = this.properties[propertyName];
+      if (property.nodes.indexOf(this) === -1) {
+        property.nodes.push(this);
+        property.props.push(propertyName);
+      }
+    }
   };
 
   var empty = function (nodes) {
@@ -170,7 +172,7 @@
         empty(node);
       });
     } else if (nodes) {
-      nodes.node = null;
+      nodes.__node__ = null;
       empty(nodes.children);
     }
   };
@@ -186,7 +188,7 @@
       }
     }
 
-    toBeRemoved.forEach(function (viewNode) {
+    toBeRemoved.forEach(function (viewNode, i) {
       viewNode.destroy();
     });
   };
