@@ -1,4 +1,4 @@
-/* global Galaxy */
+/* global Galaxy, Promise */
 (function (GV) {
 
   function createElem(t) {
@@ -56,6 +56,7 @@
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
+    this.domManipulationSequence = new Galaxy.GalaxySequence();
 
     GV.defineProp(this.schema, '__node__', {
       value: this.node,
@@ -100,19 +101,36 @@
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
-    this.inDOM = flag;
-    if (flag && !this.node.parentNode && !this.template) {
-      insertBefore(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
-      removeChild(this.placeholder.parentNode, this.placeholder);
-    } else if (!flag && this.node.parentNode) {
-      insertBefore(this.node.parentNode, this.placeholder, this.node);
-      removeChild(this.node.parentNode, this.node);
+    var _this = this;
+    _this.inDOM = flag;
+    if (flag && !_this.node.parentNode && !_this.template) {
+      _this.domManipulationSequence.next(function (done) {
+        setTimeout(done, 2000);
+        // debugger
+      });
+      _this.domManipulationSequence.next(function (done) {
+        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        removeChild(_this.placeholder.parentNode, _this.placeholder);
+
+        done();
+      });
+
+    } else if (!flag && _this.node.parentNode) {
+      _this.domManipulationSequence.next(function (done) {
+        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+        removeChild(_this.node.parentNode, _this.node);
+        done();
+      });
     }
   };
 
   ViewNode.prototype.append = function (viewNode, position) {
-    viewNode.parent = this;
-    this.node.insertBefore(viewNode.placeholder, position);
+    var _this = this;
+    viewNode.parent = _this;
+    _this.domManipulationSequence.next(function (done) {
+      _this.node.insertBefore(viewNode.placeholder, position);
+      done();
+    });
   };
 
   /**
