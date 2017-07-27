@@ -34,13 +34,32 @@
     if (this.nodes.indexOf(node) === -1) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.addProperty(this, attributeName);
+      } else {
+        var handler = {
+          value: function () {
+          },
+          writable: true,
+          configurable: true
+        };
+
+        GV.defineProp(node, '__onChange__', handler);
+        GV.defineProp(node, '__onUpdate__', handler);
       }
       this.props.push(attributeName);
       this.nodes.push(node);
     }
   };
 
-  BoundProperty.prototype.initValueFor = function (target, key, value, data) {
+  BoundProperty.prototype.removeNode = function (node) {
+    var nodeIndexInTheHost = this.nodes.indexOf(node);
+    if (nodeIndexInTheHost !== -1) {
+      this.nodes.splice(nodeIndexInTheHost, 1);
+      this.props.splice(nodeIndexInTheHost, 1);
+    }
+  };
+
+  BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
+    var oldValue = this.value;
     this.value = value;
     if (value instanceof Array) {
       var init = GV.createActiveArray(value, this.updateValue.bind(this));
@@ -49,19 +68,20 @@
         this.setUpdateFor(target, key, init);
       }
     } else {
-      this.setValueFor(target, key, value, data);
+      this.setValueFor(target, key, value, oldValue, scopeData);
     }
   };
 
-  BoundProperty.prototype.setValue = function (value) {
+  BoundProperty.prototype.setValue = function (value, scopeData) {
     if (value !== this.value) {
+      var oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
         GV.createActiveArray(value, this.updateValue.bind(this));
         this.updateValue({type: 'reset', params: value, original: value}, value);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
-          this.setValueFor(this.nodes[i], this.props[i], value);
+          this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
       }
     }
@@ -74,29 +94,34 @@
     }
   };
 
-  BoundProperty.prototype.setValueFor = function (node, attributeName, value, scopeData) {
+  BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     var newValue = value;
 
-    if (node instanceof Galaxy.GalaxyView.ViewNode) {
-      var mutator = node.mutator[attributeName];
+    if (host instanceof Galaxy.GalaxyView.ViewNode) {
+      var mutator = host.mutator[attributeName];
 
       if (mutator) {
-        newValue = mutator.call(node, value, node.values[attributeName]);
+        newValue = mutator.call(host, value, host.values[attributeName]);
       }
 
-      node.values[attributeName] = newValue;
-      if (!node.setters[attributeName]) {
-        console.info(node, attributeName, newValue);
+      host.values[attributeName] = newValue;
+      if (!host.setters[attributeName]) {
+        console.info(host, attributeName, newValue);
       }
 
-      node.setters[attributeName](newValue, scopeData);
+      host.setters[attributeName](newValue, scopeData);
     } else {
-      node[attributeName] = newValue;
+      host[attributeName] = newValue;
+      host.__onChange__(newValue, oldValue, host);
     }
   };
 
-  BoundProperty.prototype.setUpdateFor = function (node, attributeName, changes) {
-    node.setters[attributeName](changes);
+  BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes) {
+    if (host instanceof Galaxy.GalaxyView.ViewNode) {
+      host.setters[attributeName](changes);
+    } else {
+      host.__onUpdate__(changes, host);
+    }
   };
 
 })(Galaxy.GalaxyView);

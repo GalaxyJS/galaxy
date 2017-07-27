@@ -51,21 +51,22 @@
     this.template = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
-    Object.defineProperty(this.properties, '__reactive__', {
-      value: {},
-      enumerable: false,
-      writable: false
-    });
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
-    // this.schema.node = this.node;
+    this.dependedObjects = [];
 
-    Object.defineProperty(this.schema, '__node__', {
+    GV.defineProp(this.schema, '__node__', {
       value: this.node,
       configurable: false,
       enumerable: false
+    });
+
+    GV.defineProp(this.properties, '__behaviors__', {
+      value: {},
+      enumerable: false,
+      writable: false
     });
 
     var referenceToThis = {
@@ -74,15 +75,15 @@
       enumerable: false
     };
 
-    Object.defineProperty(this.node, '__viewNode__', referenceToThis);
-    Object.defineProperty(this.placeholder, '__viewNode__', referenceToThis);
+    GV.defineProp(this.node, '__viewNode__', referenceToThis);
+    GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
   }
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
     empty(clone);
 
-    Object.defineProperty(clone, 'mother', {
+    GV.defineProp(clone, 'mother', {
       value: this.schema,
       writable: false,
       enumerable: false,
@@ -138,21 +139,34 @@
 
     _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
 
-    var nodeIndexInTheHost, property, properties = _this.properties;
+    var property, properties = _this.properties;
 
     for (var propertyName in properties) {
       property = properties[propertyName];
-      nodeIndexInTheHost = property.nodes.indexOf(_this);
-      if (nodeIndexInTheHost !== -1) {
-        property.nodes.splice(nodeIndexInTheHost, 1);
-        property.props.splice(nodeIndexInTheHost, 1);
-      }
+      property.removeNode(_this);
+      // nodeIndexInTheHost = property.nodes.indexOf(_this);
+      // if (nodeIndexInTheHost !== -1) {
+      //   property.nodes.splice(nodeIndexInTheHost, 1);
+      //   property.props.splice(nodeIndexInTheHost, 1);
+      // }
     }
 
     _this.inDOM = false;
+    this.dependedObjects.forEach(function (item) {
+      var temp = GV.getBoundProperties(item);
+      temp.forEach(function (property) {
+        property.removeNode(item);
+      });
+    });
     // _this.properties = {};
     // _this.node = null;
     // _this.placeholder = null;
+  };
+
+  ViewNode.prototype.addDependedObject = function (item) {
+    if (this.dependedObjects.indexOf(item) === -1) {
+      this.dependedObjects.push(item);
+    }
   };
 
   ViewNode.prototype.refreshBinds = function (data) {

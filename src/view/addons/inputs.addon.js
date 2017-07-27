@@ -14,7 +14,7 @@
       }
 
       var keys = Object.keys(value);
-      var bind = null;
+      var bind;
       var attributeName;
       var attributeValue;
       var type;
@@ -28,8 +28,6 @@
 
         if (type === 'string') {
           bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
-        } else if (type === 'function') {
-
         } else {
           bind = null;
         }
@@ -47,7 +45,6 @@
           enumerable: false
         });
       }
-
     }
   };
 

@@ -71,6 +71,8 @@
 
   GalaxyView.nextTick = nextTick;
 
+  GalaxyView.defineProp = defineProp;
+
   GalaxyView.cleanProperty = function (obj, key) {
     delete obj[key];
   };
@@ -133,6 +135,20 @@
     });
   };
 
+  GalaxyView.getBoundProperties = function (host) {
+    var all = Object.getOwnPropertyNames(host);
+    var visible = Object.keys(host);
+    var properties = [];
+
+    all.forEach(function (key) {
+      if (host[key] instanceof GalaxyView.BoundProperty && visible.indexOf(key) === -1) {
+        properties.push(host[key]);
+      }
+    });
+
+    return properties;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -154,6 +170,7 @@
         if (value instanceof Array) {
           return value.join(' ');
         }
+
 
         return value || '';
       }
@@ -220,7 +237,7 @@
       rootElement = scope.element;
     } else {
       rootElement = new GalaxyView.ViewNode(this, {
-        tag: scope.element.tagName,
+        tag: scope.element.tagName
         // node: scope.element
       }, scope.element);
     }
@@ -302,9 +319,9 @@
     var value = nodeSchema[key];
 
     if (behavior) {
-      var matches = behavior.regex ? value.match(behavior.regex) : value;
+      var matches = behavior.regex ? (typeof(value) === 'string' ? value.match(behavior.regex) : value) : value;
 
-      viewNode.properties.__reactive__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+      viewNode.properties.__behaviors__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
         if (BEHAVIOR.getCache) {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
@@ -335,7 +352,7 @@
         break;
 
       case 'reactive':
-        viewNode.properties.__reactive__[property.name](viewNode, newValue);
+        viewNode.properties.__behaviors__[property.name](viewNode, newValue);
         break;
 
       case 'event':
@@ -373,7 +390,7 @@
         };
 
       case 'reactive':
-        var reactiveFunction = viewNode.properties.__reactive__[property.name];
+        var reactiveFunction = viewNode.properties.__behaviors__[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);
@@ -477,7 +494,7 @@
 
               newVisible.forEach(function (key) {
                 if (hidden.indexOf('[' + key + ']') !== -1) {
-                  descriptors['[' + key + ']'].value.setValue(newValue[key]);
+                  descriptors['[' + key + ']'].value.setValue(newValue[key], data);
 
                   defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
                   defineProp(newValue, key, descriptors[key]);
@@ -485,12 +502,12 @@
               });
             }
 
-            boundProperty.setValue(newValue);
+            boundProperty.setValue(newValue, data);
           }
         };
       } else {
         setterAndGetter.set = function (value) {
-          boundProperty.setValue(value);
+          boundProperty.setValue(value, data);
         };
       }
 
@@ -506,13 +523,13 @@
         return boundProperty.value;
       };
       setterAndGetter.set = function (value) {
-        boundProperty.setValue(value);
+        boundProperty.setValue(value, data);
       };
 
       defineProp(target, targetKeyName, setterAndGetter);
     }
 
-    if (!childProperty && target instanceof Galaxy.GalaxyView.ViewNode) {
+    if (!childProperty /*&& target instanceof Galaxy.GalaxyView.ViewNode*/) {
       boundProperty.addNode(target, targetKeyName);
     }
 
