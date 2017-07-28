@@ -5,7 +5,7 @@
     type: 'custom',
     name: 'inputs',
     handler: function (viewNode, attr, value, scopeData) {
-      if (viewNode.template) {
+      if (viewNode.virtual) {
         return;
       }
 

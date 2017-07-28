@@ -257,7 +257,7 @@
    *
    * @param {Object} nodeSchema
    * @param {Object} nodeScopeData
-   * @param {Element} parentViewNode
+   * @param {GalaxyView.ViewNode} parentViewNode
    */
   GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
     var _this = this;
@@ -302,14 +302,20 @@
         }
       }
 
-      if (!viewNode.template) {
-        _this.append(nodeSchema.children, parentScopeData, viewNode);
-
+      if (!viewNode.virtual) {
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
+
+        _this.append(nodeSchema.children, parentScopeData, viewNode);
       }
 
+      // viewNode.onReady promise will be resolved after all the dom manipulations are done
+      // this make sure that the viewNode and its children elements are rendered
+      viewNode.domManipulationSequence.next(function (done) {
+        viewNode.ready();
+        done();
+      });
       return viewNode;
     }
   };

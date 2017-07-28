@@ -48,7 +48,7 @@
     this.schema = schema;
     this.data = {};
     this.mutator = {};
-    this.template = false;
+    this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.values = {};
@@ -56,7 +56,16 @@
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.domManipulationSequence = new Galaxy.GalaxySequence();
+    this.domManipulationSequence = new Galaxy.GalaxySequence().start();
+    this.sequences = {
+      'leave': new Galaxy.GalaxySequence(),
+      'enter': new Galaxy.GalaxySequence().start()
+    };
+
+    var _this = this;
+    this.onReady = new Promise(function (ready) {
+      _this.ready = ready;
+    });
 
     GV.defineProp(this.schema, '__node__', {
       value: this.node,
@@ -96,30 +105,28 @@
 
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
-    this.template = true;
+    this.virtual = true;
     this.setInDOM(false);
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
     var _this = this;
     _this.inDOM = flag;
-    if (flag && !_this.node.parentNode && !_this.template) {
-      _this.domManipulationSequence.next(function (done) {
-        setTimeout(done, 2000);
-        // debugger
-      });
+    if (flag && !_this.node.parentNode && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
-
-        done();
+        _this.sequences['enter'].finish(done);
       });
 
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
-        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-        removeChild(_this.node.parentNode, _this.node);
-        done();
+        _this.sequences['leave'].start().finish(function () {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences['leave'].reset();
+        });
       });
     }
   };
@@ -127,10 +134,7 @@
   ViewNode.prototype.append = function (viewNode, position) {
     var _this = this;
     viewNode.parent = _this;
-    _this.domManipulationSequence.next(function (done) {
-      _this.node.insertBefore(viewNode.placeholder, position);
-      done();
-    });
+    _this.node.insertBefore(viewNode.placeholder, position);
   };
 
   /**
@@ -152,21 +156,25 @@
     var _this = this;
 
     if (_this.inDOM) {
-      removeChild(_this.node.parentNode, _this.node);
+      _this.domManipulationSequence.next(function (done) {
+        _this.sequences['leave'].start().finish(function () {
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences['leave'].reset();
+        });
+      });
     }
 
-    _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+    _this.domManipulationSequence.next(function (done) {
+      _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+      done();
+    });
 
     var property, properties = _this.properties;
 
     for (var propertyName in properties) {
       property = properties[propertyName];
       property.removeNode(_this);
-      // nodeIndexInTheHost = property.nodes.indexOf(_this);
-      // if (nodeIndexInTheHost !== -1) {
-      //   property.nodes.splice(nodeIndexInTheHost, 1);
-      //   property.props.splice(nodeIndexInTheHost, 1);
-      // }
     }
 
     _this.inDOM = false;
@@ -176,9 +184,6 @@
         property.removeNode(item);
       });
     });
-    // _this.properties = {};
-    // _this.node = null;
-    // _this.placeholder = null;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {

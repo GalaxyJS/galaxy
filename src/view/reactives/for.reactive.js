@@ -54,8 +54,8 @@
       } else if (changes.type === 'splice') {
         var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
-        removedItems.forEach(function (viewNode) {
-          viewNode.destroy();
+        removedItems.forEach(function (node) {
+          node.destroy();
         });
       } else if (changes.type === 'pop') {
         cache.nodes.pop().destroy();

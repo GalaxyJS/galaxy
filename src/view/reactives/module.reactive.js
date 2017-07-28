@@ -17,15 +17,17 @@
       };
     },
     onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
-      if (!viewNode.template && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
-        viewNode.empty();
-        cache.scope.load(moduleMeta, {
-          element: viewNode
-        }).then(function (module) {
-          viewNode.node.setAttribute('module', module.systemId);
-          module.start();
-        }).catch(function (response) {
-          console.error(response);
+      if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
+        viewNode.onReady.then(function () {
+          viewNode.empty();
+          cache.scope.load(moduleMeta, {
+            element: viewNode
+          }).then(function (module) {
+            viewNode.node.setAttribute('module', module.systemId);
+            module.start();
+          }).catch(function (response) {
+            console.error(response);
+          });
         });
       } else if (!moduleMeta) {
         viewNode.empty();

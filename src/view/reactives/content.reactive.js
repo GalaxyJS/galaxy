@@ -21,12 +21,12 @@
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
           var allContent = scopeData.element.schema.children;
-          var parentNode = viewNode.parent.node;
-
+          var parentViewNode = viewNode.parent;
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentNode.insertBefore(content.__node__, viewNode.placeholder);
+              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
+              content.__node__.__viewNode__.setInDOM(true);
             }
           });
 

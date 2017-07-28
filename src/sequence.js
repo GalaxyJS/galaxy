@@ -8,8 +8,25 @@
   G.GalaxySequence = GalaxySequence;
 
   function GalaxySequence() {
-    this.line = Promise.resolve();
+    this.line = null;
+    this.firstStepResolve = null;
+    this.reset();
   }
+
+  GalaxySequence.prototype.start = function () {
+    this.firstStepResolve();
+    return this;
+  };
+
+  GalaxySequence.prototype.reset = function () {
+    var _this = this;
+
+    _this.line = new Promise(function (resolve) {
+      _this.firstStepResolve = resolve;
+    });
+
+    return _this;
+  };
 
   GalaxySequence.prototype.next = function (action) {
     var thunk;
@@ -23,6 +40,10 @@
     this.line = promise;
 
     return promise;
+  };
+
+  GalaxySequence.prototype.finish = function (action) {
+    this.line.then(action);
   };
 
 

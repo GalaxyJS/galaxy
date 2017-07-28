@@ -11,7 +11,7 @@
     bind: function (viewNode, scopeData, matches) {
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
-      if (viewNode.template) {
+      if (viewNode.virtual) {
         return;
       }
 
