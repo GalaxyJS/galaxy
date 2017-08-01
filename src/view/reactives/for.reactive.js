@@ -18,6 +18,14 @@
         nodes: []
       };
     },
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param nodeScopeData
+     */
     onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
       var parentNode = viewNode.parent;
       var position = null;

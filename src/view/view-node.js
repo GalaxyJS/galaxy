@@ -30,6 +30,24 @@
   };
 
 
+  var referenceToThis = {
+    value: this,
+    configurable: false,
+    enumerable: false
+  };
+
+  var __node__ = {
+    value: null,
+    configurable: false,
+    enumerable: false
+  };
+
+  var __behaviors__ = {
+    value: {},
+    enumerable: false,
+    writable: false
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -57,34 +75,23 @@
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
-    this.sequences = {
-      'leave': new Galaxy.GalaxySequence(),
-      'enter': new Galaxy.GalaxySequence().start()
-    };
+    this.sequences = {};
 
     var _this = this;
     this.onReady = new Promise(function (ready) {
       _this.ready = ready;
     });
 
-    GV.defineProp(this.schema, '__node__', {
-      value: this.node,
-      configurable: false,
-      enumerable: false
-    });
+    this.createSequence(':enter', true);
+    this.createSequence(':leave', false);
 
-    GV.defineProp(this.properties, '__behaviors__', {
-      value: {},
-      enumerable: false,
-      writable: false
-    });
+    __node__.value = this.node;
+    GV.defineProp(this.schema, '__node__', __node__);
 
-    var referenceToThis = {
-      value: this,
-      configurable: false,
-      enumerable: false
-    };
+    __behaviors__.value = {};
+    GV.defineProp(this.properties, '__behaviors__', __behaviors__);
 
+    referenceToThis.value = this;
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
   }
@@ -103,6 +110,24 @@
     return clone;
   };
 
+  /**
+   *
+   * @param name
+   * @param start
+   * @returns {Galaxy.GalaxySequence}
+   */
+  ViewNode.prototype.createSequence = function (name, start) {
+    if (!this.sequences[name]) {
+      this.sequences[name] = new Galaxy.GalaxySequence();
+
+      if (start) {
+        this.sequences[name].start();
+      }
+    }
+
+    return this.sequences[name];
+  };
+
   ViewNode.prototype.toTemplate = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.virtual = true;
@@ -116,16 +141,15 @@
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
-        _this.sequences['enter'].finish(done);
+        _this.sequences[':enter'].finish(done);
       });
-
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
-        _this.sequences['leave'].start().finish(function () {
+        _this.sequences[':leave'].start().finish(function () {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
           removeChild(_this.node.parentNode, _this.node);
           done();
-          _this.sequences['leave'].reset();
+          _this.sequences[':leave'].reset();
         });
       });
     }
@@ -157,10 +181,10 @@
 
     if (_this.inDOM) {
       _this.domManipulationSequence.next(function (done) {
-        _this.sequences['leave'].start().finish(function () {
+        _this.sequences[':leave'].start().finish(function () {
           removeChild(_this.node.parentNode, _this.node);
           done();
-          _this.sequences['leave'].reset();
+          _this.sequences[':leave'].reset();
         });
       });
     }
@@ -225,7 +249,7 @@
       }
     }
 
-    toBeRemoved.forEach(function (viewNode, i) {
+    toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy();
     });
   };

@@ -8,7 +8,14 @@
 
   GV.REACTIVE_BEHAVIORS['class'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param matches
+     */
     bind: function (viewNode, scopeData, matches) {
+      viewNode.createSequence(':class', true);
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
       if (viewNode.virtual) {
@@ -61,7 +68,6 @@
 
   function setValue(value, oldValue, classes) {
     if (oldValue === value) return;
-    // debugger;
 
     if (typeof classes === 'string') {
       this.node.setAttribute('class', classes);
@@ -73,7 +79,11 @@
         if (classes.hasOwnProperty(key) && classes[key]) temp.push(key);
       }
 
-      this.node.setAttribute('class', temp.join(' '));
+      var _this = this;
+      _this.sequences[':class'].finish(function () {
+        _this.node.setAttribute('class', temp.join(' '));
+      });
+
     }
   }
 })(Galaxy.GalaxyView);
