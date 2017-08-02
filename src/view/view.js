@@ -123,11 +123,12 @@
 
     for (var i = 0, len = node.childNodes.length; i < len; i++) {
       item = node.childNodes[i];
-      viewNodes = viewNodes.concat(GalaxyView.getAllViewNodes(item));
 
       if (item.hasOwnProperty('__viewNode__')) {
         viewNodes.push(item.__viewNode__);
       }
+
+      viewNodes = viewNodes.concat(GalaxyView.getAllViewNodes(item));
     }
 
     return viewNodes.filter(function (value, index, self) {

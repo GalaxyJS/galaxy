@@ -15,7 +15,7 @@
      * @param matches
      */
     bind: function (viewNode, scopeData, matches) {
-      viewNode.createSequence(':class', true);
+
     },
     onApply: function (cache, viewNode, value, matches, scopeData) {
       if (viewNode.virtual) {
@@ -82,6 +82,7 @@
       var _this = this;
       _this.sequences[':class'].finish(function () {
         _this.node.setAttribute('class', temp.join(' '));
+        // _this.sequences[':class'].reset();
       });
 
     }

@@ -1,6 +1,8 @@
 /* global Galaxy, TweenLite, TimelineLite */
 
 (function (G) {
+  var TIMELINES ={};
+
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
     name: 'animation',
@@ -22,7 +24,7 @@
             to.clearProps = 'all';
 
             if (enterAnimationConfig.sequence) {
-              var timeline = enterAnimationConfig.__timeline__ || new TimelineLite({
+              var timeline = TIMELINES[enterAnimationConfig.sequence] || new TimelineLite({
                 autoRemoveChildren: true
               });
 
@@ -38,7 +40,7 @@
                   to), null);
               }
 
-              enterAnimationConfig.__timeline__ = timeline;
+              TIMELINES[enterAnimationConfig.sequence] = timeline;
             } else {
               TweenLite.fromTo(viewNode.node,
                 enterAnimationConfig.duration || 0,
@@ -57,14 +59,16 @@
             to.clearProps = 'all';
 
             if (leaveAnimationConfig.sequence) {
-              var timeline = leaveAnimationConfig.__timeline__ || new TimelineLite();
+              var timeline = TIMELINES[leaveAnimationConfig.sequence] || new TimelineLite({
+                autoRemoveChildren: true
+              });
 
               timeline.add(TweenLite.fromTo(viewNode.node,
                 leaveAnimationConfig.duration || 0,
                 leaveAnimationConfig.from || {},
                 to), leaveAnimationConfig.position || null);
 
-              leaveAnimationConfig.__timeline__ = timeline;
+              TIMELINES[leaveAnimationConfig.sequence] = timeline;
             } else {
               TweenLite.fromTo(viewNode.node,
                 leaveAnimationConfig.duration || 0,
@@ -74,35 +78,50 @@
           });
         }
 
-        var _class = config['class'];
-        if (_class) {
-          viewNode.sequences[':class'].next(function (done) {
-            var classAnimationConfig = _class;
-            var to = Object.assign({}, {className: classAnimationConfig.to});
-            to.onComplete = done;
-            to.clearProps = 'all';
-
-            if (classAnimationConfig.sequence) {
-              var timeline = classAnimationConfig.__timeline__ || new TimelineLite();
-
-              timeline.add(TweenLite.fromTo(viewNode.node,
-                classAnimationConfig.duration || 0,
-                {
-                  className: classAnimationConfig.from
-                },
-                to), classAnimationConfig.position || null);
-
-              classAnimationConfig.__timeline__ = timeline;
-            } else {
-              TweenLite.fromTo(viewNode.node,
-                classAnimationConfig.duration || 0,
-                classAnimationConfig.from || {},
-                to);
-            }
-          });
-
-        }
+        // parseAnimationConfig(config);
+        // var _class = config['class'];
+        // if (_class) {
+        //   viewNode.sequences[':class'].next(function (done) {
+        //     var classAnimationConfig = _class;
+        //     var to = Object.assign({}, {className: classAnimationConfig.to || ''});
+        //     to.onComplete = done;
+        //     to.clearProps = 'all';
+        //
+        //     if (classAnimationConfig.sequence) {
+        //       var timeline = classAnimationConfig.__timeline__ || new TimelineLite();
+        //
+        //       timeline.add(TweenLite.fromTo(viewNode.node,
+        //         classAnimationConfig.duration || 0,
+        //         {
+        //           className: classAnimationConfig.from || ''
+        //         },
+        //         to), classAnimationConfig.position || null);
+        //
+        //       classAnimationConfig.__timeline__ = timeline;
+        //     } else {
+        //       TweenLite.fromTo(viewNode.node,
+        //         classAnimationConfig.duration || 0,
+        //         classAnimationConfig.from || {},
+        //         to);
+        //     }
+        //   });
+        //
+        // }
       }
     }
   };
+
+  function parseAnimationConfig(config) {
+    for (var key in config) {
+      if (config.hasOwnProperty(key)) {
+        var groups = key.match(/([^\s]*)\s+to\s+([^\s]*)/);
+        console.info(groups);
+      }
+    }
+
+    return [];
+  }
+  function getAnimationConfigOf(name, config) {
+
+  }
 })(Galaxy);

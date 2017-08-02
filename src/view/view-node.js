@@ -84,6 +84,7 @@
 
     this.createSequence(':enter', true);
     this.createSequence(':leave', false);
+    this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -239,18 +240,31 @@
   };
 
   ViewNode.prototype.empty = function () {
-    var toBeRemoved = [], node;
+    var toBeRemoved = [], node, _this = this;
     for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
       node = this.node.childNodes[i];
-      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
 
       if (node.hasOwnProperty('__viewNode__')) {
         toBeRemoved.push(node.__viewNode__);
       }
+
+      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
     }
 
+    var domManipulationSequence = this.domManipulationSequence;
     toBeRemoved.forEach(function (viewNode) {
-      viewNode.destroy();
+      console.info(viewNode.node);
+      if (viewNode.parent === _this) {
+        domManipulationSequence = viewNode.domManipulationSequence;
+        viewNode.destroy();
+      } else if (viewNode.parent) {
+        domManipulationSequence.next(function (done) {
+          viewNode.destroy();
+          done();
+        });
+      } else {
+        viewNode.destroy();
+      }
     });
   };
 
