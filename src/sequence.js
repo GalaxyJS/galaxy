@@ -10,11 +10,15 @@
   function GalaxySequence() {
     this.line = null;
     this.firstStepResolve = null;
+    this.started = false;
     this.reset();
   }
 
   GalaxySequence.prototype.start = function () {
+    if(this.started) return this;
+
     this.firstStepResolve();
+    this.started = true;
     return this;
   };
 
@@ -25,6 +29,7 @@
       _this.firstStepResolve = resolve;
     });
 
+    this.started = false;
     return _this;
   };
 

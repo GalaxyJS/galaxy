@@ -84,6 +84,7 @@
 
     this.createSequence(':enter', true);
     this.createSequence(':leave', false);
+    this.createSequence(':destroy', false);
     this.createSequence(':class', true);
 
     __node__.value = this.node;
@@ -177,23 +178,54 @@
     }
   };
 
-  ViewNode.prototype.destroy = function () {
+  ViewNode.prototype.destroy = function (sequence, source) {
     var _this = this;
 
-    if (_this.inDOM) {
-      _this.domManipulationSequence.next(function (done) {
-        _this.sequences[':leave'].start().finish(function () {
-          removeChild(_this.node.parentNode, _this.node);
-          done();
-          _this.sequences[':leave'].reset();
+    if (!source) {
+      if (_this.inDOM) {
+        _this.domManipulationSequence.next(function (done) {
+          _this.empty(_this.sequences[':destroy'], true);
+          _this.sequences[':destroy'].start().finish(function () {
+            _this.sequences[':leave'].start().finish(function () {
+              removeChild(_this.node.parentNode, _this.node);
+              _this.sequences[':leave'].reset();
+            });
+
+            done();
+            _this.sequences[':destroy'].reset();
+          });
         });
-      });
+      }
+    } else if (source) {
+      if (_this.inDOM) {
+        sequence.next(function (done) {
+          _this.sequences[':leave'].start().finish(function () {
+            _this.sequences[':leave'].reset();
+          });
+
+          done();
+        });
+      }
+
+      _this.empty(sequence, true);
+    } else {
+      if (_this.inDOM) {
+        _this.domManipulationSequence.next(function (done) {
+          _this.sequences[':leave'].start().finish(function () {
+            removeChild(_this.node.parentNode, _this.node);
+            done();
+            _this.sequences[':leave'].reset();
+          });
+        });
+      }
+      _this.empty(sequence, true);
     }
 
     _this.domManipulationSequence.next(function (done) {
       _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
       done();
     });
+
 
     var property, properties = _this.properties;
 
@@ -203,12 +235,14 @@
     }
 
     _this.inDOM = false;
-    this.dependedObjects.forEach(function (item) {
+    _this.dependedObjects.forEach(function (item) {
       var temp = GV.getBoundProperties(item);
       temp.forEach(function (property) {
         property.removeNode(item);
       });
     });
+
+
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -239,33 +273,25 @@
     }
   };
 
-  ViewNode.prototype.empty = function () {
-    var toBeRemoved = [], node, _this = this;
-    for (var i = 0, len = this.node.childNodes.length; i < len; i++) {
+  ViewNode.prototype.empty = function (sequence, source) {
+    var toBeRemoved = [], node;
+    for (var i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
         toBeRemoved.push(node.__viewNode__);
       }
-
-      toBeRemoved = toBeRemoved.concat(GV.getAllViewNodes(node));
     }
 
-    var domManipulationSequence = this.domManipulationSequence;
+    var domManipulationSequence;
+
     toBeRemoved.forEach(function (viewNode) {
-      console.info(viewNode.node);
-      if (viewNode.parent === _this) {
-        domManipulationSequence = viewNode.domManipulationSequence;
-        viewNode.destroy();
-      } else if (viewNode.parent) {
-        domManipulationSequence.next(function (done) {
-          viewNode.destroy();
-          done();
-        });
-      } else {
-        viewNode.destroy();
-      }
+      viewNode.destroy(sequence, source);
+      domManipulationSequence = viewNode.domManipulationSequence;
     });
+
+
+    return domManipulationSequence || this.domManipulationSequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {
