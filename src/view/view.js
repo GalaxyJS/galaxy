@@ -237,9 +237,9 @@
     if (scope.element instanceof GalaxyView.ViewNode) {
       rootElement = scope.element;
     } else {
+      scope.element.innerHTML = '';
       rootElement = new GalaxyView.ViewNode(this, {
         tag: scope.element.tagName
-        // node: scope.element
       }, scope.element);
     }
 

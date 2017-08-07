@@ -50,10 +50,10 @@
         }
       }
 
-      if (viewNode.hasOwnProperty('__class__') && clone !== viewNode.__class__) {
-        Galaxy.resetObjectTo(viewNode.__class__, clone);
-      } else if (!viewNode.hasOwnProperty('__class__')) {
-        Object.defineProperty(viewNode, '__class__', {
+      if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
+        Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
+      } else if (!viewNode.hasOwnProperty('[reactive/class]')) {
+        Object.defineProperty(viewNode, '[reactive/class]', {
           value: clone,
           enumerable: false
         });

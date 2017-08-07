@@ -153,40 +153,12 @@
         invokers.push(module.url);
       }
 
-      // if (moduleExist) {
-      //   _this.compileModuleContent(module, moduleExist, invokers).then(function (module) {
-      //
-      //     _this.executeCompiledModule(module).then(resolve);
-      //   });
-      //   // resolve(moduleExist);
-      //   // var ol = Galaxy.onModuleLoaded[module.systemId];
-      //
-      //   // if ('function' === typeof (ol)) {
-      //   //   ol(moduleExist);
-      //   //   delete Galaxy.onModuleLoaded[module.systemId];
-      //   // }
-      //
-      //   return;
-      // }
-
-      // if (Galaxy.onLoadQueue[module.systemId]) {
-      //   return;
-      // }
-
       Galaxy.onLoadQueue[module.systemId] = true;
       var url = module.url + '?' + _this.convertToURIString(module.params || {});
       // var fetcher = root.Galaxy.onModuleLoaded[url];
       var fetcherContent = root.Galaxy.moduleContents[url];
 
       if (!fetcherContent || module.fresh) {
-        // root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
-        //   return response.text();
-        // }).then(function (moduleContent) {
-        //   return _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
-        //     return _this.executeCompiledModule(module);
-        //   });
-        // });
-
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
           if (response.status !== 200) {
             reject(response);
@@ -285,7 +257,6 @@
    */
   Core.prototype.executeCompiledModule = function (module) {
     var promise = new Promise(function (resolve, reject) {
-
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }

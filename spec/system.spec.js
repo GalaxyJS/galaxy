@@ -2,11 +2,10 @@
 
 describe('GalaxyJS Core', function () {
   it('Galaxy.GalaxyCore exist', function () {
-
     expect(Galaxy.GalaxyCore).toBeDefined();
   });
 
-  it('Galaxy.GalaxySystem instance', function () {
+  it('Galaxy.GalaxyCore instance', function () {
     var sample = new Galaxy.GalaxyCore();
 
     expect(sample).toBeDefined();
@@ -37,11 +36,12 @@ describe('Galaxy boot:', function () {
 
     expect(function () {
       MockGalaxy.boot({
-        url: 'main.js'
+        url: 'main.js',
+        // element: document.createElement('div')
       }).then(function (module) {
         doneFn(module);
       });
-    }).toThrow(new Error('Second argument is mandatory'));
+    }).toThrow(new Error('element property is mandatory'));
 
     setTimeout(function () {
       expect(doneFn).not.toHaveBeenCalled();
@@ -63,8 +63,9 @@ describe('Galaxy boot:', function () {
 
     var doneFn = jasmine.createSpy('success');
     MockGalaxy.boot({
-      url: 'main.js'
-    }, document.getElementsByTagName('body')[0]).then(function (module) {
+      url: 'main.js',
+      element: document.createElement('div')
+    }).then(function (module) {
       expect(module.id).toBe('system');
       doneFn(module.scope.path);
     });

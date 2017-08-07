@@ -139,7 +139,7 @@
   ViewNode.prototype.setInDOM = function (flag) {
     var _this = this;
     _this.inDOM = flag;
-    if (flag && !_this.node.parentNode && !_this.virtual) {
+    if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);

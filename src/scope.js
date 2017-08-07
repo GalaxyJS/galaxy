@@ -20,6 +20,7 @@
     var match = myRegexp.exec(urlParser.pathname);
     this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
+    this.uri = urlParser;
   }
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {

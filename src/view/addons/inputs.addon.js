@@ -37,10 +37,10 @@
         }
       }
 
-      if (viewNode.hasOwnProperty('__inputs__') && clone !== viewNode.__inputs__) {
-        Galaxy.resetObjectTo(viewNode.__inputs__, clone);
-      } else if (!viewNode.hasOwnProperty('__inputs__')) {
-        Object.defineProperty(viewNode, '__inputs__', {
+      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]']) {
+        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], clone);
+      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
+        Object.defineProperty(viewNode, '[addon/inputs]', {
           value: clone,
           enumerable: false
         });
@@ -51,7 +51,7 @@
   G.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
-        scope.inputs = scope.element.__inputs__;
+        scope.inputs = scope.element['[addon/inputs]'];
 
         return scope.inputs;
       },
