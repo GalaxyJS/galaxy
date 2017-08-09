@@ -4,7 +4,7 @@
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
     type: 'custom',
     name: 'inputs',
-    handler: function (viewNode, attr, value, scopeData) {
+    handler: function (viewNode, attr, value, oldValue, scopeData) {
       if (viewNode.virtual) {
         return;
       }

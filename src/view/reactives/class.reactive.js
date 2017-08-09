@@ -17,7 +17,7 @@
     bind: function (viewNode, scopeData, matches) {
 
     },
-    onApply: function (cache, viewNode, value, matches, scopeData) {
+    onApply: function (cache, viewNode, value, oldValue, matches, scopeData) {
       if (viewNode.virtual) {
         return;
       }
@@ -59,32 +59,40 @@
         });
       }
 
-      clone.__onChange__ = setValue.bind(viewNode);
-      clone.__onChange__(true, false, clone);
-
+      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
+      clone.__onChange__ = toggles.bind(viewNode);
+      clone.__onChange__(null, true, false, clone);
       viewNode.addDependedObject(clone);
     }
   };
 
-  function setValue(value, oldValue, classes) {
+  function toggles(name, value, oldValue, classes) {
     if (oldValue === value) return;
+    var oldClasses = this.node.getAttribute('class');
+    oldClasses = oldClasses ? oldClasses.split(' ') : [];
+    var newClasses = getClasses(classes);
+    var _this = this;
 
+    _this.callWatchers('class', newClasses, oldClasses);
+    _this.sequences[':class'].start().finish(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+      _this.sequences[':class'].reset();
+    });
+
+  }
+
+  function getClasses(obj) {
     if (typeof classes === 'string') {
-      this.node.setAttribute('class', classes);
-    } else if (classes instanceof Array) {
-      this.node.setAttribute('class', classes.join(' '));
-    } else if (classes !== null && typeof classes === 'object') {
-      var temp = [];
-      for (var key in classes) {
-        if (classes.hasOwnProperty(key) && classes[key]) temp.push(key);
+      return [obj];
+    } else if (obj instanceof Array) {
+      return obj;
+    } else if (obj !== null && typeof obj === 'object') {
+      var newClasses = [];
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
       }
 
-      var _this = this;
-      _this.sequences[':class'].finish(function () {
-        _this.node.setAttribute('class', temp.join(' '));
-        // _this.sequences[':class'].reset();
-      });
-
+      return newClasses;
     }
   }
 })(Galaxy.GalaxyView);

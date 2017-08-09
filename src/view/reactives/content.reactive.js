@@ -17,7 +17,7 @@
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, selector, matches, scopeData) {
+    onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
           var allContent = scopeData.element.schema.children;

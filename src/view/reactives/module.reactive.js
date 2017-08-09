@@ -18,9 +18,9 @@
         scope: viewNode.root.scope
       };
     },
-    onApply: function (cache, viewNode, moduleMeta, matches, scopeData) {
+    onApply: function (cache, viewNode, moduleMeta) {
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.module) {
-        viewNode.onReady.then(function () {
+        viewNode.rendered.then(function () {
           viewNode.empty().next(function (done) {
             done();
 

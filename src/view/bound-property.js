@@ -109,10 +109,10 @@
         console.info(host, attributeName, newValue);
       }
 
-      host.setters[attributeName](newValue, scopeData);
+      host.setters[attributeName](newValue, oldValue, scopeData);
     } else {
       host[attributeName] = newValue;
-      host.__onChange__(newValue, oldValue, host);
+      host.__onChange__(attributeName, newValue, oldValue, host);
     }
   };
 
@@ -120,7 +120,7 @@
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      host.__onUpdate__(changes, host);
+      host.__onUpdate__(attributeName, changes, host);
     }
   };
 

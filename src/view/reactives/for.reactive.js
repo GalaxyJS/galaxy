@@ -26,7 +26,7 @@
      * @param matches
      * @param nodeScopeData
      */
-    onApply: function (cache, viewNode, changes, matches, nodeScopeData) {
+    onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
       var parentNode = viewNode.parent;
       var position = null;
       var newItems = [];

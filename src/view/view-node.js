@@ -72,13 +72,14 @@
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
+    this.watchers = {};
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
 
     var _this = this;
-    this.onReady = new Promise(function (ready) {
+    this.rendered = new Promise(function (ready) {
       _this.ready = ready;
     });
 
@@ -241,8 +242,6 @@
         property.removeNode(item);
       });
     });
-
-
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -300,6 +299,16 @@
     }
 
     return this.placeholder;
+  };
+
+  ViewNode.prototype.watch = function (name, callback) {
+    this.watchers[name] = callback.bind(this);
+  };
+
+  ViewNode.prototype.callWatchers = function (name, value, oldValue) {
+    if (this.watchers.hasOwnProperty(name)) {
+      this.watchers[name](value, oldValue);
+    }
   };
 
 })(Galaxy.GalaxyView);

@@ -73,6 +73,11 @@
 
   GalaxyView.defineProp = defineProp;
 
+  GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
+    viewNode.callWatchers(name, value);
+    setAttr.call(viewNode.node, name, value, oldValue);
+  };
+
   GalaxyView.cleanProperty = function (obj, key) {
     delete obj[key];
   };
@@ -323,10 +328,10 @@
 
   GalaxyView.prototype.addReactiveBehavior = function (viewNode, nodeSchema, nodeScopeData, key) {
     var behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
-    var value = nodeSchema[key];
+    var bindTo = nodeSchema[key];
 
     if (behavior) {
-      var matches = behavior.regex ? (typeof(value) === 'string' ? value.match(behavior.regex) : value) : value;
+      var matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
       viewNode.properties.__behaviors__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
@@ -334,8 +339,8 @@
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
         }
 
-        return function (_viewNode, _value) {
-          return BEHAVIOR.onApply(CACHE, _viewNode, _value, MATCHES, BEHAVIOR_SCOPE_DATA);
+        return function (vn, value, oldValue) {
+          return BEHAVIOR.onApply(CACHE, vn, value, oldValue, MATCHES, BEHAVIOR_SCOPE_DATA);
         };
       })(behavior, matches, nodeScopeData);
 
@@ -350,16 +355,17 @@
     switch (property.type) {
       case 'attr':
         newValue = property.parser ? property.parser(value) : value;
-        viewNode.node.setAttribute(attributeName, newValue);
+        GalaxyView.setAttr(viewNode, attributeName, newValue, null);
         break;
 
       case 'prop':
         newValue = property.parser ? property.parser(value) : value;
+        viewNode.callWatchers(property.name, value, null);
         viewNode.node[property.name] = newValue;
         break;
 
       case 'reactive':
-        viewNode.properties.__behaviors__[property.name](viewNode, newValue);
+        viewNode.properties.__behaviors__[property.name](viewNode, newValue, null);
         break;
 
       case 'event':
@@ -367,7 +373,7 @@
         break;
 
       case 'custom':
-        property.handler(viewNode, attributeName, value, scopeData);
+        property.handler(viewNode, attributeName, value, null, scopeData);
         break;
     }
   };
@@ -385,15 +391,16 @@
 
     switch (property.type) {
       case 'attr':
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
-          setAttr.call(viewNode.node, attributeName, newValue);
+          GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
         };
 
       case 'prop':
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
           viewNode.node[property.name] = newValue;
+          viewNode.callWatchers(property.name, newValue, oldValue);
         };
 
       case 'reactive':
@@ -403,19 +410,19 @@
           console.error('Reactive handler not found for: ' + property.name);
         }
 
-        return function (value) {
-          reactiveFunction(viewNode, value);
+        return function (value, oldValue) {
+          reactiveFunction(viewNode, value, oldValue);
         };
 
       case 'custom':
-        return function (value, scopeData) {
-          property.handler(viewNode, attributeName, value, scopeData);
+        return function (value, oldValue, scopeData) {
+          property.handler(viewNode, attributeName, value, oldValue, scopeData);
         };
 
       default:
-        return function (value) {
+        return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
-          setAttr.call(viewNode.node, attributeName, newValue);
+          GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
         };
     }
   };

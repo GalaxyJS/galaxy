@@ -13,119 +13,130 @@
      * @param config
      * @param scopeData
      */
-    handler: function (viewNode, attr, config, scopeData) {
-      if (!viewNode.virtual) {
-        var enterAnimationConfig = config[':enter'];
-        if (enterAnimationConfig) {
-          viewNode.sequences[':enter'].next(function (done) {
-            if (enterAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+    handler: function (viewNode, attr, config, oldConfig, scopeData) {
+      viewNode.rendered.then(function () {
+        if (!viewNode.virtual) {
+          var enterAnimationConfig = config[':enter'];
+          if (enterAnimationConfig) {
+            viewNode.sequences[':enter'].next(function (done) {
+              if (enterAnimationConfig.sequence) {
+                var animationMeta = AnimationMeta.GET(enterAnimationConfig.sequence);
 
-              if (enterAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
-              }
-
-              animationMeta.add(viewNode.node, enterAnimationConfig, done);
-            } else {
-              var to = Object.assign({}, enterAnimationConfig.to || {});
-              to.onComplete = done;
-              to.clearProps = 'all';
-              TweenLite.fromTo(viewNode.node,
-                enterAnimationConfig.duration || 0,
-                enterAnimationConfig.from || {},
-                to);
-            }
-          });
-        }
-
-        var leaveAnimationConfig = config[':leave'];
-        if (leaveAnimationConfig) {
-          viewNode.sequences[':destroy'].next(function (done) {
-            viewNode._destroyed = true;
-            done();
-          });
-
-          viewNode.sequences[':leave'].next(function (done) {
-            if (leaveAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-
-              // if the animation has order it will be added to the queue according to its order.
-              // No order means lowest order
-              if (typeof leaveAnimationConfig.order === 'number') {
-                if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
-
-                animationMeta.queue[leaveAnimationConfig.order].push(function () {
-                  if (leaveAnimationConfig.group) {
-                    animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-                  }
-
-                  animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-
-                });
-
-                // When viewNode is the one which is destroyed, then run the queue
-                // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode._destroyed) {
-                  for (var key in animationMeta.queue) {
-                    animationMeta.queue[key].forEach(function (item) {
-                      item();
-                    });
-                  }
-
-                  animationMeta.queue = {};
-                  delete viewNode._destroyed;
+                if (enterAnimationConfig.group) {
+                  animationMeta = animationMeta.getGroup(enterAnimationConfig.group);
                 }
 
-                return;
+                var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+                lastStep.clearProps = 'all';
+                animationMeta.add(viewNode.node, enterAnimationConfig, done);
+              } else {
+                AnimationMeta.CREATE_TWEEN(viewNode.node, enterAnimationConfig, done);
               }
+            });
+          }
 
-              if (leaveAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+          var leaveAnimationConfig = config[':leave'];
+          if (leaveAnimationConfig) {
+            viewNode.sequences[':destroy'].next(function (done) {
+              viewNode._destroyed = true;
+              done();
+            });
+
+            viewNode.sequences[':leave'].next(function (done) {
+              if (leaveAnimationConfig.sequence) {
+                var animationMeta = AnimationMeta.GET(leaveAnimationConfig.sequence);
+
+                // if the animation has order it will be added to the queue according to its order.
+                // No order means lowest order
+                if (typeof leaveAnimationConfig.order === 'number') {
+                  if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
+
+                  animationMeta.queue[leaveAnimationConfig.order].push(function () {
+                    if (leaveAnimationConfig.group) {
+                      animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                    }
+
+                    animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+                  });
+
+                  // When viewNode is the one which is destroyed, then run the queue
+                  // The queue will never run if the destroyed viewNode has the lowest order
+                  if (viewNode._destroyed) {
+                    for (var key in animationMeta.queue) {
+                      animationMeta.queue[key].forEach(function (item) {
+                        item();
+                      });
+                    }
+
+                    animationMeta.queue = {};
+                    delete viewNode._destroyed;
+                  }
+
+                  return;
+                }
+
+                if (leaveAnimationConfig.group) {
+                  animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+                }
+
+                animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+              } else {
+                AnimationMeta.CREATE_TWEEN(viewNode.node, leaveAnimationConfig, done);
               }
+            });
+          }
 
-              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-            } else {
-              var to = Object.assign({}, leaveAnimationConfig.to || {});
-              to.onComplete = done;
-              to.clearProps = 'all';
-              TweenLite.fromTo(viewNode.node,
-                leaveAnimationConfig.duration || 0,
-                leaveAnimationConfig.from || {},
-                to);
-            }
+          viewNode.watch('class', function (value, oldValue) {
+            value.forEach(function (item) {
+              if (oldValue.indexOf(item) === -1) {
+                var _config = config['.' + item];
+                if (_config) {
+                  viewNode.sequences[':class'].next(function (done) {
+                    var classAnimationConfig = _config;
+                    classAnimationConfig.to = {className: '+=' + item || ''};
+
+                    if (classAnimationConfig.sequence) {
+                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                      if (classAnimationConfig.group) {
+                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                      }
+
+                      animationMeta.add(viewNode.node, classAnimationConfig, done);
+                    } else {
+                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                    }
+                  });
+                }
+              }
+            });
+
+            oldValue.forEach(function (item) {
+              if (value.indexOf(item) === -1) {
+                var _config = config['.' + item];
+                if (_config) {
+                  viewNode.sequences[':class'].next(function (done) {
+                    var classAnimationConfig = _config;
+                    classAnimationConfig.to = {className: '-=' + item || ''};
+
+                    if (classAnimationConfig.sequence) {
+                      var animationMeta = AnimationMeta.GET(classAnimationConfig.sequence);
+
+                      if (classAnimationConfig.group) {
+                        animationMeta = animationMeta.getGroup(classAnimationConfig.group);
+                      }
+
+                      animationMeta.add(viewNode.node, classAnimationConfig, done);
+                    } else {
+                      AnimationMeta.CREATE_TWEEN(viewNode.node, classAnimationConfig, done);
+                    }
+                  });
+                }
+              }
+            });
           });
         }
-
-        // parseAnimationConfig(config);
-        // var _class = config['class'];
-        // if (_class) {
-        //   viewNode.sequences[':class'].next(function (done) {
-        //     var classAnimationConfig = _class;
-        //     var to = Object.assign({}, {className: classAnimationConfig.to || ''});
-        //     to.onComplete = done;
-        //     to.clearProps = 'all';
-        //
-        //     if (classAnimationConfig.sequence) {
-        //       var timeline = classAnimationConfig.__timeline__ || new TimelineLite();
-        //
-        //       timeline.add(TweenLite.fromTo(viewNode.node,
-        //         classAnimationConfig.duration || 0,
-        //         {
-        //           className: classAnimationConfig.from || ''
-        //         },
-        //         to), classAnimationConfig.position || null);
-        //
-        //       classAnimationConfig.__timeline__ = timeline;
-        //     } else {
-        //       TweenLite.fromTo(viewNode.node,
-        //         classAnimationConfig.duration || 0,
-        //         classAnimationConfig.from || {},
-        //         to);
-        //     }
-        //   });
-        //
-        // }
-      }
+      });
     }
   };
 
@@ -137,13 +148,38 @@
     this.queue = {};
   }
 
-  AnimationMeta.get = function (name) {
+  AnimationMeta.GET = function (name) {
     if (!ANIMATIONS[name]) {
       ANIMATIONS[name] = new AnimationMeta();
     }
 
 
     return ANIMATIONS[name];
+  };
+
+  AnimationMeta.CREATE_TWEEN = function (node, config, onComplete) {
+    var to = Object.assign({}, config.to || {});
+    to.onComplete = onComplete;
+    var tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      var from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
+
+    return tween;
   };
 
   AnimationMeta.prototype.getGroup = function (name) {
@@ -161,42 +197,29 @@
   AnimationMeta.prototype.add = function (node, config, onComplete) {
     var to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
-    // to.clearProps = 'all';
+    var tween = null;
+
+    if (config.from && config.to) {
+      tween = TweenLite.fromTo(node,
+        config.duration || 0,
+        config.from || {},
+        to);
+    } else if (config.from) {
+      var from = Object.assign({}, config.from || {});
+      from.onComplete = onComplete;
+      tween = TweenLite.from(node,
+        config.duration || 0,
+        from || {});
+    } else {
+      tween = TweenLite.to(node,
+        config.duration || 0,
+        to || {});
+    }
 
     if (this.timeline.getChildren().length > 0) {
-      this.timeline.add(TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to), config.position || null);
+      this.timeline.add(tween, config.position || null);
     } else {
-      this.timeline.add(TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
-        to), null);
+      this.timeline.add(tween, null);
     }
   };
-
-  function getSequenceTimeline(name) {
-    if (!ANIMATIONS[name]) {
-      ANIMATIONS[name] = new AnimationMeta();
-    }
-
-
-    return ANIMATIONS[name];
-  }
-
-  function parseAnimationConfig(config) {
-    for (var key in config) {
-      if (config.hasOwnProperty(key)) {
-        var groups = key.match(/([^\s]*)\s+to\s+([^\s]*)/);
-        console.info(groups);
-      }
-    }
-
-    return [];
-  }
-
-  function getAnimationConfigOf(name, config) {
-
-  }
 })(Galaxy);
