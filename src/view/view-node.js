@@ -56,11 +56,6 @@
    * @constructor
    */
   function ViewNode(root, schema, node) {
-    /**
-     *
-     * @public
-     * @type {Galaxy.GalaxyView}
-     */
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;

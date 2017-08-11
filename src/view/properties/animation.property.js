@@ -1,8 +1,6 @@
 /* global Galaxy, TweenLite, TimelineLite */
 
 (function (G) {
-  var ANIMATIONS = {};
-
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
     name: 'animation',
@@ -49,9 +47,7 @@
                 // if the animation has order it will be added to the queue according to its order.
                 // No order means lowest order
                 if (typeof leaveAnimationConfig.order === 'number') {
-                  if (!animationMeta.queue[leaveAnimationConfig.order]) animationMeta.queue[leaveAnimationConfig.order] = [];
-
-                  animationMeta.queue[leaveAnimationConfig.order].push(function () {
+                  animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, function () {
                     if (leaveAnimationConfig.group) {
                       animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
                     }
@@ -62,10 +58,22 @@
                   // When viewNode is the one which is destroyed, then run the queue
                   // The queue will never run if the destroyed viewNode has the lowest order
                   if (viewNode._destroyed) {
+                    var finishImmediately = false;
                     for (var key in animationMeta.queue) {
-                      animationMeta.queue[key].forEach(function (item) {
-                        item();
-                      });
+                      var item;
+                      for (var i = 0, len = animationMeta.queue[key].length; i < len; i++) {
+                        item = animationMeta.queue[key][i];
+                        item.operation();
+
+                        // If the the current queue item.node is the destroyed node, then all the animations in
+                        // queue should be ignored
+                        if (item.node === viewNode.node) {
+                          finishImmediately = true;
+                          break;
+                        }
+                      }
+
+                      if (finishImmediately) break;
                     }
 
                     animationMeta.queue = {};
@@ -148,13 +156,14 @@
     this.queue = {};
   }
 
+  AnimationMeta.ANIMATIONS = {};
+
   AnimationMeta.GET = function (name) {
-    if (!ANIMATIONS[name]) {
-      ANIMATIONS[name] = new AnimationMeta();
+    if (!AnimationMeta.ANIMATIONS[name]) {
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta();
     }
 
-
-    return ANIMATIONS[name];
+    return AnimationMeta.ANIMATIONS[name];
   };
 
   AnimationMeta.CREATE_TWEEN = function (node, config, onComplete) {
@@ -196,8 +205,16 @@
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
     var to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
+
     var tween = null;
+    // var onStart = function () {
+    //   console.info(node.offsetParent);
+    //   if (node.offsetParent === null) {
+    //     tween.progress(1);
+    //   }
+    // };
+
+    to.onComplete = onComplete;
 
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
@@ -221,5 +238,18 @@
     } else {
       this.timeline.add(tween, null);
     }
+  };
+
+  /**
+   *
+   * @param {number} order
+   * @param {callback} operation
+   */
+  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+    if (!this.queue[order]) {
+      this.queue[order] = [];
+    }
+
+    this.queue[order].push({node: node, operation: operation});
   };
 })(Galaxy);

@@ -96,15 +96,19 @@
   GalaxyView.createClone = function (source) {
     var cloned = Object.assign({}, source);
 
-    for (var key in source) {
-      if (source.hasOwnProperty('[' + key + ']')) {
-        boundPropertyReference.value = source['[' + key + ']'];
-        defineProp(cloned, '[' + key + ']', boundPropertyReference);
-        defineProp(cloned, key, Object.getOwnPropertyDescriptor(source, key));
-      }
-    }
+    GalaxyView.link(source, cloned);
 
     return cloned;
+  };
+
+  GalaxyView.link = function (from, to) {
+    for (var key in from) {
+      if (from.hasOwnProperty('[' + key + ']')) {
+        boundPropertyReference.value = from['[' + key + ']'];
+        defineProp(to, '[' + key + ']', boundPropertyReference);
+        defineProp(to, key, Object.getOwnPropertyDescriptor(from, key));
+      }
+    }
   };
 
   GalaxyView.getPropertyContainer = function (data, propertyName) {
@@ -561,6 +565,8 @@
       params: value
     };
 
+    var oldChanges = Object.assign({}, changes);
+
     if (value.hasOwnProperty('[live]')) {
       return changes;
     }
@@ -601,7 +607,8 @@
           changes.type = method;
           changes.params = args;
 
-          onUpdate(changes);
+          onUpdate(changes, oldChanges);
+          oldChanges = Object.assign({}, changes);
 
           return result;
         },

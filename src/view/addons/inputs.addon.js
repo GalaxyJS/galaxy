@@ -2,16 +2,27 @@
 
 (function (G) {
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
-    type: 'custom',
-    name: 'inputs',
-    handler: function (viewNode, attr, value, oldValue, scopeData) {
-      if (viewNode.virtual) {
-        return;
+    type: 'reactive',
+    name: 'inputs'
+  };
+  // G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+  G.GalaxyView.REACTIVE_BEHAVIORS['inputs'] = {
+    regex: null,
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param scopeData
+     * @param value
+     */
+    bind: function (viewNode, scopeData, value) {
+      if (value !== null && typeof  value !== 'object') {
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
       }
 
-      if (typeof value !== 'object' || value === null) {
-        throw new Error('Inputs must be an object');
-      }
+
+    },
+    onApply: function (cache, viewNode, value, oldValue, matches, context) {
+      if (viewNode.virtual) return;
 
       var keys = Object.keys(value);
       var bind;
@@ -33,30 +44,38 @@
         }
 
         if (bind) {
-          viewNode.root.makeBinding(clone, scopeData, attributeName, bind[1]);
+          viewNode.root.makeBinding(clone, context, attributeName, bind[1]);
         }
       }
 
-      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]']) {
-        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], clone);
+      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
+        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
+          clone: clone,
+          original: value
+        });
       } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
         Object.defineProperty(viewNode, '[addon/inputs]', {
-          value: clone,
+          value: {
+            clone: clone,
+            original: value
+          },
           enumerable: false
         });
       }
+
+      viewNode.addDependedObject(clone);
     }
   };
 
   G.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
-        scope.inputs = scope.element['[addon/inputs]'];
+        scope.inputs = scope.element['[addon/inputs]'].clone;
 
         return scope.inputs;
       },
       finalize: function () {
-
+        G.GalaxyView.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
       }
     };
   });

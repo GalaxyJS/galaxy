@@ -61,12 +61,12 @@
 
       viewNode.node.setAttribute('class', getClasses(clone).join(' '));
       clone.__onChange__ = toggles.bind(viewNode);
-      clone.__onChange__(null, true, false, clone);
+      toggles.call(viewNode, null, true, false, clone);
       viewNode.addDependedObject(clone);
     }
   };
 
-  function toggles(name, value, oldValue, classes) {
+  function toggles(key, value, oldValue, classes) {
     if (oldValue === value) return;
     var oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];

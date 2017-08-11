@@ -35,15 +35,32 @@
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.addProperty(this, attributeName);
       } else {
+        var onChange = (function () {
+          var whens = {};
+          var on = function (key, value, oldValue, context) {
+            if (whens.hasOwnProperty(key)) {
+              whens[key].call(context, value, oldValue);
+            }
+          };
+
+          function f(key, value, oldValue, context) {
+            on.call(this, key, value, oldValue, context);
+          }
+
+          f.when = function (key, action) {
+            whens[key] = action;
+          };
+
+          return f;
+        })();
+
         var handler = {
-          value: function () {
-          },
+          value: onChange,
           writable: true,
           configurable: true
         };
 
         GV.defineProp(node, '__onChange__', handler);
-        GV.defineProp(node, '__onUpdate__', handler);
       }
       this.props.push(attributeName);
       this.nodes.push(node);
@@ -77,8 +94,8 @@
       var oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        GV.createActiveArray(value, this.updateValue.bind(this));
-        this.updateValue({type: 'reset', params: value, original: value}, value);
+        var oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
+        this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
@@ -87,10 +104,10 @@
     }
   };
 
-  BoundProperty.prototype.updateValue = function (changes, original) {
+  BoundProperty.prototype.updateValue = function (changes, oldChanges) {
     for (var i = 0, len = this.nodes.length; i < len; i++) {
-      this.nodes[i].value = original;
-      this.setUpdateFor(this.nodes[i], this.props[i], changes);
+      this.nodes[i].value = changes.original;
+      this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }
   };
 
@@ -116,11 +133,11 @@
     }
   };
 
-  BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes) {
+  BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      host.__onUpdate__(attributeName, changes, host);
+      host.__onChange__(attributeName, changes, oldChanges, host);
     }
   };
 
