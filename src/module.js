@@ -33,6 +33,8 @@
         addOn.onModuleInit();
       }
     }
+
+    this.scope.trigger('module.init');
   };
 
   GalaxyModule.prototype.start = function () {
@@ -42,6 +44,19 @@
         addOn.onModuleStart();
       }
     }
+
+    this.scope.trigger('module.start');
+  };
+
+  GalaxyModule.prototype.destroy = function () {
+    for (var key in this.addOns) {
+      var addOn = this.addOns[key];
+      if (typeof addOn.onModuleDestroy === 'function') {
+        addOn.onModuleDestroy();
+      }
+    }
+
+    this.scope.trigger('module.destroy');
   };
 
   GalaxyModule.prototype.registerAddOn = function (id, object) {

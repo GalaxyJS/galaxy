@@ -21,10 +21,11 @@
     this.path = match ? match[0] : '/';
     this.parsedURL = urlParser.href;
     this.uri = urlParser;
+    this.eventHandlers = {};
   }
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
-    var newModuleMetaData = Object.assign({}, moduleMeta,config || {});
+    var newModuleMetaData = Object.assign({}, moduleMeta, config || {});
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }
@@ -41,6 +42,32 @@
       module.start();
       return module;
     });
+  };
+
+  GalaxyScope.prototype.watch = function () {
+
+  };
+
+  /**
+   *
+   * @param {string} event
+   */
+  GalaxyScope.prototype.on = function (event, handler) {
+    if (!this.eventHandlers[event]) {
+      this.eventHandlers[event] = [];
+    }
+
+    if (this.eventHandlers[event].indexOf(handler) === -1) {
+      this.eventHandlers[event].push(handler);
+    }
+  };
+
+  GalaxyScope.prototype.trigger = function (event, data) {
+    if (this.eventHandlers[event]) {
+      this.eventHandlers[event].forEach(function (handler) {
+        handler.call(null, data);
+      });
+    }
   };
 
 }(this, Galaxy || {}));

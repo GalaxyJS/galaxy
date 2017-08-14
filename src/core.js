@@ -302,6 +302,8 @@
         };
       }
 
+      currentModule.init();
+
       resolve(currentModule);
 
       delete Galaxy.onLoadQueue[module.systemId];
