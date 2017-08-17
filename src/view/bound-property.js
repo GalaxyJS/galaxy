@@ -21,6 +21,7 @@
     this.name = name;
     this.value = value;
     this.props = [];
+    this.expr = [];
     this.nodes = [];
   }
 
@@ -30,7 +31,7 @@
    * @param {String} attributeName
    * @public
    */
-  BoundProperty.prototype.addNode = function (node, attributeName) {
+  BoundProperty.prototype.addNode = function (node, attributeName, expression) {
     if (this.nodes.indexOf(node) === -1) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.addProperty(this, attributeName);
@@ -62,6 +63,8 @@
 
         GV.defineProp(node, '__onChange__', handler);
       }
+      // var f = new Function('','return '+expression)
+      this.expr.push(expression);
       this.props.push(attributeName);
       this.nodes.push(node);
     }
@@ -98,7 +101,11 @@
         this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
-          this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
+          if (this.expr[i]) {
+            this.setValueFor(this.nodes[i], this.props[i], this.expr[i].call(), oldValue, scopeData);
+          } else {
+            this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
+          }
         }
       }
     }
@@ -115,11 +122,11 @@
     var newValue = value;
 
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      var mutator = host.mutator[attributeName];
-
-      if (mutator) {
-        newValue = mutator.call(host, value, host.values[attributeName]);
-      }
+      // var mutator = host.mutator[attributeName];
+      //
+      // if (mutator) {
+      //   newValue = mutator.call(host, value, host.values[attributeName]);
+      // }
 
       host.values[attributeName] = newValue;
       if (!host.setters[attributeName]) {

@@ -60,7 +60,7 @@
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
-    this.mutator = {};
+    // this.mutator = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
