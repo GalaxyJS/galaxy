@@ -21,7 +21,6 @@
     this.name = name;
     this.value = value;
     this.props = [];
-    this.expr = [];
     this.nodes = [];
   }
 
@@ -29,12 +28,13 @@
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
    * @param {String} attributeName
+   * @param {Function} expression
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName, expression) {
     if (this.nodes.indexOf(node) === -1) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
-        node.addProperty(this, attributeName);
+        node.installPropertySetter(this, attributeName, expression);
       } else {
         var onChange = (function () {
           var whens = {};
@@ -63,8 +63,7 @@
 
         GV.defineProp(node, '__onChange__', handler);
       }
-      // var f = new Function('','return '+expression)
-      this.expr.push(expression);
+
       this.props.push(attributeName);
       this.nodes.push(node);
     }
@@ -101,11 +100,7 @@
         this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
-          if (this.expr[i]) {
-            this.setValueFor(this.nodes[i], this.props[i], this.expr[i].call(), oldValue, scopeData);
-          } else {
-            this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
-          }
+          this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
       }
     }
@@ -119,24 +114,16 @@
   };
 
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
-    var newValue = value;
-
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      // var mutator = host.mutator[attributeName];
-      //
-      // if (mutator) {
-      //   newValue = mutator.call(host, value, host.values[attributeName]);
-      // }
-
-      host.values[attributeName] = newValue;
+      host.values[attributeName] = value;
       if (!host.setters[attributeName]) {
-        console.info(host, attributeName, newValue);
+        console.info(host, attributeName, value);
       }
 
-      host.setters[attributeName](newValue, oldValue, scopeData);
+      host.setters[attributeName](value, oldValue, scopeData);
     } else {
-      host[attributeName] = newValue;
-      host.__onChange__(attributeName, newValue, oldValue, host);
+      host[attributeName] = value;
+      host.__onChange__(attributeName, value, oldValue, host);
     }
   };
 

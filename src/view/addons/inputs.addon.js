@@ -1,12 +1,12 @@
 /* global Galaxy */
 
-(function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+(function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
     name: 'inputs'
   };
-  // G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
-  G.GalaxyView.REACTIVE_BEHAVIORS['inputs'] = {
+
+  GV.REACTIVE_BEHAVIORS['inputs'] = {
     regex: null,
     /**
      *
@@ -25,26 +25,18 @@
       if (viewNode.virtual) return;
 
       var keys = Object.keys(value);
-      var bind;
       var attributeName;
       var attributeValue;
-      var type;
-      var clone = G.GalaxyView.createClone(value);
+      var clone = GV.createClone(value);
 
       for (var i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = value[attributeName];
-        bind = null;
-        type = typeof(attributeValue);
 
-        if (type === 'string') {
-          bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
-        } else {
-          bind = null;
-        }
+        var bindings = GV.getBindings(attributeValue);
 
-        if (bind) {
-          viewNode.root.makeBinding(clone, context, attributeName, bind[1]);
+        if (bindings.variableNamePaths) {
+          viewNode.root.makeBinding(clone, context, attributeName, bindings.variableNamePaths, bindings.isExpression);
         }
       }
 
@@ -67,7 +59,7 @@
     }
   };
 
-  G.registerAddOnProvider('galaxy/inputs', function (scope) {
+  Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
         scope.inputs = scope.element['[addon/inputs]'].clone;
@@ -75,8 +67,8 @@
         return scope.inputs;
       },
       finalize: function () {
-        G.GalaxyView.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
+        GV.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
       }
     };
   });
-})(Galaxy);
+})(Galaxy.GalaxyView);

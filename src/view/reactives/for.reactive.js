@@ -79,7 +79,7 @@
       }
 
       var valueEntity, itemDataScope = nodeScopeData;
-      var p = cache.propName, n = cache.nodes, vr = viewNode.root, cns;
+      var p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
         for (var i = 0, len = newItems.length; i < len; i++) {
@@ -88,7 +88,7 @@
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
-          var vn = vr.append(cns, itemDataScope, parentNode, position);
+          var vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }

@@ -27,26 +27,18 @@
       }
 
       var keys = Object.keys(value);
-      var bind;
       var attributeName;
       var attributeValue;
-      var type;
       var clone = GV.createClone(value);
 
       for (var i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         attributeValue = value[attributeName];
-        bind = null;
-        type = typeof(attributeValue);
 
-        if (type === 'string') {
-          bind = attributeValue.match(/^\[\s*([^\[\]]*)\s*\]$/);
-        } else {
-          bind = null;
-        }
+        var bindings = GV.getBindings(attributeValue);
 
-        if (bind) {
-          viewNode.root.makeBinding(clone, scopeData, attributeName, bind[1]);
+        if (bindings.variableNamePaths) {
+          viewNode.root.makeBinding(clone, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         }
       }
 

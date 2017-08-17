@@ -161,15 +161,17 @@
 
   /**
    *
-   * @param {Galaxy.GalaxyView.BoundProperty} property
+   * @param {Galaxy.GalaxyView.BoundProperty} boundProperty
+   * @param {string} propertyName
+   * @param {Function} expression
    */
-  ViewNode.prototype.addProperty = function (property, attributeName) {
-    this.properties[property.name] = property;
-    this.setters[attributeName] = this.root.getPropertySetter(this, attributeName);
-    if (!this.setters[attributeName]) {
+  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
+    this.properties[boundProperty.name] = boundProperty;
+    this.setters[propertyName] = this.root.getPropertySetter(this, propertyName, this.virtual ? null : expression);
+    if (!this.setters[propertyName]) {
       var _this = this;
-      this.setters[attributeName] = function () {
-        console.error('No setter for property :', attributeName, '\nNode:', _this);
+      this.setters[propertyName] = function () {
+        console.error('No setter for property :', propertyName, '\nNode:', _this);
       };
     }
   };

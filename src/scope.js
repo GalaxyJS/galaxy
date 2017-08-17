@@ -13,14 +13,7 @@
     this.parentScope = module.parentScope || null;
     this.element = element || null;
     this.imports = {};
-
-    var urlParser = document.createElement('a');
-    urlParser.href = module.url;
-    var myRegexp = /([^\t\n]+)\//g;
-    var match = myRegexp.exec(urlParser.pathname);
-    this.path = match ? match[0] : '/';
-    this.parsedURL = urlParser.href;
-    this.uri = urlParser;
+    this.uri = new GalaxyURI(module.url);
     this.eventHandlers = {};
   }
 
@@ -69,5 +62,22 @@
       });
     }
   };
+
+  /**
+   *
+   * @returns {Galaxy.GalaxyURI}
+   */
+  G.GalaxyURI = GalaxyURI;
+
+  function GalaxyURI(url) {
+    var urlParser = document.createElement('a');
+    urlParser.href = url;
+    var myRegexp = /([^\t\n]+)\//g;
+    var match = myRegexp.exec(urlParser.pathname);
+
+
+    this.paresdURL = urlParser.href;
+    this.path = match ? match[0] : '/';
+  }
 
 }(this, Galaxy || {}));
