@@ -279,7 +279,7 @@
       }
     }
 
-    var domManipulationSequence;
+    var domManipulationSequence = this.domManipulationSequence;
 
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
@@ -287,7 +287,7 @@
     });
 
 
-    return domManipulationSequence || this.domManipulationSequence;
+    return domManipulationSequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {

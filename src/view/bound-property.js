@@ -55,13 +55,12 @@
           return f;
         })();
 
-        var handler = {
+
+        GV.defineProp(node, '__onChange__', {
           value: onChange,
           writable: true,
           configurable: true
-        };
-
-        GV.defineProp(node, '__onChange__', handler);
+        });
       }
 
       this.props.push(attributeName);
@@ -122,6 +121,9 @@
 
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
+      // var exp = host.__expressions__[attributeName];
+      // var val = exp ? exp() : value;
+      // debugger;
       host[attributeName] = value;
       host.__onChange__(attributeName, value, oldValue, host);
     }

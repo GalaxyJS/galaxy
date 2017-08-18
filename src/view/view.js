@@ -181,6 +181,25 @@
     };
   };
 
+  GalaxyView.propertyLookup = function (data, property) {
+    property = property.split('.')[0];
+    var target = data;
+    var temp = data;
+
+    if (!data.hasOwnProperty(property)) {
+      while (temp.__parent__) {
+        if (temp.__parent__.hasOwnProperty(property)) {
+          target = temp.__parent__;
+          break;
+        }
+
+        temp = data.__parent__;
+      }
+    }
+
+    return target;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -532,18 +551,23 @@
       variables = variables.slice(0, variables.length - 1);
       var functionContent = 'return [';
       functionContent += variables.map(function (path) {
-        return 'scope.' + path;
-      }).join(',');
+        return 'prop(scope, "' + path + '").' + path;
+      }).join(', ');
       functionContent += ']';
 
       // Generate expression arguments
-      var getExpressionArguments = new Function('scope', functionContent);
-      expression = (function (scope) {
-        return function () {
-          var args = getExpressionArguments.call(target, scope);
-          return handler.apply(target, args);
-        };
-      })(dataObject);
+      try {
+        var getExpressionArguments = new Function('prop, scope', functionContent);
+        expression = (function (scope) {
+          return function () {
+            var args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
+            return handler.apply(target, args);
+          };
+        })(dataObject);
+      }
+      catch (expection) {
+        throw console.error(expection.message + '\n', variables);
+      }
     }
 
     var variableNamePath;
@@ -561,18 +585,7 @@
         childProperty = variableName.join('.');
       }
 
-      if (!dataObject.hasOwnProperty(propertyName)) {
-        var tempData = dataObject;
-
-        while (tempData.__parent__) {
-          if (tempData.__parent__.hasOwnProperty(propertyName)) {
-            dataObject = tempData.__parent__;
-            break;
-          }
-
-          tempData = dataObject.__parent__;
-        }
-      }
+      dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
 
       initValue = dataObject[propertyName];
 
@@ -589,16 +602,25 @@
         boundProperty = this.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
 
+      // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
         defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
-        setterAndGetter.get = (function (BOUND_PROPERTY) {
+        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
+          // If there is an expression for the property, then apply it on get because target is not ViewNode
+          // and can not have any setter for its properties
+          if (EXPRESSION) {
+            return function () {
+              return EXPRESSION();
+            };
+          }
+
           return function () {
             return BOUND_PROPERTY.value;
           };
-        })(boundProperty);
+        })(boundProperty, expression);
 
         setterAndGetter.set = (function (BOUND_PROPERTY, DATA) {
           return function (value) {
@@ -610,7 +632,7 @@
       }
 
       if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName,  expression);
+        boundProperty.addNode(target, targetKeyName, expression);
       }
 
       if (childProperty) {

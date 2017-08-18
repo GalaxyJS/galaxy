@@ -36,7 +36,6 @@
         attributeValue = value[attributeName];
 
         var bindings = GV.getBindings(attributeValue);
-
         if (bindings.variableNamePaths) {
           viewNode.root.makeBinding(clone, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         }
@@ -80,6 +79,7 @@
       return obj;
     } else if (obj !== null && typeof obj === 'object') {
       var newClasses = [];
+
       for (var key in obj) {
         if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
       }
