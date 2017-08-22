@@ -13,11 +13,12 @@
    * @param {String} name
    * @constructor
    */
-  function BoundProperty(name, value) {
+  function BoundProperty(host, name, value) {
     /**
      * @public
      * @type {String} Name of the property
      */
+    this.host = host;
     this.name = name;
     this.value = value;
     this.props = [];
@@ -35,32 +36,6 @@
     if (this.nodes.indexOf(node) === -1) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.installPropertySetter(this, attributeName, expression);
-      } else {
-        var onChange = (function () {
-          var whens = {};
-          var on = function (key, value, oldValue, context) {
-            if (whens.hasOwnProperty(key)) {
-              whens[key].call(context, value, oldValue);
-            }
-          };
-
-          function f(key, value, oldValue, context) {
-            on.call(this, key, value, oldValue, context);
-          }
-
-          f.when = function (key, action) {
-            whens[key] = action;
-          };
-
-          return f;
-        })();
-
-
-        GV.defineProp(node, '__onChange__', {
-          value: onChange,
-          writable: true,
-          configurable: true
-        });
       }
 
       this.props.push(attributeName);
@@ -96,11 +71,14 @@
       this.value = value;
       if (value instanceof Array) {
         var oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
-        this.updateValue({type: 'reset', params: value, original: value}, oldChanges);
+        var change = {type: 'reset', params: value, original: value};
+        this.updateValue(change, oldChanges);
+        Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
       } else {
         for (var i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
+        Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
       }
     }
   };
@@ -121,11 +99,8 @@
 
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
-      // var exp = host.__expressions__[attributeName];
-      // var val = exp ? exp() : value;
-      // debugger;
       host[attributeName] = value;
-      host.__onChange__(attributeName, value, oldValue, host);
+      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue);
     }
   };
 
@@ -133,7 +108,8 @@
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      host.__onChange__(attributeName, changes, oldChanges, host);
+      // host.__observer__.notify(attributeName, changes, oldChanges);
+      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
     }
   };
 

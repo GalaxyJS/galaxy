@@ -15,7 +15,15 @@
     this.imports = {};
     this.uri = new GalaxyURI(module.url);
     this.eventHandlers = {};
+    this.observers = [];
+    this.on('module.destroy',this.destroy.bind(this));
   }
+
+  GalaxyScope.prototype.destroy = function () {
+    this.observers.forEach(function (observer) {
+      observer.remove();
+    });
+  };
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
     var newModuleMetaData = Object.assign({}, moduleMeta, config || {});
@@ -36,11 +44,6 @@
       return module;
     });
   };
-
-  GalaxyScope.prototype.watch = function () {
-
-  };
-
   /**
    *
    * @param {string} event
@@ -61,6 +64,14 @@
         handler.call(null, data);
       });
     }
+  };
+
+  GalaxyScope.prototype.observe = function (object) {
+    var observer = new Galaxy.GalaxyObserver(object);
+
+    this.observers.push(observer);
+
+    return observer;
   };
 
   /**

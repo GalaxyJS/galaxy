@@ -21,6 +21,8 @@
    */
   Galaxy.GalaxyCore = Core;
 
+  Galaxy.defineProp = Object.defineProperty;
+
   var importedLibraries = {};
 
   function Core() {

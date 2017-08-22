@@ -18,27 +18,11 @@
       if (value !== null && typeof  value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
       }
-
-
     },
     onApply: function (cache, viewNode, value, oldValue, matches, context) {
       if (viewNode.virtual) return;
 
-      var keys = Object.keys(value);
-      var attributeName;
-      var attributeValue;
-      var clone = GV.createClone(value);
-
-      for (var i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        attributeValue = value[attributeName];
-
-        var bindings = GV.getBindings(attributeValue);
-
-        if (bindings.variableNamePaths) {
-          viewNode.root.makeBinding(clone, context, attributeName, bindings.variableNamePaths, bindings.isExpression);
-        }
-      }
+      var clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
         Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {

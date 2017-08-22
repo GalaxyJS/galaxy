@@ -94,7 +94,7 @@
             });
           }
 
-          viewNode.watch('class', function (value, oldValue) {
+          viewNode.observer.on('class', function (value, oldValue) {
             value.forEach(function (item) {
               if (oldValue.indexOf(item) === -1) {
                 var _config = config['.' + item];

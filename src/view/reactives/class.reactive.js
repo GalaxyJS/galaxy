@@ -17,29 +17,20 @@
     bind: function (viewNode, scopeData, matches) {
 
     },
-    onApply: function (cache, viewNode, value, oldValue, matches, scopeData) {
+    onApply: function (cache, viewNode, value, oldValue, matches, context) {
       if (viewNode.virtual) {
         return;
       }
 
-      if (typeof value !== 'object' || value === null) {
+      if (typeof value === 'string') {
         return viewNode.node.setAttribute('class', value);
+      } else if (value instanceof Array) {
+        return viewNode.node.setAttribute('class', value.join(' '));
+      } else if (value === null) {
+        return viewNode.node.removeAttribute('class');
       }
 
-      var keys = Object.keys(value);
-      var attributeName;
-      var attributeValue;
-      var clone = GV.createClone(value);
-
-      for (var i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        attributeValue = value[attributeName];
-
-        var bindings = GV.getBindings(attributeValue);
-        if (bindings.variableNamePaths) {
-          viewNode.root.makeBinding(clone, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
-        }
-      }
+      var clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
         Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
@@ -51,26 +42,14 @@
       }
 
       viewNode.node.setAttribute('class', getClasses(clone).join(' '));
-      clone.__onChange__ = toggles.bind(viewNode);
+      var observer = new Galaxy.GalaxyObserver(clone);
+      observer.onAll(function (key, value, oldValue) {
+        toggles.call(viewNode, key, value, oldValue, clone);
+      });
       toggles.call(viewNode, null, true, false, clone);
       viewNode.addDependedObject(clone);
     }
   };
-
-  function toggles(key, value, oldValue, classes) {
-    if (oldValue === value) return;
-    var oldClasses = this.node.getAttribute('class');
-    oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    var newClasses = getClasses(classes);
-    var _this = this;
-
-    _this.callWatchers('class', newClasses, oldClasses);
-    _this.sequences[':class'].start().finish(function () {
-      _this.node.setAttribute('class', newClasses.join(' '));
-      _this.sequences[':class'].reset();
-    });
-
-  }
 
   function getClasses(obj) {
     if (typeof classes === 'string') {
@@ -86,6 +65,21 @@
 
       return newClasses;
     }
+  }
+
+  function toggles(key, value, oldValue, classes) {
+    if (oldValue === value) return;
+    var oldClasses = this.node.getAttribute('class');
+    oldClasses = oldClasses ? oldClasses.split(' ') : [];
+    var newClasses = getClasses(classes);
+    var _this = this;
+
+    _this.notifyObserver('class', newClasses, oldClasses);
+    _this.sequences[':class'].start().finish(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+      _this.sequences[':class'].reset();
+    });
+
   }
 })(Galaxy.GalaxyView);
 

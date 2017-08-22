@@ -10,7 +10,7 @@
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
     bind: function (viewNode, nodeScopeData, matches) {
       viewNode.toTemplate();
-      viewNode.root.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
+      GV.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
     },
     getCache: function (viewNode, matches) {
       return {

@@ -60,18 +60,17 @@
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
-    // this.mutator = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
-    this.watchers = {};
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
+    this.observer = new Galaxy.GalaxyObserver(this);
 
     var _this = this;
     this.rendered = new Promise(function (ready) {
@@ -298,14 +297,8 @@
     return this.placeholder;
   };
 
-  ViewNode.prototype.watch = function (name, callback) {
-    this.watchers[name] = callback.bind(this);
-  };
-
-  ViewNode.prototype.callWatchers = function (name, value, oldValue) {
-    if (this.watchers.hasOwnProperty(name)) {
-      this.watchers[name](value, oldValue);
-    }
+  ViewNode.prototype.notifyObserver = function (name, value, oldValue) {
+    this.observer.notify(name, value, oldValue);
   };
 
 })(Galaxy.GalaxyView);

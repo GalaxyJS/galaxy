@@ -71,10 +71,10 @@
 
   GalaxyView.nextTick = nextTick;
 
-  GalaxyView.defineProp = defineProp;
+  GalaxyView.defineProp = G.defineProp;
 
   GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
-    viewNode.callWatchers(name, value);
+    viewNode.notifyObserver(name, value, oldValue);
     setAttr.call(viewNode.node, name, value, oldValue);
   };
 
@@ -200,6 +200,192 @@
     return target;
   };
 
+  GalaxyView.createBoundProperty = function (dataObject, propertyName, referenceName, enumerable, childProperty, initValue) {
+    var boundProperty = new GalaxyView.BoundProperty(dataObject, propertyName, initValue);
+    boundPropertyReference.value = boundProperty;
+    defineProp(dataObject, referenceName, boundPropertyReference);
+
+    setterAndGetter.enumerable = enumerable;
+    setterAndGetter.get = (function (bp) {
+      return function () {
+        return bp.value;
+      };
+    })(boundProperty);
+
+    if (childProperty) {
+      setterAndGetter.set = function (newValue) {
+        if (boundProperty.value !== newValue) {
+          if (newValue && typeof boundProperty.value === 'object') {
+            var all = Object.getOwnPropertyNames(boundProperty.value);
+            var visible = Object.keys(boundProperty.value);
+            var newVisible = Object.keys(newValue);
+            var descriptors = {};
+            var hidden = all.filter(function (key) {
+              descriptors[key] = Object.getOwnPropertyDescriptor(boundProperty.value || {}, key);
+              return visible.indexOf(key) === -1;
+            });
+
+            newVisible.forEach(function (key) {
+              if (hidden.indexOf('[' + key + ']') !== -1) {
+                descriptors['[' + key + ']'].value.setValue(newValue[key], dataObject);
+
+                defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
+                defineProp(newValue, key, descriptors[key]);
+              }
+            });
+          }
+
+          boundProperty.setValue(newValue, dataObject);
+        }
+      };
+    } else {
+      setterAndGetter.set = function (value) {
+        boundProperty.setValue(value, dataObject);
+      };
+    }
+
+    defineProp(dataObject, propertyName, setterAndGetter);
+
+    return boundProperty;
+  };
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode | Object} target
+   * @param {Object} dataHostObject
+   * @param {String} targetKeyName
+   * @param {string|Array<string>} variableNamePaths
+   */
+  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression) {
+    var dataObject = data;
+    if (typeof dataObject !== 'object') {
+      return;
+    }
+
+    var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
+
+    // expression === true means that a expression function is available and should be extracted
+    if (expression === true) {
+      var handler = variables[variables.length - 1];
+      variables = variables.slice(0, variables.length - 1);
+      var functionContent = 'return [';
+      functionContent += variables.map(function (path) {
+        return 'prop(scope, "' + path + '").' + path;
+      }).join(', ');
+      functionContent += ']';
+
+      // Generate expression arguments
+      try {
+        var getExpressionArguments = new Function('prop, scope', functionContent);
+        expression = (function (scope) {
+          return function () {
+            var args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
+            return handler.apply(target, args);
+          };
+        })(dataObject);
+      }
+      catch (expection) {
+        throw console.error(expection.message + '\n', variables);
+      }
+    }
+
+    var variableNamePath;
+    var propertyName = null;
+    var childProperty = null;
+    var initValue = null;
+
+    for (var i = 0, len = variables.length; i < len; i++) {
+      variableNamePath = variables[i];
+      propertyName = variableNamePath;
+
+      var variableName = variableNamePath.split('.');
+      if (variableName.length > 1) {
+        propertyName = variableName.shift();
+        childProperty = variableName.join('.');
+      }
+
+      dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
+
+      initValue = dataObject[propertyName];
+
+      var enumerable = true;
+      if (propertyName === 'length' && dataObject instanceof Array) {
+        propertyName = '_length';
+        enumerable = false;
+      }
+
+      var referenceName = '[' + propertyName + ']';
+      var boundProperty = dataObject[referenceName];
+
+      if (typeof boundProperty === 'undefined') {
+        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
+      }
+
+      // When target is not a ViewNode, then add target['[targetKeyName]']
+      if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
+        boundPropertyReference.value = boundProperty;
+        defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
+
+        setterAndGetter.enumerable = enumerable;
+        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
+          // If there is an expression for the property, then apply it on get because target is not ViewNode
+          // and can not have any setter for its properties
+          if (EXPRESSION) {
+            return function () {
+              return EXPRESSION();
+            };
+          }
+
+          return function () {
+            return BOUND_PROPERTY.value;
+          };
+        })(boundProperty, expression);
+
+        setterAndGetter.set = (function (BOUND_PROPERTY, DATA) {
+          return function (value) {
+            BOUND_PROPERTY.setValue(value, DATA);
+          };
+        })(boundProperty, dataObject);
+
+        defineProp(target, targetKeyName, setterAndGetter);
+      }
+
+      if (!childProperty) {
+        boundProperty.addNode(target, targetKeyName, expression);
+      }
+
+      if (childProperty) {
+        GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression);
+      } else if (typeof dataObject === 'object') {
+        boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
+      }
+    }
+  };
+
+  GalaxyView.bindSubjectsToData = function (subjects, data, cloneSubject) {
+    var keys = Object.keys(subjects);
+    var attributeName;
+    var attributeValue;
+    var subjectsClone = cloneSubject ? GalaxyView.createClone(subjects) : subjects;
+
+    for (var i = 0, len = keys.length; i < len; i++) {
+      attributeName = keys[i];
+      attributeValue = subjects[attributeName];
+
+      var bindings = GalaxyView.getBindings(attributeValue);
+
+      if (bindings.variableNamePaths) {
+        GalaxyView.makeBinding(subjectsClone, data, attributeName, bindings.variableNamePaths, bindings.isExpression);
+      }
+
+      if (attributeValue && typeof attributeValue === 'object' && !(attributeValue instanceof Array)) {
+        GalaxyView.bindSubjectsToData(attributeValue, data);
+      }
+    }
+
+    return subjectsClone;
+  };
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -214,17 +400,6 @@
     },
     id: {
       type: 'attr'
-    },
-    class: {
-      type: 'attr',
-      parser: function (value) {
-        if (value instanceof Array) {
-          return value.join(' ');
-        }
-
-
-        return value || '';
-      }
     },
     title: {
       type: 'attr'
@@ -338,7 +513,7 @@
         var bindings = GalaxyView.getBindings(attributeValue);
 
         if (bindings.variableNamePaths) {
-          _this.makeBinding(viewNode, parentScopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
+          GalaxyView.makeBinding(viewNode, parentScopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         } else {
           _this.setPropertyForNode(viewNode, attributeName, attributeValue, parentScopeData);
         }
@@ -396,7 +571,7 @@
 
       case 'prop':
         newValue = property.parser ? property.parser(value) : value;
-        viewNode.callWatchers(property.name, value, null);
+        viewNode.notifyObserver(property.name, value, null);
         viewNode.node[property.name] = newValue;
         break;
 
@@ -432,14 +607,14 @@
             var value = expression(none);
             var newValue = parser ? parser(value) : value;
             viewNode.node[property.name] = newValue;
-            viewNode.callWatchers(property.name, newValue, oldValue);
+            viewNode.notifyObserver(property.name, newValue, oldValue);
           };
         }
 
         return function (value, oldValue) {
           var newValue = parser ? parser(value) : value;
           viewNode.node[property.name] = newValue;
-          viewNode.callWatchers(property.name, newValue, oldValue);
+          viewNode.notifyObserver(property.name, newValue, oldValue);
         };
 
       case 'reactive':
@@ -477,169 +652,6 @@
           var newValue = parser ? parser(value) : value;
           GalaxyView.setAttr(viewNode, attributeName, newValue, oldValue);
         };
-    }
-  };
-
-  GalaxyView.prototype.createBoundProperty = function (dataObject, propertyName, referenceName, enumerable, childProperty, initValue) {
-    var boundProperty = new GalaxyView.BoundProperty(propertyName, initValue);
-    boundPropertyReference.value = boundProperty;
-    defineProp(dataObject, referenceName, boundPropertyReference);
-
-    setterAndGetter.enumerable = enumerable;
-    setterAndGetter.get = (function (bp) {
-      return function () {
-        return bp.value;
-      };
-    })(boundProperty);
-
-    if (childProperty) {
-      setterAndGetter.set = function (newValue) {
-        if (boundProperty.value !== newValue) {
-          if (newValue !== null && typeof boundProperty.value === 'object') {
-            var all = Object.getOwnPropertyNames(boundProperty.value);
-            var visible = Object.keys(boundProperty.value);
-            var newVisible = Object.keys(newValue);
-            var descriptors = {};
-            var hidden = all.filter(function (key) {
-              descriptors[key] = Object.getOwnPropertyDescriptor(boundProperty.value || {}, key);
-              return visible.indexOf(key) === -1;
-            });
-
-            newVisible.forEach(function (key) {
-              if (hidden.indexOf('[' + key + ']') !== -1) {
-                descriptors['[' + key + ']'].value.setValue(newValue[key], dataObject);
-
-                defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
-                defineProp(newValue, key, descriptors[key]);
-              }
-            });
-          }
-
-          boundProperty.setValue(newValue, dataObject);
-        }
-      };
-    } else {
-      setterAndGetter.set = function (value) {
-        boundProperty.setValue(value, dataObject);
-      };
-    }
-
-    defineProp(dataObject, propertyName, setterAndGetter);
-
-    return boundProperty;
-  };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ViewNode | Object} target
-   * @param {Object} dataHostObject
-   * @param {String} targetKeyName
-   * @param {string|Array<string>} variableNamePaths
-   */
-  GalaxyView.prototype.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression) {
-    var _this = this;
-    var dataObject = data;
-    if (typeof dataObject !== 'object') {
-      return;
-    }
-
-    var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
-
-    // expression === true means that a expression function is available and should be extracted
-    if (expression === true) {
-      var handler = variables[variables.length - 1];
-      variables = variables.slice(0, variables.length - 1);
-      var functionContent = 'return [';
-      functionContent += variables.map(function (path) {
-        return 'prop(scope, "' + path + '").' + path;
-      }).join(', ');
-      functionContent += ']';
-
-      // Generate expression arguments
-      try {
-        var getExpressionArguments = new Function('prop, scope', functionContent);
-        expression = (function (scope) {
-          return function () {
-            var args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);
-            return handler.apply(target, args);
-          };
-        })(dataObject);
-      }
-      catch (expection) {
-        throw console.error(expection.message + '\n', variables);
-      }
-    }
-
-    var variableNamePath;
-    var propertyName = null;
-    var childProperty = null;
-    var initValue = null;
-
-    for (var i = 0, len = variables.length; i < len; i++) {
-      variableNamePath = variables[i];
-      propertyName = variableNamePath;
-
-      var variableName = variableNamePath.split('.');
-      if (variableName.length > 1) {
-        propertyName = variableName.shift();
-        childProperty = variableName.join('.');
-      }
-
-      dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
-
-      initValue = dataObject[propertyName];
-
-      var enumerable = true;
-      if (propertyName === 'length' && dataObject instanceof Array) {
-        propertyName = '_length';
-        enumerable = false;
-      }
-
-      var referenceName = '[' + propertyName + ']';
-      var boundProperty = dataObject[referenceName];
-
-      if (typeof boundProperty === 'undefined') {
-        boundProperty = this.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
-      }
-
-      // When target is not a ViewNode, then add target['[targetKeyName]']
-      if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
-        boundPropertyReference.value = boundProperty;
-        defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
-
-        setterAndGetter.enumerable = enumerable;
-        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
-          // If there is an expression for the property, then apply it on get because target is not ViewNode
-          // and can not have any setter for its properties
-          if (EXPRESSION) {
-            return function () {
-              return EXPRESSION();
-            };
-          }
-
-          return function () {
-            return BOUND_PROPERTY.value;
-          };
-        })(boundProperty, expression);
-
-        setterAndGetter.set = (function (BOUND_PROPERTY, DATA) {
-          return function (value) {
-            BOUND_PROPERTY.setValue(value, DATA);
-          };
-        })(boundProperty, dataObject);
-
-        defineProp(target, targetKeyName, setterAndGetter);
-      }
-
-      if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName, expression);
-      }
-
-      if (childProperty) {
-        _this.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression);
-      } else if (typeof dataObject === 'object') {
-        boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
-      }
     }
   };
 
