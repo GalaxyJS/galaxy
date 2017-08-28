@@ -41,12 +41,20 @@
         });
       }
 
-      viewNode.node.setAttribute('class', getClasses(clone).join(' '));
+      viewNode.node.setAttribute('class', []);
       var observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
         toggles.call(viewNode, key, value, oldValue, clone);
       });
-      toggles.call(viewNode, null, true, false, clone);
+
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+        viewNode.rendered.then(function () {
+          toggles.call(viewNode, null, true, false, clone);
+        });
+      } else {
+        toggles.call(viewNode, null, true, false, clone);
+      }
+
       viewNode.addDependedObject(clone);
     }
   };
@@ -79,7 +87,6 @@
       _this.node.setAttribute('class', newClasses.join(' '));
       _this.sequences[':class'].reset();
     });
-
   }
 })(Galaxy.GalaxyView);
 

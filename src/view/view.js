@@ -389,11 +389,12 @@
   GalaxyView.createPropertySetter = function (node, property) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           var newValue = property.parser ? property.parser(asyncValue) : asyncValue;
           node.node[property.name] = newValue;
           node.notifyObserver(property.name, newValue, oldValue);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         var newValue = property.parser ? property.parser(value) : value;
         node.node[property.name] = newValue;
@@ -405,9 +406,10 @@
   GalaxyView.createCustomSetter = function (node, attributeName, property) {
     return function (value, oldValue, scopeData) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           property.handler(node, attributeName, asyncValue, oldValue, scopeData);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         property.handler(node, attributeName, value, oldValue, scopeData);
       }
@@ -417,10 +419,11 @@
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        value.then(function (asyncValue) {
+        var asyncCall = function (asyncValue) {
           var newValue = parser ? parser(asyncValue) : asyncValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
-        });
+        };
+        value.then(asyncCall).catch(asyncCall);
       } else {
         var newValue = parser ? parser(value) : value;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
@@ -587,7 +590,7 @@
     if (behavior) {
       var matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      viewNode.properties.__behaviors__[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
+      viewNode.properties.behaviors[key] = (function (BEHAVIOR, MATCHES, BEHAVIOR_SCOPE_DATA) {
         var CACHE = {};
         if (BEHAVIOR.getCache) {
           CACHE = BEHAVIOR.getCache(viewNode, MATCHES, BEHAVIOR_SCOPE_DATA);
@@ -616,7 +619,7 @@
         break;
 
       case 'reactive':
-        viewNode.properties.__behaviors__[property.name](viewNode, newValue, null);
+        viewNode.properties.behaviors[property.name](viewNode, newValue, null);
         break;
 
       case 'event':
@@ -655,7 +658,7 @@
         return setter;
 
       case 'reactive':
-        var reactiveFunction = viewNode.properties.__behaviors__[property.name];
+        var reactiveFunction = viewNode.properties.behaviors[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);

@@ -42,10 +42,14 @@
     enumerable: false
   };
 
-  var __behaviors__ = {
-    value: {},
-    enumerable: false,
-    writable: false
+  GV.NODE_SCHEMA_PROPERTY_MAP['lifeCycle'] = {
+    type: 'prop',
+    name: 'lifeCycle'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
+    type: 'prop',
+    name: 'renderConfig'
   };
 
   /**
@@ -62,7 +66,9 @@
     this.data = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {};
+    this.properties = {
+      behaviors: {}
+    };
     this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
@@ -75,6 +81,7 @@
     var _this = this;
     this.rendered = new Promise(function (ready) {
       _this.ready = ready;
+      _this.callLifeCycleEvent('rendered');
     });
 
     this.createSequence(':enter', true);
@@ -85,13 +92,18 @@
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
 
-    __behaviors__.value = {};
-    GV.defineProp(this.properties, '__behaviors__', __behaviors__);
-
     referenceToThis.value = this;
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
+
+    this.callLifeCycleEvent('created');
   }
+
+  ViewNode.prototype.callLifeCycleEvent = function (id) {
+    if (this.schema.lifeCycle && typeof this.schema.lifeCycle[id] === 'function') {
+      this.schema.lifeCycle[id].call(this);
+    }
+  };
 
   ViewNode.prototype.cloneSchema = function () {
     var clone = Object.assign({}, this.schema);
@@ -139,6 +151,7 @@
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
         _this.sequences[':enter'].finish(done);
+        _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
@@ -147,6 +160,7 @@
           removeChild(_this.node.parentNode, _this.node);
           done();
           _this.sequences[':leave'].reset();
+          _this.callLifeCycleEvent('removed');
         });
       });
     }
@@ -186,10 +200,12 @@
             _this.sequences[':leave'].start().finish(function () {
               removeChild(_this.node.parentNode, _this.node);
               _this.sequences[':leave'].reset();
+              _this.callLifeCycleEvent('removed');
             });
 
             done();
             _this.sequences[':destroy'].reset();
+            _this.callLifeCycleEvent('destroyed');
           });
         });
       }
@@ -198,6 +214,8 @@
         sequence.next(function (done) {
           _this.sequences[':leave'].start().finish(function () {
             _this.sequences[':leave'].reset();
+            _this.callLifeCycleEvent('removed');
+            _this.callLifeCycleEvent('destroyed');
           });
 
           done();
@@ -212,6 +230,8 @@
             removeChild(_this.node.parentNode, _this.node);
             done();
             _this.sequences[':leave'].reset();
+            _this.callLifeCycleEvent('removed');
+            _this.callLifeCycleEvent('destroyed');
           });
         });
       }
@@ -228,7 +248,10 @@
 
     for (var propertyName in properties) {
       property = properties[propertyName];
-      property.removeNode(_this);
+
+      if (property instanceof GV.BoundProperty) {
+        property.removeNode(_this);
+      }
     }
 
     _this.inDOM = false;
