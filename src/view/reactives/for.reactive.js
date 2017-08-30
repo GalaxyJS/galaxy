@@ -88,6 +88,9 @@
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
+          if(cns.class ==='material-item') {
+            debugger;
+          }
           var vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);

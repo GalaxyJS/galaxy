@@ -14,6 +14,7 @@
     value: null
   };
   var setAttr = Element.prototype.setAttribute;
+  var removeAttr = Element.prototype.removeAttribute;
   var nextTick = (function () {
     var callbacks = [];
     var pending = false;
@@ -75,7 +76,11 @@
 
   GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
     viewNode.notifyObserver(name, value, oldValue);
-    setAttr.call(viewNode.node, name, value, oldValue);
+    if (value) {
+      setAttr.call(viewNode.node, name, value, oldValue);
+    } else {
+      removeAttr.call(viewNode.node, name);
+    }
   };
 
   GalaxyView.cleanProperty = function (obj, key) {
@@ -260,18 +265,18 @@
    * @param {String} targetKeyName
    * @param {string|Array<string>} variableNamePaths
    */
-  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression) {
+  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
     var dataObject = data;
     if (typeof dataObject !== 'object') {
       return;
     }
 
     var variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
-
     // expression === true means that a expression function is available and should be extracted
     if (expression === true) {
       var handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
+      expressionArgumentsCount = variables.length;
       var functionContent = 'return [';
       functionContent += variables.map(function (path) {
         return 'prop(scope, "' + path + '").' + path;
@@ -291,6 +296,8 @@
       catch (expection) {
         throw console.error(expection.message + '\n', variables);
       }
+    } else if (!expression) {
+      expressionArgumentsCount = 1;
     }
 
     var variableNamePath;
@@ -359,10 +366,15 @@
       }
 
       if (childProperty) {
-        GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression);
-      } else if (typeof dataObject === 'object') {
+        GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression, expressionArgumentsCount);
+      }
+      // Call init value only on the last variable binding,
+      // so the expression with multiple arguments get called only once
+      else if (typeof dataObject === 'object' && expressionArgumentsCount === 1) {
+        if(targetKeyName === 'text' && initValue === 'bolster') debugger;
         boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
       }
+      expressionArgumentsCount--;
     }
   };
 
@@ -557,6 +569,7 @@
         attributeValue = nodeSchema[attributeName];
 
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
+          if(attributeValue === 'material in surface.data') debugger;
           _this.addReactiveBehavior(viewNode, nodeSchema, parentScopeData, attributeName);
         }
 
