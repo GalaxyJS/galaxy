@@ -33,7 +33,10 @@
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName, expression) {
-    if (this.nodes.indexOf(node) === -1) {
+    var index = this.nodes.indexOf(node);
+    // Check if the node with the same property already exist
+    // Insure that same node with different property bind can exist
+    if (index === -1 || this.props[index] !== attributeName) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
         node.installPropertySetter(this, attributeName, expression);
       }
@@ -44,11 +47,16 @@
   };
 
   BoundProperty.prototype.removeNode = function (node) {
-    var nodeIndexInTheHost = this.nodes.indexOf(node);
-    if (nodeIndexInTheHost !== -1) {
+    var nodeIndexInTheHost;
+    while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
     }
+    // var nodeIndexInTheHost = this.nodes.indexOf(node);
+    // if (nodeIndexInTheHost !== -1) {
+    //   this.nodes.splice(nodeIndexInTheHost, 1);
+    //   this.props.splice(nodeIndexInTheHost, 1);
+    // }
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {

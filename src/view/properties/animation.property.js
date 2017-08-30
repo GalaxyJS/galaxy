@@ -210,24 +210,24 @@
       // if the parent animation is still running, then add the group time line to the end of the parent animation
       // when and only when the parent time line has reached its end
       // group time line will be paused till the parent time line reaches its end
-      // _this.timeline.add(group.timeline);
-      if (this.timeline.progress() !== undefined) {
-        group.timeline.pause();
-        group.added = true;
-
-        _this.timeline.add(function () {
-          _this.commands.next(function (done) {
-            _this.timeline.add(group.timeline);
-            group.added = false;
-            group.timeline.resume();
-            done();
-          });
-        });
-      }
-      // If the parent time line is not running, then add the group time line to it immediately
-      else {
-        _this.timeline.add(group.timeline);
-      }
+      _this.timeline.add(group.timeline);
+      // if (this.timeline.progress() !== undefined) {
+      //   group.timeline.pause();
+      //   group.added = true;
+      //
+      //   _this.timeline.add(function () {
+      //     _this.commands.next(function (done) {
+      //       _this.timeline.add(group.timeline);
+      //       group.added = false;
+      //       group.timeline.resume();
+      //       done();
+      //     });
+      //   });
+      // }
+      // // If the parent time line is not running, then add the group time line to it immediately
+      // else {
+      //   _this.timeline.add(group.timeline);
+      // }
     }
 
 

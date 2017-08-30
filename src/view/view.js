@@ -371,7 +371,6 @@
       // Call init value only on the last variable binding,
       // so the expression with multiple arguments get called only once
       else if (typeof dataObject === 'object' && expressionArgumentsCount === 1) {
-        if(targetKeyName === 'text' && initValue === 'bolster') debugger;
         boundProperty.initValueFor(target, targetKeyName, initValue, dataObject);
       }
       expressionArgumentsCount--;
@@ -569,7 +568,6 @@
         attributeValue = nodeSchema[attributeName];
 
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
-          if(attributeValue === 'material in surface.data') debugger;
           _this.addReactiveBehavior(viewNode, nodeSchema, parentScopeData, attributeName);
         }
 
