@@ -1,4 +1,5 @@
 /* global Galaxy, TweenLite, TimelineLite */
+'use strict';
 
 (function (G) {
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
@@ -17,24 +18,20 @@
           return;
         }
 
-        var enterAnimationConfig = config[':enter'];
+        let enterAnimationConfig = config[':enter'];
         if (enterAnimationConfig) {
           viewNode.sequences[':enter'].next(function (done) {
             if (enterAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+              let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
+              animationMeta.s = enterAnimationConfig.sequence;
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
-              // if (enterAnimationConfig.group) {
-              // animationMeta = animationMeta.getGroup(enterAnimationConfig.group, enterAnimationConfig.duration, enterAnimationConfig.position || '+=0');
-              // }
-
+              
               if (enterAnimationConfig.parent) {
-                console.info('gonna set parent', enterAnimationConfig.parent, 'on', enterAnimationConfig.sequence);
-                // animationMeta.timeline.pause();
                 animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
               }
 
-              var lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
             } else {
@@ -43,7 +40,7 @@
           });
         }
 
-        var leaveAnimationConfig = config[':leave'];
+        let leaveAnimationConfig = config[':leave'];
         if (leaveAnimationConfig) {
           viewNode.sequences[':destroy'].next(function (done) {
             viewNode._destroyed = true;
@@ -52,18 +49,19 @@
 
           viewNode.sequences[':leave'].next(function (done) {
             if (leaveAnimationConfig.sequence) {
-              var animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              animationMeta.duration = leaveAnimationConfig.duration;
+              animationMeta.position = leaveAnimationConfig.position;
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
-              // debugger;
               if (typeof leaveAnimationConfig.order === 'number') {
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
-                    // if (conf.group) {
-                    //   am = am.getGroup(conf.group, conf.duration, conf.position || '+=0');
-                    // }
                     if (conf.parent) {
-                      am.setParent(AnimationMeta.get(conf.parent));
+                      const parent = AnimationMeta.get(conf.parent);
+                      am.setParent(parent, 'leave');
+                      // Update parent childrenOffset so the parent animation starts after the subTimeline animations
+                      parent.childrenOffset = am.childrenOffset;
                     }
 
                     am.add(viewNode.node, conf, done);
@@ -73,15 +71,15 @@
                 // When viewNode is the one which is destroyed, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode._destroyed) {
-                  var finishImmediately = false;
+                  let finishImmediately = false;
                   while (animationMeta.parent) {
                     animationMeta = animationMeta.parent;
                   }
-                  var queue = animationMeta.queue;
+                  let queue = animationMeta.queue;
 
-                  for (var key in queue) {
-                    var item;
-                    for (var i = 0, len = queue[key].length; i < len; i++) {
+                  for (let key in queue) {
+                    let item;
+                    for (let i = 0, len = queue[key].length; i < len; i++) {
                       item = queue[key][i];
                       item.operation();
 
@@ -117,15 +115,15 @@
         viewNode.observer.on('class', function (value, oldValue) {
           value.forEach(function (item) {
             if (item && oldValue.indexOf(item) === -1) {
-              var _config = config['.' + item];
+              let _config = config['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
 
-                  var classAnimationConfig = _config;
+                  let classAnimationConfig = _config;
                   classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
-                    var animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
 
                     if (classAnimationConfig.group) {
                       animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
@@ -142,14 +140,14 @@
 
           oldValue.forEach(function (item) {
             if (item && value.indexOf(item) === -1) {
-              var _config = config['.' + item];
+              let _config = config['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
-                  var classAnimationConfig = _config;
+                  let classAnimationConfig = _config;
                   classAnimationConfig.to = {className: '-=' + item || ''};
 
                   if (classAnimationConfig.sequence) {
-                    var animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
+                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
 
                     if (classAnimationConfig.group) {
                       animationMeta = animationMeta.getGroup(classAnimationConfig.group);
@@ -181,8 +179,8 @@
     this.queue = {};
     // this.commands = new Galaxy.GalaxySequence();
     // this.commands.start();
-    this.beginOffset = 0;
-    this.beginOffset2 = 0;
+    this.childrenOffset = 0;
+    this.subTimelineOffset = 0;
     this.offset = 0;
     this.parent = null;
   }
@@ -202,9 +200,9 @@
   };
 
   AnimationMeta.createTween = function (node, config, onComplete) {
-    var to = Object.assign({}, config.to || {});
+    let to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
-    var tween = null;
+    let tween = null;
 
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
@@ -212,7 +210,7 @@
         config.from || {},
         to);
     } else if (config.from) {
-      var from = Object.assign({}, config.from || {});
+      let from = Object.assign({}, config.from || {});
       from.onComplete = onComplete;
       tween = TweenLite.from(node,
         config.duration || 0,
@@ -227,90 +225,63 @@
   };
 
   AnimationMeta.calculateDuration = function (duration, position) {
-    var po = position.replace('=', '');
-    return duration + Number(po);
+    let po = position.replace('=', '');
+    return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
-  AnimationMeta.prototype.setParent = function (parent) {
-    var _this = this;
+  AnimationMeta.prototype.setParent = function (parent, type) {
+    let _this = this;
     _this.parent = parent;
-    if (_this.parent.timeline.getChildren().indexOf(_this.timeline) === -1) {
-      // console.info('set parent', _this.parent.beginOffset, _this.parent.duration);
-      // If parent time line is active then add this time line at the end of the parent item time line
-      if (_this.parent.timeline.getChildren().length > 0) {
-        var cal = AnimationMeta.calculateDuration(_this.parent.duration, _this.parent.position);
-        console.info(_this.parent.beginOffset2)
-        _this.parent.beginOffset2 += cal;
-        _this.parent.timeline.add(this.timeline, 'beginning+=' + this.parent.beginOffset2);
+    const children = _this.parent.timeline.getChildren();
+
+    if (children.indexOf(_this.timeline) === -1) {
+      let subTimelineOffset = AnimationMeta.calculateDuration(_this.parent.duration, _this.parent.position || '+=0');
+
+      if (type === 'leave') {
+        // subTimeline should start immediately when state is leave
+        if (_this.parent.timeline.progress() === undefined) {
+          _this.parent.subTimelineOffset = 0;
+        }
+
+        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
-          _this.parent.beginOffset2 -= cal;
+          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
         });
-        // _this.parent.beginOffset2 += cal;
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
       } else {
-        this.parent.beginOffset += this.parent.duration;
-        this.parent.timeline.add(this.timeline, 'beginning');
+        if (_this.parent.timeline.progress() === undefined) {
+          return;
+        }
+
+        // There should be a starting offset when state is enter
+        if (_this.parent.subTimelineOffset === 0) {
+          _this.parent.subTimelineOffset = subTimelineOffset;
+        }
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
+
+        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
+        _this.parent.timeline.add(function () {
+          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
+        });
       }
     }
   };
 
-  AnimationMeta.prototype.getGroup = function (name, duration, position) {
-    var _this = this;
-    // var group = this.groups[name];
-    // if (!group) {
-    //   group = this.groups[name] = new AnimationMeta();
-    // }
-
-    var group = AnimationMeta.get(name);
-    group.parent = _this;
-    if (this.timeline.getChildren().indexOf(group.timeline) === -1) {
-      // if the parent animation is still running, then add the group time line to the end of the parent animation
-      // when and only when the parent time line has reached its end
-      // group time line will be paused till the parent time line reaches its end
-      var calPosition = AnimationMeta.calculateDuration(duration, position);
-      group.offset++;
-      _this.timeline.add(group.timeline, 'group+=' + _this.groupPosition);
-      _this.timeline.add((function (cp) {
-        return function () {
-          group.offset--;
-          _this.groupPosition -= cp;
-        };
-      })(calPosition));
-      _this.groupPosition += calPosition;
-      // if (this.timeline.progress() !== undefined) {
-      //   group.timeline.pause();
-      //   group.added = true;
-      //
-      //   _this.timeline.add(function () {
-      //     _this.commands.next(function (done) {
-      //       _this.timeline.add(group.timeline);
-      //       group.added = false;
-      //       group.timeline.resume();
-      //       done();
-      //     });
-      //   });
-      // }
-      // // If the parent time line is not running, then add the group time line to it immediately
-      // else {
-      //   _this.timeline.add(group.timeline);
-      // }
-    }
-
-
-    return group;
-  };
-
   AnimationMeta.prototype.add = function (node, config, onComplete) {
-    var to = Object.assign({}, config.to || {});
+    const _this = this;
+    let to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
 
-    var tween = null;
+    let tween = null;
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
         config.duration || 0,
         config.from || {},
         to);
     } else if (config.from) {
-      var from = Object.assign({}, config.from || {});
+      let from = Object.assign({}, config.from || {});
       from.onComplete = onComplete;
       tween = TweenLite.from(node,
         config.duration || 0,
@@ -321,20 +292,16 @@
         to || {});
     }
 
-    var cal;
-    if (this.timeline.getChildren().length > this.offset) {
-      cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
-      this.beginOffset += cal;
-      this.timeline.add(tween, 'beginning+=' + this.beginOffset);
-      this.timeline.add(function () {
-        this.beginOffset -= cal;
-      });
-
-    } else {
-      cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
-      this.beginOffset += cal;
-      this.timeline.add(tween, config.position);
+    let cal = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
+    if (this.timeline.getChildren().length === 0) {
+      cal = 0;
     }
+
+    _this.childrenOffset = ((_this.childrenOffset * 10) + (cal * 10)) / 10;
+    _this.timeline.add(tween, _this.childrenOffset);
+    _this.timeline.add(function () {
+      _this.childrenOffset = ((_this.childrenOffset * 10) - (cal * 10)) / 10;
+    });
   };
 
   /**

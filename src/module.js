@@ -1,4 +1,5 @@
 /* global Galaxy */
+'use strict';
 
 (function (root, G) {
 

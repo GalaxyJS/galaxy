@@ -28,8 +28,8 @@
             done();
 
             // Check for circular module loading
-            var tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-            var root = viewNode.root;
+            let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+            let root = viewNode.root;
             while (root.scope) {
               if (tempURI.parsedURL === root.scope.uri.paresdURL) {
                 return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');

@@ -33,7 +33,7 @@
    * @public
    */
   BoundProperty.prototype.addNode = function (node, attributeName, expression) {
-    var index = this.nodes.indexOf(node);
+    let index = this.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || this.props[index] !== attributeName) {
@@ -47,7 +47,7 @@
   };
 
   BoundProperty.prototype.removeNode = function (node) {
-    var nodeIndexInTheHost;
+    let nodeIndexInTheHost;
     while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
@@ -60,10 +60,10 @@
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
-    var oldValue = this.value;
+    let oldValue = this.value;
     this.value = value;
     if (value instanceof Array) {
-      var init = GV.createActiveArray(value, this.updateValue.bind(this));
+      let init = GV.createActiveArray(value, this.updateValue.bind(this));
       if (target instanceof GV.ViewNode) {
         target.values[key] = value;
         this.setUpdateFor(target, key, init);
@@ -75,15 +75,15 @@
 
   BoundProperty.prototype.setValue = function (value, scopeData) {
     if (value !== this.value) {
-      var oldValue = this.value;
+      let oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        var oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
-        var change = {type: 'reset', params: value, original: value};
+        let oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
+        let change = {type: 'reset', params: value, original: value};
         this.updateValue(change, oldChanges);
         Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
       } else {
-        for (var i = 0, len = this.nodes.length; i < len; i++) {
+        for (let i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
         Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
@@ -92,7 +92,7 @@
   };
 
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {
-    for (var i = 0, len = this.nodes.length; i < len; i++) {
+    for (let i = 0, len = this.nodes.length; i < len; i++) {
       this.nodes[i].value = changes.original;
       this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }

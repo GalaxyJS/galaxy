@@ -1,4 +1,5 @@
 /* global Galaxy */
+'use strict';
 
 (function (G) {
   G.GalaxyObserver = GalaxyObserver;
@@ -28,14 +29,14 @@
   }
 
   GalaxyObserver.prototype.remove = function () {
-    var index = this.context.__observers__.indexOf(this);
+    let index = this.context.__observers__.indexOf(this);
     if (index !== -1) {
       this.context.__observers__.splice(index, 1);
     }
   };
 
   GalaxyObserver.prototype.notify = function (key, value, oldValue) {
-    var _this = this;
+    let _this = this;
     if (_this.subjectsActions.hasOwnProperty(key)) {
       _this.subjectsActions[key].call(_this.context, value, oldValue);
     }

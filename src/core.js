@@ -1,10 +1,11 @@
 /* global Galaxy, Promise */
+'use strict';
 
 (function (root) {
   Array.prototype.unique = function () {
-    var a = this.concat();
-    for (var i = 0; i < a.length; ++i) {
-      for (var j = i + 1; j < a.length; ++j) {
+    let a = this.concat();
+    for (let i = 0; i < a.length; ++i) {
+      for (let j = i + 1; j < a.length; ++j) {
         if (a[i] === a[j])
           a.splice(j--, 1);
       }
@@ -23,7 +24,7 @@
 
   Galaxy.defineProp = Object.defineProperty;
 
-  var importedLibraries = {};
+  let importedLibraries = {};
 
   function Core() {
     this.bootModule = null;
@@ -36,14 +37,14 @@
   }
 
   Core.prototype.extend = function (out) {
-    var result = out || {}, obj;
-    for (var i = 1; i < arguments.length; i++) {
+    let result = out || {}, obj;
+    for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
 
       if (!obj)
         continue;
 
-      for (var key in obj) {
+      for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
           if (obj[key] instanceof Array)
             result[key] = this.extend(result[key] || [], obj[key]);
@@ -64,7 +65,7 @@
     }
 
     if (value === null) {
-      for (var k in out) {
+      for (let k in out) {
         if (typeof out[k] === 'object') {
           out[k] = this.resetObjectTo(out[k], null);
         }
@@ -76,10 +77,10 @@
       return out;
     }
 
-    var outKeys = Object.keys(out);
-    var keys = outKeys.concat(Object.keys(value)).unique();
-    for (var i = 0, len = keys.length; i < len; i++) {
-      var key = keys[i];
+    let outKeys = Object.keys(out);
+    let keys = outKeys.concat(Object.keys(value)).unique();
+    for (let i = 0, len = keys.length; i < len; i++) {
+      let key = keys[i];
       if (value.hasOwnProperty(key)) {
         out[key] = this.resetObjectTo(out[key], value[key]);
       }
@@ -100,7 +101,7 @@
    * @param {Element} rootElement
    */
   Core.prototype.boot = function (bootModule) {
-    var _this = this;
+    let _this = this;
     _this.rootElement = bootModule.element;
 
     bootModule.domain = this;
@@ -110,7 +111,7 @@
       throw new Error('element property is mandatory');
     }
 
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
@@ -122,11 +123,11 @@
   };
 
   Core.prototype.convertToURIString = function (obj, prefix) {
-    var _this = this;
-    var str = [], p;
+    let _this = this;
+    let str = [], p;
     for (p in obj) {
       if (obj.hasOwnProperty(p)) {
-        var k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
+        let k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
         str.push((v !== null && typeof v === 'object') ?
           _this.convertToURIString(v, k) :
           encodeURIComponent(k) + '=' + encodeURIComponent(v));
@@ -137,15 +138,15 @@
   };
 
   Core.prototype.load = function (module) {
-    var _this = this;
-    var promise = new Promise(function (resolve, reject) {
+    let _this = this;
+    let promise = new Promise(function (resolve, reject) {
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
       module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
       // root.Galaxy.onModuleLoaded[module.systemId] = resolve;
       // var moduleExist = Galaxy.modules[module.systemId];
 
-      var invokers = [module.url];
+      let invokers = [module.url];
       if (module.invokers) {
         if (module.invokers.indexOf(module.url) !== -1) {
           throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
@@ -156,9 +157,9 @@
       }
 
       Galaxy.onLoadQueue[module.systemId] = true;
-      var url = module.url + '?' + _this.convertToURIString(module.params || {});
+      let url = module.url + '?' + _this.convertToURIString(module.params || {});
       // var fetcher = root.Galaxy.onModuleLoaded[url];
-      var fetcherContent = root.Galaxy.moduleContents[url];
+      let fetcherContent = root.Galaxy.moduleContents[url];
 
       if (!fetcherContent || module.fresh) {
         root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
@@ -186,9 +187,9 @@
   };
 
   Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
-    var _this = this;
+    let _this = this;
     var promise = new Promise(function (resolve, reject) {
-      var doneImporting = function (module, imports) {
+      let doneImporting = function (module, imports) {
         imports.splice(imports.indexOf(module.url) - 1, 1);
 
         if (imports.length === 0) {
@@ -197,11 +198,11 @@
         }
       };
 
-      var imports = [];
+      let imports = [];
       // extract imports from the source code
-      var moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
+      let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
       moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        var query = path.match(/([\S]+)/gm);
+        let query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],
           fresh: query.indexOf('new') !== -1
@@ -210,20 +211,20 @@
         return 'Scope.imports[\'' + query[query.length - 1] + '\']';
       });
 
-      var scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
+      let scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
       // var view = new Galaxy.GalaxyView(scope);
       // Create module from moduleMetaData
-      var module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
+      let module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
 
-        var importsCopy = imports.slice(0);
+        let importsCopy = imports.slice(0);
         imports.forEach(function (item) {
-          var moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+          let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
           if (moduleAddOnProvider) {
-            var providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-            var addOnInstance = providerStages.create();
+            let providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+            let addOnInstance = providerStages.create();
             module.registerAddOn(item.url, addOnInstance);
             module.addOnProviders.push(providerStages);
 
@@ -258,21 +259,21 @@
    * @param {Galaxy.GalaxyModule}  module
    */
   Core.prototype.executeCompiledModule = function (module) {
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       for (var item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
 
       for (item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
-          var asset = importedLibraries[item];
+          let asset = importedLibraries[item];
           if (asset.module) {
             module.scope.imports[asset.name] = asset.module;
           }
         }
       }
 
-      var moduleSource = new Function('Scope', module.source);
+      let moduleSource = new Function('Scope', module.source);
       moduleSource.call(null, module.scope);
 
       delete module.source;
@@ -295,7 +296,7 @@
         // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }
 
-      var currentModule = Galaxy.modules[module.systemId];
+      let currentModule = Galaxy.modules[module.systemId];
       if (module.temporary || module.scope._doNotRegister) {
         delete module.scope._doNotRegister;
         currentModule = {
@@ -321,10 +322,10 @@
   };
 
   Core.prototype.getModulesByAddOnId = function (addOnId) {
-    var modules = [];
-    var module;
+    let modules = [];
+    let module;
 
-    for (var moduleId in this.modules) {
+    for (let moduleId in this.modules) {
       module = this.modules[moduleId];
       if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
         modules.push({

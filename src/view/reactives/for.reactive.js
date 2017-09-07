@@ -27,10 +27,10 @@
      * @param nodeScopeData
      */
     onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
-      var parentNode = viewNode.parent;
-      var position = null;
-      var newItems = [];
-      var action = Array.prototype.push;
+      let parentNode = viewNode.parent;
+      let position = null;
+      let newItems = [];
+      let action = Array.prototype.push;
 
       if (!changes) {
         return;
@@ -47,7 +47,7 @@
       }
 
       if (changes.type === 'push') {
-        var length = cache.nodes.length;
+        let length = cache.nodes.length;
         if (length) {
           position = cache.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
@@ -60,7 +60,7 @@
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
-        var removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
+        let removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
         removedItems.forEach(function (node) {
           node.destroy();
@@ -78,17 +78,17 @@
         newItems = changes.original;
       }
 
-      var valueEntity, itemDataScope = nodeScopeData;
-      var p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
+      let valueEntity, itemDataScope = nodeScopeData;
+      let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        for (var i = 0, len = newItems.length; i < len; i++) {
+        for (let i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
-          var vn = root.append(cns, itemDataScope, parentNode, position);
+          let vn = root.append(cns, itemDataScope, parentNode, position);
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }

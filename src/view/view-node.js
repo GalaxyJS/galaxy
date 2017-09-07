@@ -5,7 +5,7 @@
     return document.createElement(t);
   }
 
-  var commentNode = document.createComment('');
+  let commentNode = document.createComment('');
 
   function createComment(t) {
     return commentNode.cloneNode(t);
@@ -30,13 +30,13 @@
   };
 
 
-  var referenceToThis = {
+  let referenceToThis = {
     value: this,
     configurable: false,
     enumerable: false
   };
 
-  var __node__ = {
+  let __node__ = {
     value: null,
     configurable: false,
     enumerable: false
@@ -78,7 +78,7 @@
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
 
-    var _this = this;
+    let _this = this;
     this.rendered = new Promise(function (ready) {
       _this.ready = ready;
       _this.callLifeCycleEvent('rendered');
@@ -106,7 +106,7 @@
   };
 
   ViewNode.prototype.cloneSchema = function () {
-    var clone = Object.assign({}, this.schema);
+    let clone = Object.assign({}, this.schema);
     empty(clone);
 
     GV.defineProp(clone, 'mother', {
@@ -144,7 +144,7 @@
   };
 
   ViewNode.prototype.setInDOM = function (flag) {
-    var _this = this;
+    let _this = this;
     _this.inDOM = flag;
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
@@ -167,7 +167,7 @@
   };
 
   ViewNode.prototype.append = function (viewNode, position) {
-    var _this = this;
+    let _this = this;
     viewNode.parent = _this;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
@@ -182,7 +182,7 @@
     this.properties[boundProperty.name] = boundProperty;
     this.setters[propertyName] = this.root.getPropertySetter(this, propertyName, this.virtual ? null : expression);
     if (!this.setters[propertyName]) {
-      var _this = this;
+      let _this = this;
       this.setters[propertyName] = function () {
         console.error('No setter for property :', propertyName, '\nNode:', _this);
       };
@@ -190,7 +190,7 @@
   };
 
   ViewNode.prototype.destroy = function (sequence, source) {
-    var _this = this;
+    let _this = this;
 
     if (!source) {
       if (_this.inDOM) {
@@ -244,9 +244,9 @@
     });
 
 
-    var property, properties = _this.properties;
+    let property, properties = _this.properties;
 
-    for (var propertyName in properties) {
+    for (let propertyName in properties) {
       property = properties[propertyName];
 
       if (property instanceof GV.BoundProperty) {
@@ -256,7 +256,7 @@
 
     _this.inDOM = false;
     _this.dependedObjects.forEach(function (item) {
-      var temp = GV.getBoundProperties(item);
+      let temp = GV.getBoundProperties(item);
       temp.forEach(function (property) {
         property.removeNode(item);
       });
@@ -270,8 +270,8 @@
   };
 
   ViewNode.prototype.refreshBinds = function (data) {
-    var property;
-    for (var propertyName in this.properties) {
+    let property;
+    for (let propertyName in this.properties) {
       property = this.properties[propertyName];
       if (property.nodes.indexOf(this) === -1) {
         property.nodes.push(this);
@@ -292,8 +292,8 @@
   };
 
   ViewNode.prototype.empty = function (sequence, source) {
-    var toBeRemoved = [], node;
-    for (var i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
+    let toBeRemoved = [], node;
+    for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
@@ -301,7 +301,7 @@
       }
     }
 
-    var domManipulationSequence = this.domManipulationSequence;
+    let domManipulationSequence = this.domManipulationSequence;
 
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);

@@ -1,4 +1,5 @@
 /* global Galaxy */
+'use strict';
 
 (function (root, G) {
   root.Galaxy = G;
@@ -16,7 +17,7 @@
     this.uri = new GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
-    this.on('module.destroy',this.destroy.bind(this));
+    this.on('module.destroy', this.destroy.bind(this));
   }
 
   GalaxyScope.prototype.destroy = function () {
@@ -26,7 +27,7 @@
   };
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
-    var newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+    let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }
@@ -67,7 +68,7 @@
   };
 
   GalaxyScope.prototype.observe = function (object) {
-    var observer = new Galaxy.GalaxyObserver(object);
+    let observer = new Galaxy.GalaxyObserver(object);
 
     this.observers.push(observer);
 
@@ -81,10 +82,10 @@
   G.GalaxyURI = GalaxyURI;
 
   function GalaxyURI(url) {
-    var urlParser = document.createElement('a');
+    let urlParser = document.createElement('a');
     urlParser.href = url;
-    var myRegexp = /([^\t\n]+)\//g;
-    var match = myRegexp.exec(urlParser.pathname);
+    let myRegexp = /([^\t\n]+)\//g;
+    let match = myRegexp.exec(urlParser.pathname);
 
 
     this.paresdURL = urlParser.href;

@@ -22,7 +22,7 @@
     onApply: function (cache, viewNode, value, oldValue, matches, context) {
       if (viewNode.virtual) return;
 
-      var clone = GV.bindSubjectsToData(value, context, true);
+      let clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
         Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {

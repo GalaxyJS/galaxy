@@ -9,8 +9,8 @@
   GV.REACTIVE_BEHAVIORS['checked'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (viewNode, nodeScopeData, matches) {
-      var parts = matches[1].split('.');
-      var setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
+      let parts = matches[1].split('.');
+      let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
       viewNode.node.addEventListener('change', function () {
         setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.checked);
       });

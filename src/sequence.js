@@ -1,4 +1,5 @@
 /* global Galaxy, Promise */
+'use strict';
 
 (function (G) {
   /**
@@ -15,7 +16,7 @@
   }
 
   GalaxySequence.prototype.start = function () {
-    if(this.started) return this;
+    if (this.started) return this;
 
     this.firstStepResolve();
     this.started = true;
@@ -23,7 +24,7 @@
   };
 
   GalaxySequence.prototype.reset = function () {
-    var _this = this;
+    let _this = this;
 
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
@@ -34,8 +35,8 @@
   };
 
   GalaxySequence.prototype.next = function (action) {
-    var thunk;
-    var promise = new Promise(function (resolve, reject) {
+    let thunk;
+    let promise = new Promise(function (resolve, reject) {
       thunk = function () {
         action(resolve, reject);
       };

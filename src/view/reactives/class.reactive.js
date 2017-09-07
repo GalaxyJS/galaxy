@@ -30,7 +30,7 @@
         return viewNode.node.removeAttribute('class');
       }
 
-      var clone = GV.bindSubjectsToData(value, context, true);
+      let clone = GV.bindSubjectsToData(value, context, true);
 
       if (viewNode.hasOwnProperty('[reactive/class]') && clone !== viewNode['[reactive/class]']) {
         Galaxy.resetObjectTo(viewNode['[reactive/class]'], clone);
@@ -42,7 +42,7 @@
       }
 
       viewNode.node.setAttribute('class', []);
-      var observer = new Galaxy.GalaxyObserver(clone);
+      let observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
         toggles.call(viewNode, key, value, oldValue, clone);
       });
@@ -65,9 +65,9 @@
     } else if (obj instanceof Array) {
       return obj;
     } else if (obj !== null && typeof obj === 'object') {
-      var newClasses = [];
+      let newClasses = [];
 
-      for (var key in obj) {
+      for (let key in obj) {
         if (obj.hasOwnProperty(key) && obj[key]) newClasses.push(key);
       }
 
@@ -77,10 +77,10 @@
 
   function toggles(key, value, oldValue, classes) {
     if (oldValue === value) return;
-    var oldClasses = this.node.getAttribute('class');
+    let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    var newClasses = getClasses(classes);
-    var _this = this;
+    let newClasses = getClasses(classes);
+    let _this = this;
 
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.sequences[':class'].start().finish(function () {

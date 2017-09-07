@@ -20,8 +20,8 @@
     onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
         viewNode.domManipulationSequence.next(function (done) {
-          var allContent = scopeData.element.schema.children;
-          var parentViewNode = viewNode.parent;
+          let allContent = scopeData.element.schema.children;
+          let parentViewNode = viewNode.parent;
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);

@@ -1,14 +1,15 @@
 /* global require */
 
-var gulp = require('gulp');
+let gulp = require('gulp');
 // var minify = require('gulp-minify');
-var uglify = require('gulp-uglify');
-var gulpDocumentation = require('gulp-documentation');
-var pump = require('pump');
-var concat = require('gulp-concat');
-var Server = require('karma').Server;
+let uglify = require('gulp-uglify');
+let babel = require('gulp-babel');
+let gulpDocumentation = require('gulp-documentation');
+let pump = require('pump');
+let concat = require('gulp-concat');
+let Server = require('karma').Server;
 
-var sources = {
+let sources = {
   galaxy: [
     'src/polyfills/*.js',
     'src/core.js',
@@ -21,6 +22,13 @@ var sources = {
 gulp.task('build-galaxy', function () {
   return pump([
     gulp.src(sources.galaxy),
+    // babel({
+    //   'plugins': ['transform-es2015-modules-commonjs'],
+    //   presets: ['es2015', {
+    //     loose: true,
+    //     'modules': false
+    //   }]
+    // }),
     concat('galaxy.js'),
     // uglify({
     //   compress: {
@@ -42,8 +50,9 @@ gulp.task('build-galaxy', function () {
 gulp.task('build-galaxy-production', function () {
   return pump([
     gulp.src(sources.galaxy),
+    babel({presets: ['es2015']}),
     concat('galaxy.min.js'),
-    uglify(),
+    uglify({compress: true}),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/')
   ], function (error) {
@@ -59,7 +68,7 @@ gulp.task('start-development', ['build-galaxy'], function () {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], ['build-galaxy', 'build-galaxy-production']);
+  ], ['build-galaxy']);
 });
 
 gulp.task('generate-docs', function () {
