@@ -13,9 +13,9 @@
     },
     onApply: function (cache, viewNode, value) {
       // console.info('apply $if', value);
-      if (value) {
+      if (value && !viewNode.inDOM) {
         viewNode.setInDOM(true);
-      } else {
+      } else if (!value && viewNode.inDOM) {
         viewNode.setInDOM(false);
       }
     }

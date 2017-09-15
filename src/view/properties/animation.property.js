@@ -13,20 +13,23 @@
      * @param scopeData
      */
     handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      viewNode.rendered.then(function () {
-        if (viewNode.virtual || !config) {
-          return;
-        }
+      if (viewNode.virtual || !config) {
+        return;
+      }
+      let enterAnimationConfig = config[':enter'];
+      if (enterAnimationConfig) {
+        // viewNode.sequences[':enter'].next(function (done) {
+        //
+        // });
 
-        let enterAnimationConfig = config[':enter'];
-        if (enterAnimationConfig) {
-          viewNode.sequences[':enter'].next(function (done) {
+        viewNode.populateEnterSequence = function (sequence) {
+          sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               animationMeta.s = enterAnimationConfig.sequence;
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
-              
+
               if (enterAnimationConfig.parent) {
                 animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
               }
@@ -35,19 +38,25 @@
               lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
             } else {
+              let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
+              lastStep.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
             }
           });
-        }
+        };
+      }
 
-        let leaveAnimationConfig = config[':leave'];
-        if (leaveAnimationConfig) {
-          viewNode.sequences[':destroy'].next(function (done) {
-            viewNode._destroyed = true;
-            done();
-          });
+      let leaveAnimationConfig = config[':leave'];
+      if (leaveAnimationConfig) {
+        // Set view node as destroyed whenever the node is leaving the dom
+        viewNode.populateLeaveSequence = function (sequence) {
+          // viewNode._destroyed = true;
+          // sequence.next(function (done) {
+          //   viewNode._destroyed = true;
+          //   done();
+          // });
 
-          viewNode.sequences[':leave'].next(function (done) {
+          sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
@@ -67,10 +76,10 @@
                     am.add(viewNode.node, conf, done);
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
-
-                // When viewNode is the one which is destroyed, then run the queue
+// debugger;
+                // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode._destroyed) {
+                if (viewNode.origin) {
                   let finishImmediately = false;
                   while (animationMeta.parent) {
                     animationMeta = animationMeta.parent;
@@ -95,23 +104,25 @@
                   }
 
                   animationMeta.queue = {};
-                  delete viewNode._destroyed;
+                  viewNode.origin = false;
+                  // delete viewNode._destroyed;
                 }
 
                 return;
               }
 
-              if (leaveAnimationConfig.group) {
-                animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
-              }
-
+              // if (leaveAnimationConfig.group) {
+              //   animationMeta = animationMeta.getGroup(leaveAnimationConfig.group);
+              // }
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
             } else {
               AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
             }
           });
-        }
+        };
+      }
 
+      viewNode.rendered.then(function () {
         viewNode.observer.on('class', function (value, oldValue) {
           value.forEach(function (item) {
             if (item && oldValue.indexOf(item) === -1) {

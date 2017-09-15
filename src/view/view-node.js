@@ -77,6 +77,7 @@
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
+    this.origin = false;
 
     let _this = this;
     this.rendered = new Promise(function (ready) {
@@ -143,23 +144,39 @@
     this.setInDOM(false);
   };
 
+  ViewNode.prototype.populateEnterSequence = function (sequence) {
+
+  };
+
+  ViewNode.prototype.populateLeaveSequence = function (sequence) {
+
+  };
+
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
+
+    // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
+        _this.populateEnterSequence(_this.sequences[':enter']);
+        // Go to next dom manipulation step when the whole :enter sequence is done
         _this.sequences[':enter'].finish(done);
         _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
+        _this.origin = true;
+        _this.populateLeaveSequence(_this.sequences[':leave']);
+        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
         _this.sequences[':leave'].start().finish(function () {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
           removeChild(_this.node.parentNode, _this.node);
           done();
           _this.sequences[':leave'].reset();
+          _this.origin = false;
           _this.callLifeCycleEvent('removed');
         });
       });
@@ -193,25 +210,34 @@
     let _this = this;
 
     if (!source) {
+      _this.origin = true;
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
-          _this.empty(_this.sequences[':destroy'], true);
-          _this.sequences[':destroy'].start().finish(function () {
-            _this.sequences[':leave'].start().finish(function () {
-              removeChild(_this.node.parentNode, _this.node);
-              _this.sequences[':leave'].reset();
-              _this.callLifeCycleEvent('removed');
-            });
+          // _this.empty(_this.sequences[':destroy'], true);
+          // _this.sequences[':destroy'].start().finish(function ()
 
+          // Add children leave sequence to this node leave sequence
+          _this.empty(_this.sequences[':leave'], true);
+          _this.populateLeaveSequence(_this.sequences[':leave']);
+          _this.sequences[':leave'].start().finish(function () {
+            removeChild(_this.node.parentNode, _this.node);
+            _this.sequences[':leave'].reset();
             done();
-            _this.sequences[':destroy'].reset();
+            _this.origin = false;
+            _this.callLifeCycleEvent('removed');
             _this.callLifeCycleEvent('destroyed');
           });
+
+
+          // _this.sequences[':destroy'].reset();
+          // _this.callLifeCycleEvent('destroyed');
+          // });
         });
       }
     } else if (source) {
       if (_this.inDOM) {
         sequence.next(function (done) {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start().finish(function () {
             _this.sequences[':leave'].reset();
             _this.callLifeCycleEvent('removed');
@@ -226,6 +252,7 @@
     } else {
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start().finish(function () {
             removeChild(_this.node.parentNode, _this.node);
             done();
@@ -280,7 +307,7 @@
     }
   };
 
-  var empty = function (nodes) {
+  const empty = function (nodes) {
     if (nodes instanceof Array) {
       nodes.forEach(function (node) {
         empty(node);
@@ -302,9 +329,10 @@
     }
 
     let domManipulationSequence = this.domManipulationSequence;
-
+// sequence = sequence || this.domManipulationSequence
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
+      // if(viewNode.origin)
       domManipulationSequence = viewNode.domManipulationSequence;
     });
 
