@@ -60,7 +60,7 @@
     this.line.then(thunk).catch(thunk);
     this.line = promise;
 
-    return promise;
+    return _this;
   };
 
   GalaxySequence.prototype.finish = function (action) {

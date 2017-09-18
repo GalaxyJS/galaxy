@@ -329,7 +329,7 @@
     }
 
     let domManipulationSequence = this.domManipulationSequence;
-// sequence = sequence || this.domManipulationSequence
+    // sequence = sequence || this.domManipulationSequence
     toBeRemoved.forEach(function (viewNode) {
       viewNode.destroy(sequence, source);
       // if(viewNode.origin)
