@@ -25,7 +25,7 @@
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentViewNode.append(content.__node__.__viewNode__, viewNode.placeholder);
+              parentViewNode.registerChild(content.__node__.__viewNode__, viewNode.placeholder);
               content.__node__.__viewNode__.setInDOM(true);
             }
           });

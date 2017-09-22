@@ -59,7 +59,7 @@
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema, node) {
+  function ViewNode(root, schema, node,dms) {
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
@@ -155,6 +155,7 @@
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
+    // domManipulationSequence = domManipulationSequence || _this.domManipulationSequence;
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
@@ -183,7 +184,7 @@
     }
   };
 
-  ViewNode.prototype.append = function (viewNode, position) {
+  ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
     _this.node.insertBefore(viewNode.placeholder, position);

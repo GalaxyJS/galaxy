@@ -26,6 +26,7 @@
         }).then(function (module) {
           cache.module = module;
           viewNode.node.setAttribute('module', module.systemId);
+          console.warn('-------------------', module.systemId);
           module.start();
           done();
         }).catch(function (response) {
@@ -61,7 +62,6 @@
 
             // Wait till all viewNode animation are done
             viewNode.domManipulationSequence.next(function (done) {
-              done();
               // Empty the node and wait till all animation are finished
               // Then load the next requested module in the queue
               // and after that proceed to next request in the queue
@@ -72,6 +72,11 @@
                   done();
                   nextCall();
                 });
+              // requestAnimationFrame(function () {
+                done();
+                // debugger;
+              // });
+
             });
           });
         });

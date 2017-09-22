@@ -72,8 +72,6 @@
                     if (conf.parent) {
                       parent = AnimationMeta.get(conf.parent);
                       am.setParent(parent, 'leave');
-
-
                     } else {
                       // console.info(conf.parent, conf.sequence, am.childrenOffset);
                     }
