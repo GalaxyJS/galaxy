@@ -59,7 +59,7 @@
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema, node,dms) {
+  function ViewNode(root, schema, node, dms) {
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
@@ -74,6 +74,7 @@
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
+    this.activityState = new GV.StateTree();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
@@ -155,16 +156,20 @@
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
-    // domManipulationSequence = domManipulationSequence || _this.domManipulationSequence;
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
+      _this.activityState.busy();
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
         _this.populateEnterSequence(_this.sequences[':enter']);
         // Go to next dom manipulation step when the whole :enter sequence is done
-        _this.sequences[':enter'].finish(done);
+        _this.sequences[':enter'].finish(function () {
+          done();
+          _this.activityState.idle();
+        });
+        // done()
         _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
@@ -187,6 +192,9 @@
   ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
+
+    _this.activityState.add(viewNode.activityState);
+
     _this.node.insertBefore(viewNode.placeholder, position);
   };
 
@@ -209,14 +217,12 @@
 
   ViewNode.prototype.destroy = function (sequence, source) {
     let _this = this;
+    _this.activityState.busy();
 
     if (!source) {
       _this.origin = true;
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
-          // _this.empty(_this.sequences[':destroy'], true);
-          // _this.sequences[':destroy'].start().finish(function ()
-
           // Add children leave sequence to this node leave sequence
           _this.empty(_this.sequences[':leave'], true);
           _this.populateLeaveSequence(_this.sequences[':leave']);
@@ -228,11 +234,6 @@
             _this.callLifeCycleEvent('removed');
             _this.callLifeCycleEvent('destroyed');
           });
-
-
-          // _this.sequences[':destroy'].reset();
-          // _this.callLifeCycleEvent('destroyed');
-          // });
         });
       }
     } else if (source) {
@@ -269,6 +270,7 @@
     _this.domManipulationSequence.next(function (done) {
       _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
       done();
+      _this.activityState.idle();
     });
 
 
@@ -320,7 +322,7 @@
   };
 
   ViewNode.prototype.empty = function (sequence, source) {
-    let toBeRemoved = [], node;
+    let toBeRemoved = [], node, _this = this;
     for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
@@ -329,16 +331,33 @@
       }
     }
 
-    let domManipulationSequence = this.domManipulationSequence;
-    // sequence = sequence || this.domManipulationSequence
-    toBeRemoved.forEach(function (viewNode) {
-      viewNode.destroy(sequence, source);
-      // if(viewNode.origin)
-      domManipulationSequence = viewNode.domManipulationSequence;
+    if (sequence) {
+      toBeRemoved.forEach(function (viewNode) {
+        viewNode.destroy(sequence, source);
+      });
+
+      return;
+    }
+
+    this.activityState.next(function (nextEmptyRequest) {
+      let domManipulationSequence = null;
+      toBeRemoved.forEach(function (viewNode) {
+        viewNode.destroy(sequence, source);
+        domManipulationSequence = viewNode.domManipulationSequence;
+      });
+      // debugger;
+      nextEmptyRequest();
+      // if (domManipulationSequence) {
+      //   domManipulationSequence.next(function (nextDOMAction) {
+      //     nextEmptyRequest();
+      //     nextDOMAction();
+      //   });
+      // } else {
+      //   nextEmptyRequest();
+      // }
     });
-
-
-    return domManipulationSequence;
+    debugger;
+    return this.activityState.sequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {

@@ -546,19 +546,19 @@
    * @param {Object} nodeScopeData
    * @param {GalaxyView.ViewNode} parentViewNode
    */
-  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, domManipulationSequence) {
+  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
     let _this = this;
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, domManipulationSequence);
+        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null, domManipulationSequence);
+      let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null);
       parentViewNode.registerChild(viewNode, position);
 
-      domManipulationSequence = domManipulationSequence || viewNode.domManipulationSequence;
+      // activitySequence = activitySequence || viewNode.domManipulationSequence;
 
       if (nodeSchema['mutator']) {
         viewNode.mutator = nodeSchema['mutator'];
@@ -583,15 +583,19 @@
         }
       }
 
-      if (!viewNode.virtual) {
-        if (viewNode.inDOM) {
-          viewNode.setInDOM(true);
+      // viewNode.activitySequence.next(function (nextActivity) {
+        if (!viewNode.virtual) {
+          if (viewNode.inDOM) {
+            viewNode.setInDOM(true);
+          }
+
+          _this.append(nodeSchema.children,
+            parentScopeData,
+            viewNode, null);
         }
 
-        _this.append(nodeSchema.children,
-          parentScopeData,
-          viewNode, null, domManipulationSequence);
-      }
+        // nextActivity();
+      // });
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered

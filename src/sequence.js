@@ -15,6 +15,7 @@
     this.lastTimestamp = Date.now();
     this.offset = 0;
     this.reset();
+    this.children = [];
   }
 
   GalaxySequence.prototype.start = function () {
@@ -40,20 +41,20 @@
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
     let thunk;
+    _this.offset++;
     let promise = new Promise(function (resolve, reject) {
-      const timestamp = Date.now();
-      if (_this.lastTimestamp !== timestamp) {
-        _this.lastTimestamp = timestamp;
-        _this.offset = 0;
-      } else {
-        _this.offset++;
-      }
-
-      const id = _this.lastTimestamp + '-' + _this.offset;
+      // const timestamp = Date.now();
+      // if (_this.lastTimestamp !== timestamp) {
+      //   _this.lastTimestamp = timestamp;
+      //   _this.offset = 0;
+      // } else {
+      //   _this.offset++;
+      // }
+      //
+      // const id = _this.lastTimestamp + '-' + _this.offset;
       thunk = function () {
-        action.call({
-          id: id
-        }, resolve, reject);
+        _this.offset--;
+        action.call(null, resolve, reject);
       };
     });
 

@@ -57,11 +57,12 @@
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         viewNode.rendered.then(function () {
           // Add the new module request to the sequence
-          console.info('Added to queue:', moduleMeta.id);
+
           loadModuleQueue.next(function (nextCall) {
 
             // Wait till all viewNode animation are done
-            viewNode.domManipulationSequence.next(function (done) {
+            // viewNode.domManipulationSequence.next(function (done) {
+              console.info('Added to queue:', moduleMeta.id);
               // Empty the node and wait till all animation are finished
               // Then load the next requested module in the queue
               // and after that proceed to next request in the queue
@@ -73,12 +74,12 @@
                   nextCall();
                 });
               // requestAnimationFrame(function () {
-                done();
+              //   done();
                 // debugger;
               // });
 
             });
-          });
+          // });
         });
       } else if (!moduleMeta) {
         viewNode.empty();
