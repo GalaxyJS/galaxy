@@ -57,29 +57,20 @@
       if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         viewNode.rendered.then(function () {
           // Add the new module request to the sequence
-
           loadModuleQueue.next(function (nextCall) {
-
             // Wait till all viewNode animation are done
-            // viewNode.domManipulationSequence.next(function (done) {
-              console.info('Added to queue:', moduleMeta.id);
-              // Empty the node and wait till all animation are finished
-              // Then load the next requested module in the queue
-              // and after that proceed to next request in the queue
-              viewNode.empty().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
-                .next(function (done) {
-                  // module loader may add animations to the viewNode. if that is the case we will wait for the animations
-                  // to finish at the beginning of the next module request
-                  done();
-                  nextCall();
-                });
-              // requestAnimationFrame(function () {
-              //   done();
-                // debugger;
-              // });
-
-            });
-          // });
+            console.info('Added to queue:', moduleMeta.id);
+            // Empty the node and wait till all animation are finished
+            // Then load the next requested module in the queue
+            // and after that proceed to next request in the queue
+            viewNode.empty().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
+              .next(function (done) {
+                // module loader may add animations to the viewNode. if that is the case we will wait for the animations
+                // to finish at the beginning of the next module request
+                done();
+                nextCall();
+              });
+          });
         });
       } else if (!moduleMeta) {
         viewNode.empty();

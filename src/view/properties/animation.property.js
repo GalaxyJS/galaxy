@@ -55,7 +55,7 @@
           //   done();
           // });
 
-          console.info('outside', viewNode.node);
+          // console.info('outside', viewNode.node);
           sequence.next(function (done) {
 
             if (leaveAnimationConfig.sequence) {
@@ -65,7 +65,7 @@
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
-                console.info('--->', viewNode.node, leaveAnimationConfig.order, leaveAnimationConfig.parent, leaveAnimationConfig.sequence);
+                // console.info('--->', viewNode.node, leaveAnimationConfig.order, leaveAnimationConfig.parent, leaveAnimationConfig.sequence);
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
                     let parent;
@@ -81,7 +81,7 @@
                     if (parent) {
                       // Update parent childrenOffset so the parent animation starts after the subTimeline animations
                       parent.childrenOffset = am.childrenOffset;
-                      console.info(conf.parent, conf.sequence, am.childrenOffset);
+                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
                     }
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));

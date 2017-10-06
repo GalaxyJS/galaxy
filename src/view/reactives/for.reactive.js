@@ -88,7 +88,7 @@
           itemDataScope[p] = valueEntity;
           cns = viewNode.cloneSchema();
           delete cns.$for;
-          let vn = root.append(cns, itemDataScope, parentNode, position, parentNode.domManipulationSequence);
+          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }

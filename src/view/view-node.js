@@ -52,6 +52,17 @@
     name: 'renderConfig'
   };
 
+  ViewNode.cleanReferenceNode = function (schemas) {
+    if (schemas instanceof Array) {
+      schemas.forEach(function (node) {
+        ViewNode.cleanReferenceNode(node);
+      });
+    } else if (schemas) {
+      schemas.__node__ = null;
+      ViewNode.cleanReferenceNode(schemas.children);
+    }
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -74,7 +85,8 @@
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.activityState = new GV.StateTree();
+    this.manipulationPromiseList = [];
+    this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
     this.observer = new Galaxy.GalaxyObserver(this);
@@ -108,17 +120,17 @@
   };
 
   ViewNode.prototype.cloneSchema = function () {
-    let clone = Object.assign({}, this.schema);
-    empty(clone);
+    let schemaClone = Object.assign({}, this.schema);
+    ViewNode.cleanReferenceNode(schemaClone);
 
-    GV.defineProp(clone, 'mother', {
+    GV.defineProp(schemaClone, 'mother', {
       value: this.schema,
       writable: false,
       enumerable: false,
       configurable: false
     });
 
-    return clone;
+    return schemaClone;
   };
 
   /**
@@ -159,7 +171,6 @@
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
-      _this.activityState.busy();
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         removeChild(_this.placeholder.parentNode, _this.placeholder);
@@ -167,9 +178,7 @@
         // Go to next dom manipulation step when the whole :enter sequence is done
         _this.sequences[':enter'].finish(function () {
           done();
-          _this.activityState.idle();
         });
-        // done()
         _this.callLifeCycleEvent('inserted');
       });
     } else if (!flag && _this.node.parentNode) {
@@ -189,11 +198,16 @@
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @param position
+   */
   ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
 
-    _this.activityState.add(viewNode.activityState);
+    // _this.activityState.add(viewNode.activityState);
 
     _this.node.insertBefore(viewNode.placeholder, position);
   };
@@ -215,62 +229,72 @@
     }
   };
 
-  ViewNode.prototype.destroy = function (sequence, source) {
-    let _this = this;
-    _this.activityState.busy();
+  /**
+   *
+   * @param {Galaxy.GalaxySequence}
+   */
+  ViewNode.prototype.destroy = function (leaveSequence) {
+    const _this = this;
 
-    if (!source) {
+    // The node is the original node that is being removed
+    if (!leaveSequence) {
       _this.origin = true;
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
-          // Add children leave sequence to this node leave sequence
-          _this.empty(_this.sequences[':leave'], true);
+          // Add children leave sequence to this node(parent node) leave sequence
+          _this.empty(_this.sequences[':leave']);
           _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start().finish(function () {
-            removeChild(_this.node.parentNode, _this.node);
-            _this.sequences[':leave'].reset();
-            done();
-            _this.origin = false;
-            _this.callLifeCycleEvent('removed');
-            _this.callLifeCycleEvent('destroyed');
-          });
+          _this.sequences[':leave'].start()
+            .finish(function () {
+              removeChild(_this.node.parentNode, _this.node);
+              done();
+
+              _this.origin = false;
+
+              _this.sequences[':leave'].reset();
+
+              _this.callLifeCycleEvent('removed');
+              _this.callLifeCycleEvent('destroyed');
+            });
         });
       }
-    } else if (source) {
+    } else if (leaveSequence) {
       if (_this.inDOM) {
-        sequence.next(function (done) {
+        leaveSequence.nextAction(function () {
           _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start().finish(function () {
-            _this.sequences[':leave'].reset();
-            _this.callLifeCycleEvent('removed');
-            _this.callLifeCycleEvent('destroyed');
-          });
+          _this.sequences[':leave'].start()
+            .finish(function () {
+              _this.sequences[':leave'].reset();
 
-          done();
+              _this.callLifeCycleEvent('removed');
+              _this.callLifeCycleEvent('destroyed');
+            });
         });
       }
 
-      _this.empty(sequence, true);
+      _this.empty(leaveSequence);
     } else {
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
           _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start().finish(function () {
-            removeChild(_this.node.parentNode, _this.node);
-            done();
-            _this.sequences[':leave'].reset();
-            _this.callLifeCycleEvent('removed');
-            _this.callLifeCycleEvent('destroyed');
-          });
+          _this.sequences[':leave'].start()
+            .finish(function () {
+              removeChild(_this.node.parentNode, _this.node);
+              done();
+
+              _this.sequences[':leave'].reset();
+
+              _this.callLifeCycleEvent('removed');
+              _this.callLifeCycleEvent('destroyed');
+            });
         });
       }
-      _this.empty(sequence, true);
+
+      _this.empty(leaveSequence);
     }
 
-    _this.domManipulationSequence.next(function (done) {
+    _this.domManipulationSequence.nextAction(function () {
       _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-      done();
-      _this.activityState.idle();
     });
 
 
@@ -310,54 +334,46 @@
     }
   };
 
-  const empty = function (nodes) {
-    if (nodes instanceof Array) {
-      nodes.forEach(function (node) {
-        empty(node);
-      });
-    } else if (nodes) {
-      nodes.__node__ = null;
-      empty(nodes.children);
-    }
-  };
-
-  ViewNode.prototype.empty = function (sequence, source) {
+  ViewNode.prototype.empty = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
     for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
-        toBeRemoved.push(node.__viewNode__);
+        toBeRemoved.push(node['__viewNode__']);
       }
     }
 
-    if (sequence) {
+    // If leaveSequence is present we assume that this is a being destroyed as child, therefore its
+    // children should also get destroyed as child
+    if (leaveSequence) {
+      _this.manipulationPromiseList = _this.parent.manipulationPromiseList;
       toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy(sequence, source);
+        viewNode.destroy(leaveSequence);
+        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
       });
+      _this.manipulationPromiseList = [];
 
-      return;
+      return this.uiManipulationSequence;
     }
 
-    this.activityState.next(function (nextEmptyRequest) {
-      let domManipulationSequence = null;
+    this.uiManipulationSequence.next(function (nextUIAction) {
+      if (!toBeRemoved.length) {
+        nextUIAction();
+      }
+
       toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy(sequence, source);
-        domManipulationSequence = viewNode.domManipulationSequence;
+        viewNode.destroy();
+        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
       });
-      // debugger;
-      nextEmptyRequest();
-      // if (domManipulationSequence) {
-      //   domManipulationSequence.next(function (nextDOMAction) {
-      //     nextEmptyRequest();
-      //     nextDOMAction();
-      //   });
-      // } else {
-      //   nextEmptyRequest();
-      // }
+
+      Promise.all(_this.manipulationPromiseList).then(function () {
+        _this.manipulationPromiseList = [];
+        nextUIAction();
+      });
     });
-    debugger;
-    return this.activityState.sequence;
+
+    return this.uiManipulationSequence;
   };
 
   ViewNode.prototype.getPlaceholder = function () {

@@ -537,7 +537,14 @@
   };
 
   GalaxyView.prototype.init = function (schema) {
-    this.append(schema, this.scope, this.container);
+    const _this = this;
+    _this.container.uiManipulationSequence.next(function (nextUIAction) {
+      _this.append(schema, _this.scope, _this.container, null, _this.container.manipulationPromiseList);
+      Promise.all(_this.container.manipulationPromiseList).then(function () {
+        _this.container.manipulationPromiseList = [];
+        nextUIAction();
+      });
+    });
   };
 
   /**
@@ -545,20 +552,21 @@
    * @param {Object} nodeSchema
    * @param {Object} nodeScopeData
    * @param {GalaxyView.ViewNode} parentViewNode
+   * @param position
+   * @param {Array} manipulationPromiseList
    */
-  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position) {
+  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, manipulationPromiseList) {
     let _this = this;
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null);
+        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, manipulationPromiseList);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null);
+      viewNode.manipulationPromiseList = manipulationPromiseList || [];
       parentViewNode.registerChild(viewNode, position);
-
-      // activitySequence = activitySequence || viewNode.domManipulationSequence;
 
       if (nodeSchema['mutator']) {
         viewNode.mutator = nodeSchema['mutator'];
@@ -583,26 +591,25 @@
         }
       }
 
-      // viewNode.activitySequence.next(function (nextActivity) {
-        if (!viewNode.virtual) {
-          if (viewNode.inDOM) {
-            viewNode.setInDOM(true);
-          }
-
-          _this.append(nodeSchema.children,
-            parentScopeData,
-            viewNode, null);
+      if (!viewNode.virtual) {
+        if (viewNode.inDOM) {
+          viewNode.setInDOM(true);
         }
 
-        // nextActivity();
-      // });
+        _this.append(nodeSchema.children,
+          parentScopeData,
+          viewNode, null, manipulationPromiseList);
+      }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered
-      viewNode.domManipulationSequence.next(function (done) {
+      viewNode.domManipulationSequence.finish(function () {
         viewNode.ready();
-        done();
       });
+
+      if (manipulationPromiseList) {
+        manipulationPromiseList.push(viewNode.domManipulationSequence.line);
+      }
 
       return viewNode;
     }
@@ -683,7 +690,7 @@
         return setter;
 
       case 'reactive':
-        var reactiveFunction = viewNode.properties.behaviors[property.name];
+        let reactiveFunction = viewNode.properties.behaviors[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);

@@ -29,6 +29,7 @@
   GalaxySequence.prototype.reset = function () {
     const _this = this;
     _this.offset = 0;
+    _this.children = [];
 
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
@@ -58,14 +59,27 @@
       };
     });
 
+    this.children.push(promise);
+
     this.line.then(thunk).catch(thunk);
     this.line = promise;
 
     return _this;
   };
 
+  GalaxySequence.prototype.nextAction = function (action) {
+    this.next(function (done) {
+      action.call();
+      done();
+    });
+  };
+
   GalaxySequence.prototype.finish = function (action) {
-    this.line.then(action);
+    const _this = this;
+    Promise.all(this.children).then(function () {
+      _this.children = [];
+      action.call();
+    });
   };
 
 
