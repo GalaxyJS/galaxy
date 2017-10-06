@@ -165,7 +165,7 @@
 
   };
 
-  ViewNode.prototype.setInDOM = function (flag) {
+  ViewNode.prototype.setInDOM = function (flag, nextUIAction) {
     let _this = this;
     _this.inDOM = flag;
 
@@ -176,7 +176,7 @@
         removeChild(_this.placeholder.parentNode, _this.placeholder);
         _this.populateEnterSequence(_this.sequences[':enter']);
         // Go to next dom manipulation step when the whole :enter sequence is done
-        _this.sequences[':enter'].finish(function () {
+        _this.sequences[':enter'].nextAction(function () {
           done();
         });
         _this.callLifeCycleEvent('inserted');
@@ -243,6 +243,7 @@
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
           _this.empty(_this.sequences[':leave']);
+
           _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start()
             .finish(function () {

@@ -13,7 +13,7 @@
     this.firstStepResolve = null;
     this.started = false;
     this.lastTimestamp = Date.now();
-    this.offset = 0;
+    // this.offset = 0;
     this.reset();
     this.children = [];
   }
@@ -28,7 +28,7 @@
 
   GalaxySequence.prototype.reset = function () {
     const _this = this;
-    _this.offset = 0;
+    // _this.offset = 0;
     _this.children = [];
 
     _this.line = new Promise(function (resolve) {
@@ -42,7 +42,7 @@
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
     let thunk;
-    _this.offset++;
+    // _this.offset++;
     let promise = new Promise(function (resolve, reject) {
       // const timestamp = Date.now();
       // if (_this.lastTimestamp !== timestamp) {
@@ -54,7 +54,7 @@
       //
       // const id = _this.lastTimestamp + '-' + _this.offset;
       thunk = function () {
-        _this.offset--;
+        // _this.offset--;
         action.call(null, resolve, reject);
       };
     });

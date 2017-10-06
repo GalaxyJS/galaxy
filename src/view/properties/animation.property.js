@@ -18,10 +18,6 @@
       }
       let enterAnimationConfig = config[':enter'];
       if (enterAnimationConfig) {
-        // viewNode.sequences[':enter'].next(function (done) {
-        //
-        // });
-
         viewNode.populateEnterSequence = function (sequence) {
           sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
@@ -30,7 +26,8 @@
               animationMeta.position = enterAnimationConfig.position;
 
               if (enterAnimationConfig.parent) {
-                animationMeta.setParent(AnimationMeta.get(enterAnimationConfig.parent));
+                const parent = AnimationMeta.get(enterAnimationConfig.parent);
+                animationMeta.setParent(parent);
               }
 
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
@@ -49,13 +46,6 @@
       if (leaveAnimationConfig) {
         // Set view node as destroyed whenever the node is leaving the dom
         viewNode.populateLeaveSequence = function (sequence) {
-          // viewNode._destroyed = true;
-          // sequence.next(function (done) {
-          //   viewNode._destroyed = true;
-          //   done();
-          // });
-
-          // console.info('outside', viewNode.node);
           sequence.next(function (done) {
 
             if (leaveAnimationConfig.sequence) {
@@ -65,23 +55,22 @@
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
-                // console.info('--->', viewNode.node, leaveAnimationConfig.order, leaveAnimationConfig.parent, leaveAnimationConfig.sequence);
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
-                    let parent;
+                    // debugger;
+                    let parent, extra = 0;
                     if (conf.parent) {
                       parent = AnimationMeta.get(conf.parent);
                       am.setParent(parent, 'leave');
-                    } else {
-                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
+                      // extra = parent.childrenOffset;
                     }
 
                     am.add(viewNode.node, conf, done);
 
                     if (parent) {
                       // Update parent childrenOffset so the parent animation starts after the subTimeline animations
-                      parent.childrenOffset = am.childrenOffset;
-                      // console.info(conf.parent, conf.sequence, am.childrenOffset);
+                      parent.childrenOffset = extra + am.childrenOffset;
+                      // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.childrenOffset);
                     }
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
@@ -89,10 +78,11 @@
                 // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode.origin) {
+                  // debugger;
                   let finishImmediately = false;
-                  while (animationMeta.parent) {
-                    animationMeta = animationMeta.parent;
-                  }
+                  // while (animationMeta.parent) {
+                  //   animationMeta = animationMeta.parent;
+                  // }
                   let queue = animationMeta.queue;
 
                   for (let key in queue) {
@@ -261,7 +251,7 @@
         _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
           _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
-          _this.parent.childrenOffset = 0;
+          // _this.parent.childrenOffset = 0;
         });
 
         _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
@@ -275,12 +265,12 @@
           _this.parent.subTimelineOffset = subTimelineOffset;
         }
 
-        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
-
         _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
         _this.parent.timeline.add(function () {
           _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
         });
+
+        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
       }
     }
   };

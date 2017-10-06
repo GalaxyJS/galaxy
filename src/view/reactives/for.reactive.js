@@ -82,16 +82,25 @@
       let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = viewNode.cloneSchema();
-          delete cns.$for;
-          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
-          vn.data[p] = valueEntity;
-          action.call(n, vn);
-        }
+        // console.info(viewNode.manipulationPromiseList.length);
+        // viewNode.uiManipulationSequence.next(function (ne) {
+
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            valueEntity = newItems[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = valueEntity;
+            cns = viewNode.cloneSchema();
+            delete cns.$for;
+            let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
+            vn.data[p] = valueEntity;
+            action.call(n, vn);
+          }
+
+          // Promise.all(viewNode.manipulationPromiseList).then(function () {
+          //   // debugger;
+          //   ne();
+          // });
+        // });
       }
     }
   };
