@@ -25,14 +25,15 @@
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
 
-              if (enterAnimationConfig.parent) {
-                const parent = AnimationMeta.get(enterAnimationConfig.parent);
-                animationMeta.setParent(parent);
-              }
-
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
+
+              // Add to parent should happen after the animation is added to the child
+              if (enterAnimationConfig.parent) {
+                const parent = AnimationMeta.get(enterAnimationConfig.parent);
+                parent.addChild(animationMeta);
+              }
             } else {
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
@@ -47,7 +48,6 @@
         // Set view node as destroyed whenever the node is leaving the dom
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.next(function (done) {
-
             if (leaveAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
@@ -58,19 +58,21 @@
                 animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
                   return function () {
                     // debugger;
-                    let parent, extra = 0;
-                    if (conf.parent) {
-                      parent = AnimationMeta.get(conf.parent);
-                      am.setParent(parent, 'leave');
-                      // extra = parent.childrenOffset;
-                    }
+                    // let parent;
 
                     am.add(viewNode.node, conf, done);
+                    // debugger;
+                    // let a = AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
+                    // debugger;
+                    // if (parent) {
+                    // Update parent lastChildPosition so the parent animation starts after the subTimeline animations
+                    // parent.lastChildPosition += AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
+                    // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.lastChildPosition);
+                    // }
 
-                    if (parent) {
-                      // Update parent childrenOffset so the parent animation starts after the subTimeline animations
-                      parent.childrenOffset = extra + am.childrenOffset;
-                      // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.childrenOffset);
+                    if (conf.parent) {
+                      const parent = AnimationMeta.get(conf.parent);
+                      parent.addChild(am, true);
                     }
                   };
                 })(viewNode, animationMeta, leaveAnimationConfig));
@@ -104,6 +106,7 @@
 
                   animationMeta.queue = {};
                   viewNode.origin = false;
+                  // debugger;
                   // delete viewNode._destroyed;
                 }
 
@@ -174,23 +177,39 @@
   };
 
   function AnimationMeta(onComplete) {
+    const _this = this;
+
     this.timeline = new TimelineLite({
       autoRemoveChildren: true,
-      onComplete: onComplete
+      onComplete: function () {
+        _this.lastChildPosition = 0;
+        if (_this.parent) {
+          _this.parent.timeline.remove(_this.timeline);
+        }
+      }
     });
 
     this.timeline.addLabel('beginning', 0);
     this.duration = 0;
     this.position = '+=0';
-    this.subSequences = {};
     this.queue = {};
-    this.childrenOffset = 0;
-    this.subTimelineOffset = 0;
-    this.offset = 0;
+    this.lastChildPosition = 0;
     this.parent = null;
   }
 
   AnimationMeta.ANIMATIONS = {};
+  AnimationMeta.TIMELINES = {};
+
+  AnimationMeta.getTimeline = function (name, onComplete) {
+    if (!AnimationMeta.TIMELINES[name]) {
+      AnimationMeta.TIMELINES[name] = new TimelineLite({
+        autoRemoveChildren: true,
+        onComplete: onComplete
+      });
+    }
+
+    return AnimationMeta.TIMELINES[name];
+  };
 
   AnimationMeta.get = function (name) {
     if (!AnimationMeta.ANIMATIONS[name]) {
@@ -234,43 +253,26 @@
     return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
-  AnimationMeta.prototype.setParent = function (parent, type) {
-    let _this = this;
-    _this.parent = parent;
-    const children = _this.parent.timeline.getChildren();
+  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
+    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
+    const lcp = (this.lastChildPosition * 10);
+    const c = (calc * 10);
+    this.lastChildPosition = (lcp + c) / 10;
+  };
 
-    if (children.indexOf(_this.timeline) === -1) {
-      let subTimelineOffset = AnimationMeta.calculateDuration(_this.parent.duration, _this.parent.position || '+=0');
+  AnimationMeta.prototype.addChild = function (child, prior) {
+    const _this = this;
+    child.parent = _this;
 
-      if (type === 'leave') {
-        // subTimeline should start immediately when state is leave
-        if (_this.parent.timeline.progress() === undefined) {
-          _this.parent.subTimelineOffset = 0;
-        }
-
-        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
-        _this.parent.timeline.add(function () {
-          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
-          // _this.parent.childrenOffset = 0;
-        });
-
-        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
-      } else {
-        if (_this.parent.timeline.progress() === undefined) {
-          return;
-        }
-
-        // There should be a starting offset when state is enter
-        if (_this.parent.subTimelineOffset === 0) {
-          _this.parent.subTimelineOffset = subTimelineOffset;
-        }
-
-        _this.parent.timeline.add(this.timeline, _this.parent.subTimelineOffset);
-        _this.parent.timeline.add(function () {
-          _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) - (subTimelineOffset * 10)) / 10;
-        });
-
-        _this.parent.subTimelineOffset = ((_this.parent.subTimelineOffset * 10) + (subTimelineOffset * 10)) / 10;
+    const children = this.timeline.getChildren(false);
+    // console.info(children);
+    if (children.indexOf(child.timeline) === -1) {
+      _this.calculateLastChildPosition(child.duration, child.position);
+      // console.info('-------------------------------', child.duration, child.position, _this.lastChildPosition);
+      _this.timeline.add(child.timeline, _this.lastChildPosition);
+    } else {
+      if (prior) {
+        _this.lastChildPosition = (child.lastChildPosition + child.duration);
       }
     }
   };
@@ -298,16 +300,23 @@
         to || {});
     }
 
-    let calc = AnimationMeta.calculateDuration(config.duration, config.position || '+=0');
-    if (this.timeline.getChildren().length === 0) {
-      calc = 0;
+    _this.calculateLastChildPosition(config.duration, config.position);
+    // debugger;
+    // First animation in the timeline should always start at zero
+    if (this.timeline.getChildren(false).length === 0) {
+      _this.lastChildPosition = 0;
+      // console.info(node, 'beginning');
+      _this.timeline.add(tween, 0);
+    } else {
+      // console.info(node, _this.lastChildPosition);
+      _this.timeline.add(tween, _this.lastChildPosition);
+      // _this.timeline.add((function (a, b) {
+      //   return function () {
+      //     _this.lastChildPosition = (a - b) / 10;
+      //   };
+      // })(lcp, (calc * 10)));
     }
 
-    _this.childrenOffset = ((_this.childrenOffset * 10) + (calc * 10)) / 10;
-    _this.timeline.add(tween, _this.childrenOffset);
-    _this.timeline.add(function () {
-      _this.childrenOffset = ((_this.childrenOffset * 10) - (calc * 10)) / 10;
-    });
   };
 
   /**
