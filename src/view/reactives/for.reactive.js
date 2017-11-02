@@ -37,9 +37,11 @@
       }
 
       if (changes.type === 'reset') {
-        cache.nodes.forEach(function (viewNode) {
-          viewNode.destroy();
-        });
+        let vn = null;
+        for (let i = cache.nodes.length - 1; i >= 0; i--) {
+          vn = cache.nodes[i];
+          vn.destroy();
+        }
 
         cache.nodes = [];
         changes = Object.assign({}, changes);
@@ -82,24 +84,21 @@
       let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
 
       if (newItems instanceof Array) {
-        // console.info(viewNode.manipulationPromiseList.length);
-        // viewNode.uiManipulationSequence.next(function (ne) {
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = valueEntity;
+          cns = viewNode.cloneSchema();
+          delete cns.$for;
+          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+          vn.data[p] = valueEntity;
+          action.call(n, vn);
+        }
 
-          for (let i = 0, len = newItems.length; i < len; i++) {
-            valueEntity = newItems[i];
-            itemDataScope = GV.createMirror(nodeScopeData);
-            itemDataScope[p] = valueEntity;
-            cns = viewNode.cloneSchema();
-            delete cns.$for;
-            let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.manipulationPromiseList);
-            vn.data[p] = valueEntity;
-            action.call(n, vn);
-          }
-
-          // Promise.all(viewNode.manipulationPromiseList).then(function () {
-          //   // debugger;
-          //   ne();
-          // });
+        // Promise.all(viewNode.manipulationPromiseList).then(function () {
+        //   // debugger;
+        //   ne();
+        // });
         // });
       }
     }

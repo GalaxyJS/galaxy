@@ -539,9 +539,10 @@
   GalaxyView.prototype.init = function (schema) {
     const _this = this;
     _this.container.uiManipulationSequence.next(function (nextUIAction) {
-      _this.append(schema, _this.scope, _this.container, null, _this.container.manipulationPromiseList);
-      Promise.all(_this.container.manipulationPromiseList).then(function () {
-        _this.container.manipulationPromiseList = [];
+      _this.append(schema, _this.scope, _this.container, null, _this.container.domManipulationBus);
+
+      Promise.all(_this.container.domManipulationBus).then(function () {
+        _this.container.domManipulationBus = [];
         nextUIAction();
       });
     });
@@ -553,19 +554,19 @@
    * @param {Object} nodeScopeData
    * @param {GalaxyView.ViewNode} parentViewNode
    * @param position
-   * @param {Array} manipulationPromiseList
+   * @param {Array} domManipulationBus
    */
-  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, manipulationPromiseList) {
+  GalaxyView.prototype.append = function (nodeSchema, parentScopeData, parentViewNode, position, domManipulationBus) {
     let _this = this;
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, manipulationPromiseList);
+        _this.append(nodeSchema[i], parentScopeData, parentViewNode, null, domManipulationBus);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(_this, nodeSchema, null);
-      viewNode.manipulationPromiseList = manipulationPromiseList || [];
+      viewNode.domManipulationBus = domManipulationBus || [];
       parentViewNode.registerChild(viewNode, position);
 
       if (nodeSchema['mutator']) {
@@ -598,7 +599,7 @@
 
         _this.append(nodeSchema.children,
           parentScopeData,
-          viewNode, null, manipulationPromiseList);
+          viewNode, null, domManipulationBus);
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
@@ -607,8 +608,8 @@
         viewNode.ready();
       });
 
-      if (manipulationPromiseList) {
-        manipulationPromiseList.push(viewNode.domManipulationSequence.line);
+      if (domManipulationBus) {
+        domManipulationBus.push(viewNode.domManipulationSequence.line);
       }
 
       return viewNode;

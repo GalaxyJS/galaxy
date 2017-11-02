@@ -63,7 +63,7 @@
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue
-            viewNode.empty().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
+            viewNode.clean().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
               .next(function (done) {
                 // module loader may add animations to the viewNode. if that is the case we will wait for the animations
                 // to finish at the beginning of the next module request
@@ -73,7 +73,7 @@
           });
         });
       } else if (!moduleMeta) {
-        viewNode.empty();
+        viewNode.clean();
       }
 
       cache.moduleMeta = moduleMeta;

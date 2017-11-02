@@ -52,62 +52,67 @@
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
               animationMeta.position = leaveAnimationConfig.position;
+              animationMeta.sequuuu = leaveAnimationConfig.sequence;
+              animationMeta.NODE = viewNode;
+
               // if the animation has order it will be added to the queue according to its order.
               // No order means lowest order
               if (typeof leaveAnimationConfig.order === 'number') {
-                animationMeta.addToQueue(leaveAnimationConfig.order, viewNode.node, (function (viewNode, am, conf) {
-                  return function () {
-                    // debugger;
-                    // let parent;
+                animationMeta.addToQueue(leaveAnimationConfig.order,
+                  viewNode.node, (function (viewNode, am, conf) {
+                    return function () {
+                      am.add(viewNode.node, conf, done);
+                      animationMeta.NODE = viewNode;
 
-                    am.add(viewNode.node, conf, done);
-                    // debugger;
-                    // let a = AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
-                    // debugger;
-                    // if (parent) {
-                    // Update parent lastChildPosition so the parent animation starts after the subTimeline animations
-                    // parent.lastChildPosition += AnimationMeta.calculateDuration(conf.duration, conf.position || '+=0');
-                    // console.info(viewNode.node, '\n', conf.parent, conf.sequence, parent.lastChildPosition);
-                    // }
-
-                    if (conf.parent) {
-                      const parent = AnimationMeta.get(conf.parent);
-                      parent.addChild(am, true);
-                    }
-                  };
-                })(viewNode, animationMeta, leaveAnimationConfig));
+                      if (conf.parent) {
+                        const parent = AnimationMeta.get(conf.parent);
+                        parent.addChild(am, true);
+                      }
+                    };
+                  })(viewNode, animationMeta, leaveAnimationConfig));
 
                 // When viewNode is the one which is the origin, then run the queue
                 // The queue will never run if the destroyed viewNode has the lowest order
                 if (viewNode.origin) {
-                  // debugger;
                   let finishImmediately = false;
-                  // while (animationMeta.parent) {
-                  //   animationMeta = animationMeta.parent;
-                  // }
+                  while (animationMeta.parent) {
+                    animationMeta = animationMeta.parent;
+                  }
                   let queue = animationMeta.queue;
 
-                  for (let key in queue) {
-                    let item;
-                    for (let i = 0, len = queue[key].length; i < len; i++) {
-                      item = queue[key][i];
-                      item.operation();
+                  let item = null;
+                  for (let i = 0, len = animationMeta.list.length; i < len; i++) {
+                    item = animationMeta.list[i];
+                    item.operation();
 
-                      // If the the current queue item.node is the destroyed node, then all the animations in
-                      // queue should be ignored
-                      if (item.node === viewNode.node) {
-                        finishImmediately = true;
-                        break;
-                      }
+                    if (item.node === viewNode.node) {
+                      finishImmediately = true;
+                      break;
                     }
 
                     if (finishImmediately) break;
                   }
+                  // for (let key in queue) {
+                  //   let item;
+                  //   for (let i = 0, len = queue[key].length; i < len; i++) {
+                  //     item = queue[key][i];
+                  //     item.operation();
+                  //
+                  //     // If the the current queue item.node is the destroyed node, then all the animations in
+                  //     // queue should be ignored
+                  //     if (item.node === viewNode.node) {
+                  //       finishImmediately = true;
+                  //       break;
+                  //     }
+                  //   }
+                  //
+                  //   if (finishImmediately) break;
+                  // }
 
                   animationMeta.queue = {};
+                  animationMeta.list = [];
                   viewNode.origin = false;
                   // debugger;
-                  // delete viewNode._destroyed;
                 }
 
                 return;
@@ -128,7 +133,6 @@
               let _config = config['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
-
                   let classAnimationConfig = _config;
                   classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
 
@@ -193,6 +197,7 @@
     this.duration = 0;
     this.position = '+=0';
     this.queue = {};
+    this.list = [];
     this.lastChildPosition = 0;
     this.parent = null;
   }
@@ -258,6 +263,7 @@
     const lcp = (this.lastChildPosition * 10);
     const c = (calc * 10);
     this.lastChildPosition = (lcp + c) / 10;
+
   };
 
   AnimationMeta.prototype.addChild = function (child, prior) {
@@ -265,16 +271,26 @@
     child.parent = _this;
 
     const children = this.timeline.getChildren(false);
-    // console.info(children);
+
     if (children.indexOf(child.timeline) === -1) {
       _this.calculateLastChildPosition(child.duration, child.position);
-      // console.info('-------------------------------', child.duration, child.position, _this.lastChildPosition);
       _this.timeline.add(child.timeline, _this.lastChildPosition);
     } else {
-      if (prior) {
-        _this.lastChildPosition = (child.lastChildPosition + child.duration);
-      }
+      _this.calculateLastChildPosition(child.duration, child.position);
+      _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
     }
+
+    // if (prior) {
+    // if (_this.timeline.getChildren(false).length !== 0) {
+    // const calc = AnimationMeta.calculateDuration(child.duration, child.position || '+=0');
+    // _this.lastChildPosition = ((_this.lastChildPosition * 10) + (child.lastChildPosition * 10) ) / 10;
+    // }
+    // _this.lastChildPosition = (child.lastChildPosition + child.duration);
+    // _this.lastChildPosition += AnimationMeta.calculateDuration(child.lastChildPosition, child.position || '+=0');
+    // console.info(child.NODE.node.tagName, '>', child.lastChildPosition, '<', child.duration,
+    //   '===', _this.NODE.node.tagName, '>', _this.lastChildPosition);
+    // }
+
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
@@ -301,20 +317,13 @@
     }
 
     _this.calculateLastChildPosition(config.duration, config.position);
-    // debugger;
+
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
-      // console.info(node, 'beginning');
       _this.timeline.add(tween, 0);
     } else {
-      // console.info(node, _this.lastChildPosition);
       _this.timeline.add(tween, _this.lastChildPosition);
-      // _this.timeline.add((function (a, b) {
-      //   return function () {
-      //     _this.lastChildPosition = (a - b) / 10;
-      //   };
-      // })(lcp, (calc * 10)));
     }
 
   };
@@ -332,7 +341,7 @@
     if (!this.queue[order]) {
       this.queue[order] = [];
     }
-
     this.queue[order].push({node: node, operation: operation});
+    this.list.push({node: node, operation: operation, order: order});
   };
 })(Galaxy);

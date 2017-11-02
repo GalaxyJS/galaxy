@@ -34,7 +34,7 @@
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
     });
-
+this.startP = _this.line;
     this.started = false;
     return _this;
   };

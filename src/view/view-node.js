@@ -63,6 +63,16 @@
     }
   };
 
+  ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
+    node.domManipulationBus = node.parent.domManipulationBus;
+    let remove = null;
+    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
+      remove = toBeRemoved[i];
+      remove.destroy(sequence);
+      node.domManipulationBus.push(remove.domManipulationSequence.line);
+    }
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView} root
@@ -85,7 +95,7 @@
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.manipulationPromiseList = [];
+    this.domManipulationBus = [];
     this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {};
@@ -169,7 +179,7 @@
     let _this = this;
     _this.inDOM = flag;
 
-    // We use domManipulationSequence to make sure dom manipulation activities happen in oder and don't interfere
+    // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
@@ -242,7 +252,7 @@
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
-          _this.empty(_this.sequences[':leave']);
+          _this.clean(_this.sequences[':leave']);
 
           _this.populateLeaveSequence(_this.sequences[':leave']);
           _this.sequences[':leave'].start()
@@ -260,6 +270,8 @@
         });
       }
     } else if (leaveSequence) {
+      _this.clean(leaveSequence);
+
       if (_this.inDOM) {
         leaveSequence.nextAction(function () {
           _this.populateLeaveSequence(_this.sequences[':leave']);
@@ -272,9 +284,9 @@
             });
         });
       }
-
-      _this.empty(leaveSequence);
     } else {
+      _this.clean(leaveSequence);
+
       if (_this.inDOM) {
         _this.domManipulationSequence.next(function (done) {
           _this.populateLeaveSequence(_this.sequences[':leave']);
@@ -290,8 +302,6 @@
             });
         });
       }
-
-      _this.empty(leaveSequence);
     }
 
     _this.domManipulationSequence.nextAction(function () {
@@ -324,7 +334,7 @@
     }
   };
 
-  ViewNode.prototype.refreshBinds = function (data) {
+  ViewNode.prototype.refreshBinds = function () {
     let property;
     for (let propertyName in this.properties) {
       property = this.properties[propertyName];
@@ -335,9 +345,9 @@
     }
   };
 
-  ViewNode.prototype.empty = function (leaveSequence) {
+  ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
-    for (let i = this.node.childNodes.length - 1, till = 0; i >= till; i--) {
+    for (let i = this.node.childNodes.length - 1; i >= 0; i--) {
       node = this.node.childNodes[i];
 
       if (node.hasOwnProperty('__viewNode__')) {
@@ -348,28 +358,20 @@
     // If leaveSequence is present we assume that this is a being destroyed as child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
-      _this.manipulationPromiseList = _this.parent.manipulationPromiseList;
-      toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy(leaveSequence);
-        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
-      });
-      _this.manipulationPromiseList = [];
+      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
 
-      return this.uiManipulationSequence;
+      return _this.uiManipulationSequence;
     }
 
-    this.uiManipulationSequence.next(function (nextUIAction) {
+    _this.uiManipulationSequence.next(function (nextUIAction) {
       if (!toBeRemoved.length) {
         nextUIAction();
       }
 
-      toBeRemoved.forEach(function (viewNode) {
-        viewNode.destroy();
-        _this.manipulationPromiseList.push(viewNode.domManipulationSequence.line);
-      });
+      ViewNode.destroyNodes(_this, toBeRemoved);
 
-      Promise.all(_this.manipulationPromiseList).then(function () {
-        _this.manipulationPromiseList = [];
+      Promise.all(_this.domManipulationBus).then(function () {
+        _this.domManipulationBus = [];
         nextUIAction();
       });
     });
