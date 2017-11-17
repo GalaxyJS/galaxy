@@ -109,6 +109,7 @@
 
                     if (finishImmediately) break;
                   }
+                  debugger;
 
                   animationMeta.queue = {};
                   animationMeta.list = [];
@@ -272,31 +273,47 @@
 
     const children = this.timeline.getChildren(false);
 
-
     if (children.indexOf(child.timeline) === -1) {
       if (prior) {
-        // _this.lastChildPosition = ((child.lastChildPosition * 10)  ) / 10;
-        // console.info(child.NODE.node, child.lastChildPosition,
-        //   '\n====\n', _this.NODE.node.tagName, _this.lastChildPosition);
-        //
-        // _this.timeline.add(child.timeline, _this.lastChildPosition);
-        // const calc = AnimationMeta.calculateDuration(child.lastChildPosition, _this.position);
-        // let c = ( (calc * 10) - (_this.duration * 10) ) / 10;
-        // _this.calculateLastChildPosition(calc, child.position);
-
+        console.info(child.NODE.node, child.lastChildPosition, _this.duration);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
-        _this.calculateLastChildPosition(child.duration, child.position);
-      }
-      else {
-        _this.calculateLastChildPosition(child.duration, child.position);
+        _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
+      } else {
+        _this.calculateLastChildPosition(_this.duration, _this.position);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
       }
     } else {
       if (prior) {
         _this.calculateLastChildPosition(child.duration, child.position);
-        _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
+        console.info(child.NODE.node, _this.lastChildPosition);
       }
     }
+
+
+    // if (children.indexOf(child.timeline) === -1) {
+    //   if (prior) {
+    //     // _this.lastChildPosition = ((child.lastChildPosition * 10)  ) / 10;
+    //     // console.info(child.NODE.node, child.lastChildPosition,
+    //     //   '\n====\n', _this.NODE.node.tagName, _this.lastChildPosition);
+    //     //
+    //     // _this.timeline.add(child.timeline, _this.lastChildPosition);
+    //     // const calc = AnimationMeta.calculateDuration(child.lastChildPosition, _this.position);
+    //     // let c = ( (calc * 10) - (_this.duration * 10) ) / 10;
+    //     // _this.calculateLastChildPosition(calc, child.position);
+    //
+    //     _this.timeline.add(child.timeline, _this.lastChildPosition);
+    //     _this.calculateLastChildPosition(child.duration, child.position);
+    //   }
+    //   else {
+    //     _this.calculateLastChildPosition(child.duration, child.position);
+    //     _this.timeline.add(child.timeline, _this.lastChildPosition);
+    //   }
+    // } else {
+    //   if (prior) {
+    //     _this.calculateLastChildPosition(child.duration, child.position);
+    //     _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
+    //   }
+    // }
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
