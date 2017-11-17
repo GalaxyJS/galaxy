@@ -24,6 +24,7 @@
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               animationMeta.duration = enterAnimationConfig.duration;
               animationMeta.position = enterAnimationConfig.position;
+              animationMeta.NODE = viewNode;
 
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
@@ -80,39 +81,38 @@
                   }
                   let queue = animationMeta.queue;
 
-                  let item = null;
-                  for (let i = 0, len = animationMeta.list.length; i < len; i++) {
-                    item = animationMeta.list[i];
-                    item.operation();
-
-                    if (item.node === viewNode.node) {
-                      finishImmediately = true;
-                      break;
-                    }
-
-                    if (finishImmediately) break;
-                  }
-                  // for (let key in queue) {
-                  //   let item;
-                  //   for (let i = 0, len = queue[key].length; i < len; i++) {
-                  //     item = queue[key][i];
-                  //     item.operation();
+                  // let item = null;
+                  // for (let i = 0, len = animationMeta.list.length; i < len; i++) {
+                  //   item = animationMeta.list[i];
+                  //   item.operation();
                   //
-                  //     // If the the current queue item.node is the destroyed node, then all the animations in
-                  //     // queue should be ignored
-                  //     if (item.node === viewNode.node) {
-                  //       finishImmediately = true;
-                  //       break;
-                  //     }
+                  //   if (item.node === viewNode.node) {
+                  //     finishImmediately = true;
+                  //     break;
                   //   }
                   //
                   //   if (finishImmediately) break;
                   // }
+                  for (let key in queue) {
+                    let item;
+                    for (let i = 0, len = queue[key].length; i < len; i++) {
+                      item = queue[key][i];
+                      item.operation();
+
+                      // If the the current queue item.node is the destroyed node, then all the animations in
+                      // queue should be ignored
+                      if (item.node === viewNode.node) {
+                        finishImmediately = true;
+                        break;
+                      }
+                    }
+
+                    if (finishImmediately) break;
+                  }
 
                   animationMeta.queue = {};
                   animationMeta.list = [];
                   viewNode.origin = false;
-                  // debugger;
                 }
 
                 return;
@@ -272,25 +272,31 @@
 
     const children = this.timeline.getChildren(false);
 
+
     if (children.indexOf(child.timeline) === -1) {
-      _this.calculateLastChildPosition(child.duration, child.position);
-      _this.timeline.add(child.timeline, _this.lastChildPosition);
+      if (prior) {
+        // _this.lastChildPosition = ((child.lastChildPosition * 10)  ) / 10;
+        // console.info(child.NODE.node, child.lastChildPosition,
+        //   '\n====\n', _this.NODE.node.tagName, _this.lastChildPosition);
+        //
+        // _this.timeline.add(child.timeline, _this.lastChildPosition);
+        // const calc = AnimationMeta.calculateDuration(child.lastChildPosition, _this.position);
+        // let c = ( (calc * 10) - (_this.duration * 10) ) / 10;
+        // _this.calculateLastChildPosition(calc, child.position);
+
+        _this.timeline.add(child.timeline, _this.lastChildPosition);
+        _this.calculateLastChildPosition(child.duration, child.position);
+      }
+      else {
+        _this.calculateLastChildPosition(child.duration, child.position);
+        _this.timeline.add(child.timeline, _this.lastChildPosition);
+      }
     } else {
-      _this.calculateLastChildPosition(child.duration, child.position);
-      _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
+      if (prior) {
+        _this.calculateLastChildPosition(child.duration, child.position);
+        _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
+      }
     }
-
-    // if (prior) {
-    // if (_this.timeline.getChildren(false).length !== 0) {
-    // const calc = AnimationMeta.calculateDuration(child.duration, child.position || '+=0');
-    // _this.lastChildPosition = ((_this.lastChildPosition * 10) + (child.lastChildPosition * 10) ) / 10;
-    // }
-    // _this.lastChildPosition = (child.lastChildPosition + child.duration);
-    // _this.lastChildPosition += AnimationMeta.calculateDuration(child.lastChildPosition, child.position || '+=0');
-    // console.info(child.NODE.node.tagName, '>', child.lastChildPosition, '<', child.duration,
-    //   '===', _this.NODE.node.tagName, '>', _this.lastChildPosition);
-    // }
-
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
