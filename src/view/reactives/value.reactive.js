@@ -8,21 +8,21 @@
 
   GV.REACTIVE_BEHAVIORS['value'] = {
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
-    bind: function (viewNode, nodeScopeData, matches) {
-      if (viewNode.node.type === 'text') {
+    bind: function (nodeScopeData, matches) {
+      if (this.node.type === 'text') {
         let parts = matches[1].split('.');
         let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-        viewNode.node.addEventListener('keyup', function () {
-          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), viewNode.node.value);
+        this.node.addEventListener('keyup', function () {
+          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), this.node.value);
         });
       }
     },
-    onApply: function (cache, viewNode, value) {
-      if (document.activeElement === viewNode.node && viewNode.node.value === value) {
+    onApply: function (cache, value) {
+      if (document.activeElement === this.node && this.node.value === value) {
         return;
       }
 
-      viewNode.node.value = value || '';
+      this.node.value = value || '';
     }
   };
 })(Galaxy.GalaxyView);

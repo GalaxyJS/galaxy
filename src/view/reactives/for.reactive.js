@@ -8,11 +8,11 @@
 
   GV.REACTIVE_BEHAVIORS['$for'] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (viewNode, nodeScopeData, matches) {
-      viewNode.toTemplate();
-      GV.makeBinding(viewNode, nodeScopeData, '$for', matches[2]);
+    bind: function (nodeScopeData, matches) {
+      this.toTemplate();
+      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
     },
-    getCache: function (viewNode, matches) {
+    getCache: function (matches) {
       return {
         propName: matches[1],
         nodes: []
@@ -26,8 +26,8 @@
      * @param matches
      * @param nodeScopeData
      */
-    onApply: function (cache, viewNode, changes, oldChanges, matches, nodeScopeData) {
-      let parentNode = viewNode.parent;
+    onApply: function (cache, changes, oldChanges, nodeScopeData) {
+      let parentNode = this.parent;
       let position = null;
       let newItems = [];
       let action = Array.prototype.push;
@@ -53,7 +53,7 @@
         if (length) {
           position = cache.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
-          position = viewNode.placeholder.nextSibling;
+          position = this.placeholder.nextSibling;
         }
 
         newItems = changes.params;
@@ -81,16 +81,17 @@
       }
 
       let valueEntity, itemDataScope = nodeScopeData;
-      let p = cache.propName, n = cache.nodes, root = viewNode.root, cns;
+      let p = cache.propName, n = cache.nodes, cns;
 
       if (newItems instanceof Array) {
         for (let i = 0, len = newItems.length; i < len; i++) {
           valueEntity = newItems[i];
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
-          cns = viewNode.cloneSchema();
+          cns = this.cloneSchema();
           delete cns.$for;
-          let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+          // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+          let vn = GV.createNode(parentNode, itemDataScope, cns, position, this.domManipulationBus);
           vn.data[p] = valueEntity;
           action.call(n, vn);
         }

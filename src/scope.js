@@ -9,6 +9,12 @@
    */
   G.GalaxyScope = GalaxyScope;
 
+  /**
+   *
+   * @param module
+   * @param element
+   * @constructor
+   */
   function GalaxyScope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;

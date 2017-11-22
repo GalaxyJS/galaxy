@@ -61,7 +61,9 @@ this.startP = _this.line;
 
     this.children.push(promise);
 
-    this.line.then(thunk).catch(thunk);
+    this.line.then(thunk).catch(function (e) {
+      console.error(e);
+    });
     this.line = promise;
 
     return _this;

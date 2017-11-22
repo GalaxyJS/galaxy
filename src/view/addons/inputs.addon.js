@@ -14,23 +14,23 @@
      * @param scopeData
      * @param value
      */
-    bind: function (viewNode, scopeData, value) {
+    bind: function (scopeData, value) {
       if (value !== null && typeof  value !== 'object') {
-        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(viewNode.schema, null, '  '));
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
     },
-    onApply: function (cache, viewNode, value, oldValue, matches, context) {
-      if (viewNode.virtual) return;
+    onApply: function (cache, value, oldValue, matches, context) {
+      if (this.virtual) return;
 
       let clone = GV.bindSubjectsToData(value, context, true);
 
-      if (viewNode.hasOwnProperty('[addon/inputs]') && clone !== viewNode['[addon/inputs]'].clone) {
-        Galaxy.resetObjectTo(viewNode['[addon/inputs]'], {
+      if (this.hasOwnProperty('[addon/inputs]') && clone !== this['[addon/inputs]'].clone) {
+        Galaxy.resetObjectTo(this['[addon/inputs]'], {
           clone: clone,
           original: value
         });
-      } else if (!viewNode.hasOwnProperty('[addon/inputs]')) {
-        Object.defineProperty(viewNode, '[addon/inputs]', {
+      } else if (!this.hasOwnProperty('[addon/inputs]')) {
+        Object.defineProperty(this, '[addon/inputs]', {
           value: {
             clone: clone,
             original: value
@@ -39,7 +39,7 @@
         });
       }
 
-      viewNode.addDependedObject(clone);
+      this.addDependedObject(clone);
     }
   };
 
@@ -51,6 +51,8 @@
         return scope.inputs;
       },
       finalize: function () {
+        // By linking the clone to original we make sure that changes on the local copy of the input data will be
+        // reflected to the original one
         GV.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
       }
     };

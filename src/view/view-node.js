@@ -80,7 +80,7 @@
    * @param schema
    * @constructor
    */
-  function ViewNode(root, schema, node, dms) {
+  function ViewNode(root, schema, node) {
     this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
@@ -230,7 +230,7 @@
    */
   ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
     this.properties[boundProperty.name] = boundProperty;
-    this.setters[propertyName] = this.root.getPropertySetter(this, propertyName, this.virtual ? null : expression);
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? null : expression);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {

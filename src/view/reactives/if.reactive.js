@@ -8,15 +8,13 @@
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
     regex: null,
-    bind: function (viewNode, nodeScopeData, matches) {
-      // debugger;
+    bind: function (nodeScopeData, matches) {
     },
-    onApply: function (cache, viewNode, value) {
-      // console.info('apply $if', value);
-      if (value && !viewNode.inDOM) {
-        viewNode.setInDOM(true);
-      } else if (!value && viewNode.inDOM) {
-        viewNode.setInDOM(false);
+    onApply: function (cache, value) {
+      if (value && !this.inDOM) {
+        this.setInDOM(true);
+      } else if (!value && this.inDOM) {
+        this.setInDOM(false);
       }
     }
   };

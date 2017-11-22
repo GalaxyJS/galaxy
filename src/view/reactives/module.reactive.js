@@ -11,13 +11,14 @@
       }
       // Check for circular module loading
       let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-      let root = viewNode.root;
-      while (root.scope) {
-        if (tempURI.parsedURL === root.scope.uri.paresdURL) {
+      let scope = cache.scope;
+
+      while (scope) {
+        if (tempURI.parsedURL === cache.scope.uri.paresdURL) {
           return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
         }
 
-        root = root.container;
+        scope = scope.parentScope;
       }
 
       window.requestAnimationFrame(function () {
@@ -26,7 +27,6 @@
         }).then(function (module) {
           cache.module = module;
           viewNode.node.setAttribute('module', module.systemId);
-          console.warn('-------------------', module.systemId);
           module.start();
           done();
         }).catch(function (response) {
@@ -44,18 +44,20 @@
 
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
-    bind: function (viewNode, nodeScopeData, matches) {
+    bind: function ( nodeScopeData, matches) {
     },
-    getCache: function (viewNode) {
+    getCache: function ( matches, scopeData) {
       return {
         module: null,
         moduleMeta: null,
-        scope: viewNode.root.scope
+        scope: scopeData
       };
     },
-    onApply: function (cache, viewNode, moduleMeta) {
-      if (!viewNode.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
-        viewNode.rendered.then(function () {
+    onApply: function (cache, moduleMeta) {
+      const _this = this;
+
+      if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
+        _this.rendered.then(function () {
           // Add the new module request to the sequence
           loadModuleQueue.next(function (nextCall) {
             // Wait till all viewNode animation are done
@@ -63,7 +65,7 @@
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue
-            viewNode.clean().next(moduleLoaderGenerator(viewNode, cache, moduleMeta))
+            _this.clean().next(moduleLoaderGenerator(_this, cache, moduleMeta))
               .next(function (done) {
                 // module loader may add animations to the viewNode. if that is the case we will wait for the animations
                 // to finish at the beginning of the next module request
@@ -73,7 +75,7 @@
           });
         });
       } else if (!moduleMeta) {
-        viewNode.clean();
+        _this.clean();
       }
 
       cache.moduleMeta = moduleMeta;

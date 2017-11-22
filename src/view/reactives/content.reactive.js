@@ -8,24 +8,23 @@
 
   GV.REACTIVE_BEHAVIORS['content'] = {
     regex: null,
-    bind: function (viewNode) {
-      viewNode.toTemplate();
+    bind: function () {
+      this.toTemplate();
     },
-    getCache: function (viewNode) {
+    getCache: function () {
       return {
-        module: null,
-        scope: viewNode.root.scope
+        module: null
       };
     },
-    onApply: function (cache, viewNode, selector, oldSelector, matches, scopeData) {
+    onApply: function (cache, selector, oldSelector, scopeData) {
       if (scopeData.element.schema.children && scopeData.element.schema.hasOwnProperty('module')) {
-        viewNode.domManipulationSequence.next(function (done) {
+        this.domManipulationSequence.next(function (done) {
           let allContent = scopeData.element.schema.children;
-          let parentViewNode = viewNode.parent;
+          let parentViewNode = this.parent;
           allContent.forEach(function (content) {
             if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
               content.__node__.__viewNode__.refreshBinds(scopeData);
-              parentViewNode.registerChild(content.__node__.__viewNode__, viewNode.placeholder);
+              parentViewNode.registerChild(content.__node__.__viewNode__, this.placeholder);
               content.__node__.__viewNode__.setInDOM(true);
             }
           });

@@ -109,7 +109,7 @@
 
                     if (finishImmediately) break;
                   }
-                  debugger;
+                  // debugger;
 
                   animationMeta.queue = {};
                   animationMeta.list = [];
@@ -279,8 +279,8 @@
         _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
       } else {
-        _this.calculateLastChildPosition(_this.duration, _this.position);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
+        _this.calculateLastChildPosition(_this.duration, _this.position);
       }
     } else {
       if (prior) {
@@ -339,16 +339,17 @@
         to || {});
     }
 
-    _this.calculateLastChildPosition(config.duration, config.position);
 
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
+      // _this.calculateLastChildPosition(config.duration, config.position);
+      _this.calculateLastChildPosition(config.duration, config.position);
       _this.timeline.add(tween, 0);
     } else {
+      _this.calculateLastChildPosition(config.duration, config.position);
       _this.timeline.add(tween, _this.lastChildPosition);
     }
-
   };
 
   /**
