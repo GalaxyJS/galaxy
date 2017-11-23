@@ -19,7 +19,7 @@
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
     },
-    onApply: function (cache, value, oldValue, matches, context) {
+    onApply: function (cache, value, oldValue, context) {
       if (this.virtual) return;
 
       let clone = GV.bindSubjectsToData(value, context, true);

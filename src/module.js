@@ -1,12 +1,11 @@
 /* global Galaxy */
 'use strict';
 
-(function (root, G) {
+(function (G) {
 
-  root.Galaxy = G;
   /**
    *
-   * @returns {Galaxy.GalaxyModule}
+   * @type {Galaxy.GalaxyModule}
    */
   G.GalaxyModule = GalaxyModule;
 
@@ -15,6 +14,7 @@
    * @param {Object} module
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyModule(module, source, scope) {
     this.id = module.id;
@@ -42,4 +42,4 @@
   GalaxyModule.prototype.registerAddOn = function (id, object) {
     this.addOns[id] = object;
   };
-}(this, Galaxy || {}));
+}(Galaxy || {}));

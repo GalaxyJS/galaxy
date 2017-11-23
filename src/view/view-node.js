@@ -1,6 +1,7 @@
 /* global Galaxy, Promise */
-(function (GV) {
+'use strict';
 
+(function (GV) {
   function createElem(t) {
     return document.createElement(t);
   }
@@ -19,17 +20,6 @@
     node.removeChild(child);
   }
 
-  /**
-   *
-   * @returns {Galaxy.GalaxyView.ViewNode}
-   */
-  GV.ViewNode = ViewNode;
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
-    type: 'none'
-  };
-
-
   let referenceToThis = {
     value: this,
     configurable: false,
@@ -40,6 +30,16 @@
     value: null,
     configurable: false,
     enumerable: false
+  };
+
+  /**
+   *
+   * @type {Galaxy.GalaxyView.ViewNode}
+   */
+  GV.ViewNode = ViewNode;
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'none'
   };
 
   GV.NODE_SCHEMA_PROPERTY_MAP['lifeCycle'] = {
@@ -76,9 +76,10 @@
   /**
    *
    * @param {Galaxy.GalaxyView} root
-   * @param node
+   * @param {Node|Element} node
    * @param schema
    * @constructor
+   * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
     this.root = root;

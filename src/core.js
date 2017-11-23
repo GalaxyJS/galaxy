@@ -1,6 +1,9 @@
 /* global Galaxy, Promise */
 'use strict';
 
+/**
+ * @exports Galaxy
+ */
 (function (root) {
   Array.prototype.unique = function () {
     let a = this.concat();
@@ -14,19 +17,30 @@
     return a;
   };
 
-  root.Galaxy = root.Galaxy || new Core();
-
-  /** The main class of the GalaxyJS. window.galaxy is an instance of this class.
+  /**
    *
-   * @returns {Galaxy.GalaxySystem}
+   * @namespace
    */
-  Galaxy.GalaxyCore = Core;
+  const Galaxy = root.Galaxy || new GalaxyCore();
+  root.Galaxy = Galaxy;
+  /** The main class of the GalaxyJS. window.Galaxy is an instance of this class.
+   *
+   * @type {GalaxyCore}
+   */
+  Galaxy.GalaxyCore = GalaxyCore;
 
+  /**
+   * @type Function
+   */
   Galaxy.defineProp = Object.defineProperty;
 
   let importedLibraries = {};
 
-  function Core() {
+  /**
+   *
+   * @constructor
+   */
+  function GalaxyCore() {
     this.bootModule = null;
     this.modules = {};
     this.onLoadQueue = [];
@@ -36,7 +50,12 @@
     this.rootElement = null;
   }
 
-  Core.prototype.extend = function (out) {
+  /**
+   *
+   * @param {Object} out
+   * @returns {*|{}}
+   */
+  GalaxyCore.prototype.extend = function (out) {
     let result = out || {}, obj;
     for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
@@ -59,7 +78,7 @@
     return result;
   };
 
-  Core.prototype.resetObjectTo = function (out, value) {
+  GalaxyCore.prototype.resetObjectTo = function (out, value) {
     if (value !== null && typeof value !== 'object') {
       return value;
     }
@@ -97,10 +116,10 @@
 
   /**
    *
-   * @param bootModule
+   * @param {Object} bootModule
    * @param {Element} rootElement
    */
-  Core.prototype.boot = function (bootModule) {
+  GalaxyCore.prototype.boot = function (bootModule) {
     let _this = this;
     _this.rootElement = bootModule.element;
 
@@ -122,7 +141,7 @@
     return promise;
   };
 
-  Core.prototype.convertToURIString = function (obj, prefix) {
+  GalaxyCore.prototype.convertToURIString = function (obj, prefix) {
     let _this = this;
     let str = [], p;
     for (p in obj) {
@@ -137,7 +156,7 @@
     return str.join('&');
   };
 
-  Core.prototype.load = function (module) {
+  GalaxyCore.prototype.load = function (module) {
     let _this = this;
     let promise = new Promise(function (resolve, reject) {
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -186,9 +205,9 @@
     return promise;
   };
 
-  Core.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
+  GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
     let _this = this;
-    var promise = new Promise(function (resolve, reject) {
+    let promise = new Promise(function (resolve, reject) {
       let doneImporting = function (module, imports) {
         imports.splice(imports.indexOf(module.url) - 1, 1);
 
@@ -218,7 +237,6 @@
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
-
         let importsCopy = imports.slice(0);
         imports.forEach(function (item) {
           let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
@@ -245,7 +263,7 @@
           }
         });
 
-        return promise;
+        return;
       }
 
       resolve(module);
@@ -258,13 +276,13 @@
    *
    * @param {Galaxy.GalaxyModule}  module
    */
-  Core.prototype.executeCompiledModule = function (module) {
+  GalaxyCore.prototype.executeCompiledModule = function (module) {
     let promise = new Promise(function (resolve, reject) {
-      for (var item in module.addOns) {
+      for (let item in module.addOns) {
         module.scope.imports[item] = module.addOns[item];
       }
 
-      for (item in importedLibraries) {
+      for (let item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           let asset = importedLibraries[item];
           if (asset.module) {
@@ -315,13 +333,13 @@
     return promise;
   };
 
-  Core.prototype.getModuleAddOnProvider = function (name) {
+  GalaxyCore.prototype.getModuleAddOnProvider = function (name) {
     return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[0];
   };
 
-  Core.prototype.getModulesByAddOnId = function (addOnId) {
+  GalaxyCore.prototype.getModulesByAddOnId = function (addOnId) {
     let modules = [];
     let module;
 
@@ -338,7 +356,7 @@
     return modules;
   };
 
-  Core.prototype.registerAddOnProvider = function (name, handler) {
+  GalaxyCore.prototype.registerAddOnProvider = function (name, handler) {
     if (typeof handler !== 'function') {
       throw 'Addon provider should be a function';
     }

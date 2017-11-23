@@ -1,34 +1,36 @@
 /* global Galaxy */
 
 (function (GV) {
-
   /**
    *
-   * @returns {Galaxy.GalaxyView.BoundProperty}
+   * @type {Galaxy.GalaxyView.BoundProperty}
    */
   GV.BoundProperty = BoundProperty;
 
   /**
    *
-   * @param {String} name
+   * @param {Object} host
+   * @param {string} name
+   * @param {} value
    * @constructor
+   * @memberOf Galaxy.GalaxyView
    */
   function BoundProperty(host, name, value) {
-    /**
-     * @public
-     * @type {String} Name of the property
-     */
     this.host = host;
     this.name = name;
     this.value = value;
     this.props = [];
+    /**
+     *
+     * @type {Array<Galaxy.GalaxyView.ViewNode>}
+     */
     this.nodes = [];
   }
 
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param {String} attributeName
+   * @param {string} attributeName
    * @param {Function} expression
    * @public
    */
@@ -46,6 +48,10 @@
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   */
   BoundProperty.prototype.removeNode = function (node) {
     let nodeIndexInTheHost;
     while ((nodeIndexInTheHost = this.nodes.indexOf(node)) !== -1) {
@@ -98,6 +104,14 @@
     }
   };
 
+  /**
+   *
+   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
+   * @param {string} attributeName
+   * @param value
+   * @param oldValue
+   * @param scopeData
+   */
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.values[attributeName] = value;
@@ -112,6 +126,13 @@
     }
   };
 
+  /**
+   *
+   * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
+   * @param {string} attributeName
+   * @param {} changes
+   * @param {} oldChanges
+   */
   BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);

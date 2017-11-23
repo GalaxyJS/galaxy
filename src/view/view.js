@@ -1,6 +1,7 @@
 /* global Galaxy, Promise */
+'use strict';
 
-(function (root, G) {
+(function (G) {
   let defineProp = Object.defineProperty;
   let setterAndGetter = {
     configurable: true,
@@ -16,11 +17,9 @@
   let setAttr = Element.prototype.setAttribute;
   let removeAttr = Element.prototype.removeAttribute;
 
-  root.Galaxy = G;
-
   /**
    *
-   * @returns {Galaxy.GalaxyView}
+   * @type {Galaxy.GalaxyView}
    */
   G.GalaxyView = GalaxyView;
 
@@ -715,6 +714,7 @@
    *
    * @param {Galaxy.GalaxyScope} scope
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyView(scope) {
     this.scope = scope;
@@ -747,4 +747,4 @@
     });
   };
 
-}(this, Galaxy || {}));
+}(Galaxy || {}));

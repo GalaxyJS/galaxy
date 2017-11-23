@@ -22,40 +22,42 @@
         return;
       }
 
+      const _this = this;
+
       if (typeof value === 'string') {
-        return this.node.setAttribute('class', value);
+        return _this.node.setAttribute('class', value);
       } else if (value instanceof Array) {
-        return this.node.setAttribute('class', value.join(' '));
+        return _this.node.setAttribute('class', value.join(' '));
       } else if (value === null) {
-        return this.node.removeAttribute('class');
+        return _this.node.removeAttribute('class');
       }
 
       let clone = GV.bindSubjectsToData(value, context, true);
 
-      if (this.hasOwnProperty('[reactive/class]') && clone !== this['[reactive/class]']) {
-        Galaxy.resetObjectTo(this['[reactive/class]'], clone);
-      } else if (!this.hasOwnProperty('[reactive/class]')) {
-        Object.defineProperty(this, '[reactive/class]', {
+      if (_this.hasOwnProperty('[reactive/class]') && clone !== _this['[reactive/class]']) {
+        Galaxy.resetObjectTo(_this['[reactive/class]'], clone);
+      } else if (!_this.hasOwnProperty('[reactive/class]')) {
+        Object.defineProperty(_this, '[reactive/class]', {
           value: clone,
           enumerable: false
         });
       }
 
-      this.node.setAttribute('class', []);
+      _this.node.setAttribute('class', []);
       let observer = new Galaxy.GalaxyObserver(clone);
       observer.onAll(function (key, value, oldValue) {
-        toggles.call(this, key, value, oldValue, clone);
+        toggles.call(_this, key, value, oldValue, clone);
       });
 
-      if (this.schema.renderConfig && this.schema.renderConfig.applyClassListAfterRender) {
-        this.rendered.then(function () {
-          toggles.call(this, null, true, false, clone);
+      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
+        _this.rendered.then(function () {
+          toggles.call(_this, null, true, false, clone);
         });
       } else {
-        toggles.call(this, null, true, false, clone);
+        toggles.call(_this, null, true, false, clone);
       }
 
-      this.addDependedObject(clone);
+      _this.addDependedObject(clone);
     }
   };
 

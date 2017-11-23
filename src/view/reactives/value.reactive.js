@@ -10,10 +10,11 @@
     regex: /^\[\s*([^\[\]]*)\s*\]$/,
     bind: function (nodeScopeData, matches) {
       if (this.node.type === 'text') {
+        const _this = this;
         let parts = matches[1].split('.');
         let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
-        this.node.addEventListener('keyup', function () {
-          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), this.node.value);
+        _this.node.addEventListener('keyup', function () {
+          setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.value);
         });
       }
     },

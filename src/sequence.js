@@ -4,10 +4,15 @@
 (function (G) {
   /**
    *
-   * @returns {Galaxy.GalaxyScope}
+   * @type {Galaxy.GalaxySequence}
    */
   G.GalaxySequence = GalaxySequence;
 
+  /**
+   *
+   * @constructor
+   * @memberOf Galaxy
+   */
   function GalaxySequence() {
     this.line = null;
     this.firstStepResolve = null;

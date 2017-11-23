@@ -1,19 +1,19 @@
 /* global Galaxy */
 'use strict';
 
-(function (root, G) {
-  root.Galaxy = G;
+(function (G) {
   /**
    *
-   * @returns {Galaxy.GalaxyScope}
+   * @typedef {Galaxy.GalaxyScope}
    */
   G.GalaxyScope = GalaxyScope;
 
   /**
    *
-   * @param module
+   * @param {Object} module
    * @param element
    * @constructor
+   * @memberOf Galaxy
    */
   function GalaxyScope(module, element) {
     this.systemId = module.systemId;
@@ -98,4 +98,4 @@
     this.path = match ? match[0] : '/';
   }
 
-}(this, Galaxy || {}));
+}(Galaxy || {}));

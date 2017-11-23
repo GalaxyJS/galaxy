@@ -2,6 +2,10 @@
 'use strict';
 
 (function (G) {
+  /**
+   *
+   * @type {Galaxy.GalaxyObserver}
+   */
   G.GalaxyObserver = GalaxyObserver;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue) {
@@ -12,6 +16,12 @@
     }
   };
 
+  /**
+   *
+   * @param {Object} context
+   * @constructor
+   * @memberOf Galaxy
+   */
   function GalaxyObserver(context) {
     this.context = context;
     this.subjectsActions = {};
