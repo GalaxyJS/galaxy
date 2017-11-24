@@ -99,7 +99,12 @@
     this.domManipulationBus = [];
     this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
-    this.sequences = {};
+    this.sequences = {
+      ':enter': new Galaxy.GalaxySequence().start(),
+      ':leave': new Galaxy.GalaxySequence(),
+      ':destroy': new Galaxy.GalaxySequence(),
+      ':class': new Galaxy.GalaxySequence().start()
+    };
     this.observer = new Galaxy.GalaxyObserver(this);
     this.origin = false;
 
@@ -109,10 +114,10 @@
       _this.callLifeCycleEvent('rendered');
     });
 
-    this.createSequence(':enter', true);
-    this.createSequence(':leave', false);
-    this.createSequence(':destroy', false);
-    this.createSequence(':class', true);
+    // this.createSequence(':enter', true);
+    // this.createSequence(':leave', false);
+    // this.createSequence(':destroy', false);
+    // this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -142,24 +147,6 @@
     });
 
     return schemaClone;
-  };
-
-  /**
-   *
-   * @param name
-   * @param start
-   * @returns {Galaxy.GalaxySequence}
-   */
-  ViewNode.prototype.createSequence = function (name, start) {
-    if (!this.sequences[name]) {
-      this.sequences[name] = new Galaxy.GalaxySequence();
-
-      if (start) {
-        this.sequences[name].start();
-      }
-    }
-
-    return this.sequences[name];
   };
 
   ViewNode.prototype.toTemplate = function () {

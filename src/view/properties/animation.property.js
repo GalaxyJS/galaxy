@@ -279,8 +279,8 @@
         _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
       } else {
-        _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(_this.duration, _this.position);
+        _this.timeline.add(child.timeline, _this.lastChildPosition);
       }
     } else {
       if (prior) {
@@ -344,7 +344,7 @@
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
       // _this.calculateLastChildPosition(config.duration, config.position);
-      _this.calculateLastChildPosition(config.duration, config.position);
+      // _this.calculateLastChildPosition(config.duration, config.position);
       _this.timeline.add(tween, 0);
     } else {
       _this.calculateLastChildPosition(config.duration, config.position);

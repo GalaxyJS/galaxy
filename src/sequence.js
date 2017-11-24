@@ -17,8 +17,6 @@
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
-    this.lastTimestamp = Date.now();
-    // this.offset = 0;
     this.reset();
     this.children = [];
   }

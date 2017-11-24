@@ -272,6 +272,33 @@
     return boundProperty;
   };
 
+  GalaxyView.EXPRESSION_ARGS_FUNC_CACHE = {};
+
+  GalaxyView.createExpressionArgumentsFunction = function (variables) {
+    const id = variables.join();
+
+    if (GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id]) {
+      return GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id];
+    }
+
+    let functionContent = 'return [';
+
+    let middle = '';
+    for (let i = 0, len = variables.length; i < len; i++) {
+      functionContent += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
+    }
+
+    // Take care of variables that contain square brackets like '[variable_name]'
+    // for the convenience of the programmer
+    middle = middle.substring(0, middle.length - 1).replace(/\[|\]/g, '');
+
+    functionContent += middle + ']';
+
+    const func = new Function('prop, scope', functionContent);
+    GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
+
+    return func;
+  };
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode | Object} target
@@ -280,10 +307,11 @@
    * @param {string|Array<string>} variableNamePaths
    */
   GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
-    let dataObject = data;
-    if (typeof dataObject !== 'object') {
+    if (typeof data !== 'object') {
       return;
     }
+
+    let dataObject = data;
 
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
     // expression === true means that a expression function is available and should be extracted
@@ -291,18 +319,18 @@
       let handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
       expressionArgumentsCount = variables.length;
-      let functionContent = 'return [';
-      functionContent += variables.map(function (path) {
-        // Take care of variables that contain square brackets like '[variable_name]'
-        // for the convenience of the programmer
-        path = path.replace(/\[|\]/g, '');
-        return 'prop(scope, "' + path + '").' + path;
-      }).join(', ');
-      functionContent += ']';
+      // let functionContent = 'return [';
+      // functionContent += variables.map(function (path) {
+      //   // Take care of variables that contain square brackets like '[variable_name]'
+      //   // for the convenience of the programmer
+      //   path = path.replace(/\[|\]/g, '');
+      //   return 'prop(scope, "' + path + '").' + path;
+      // }).join(', ');
+      // functionContent += ']';
 
       // Generate expression arguments
       try {
-        let getExpressionArguments = new Function('prop, scope', functionContent);
+        let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsFunction(variables);
         expression = (function (scope) {
           return function () {
             let args = getExpressionArguments.call(target, Galaxy.GalaxyView.propertyLookup, scope);

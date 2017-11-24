@@ -89,7 +89,7 @@
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
           cns = this.cloneSchema();
-          delete cns.$for;
+          Reflect.deleteProperty(cns, '$for');
           // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
           let vn = GV.createNode(parentNode, itemDataScope, cns, position, this.domManipulationBus);
           vn.data[p] = valueEntity;

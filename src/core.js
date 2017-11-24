@@ -17,6 +17,12 @@
     return a;
   };
 
+  root.Reflect = root.Reflect || {
+    deleteProperty: function (target, propertyKey) {
+      delete target[propertyKey];
+    }
+  };
+
   /**
    *
    * @namespace
@@ -294,14 +300,13 @@
       let moduleSource = new Function('Scope', module.source);
       moduleSource.call(null, module.scope);
 
-      delete module.source;
+      Reflect.deleteProperty(module, 'source');
 
       module.addOnProviders.forEach(function (item) {
         item.finalize();
       });
 
-      delete module.addOnProviders;
-
+      Reflect.deleteProperty(module, 'addOnProviders');
 
       if (!importedLibraries[module.url]) {
         importedLibraries[module.url] = {
@@ -316,7 +321,7 @@
 
       let currentModule = Galaxy.modules[module.systemId];
       if (module.temporary || module.scope._doNotRegister) {
-        delete module.scope._doNotRegister;
+        Reflect.deleteProperty(module, 'scope._doNotRegister');
         currentModule = {
           id: module.id,
           scope: module.scope
@@ -327,7 +332,7 @@
 
       resolve(currentModule);
 
-      delete Galaxy.onLoadQueue[module.systemId];
+      Reflect.deleteProperty(Galaxy.onLoadQueue, module.systemId);
     });
 
     return promise;
