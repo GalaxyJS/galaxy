@@ -82,25 +82,22 @@
 
       let valueEntity, itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
+      const _this = this;
 
       if (newItems instanceof Array) {
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = this.cloneSchema();
-          Reflect.deleteProperty(cns, '$for');
-          // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
-          let vn = GV.createNode(parentNode, itemDataScope, cns, position, this.domManipulationBus);
-          vn.data[p] = valueEntity;
-          action.call(n, vn);
-        }
-
-        // Promise.all(viewNode.manipulationPromiseList).then(function () {
-        //   // debugger;
-        //   ne();
-        // });
-        // });
+        requestAnimationFrame(function () {
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            valueEntity = newItems[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = valueEntity;
+            cns = _this.cloneSchema();
+            Reflect.deleteProperty(cns, '$for');
+            // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
+            let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
+            vn.data[p] = valueEntity;
+            action.call(n, vn);
+          }
+        });
       }
     }
   };
