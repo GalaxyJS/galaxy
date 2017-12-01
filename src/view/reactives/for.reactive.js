@@ -27,14 +27,14 @@
      * @param nodeScopeData
      */
     onApply: function (cache, changes, oldChanges, nodeScopeData) {
+      if (!changes) {
+        return;
+      }
+
       let parentNode = this.parent;
       let position = null;
       let newItems = [];
       let action = Array.prototype.push;
-
-      if (!changes) {
-        return;
-      }
 
       if (changes.type === 'reset') {
         let vn = null;
@@ -58,7 +58,7 @@
 
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = cache.nodes[0] ? cache.nodes[0].placeholder : null;
+        position = cache.nodes[0] ? cache.nodes[0].getPlaceholder() : null;
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
@@ -94,7 +94,9 @@
             Reflect.deleteProperty(cns, '$for');
             // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
             let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
-            vn.data[p] = valueEntity;
+            // vn.data[p] = valueEntity;
+            vn.data['$for'] = {};
+            vn.data['$for'][p] = valueEntity;
             action.call(n, vn);
           }
         });

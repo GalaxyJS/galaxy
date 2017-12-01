@@ -9,6 +9,38 @@
 
   /**
    *
+   * @param {Galaxy.GalaxyView.BoundProperty} bp
+   * @param {Array} list
+   */
+  BoundProperty.installContainerList = function (bp, list) {
+    list.forEach(function (item) {
+      if (item.hasOwnProperty('__lists__')) {
+        if (item['__lists__'].indexOf(bp) === -1) {
+          item['__lists__'].push(bp);
+        }
+      } else {
+        GV.defineProp(item, '__lists__', {
+          configurable: false,
+          enumerable: false,
+          value: [bp]
+        });
+      }
+    });
+  };
+
+  BoundProperty.uninstallContainerList = function (bp, list) {
+    list.forEach(function (item) {
+      if (item.hasOwnProperty('__lists__')) {
+        let i = item['__lists__'].indexOf(bp);
+        if (i !== -1) {
+          item['__lists__'].splice(i, 1);
+        }
+      }
+    });
+  };
+
+  /**
+   *
    * @param {Object} host
    * @param {string} name
    * @param {} value
@@ -25,6 +57,7 @@
      * @type {Array<Galaxy.GalaxyView.ViewNode>}
      */
     this.nodes = [];
+    this.lists = [];
   }
 
   /**
@@ -66,16 +99,18 @@
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
-    let oldValue = this.value;
-    this.value = value;
+    const _this = this;
+    let oldValue = _this.value;
+    _this.value = value;
     if (value instanceof Array) {
+      BoundProperty.installContainerList(_this, value);
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
       if (target instanceof GV.ViewNode) {
-        target.values[key] = value;
-        this.setUpdateFor(target, key, init);
+        target.data[key] = value;
+        _this.setUpdateFor(target, key, init);
       }
     } else {
-      this.setValueFor(target, key, value, oldValue, scopeData);
+      _this.setValueFor(target, key, value, oldValue, scopeData);
     }
   };
 
@@ -84,22 +119,37 @@
       let oldValue = this.value;
       this.value = value;
       if (value instanceof Array) {
-        let oldChanges = GV.createActiveArray(value, this.updateValue.bind(this));
-        let change = {type: 'reset', params: value, original: value};
-        this.updateValue(change, oldChanges);
+        let change = GV.createActiveArray(value, this.updateValue.bind(this));
+        // let change = {type: 'reset', params: value, original: value};
+        change.type = 'reset';
+        change.result = oldValue;
+        this.updateValue(change, {original: oldValue});
         Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
       } else {
         for (let i = 0, len = this.nodes.length; i < len; i++) {
           this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
         }
         Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
+
+        this.lists.forEach(function (con) {
+          con.updateValue();
+        });
       }
     }
   };
 
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {
+    if (changes) {
+      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
+        BoundProperty.installContainerList(this, changes.params);
+      } else if (changes.type === 'shift' || changes.type === 'pop') {
+        BoundProperty.uninstallContainerList(this, [changes.result]);
+      } else if (changes.type === 'splice' || changes.type === 'reset') {
+        BoundProperty.uninstallContainerList(this, changes.result);
+      }
+    }
+
     for (let i = 0, len = this.nodes.length; i < len; i++) {
-      this.nodes[i].value = changes.original;
       this.setUpdateFor(this.nodes[i], this.props[i], changes, oldChanges);
     }
   };
@@ -114,7 +164,7 @@
    */
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      host.values[attributeName] = value;
+      host.data[attributeName] = value;
       if (!host.setters[attributeName]) {
         console.info(host, attributeName, value);
       }
@@ -136,10 +186,14 @@
   BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
+      // console.info('node', attributeName, changes);
     } else {
       // host.__observer__.notify(attributeName, changes, oldChanges);
+      // console.info('notify', attributeName, changes);
       Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
     }
+
+
   };
 
 })(Galaxy.GalaxyView);

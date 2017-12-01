@@ -275,12 +275,12 @@
 
     if (children.indexOf(child.timeline) === -1) {
       if (prior) {
-        console.info(child.NODE.node, child.lastChildPosition, _this.duration);
+        // console.info(child.NODE.node, child.lastChildPosition, _this.duration);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
         _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
       } else {
-        _this.calculateLastChildPosition(_this.duration, _this.position);
         _this.timeline.add(child.timeline, _this.lastChildPosition);
+        _this.calculateLastChildPosition(_this.duration, _this.position);
       }
     } else {
       if (prior) {

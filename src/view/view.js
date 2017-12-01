@@ -80,10 +80,13 @@
     checked: {
       type: 'prop'
     },
-    click: {
-      type: 'event',
-      name: 'click'
+    disabled: {
+      type: 'attr'
     }
+    // click: {
+    //   type: 'event',
+    //   name: 'click'
+    // }
   };
 
   GalaxyView.defineProp = G.defineProp;
@@ -380,6 +383,10 @@
       if (typeof boundProperty === 'undefined') {
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
+
+      if (dataObject.hasOwnProperty('__lists__')) {
+        boundProperty.lists = dataObject['__lists__'];
+      }
       // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
@@ -388,8 +395,9 @@
         // the expression it self will be treated as a BoundProperty
         if (expression) {
           boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, '[' + targetKeyName + ']', false, null, null);
-        }
 
+        }
+        // console.info(boundPropertyReference.value,referenceName );
         // Otherwise the data is going to be bound through alias.
         // In other word, [targetKeyName] will refer to original BoundProperty.
         // This will make sure that there is always one BoundProperty for each data entry
@@ -552,6 +560,7 @@
 
           changes.type = method;
           changes.params = args;
+          changes.result = result;
 
           onUpdate(changes, oldChanges);
           oldChanges = Object.assign({}, changes);

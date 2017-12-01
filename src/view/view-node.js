@@ -82,7 +82,7 @@
    * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
-    this.root = root;
+    // this.root = root;
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
@@ -91,7 +91,7 @@
     this.properties = {
       behaviors: {}
     };
-    this.values = {};
+    // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
