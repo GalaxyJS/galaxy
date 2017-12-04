@@ -1,59 +1,38 @@
 /* global Galaxy */
 
 (function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
-    type: 'reactive',
-    name: '$for'
+  const createResetProcess = function (node, cache, changes, nodeScopeData) {
+    if (changes.type === 'reset') {
+      node.uiManipulationSequence.next(function (nextUIAction) {
+        GV.ViewNode.destroyNodes(node, cache.nodes);
+
+        const bus = node.domManipulationBus.slice(0);
+        cache.nodes = [];
+
+        Promise.all(bus).then(function () {
+          nextUIAction();
+        });
+      });
+
+      changes = Object.assign({}, changes);
+      changes.type = 'push';
+    }
+
+    createPushProcess(node, cache, changes, nodeScopeData);
   };
 
-  GV.REACTIVE_BEHAVIORS['$for'] = {
-    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (nodeScopeData, matches) {
-      this.toTemplate();
-      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
-    },
-    getCache: function (matches) {
-      return {
-        propName: matches[1],
-        nodes: []
-      };
-    },
-    /**
-     *
-     * @param cache
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param changes
-     * @param matches
-     * @param nodeScopeData
-     */
-    onApply: function (cache, changes, oldChanges, nodeScopeData) {
-      if (!changes) {
-        return;
-      }
-
-      let parentNode = this.parent;
-      let position = null;
-      let newItems = [];
-      let action = Array.prototype.push;
-
-      if (changes.type === 'reset') {
-        let vn = null;
-        for (let i = cache.nodes.length - 1; i >= 0; i--) {
-          vn = cache.nodes[i];
-          vn.destroy();
-        }
-
-        cache.nodes = [];
-        changes = Object.assign({}, changes);
-        changes.type = 'push';
-      }
-
+  const createPushProcess = function (node, cache, changes, nodeScopeData) {
+    let parentNode = node.parent;
+    let position = null;
+    let newItems = [];
+    let action = Array.prototype.push;
+    node.uiManipulationSequence.next(function (nextUIAction) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
           position = cache.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
-          position = this.placeholder.nextSibling;
+          position = node.placeholder.nextSibling;
         }
 
         newItems = changes.params;
@@ -82,25 +61,60 @@
 
       let valueEntity, itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
-      const _this = this;
 
       if (newItems instanceof Array) {
-        requestAnimationFrame(function () {
-          for (let i = 0, len = newItems.length; i < len; i++) {
-            valueEntity = newItems[i];
-            itemDataScope = GV.createMirror(nodeScopeData);
-            itemDataScope[p] = valueEntity;
-            cns = _this.cloneSchema();
-            Reflect.deleteProperty(cns, '$for');
-            // let vn = root.append(cns, itemDataScope, parentNode, position, viewNode.domManipulationBus);
-            let vn = GV.createNode(parentNode, itemDataScope, cns, position, _this.domManipulationBus);
-            // vn.data[p] = valueEntity;
-            vn.data['$for'] = {};
-            vn.data['$for'][p] = valueEntity;
-            action.call(n, vn);
-          }
-        });
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          valueEntity = newItems[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = valueEntity;
+          cns = node.cloneSchema();
+          Reflect.deleteProperty(cns, '$for');
+
+          let vn = GV.createNode(parentNode, itemDataScope, cns, position, node.domManipulationBus);
+
+          vn.data['$for'] = {};
+          vn.data['$for'][p] = valueEntity;
+          action.call(n, vn);
+        }
       }
+
+      Promise.all(node.domManipulationBus).then(function () {
+        nextUIAction();
+      });
+    });
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+    type: 'reactive',
+    name: '$for'
+  };
+
+  GV.REACTIVE_BEHAVIORS['$for'] = {
+    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
+    bind: function (nodeScopeData, matches) {
+      this.toTemplate();
+      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
+    },
+    getCache: function (matches) {
+      return {
+        propName: matches[1],
+        nodes: []
+      };
+    },
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param nodeScopeData
+     */
+    onApply: function (cache, changes, oldChanges, nodeScopeData) {
+      if (!changes || typeof changes === 'string') {
+        return;
+      }
+
+      createResetProcess(this, cache, changes, nodeScopeData);
     }
   };
 })(Galaxy.GalaxyView);

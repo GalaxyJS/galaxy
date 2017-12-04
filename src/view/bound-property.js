@@ -91,11 +91,6 @@
       this.nodes.splice(nodeIndexInTheHost, 1);
       this.props.splice(nodeIndexInTheHost, 1);
     }
-    // var nodeIndexInTheHost = this.nodes.indexOf(node);
-    // if (nodeIndexInTheHost !== -1) {
-    //   this.nodes.splice(nodeIndexInTheHost, 1);
-    //   this.props.splice(nodeIndexInTheHost, 1);
-    // }
   };
 
   BoundProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -105,6 +100,7 @@
     if (value instanceof Array) {
       BoundProperty.installContainerList(_this, value);
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
+
       if (target instanceof GV.ViewNode) {
         target.data[key] = value;
         _this.setUpdateFor(target, key, init);
@@ -120,7 +116,6 @@
       this.value = value;
       if (value instanceof Array) {
         let change = GV.createActiveArray(value, this.updateValue.bind(this));
-        // let change = {type: 'reset', params: value, original: value};
         change.type = 'reset';
         change.result = oldValue;
         this.updateValue(change, {original: oldValue});

@@ -355,7 +355,6 @@
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
-
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
@@ -404,17 +403,17 @@
         defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
-        setterAndGetter.get = (function (BOUND_PROPERTY, EXPRESSION) {
+        setterAndGetter.get = (function (_boundProperty, _expression) {
           // If there is an expression for the property, then apply it on get because target is not ViewNode
           // and can not have any setter for its properties
-          if (EXPRESSION) {
+          if (_expression) {
             return function () {
-              return EXPRESSION();
+              return _expression();
             };
           }
 
           return function () {
-            return BOUND_PROPERTY.value;
+            return _boundProperty.value;
           };
         })(boundPropertyReference.value, expression);
 
@@ -583,14 +582,13 @@
     if (behavior) {
       let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      viewNode.properties.behaviors[key] = (function (_behavior, _matches, _scopeData) {
+      viewNode.behaviors[key] = (function (_behavior, _matches, _scopeData) {
         let _cache = {};
         if (_behavior.getCache) {
           _cache = _behavior.getCache.call(viewNode, _matches, _scopeData);
         }
 
         return function (vn, value, oldValue) {
-          // console.info(_scopeData);
           return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData);
         };
       })(behavior, matches, scopeData);
@@ -626,7 +624,7 @@
       }
 
       case 'reactive': {
-        let reactiveFunction = viewNode.properties.behaviors[property.name];
+        let reactiveFunction = viewNode.behaviors[property.name];
 
         if (!reactiveFunction) {
           console.error('Reactive handler not found for: ' + property.name);
@@ -677,7 +675,7 @@
         break;
 
       case 'reactive':
-        viewNode.properties.behaviors[property.name](viewNode, newValue, null);
+        viewNode.behaviors[property.name](viewNode, newValue, null);
         break;
 
       case 'event':

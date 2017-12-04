@@ -71,6 +71,10 @@
       remove.destroy(sequence);
       node.domManipulationBus.push(remove.domManipulationSequence.line);
     }
+
+    Promise.all(node.parent.domManipulationBus).then(function () {
+      node.parent.domManipulationBus = [];
+    });
   };
 
   /**
@@ -88,9 +92,8 @@
     this.data = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {
-      behaviors: {}
-    };
+    this.properties = {};
+    this.behaviors = {};
     // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
@@ -113,11 +116,6 @@
       _this.ready = ready;
       _this.callLifeCycleEvent('rendered');
     });
-
-    // this.createSequence(':enter', true);
-    // this.createSequence(':leave', false);
-    // this.createSequence(':destroy', false);
-    // this.createSequence(':class', true);
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -217,8 +215,17 @@
    * @param {Function} expression
    */
   ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
-    this.properties[boundProperty.name] = boundProperty;
-    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? null : expression);
+    // This cause memory leak for expressions
+    let exist = this.properties[boundProperty.name];
+    if (exist instanceof Array) {
+      exist.push(boundProperty);
+    } else if (exist) {
+      this.properties[boundProperty.name] = [exist, boundProperty];
+    } else {
+      this.properties[boundProperty.name] = boundProperty;
+    }
+
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? false : expression);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {
@@ -298,11 +305,15 @@
 
 
     let property, properties = _this.properties;
+    // for (let i = 0, len = properties.length; i < len; i++) {
+    for (let key in properties) {
+      property = properties[key];
 
-    for (let propertyName in properties) {
-      property = properties[propertyName];
-
-      if (property instanceof GV.BoundProperty) {
+      if (property instanceof Array) {
+        property.forEach(function (item) {
+          item.removeNode(_this);
+        });
+      } else {
         property.removeNode(_this);
       }
     }
@@ -314,6 +325,8 @@
         property.removeNode(item);
       });
     });
+
+    _this.schema.__node__ = undefined;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {
@@ -323,12 +336,22 @@
   };
 
   ViewNode.prototype.refreshBinds = function () {
-    let property;
-    for (let propertyName in this.properties) {
-      property = this.properties[propertyName];
-      if (property.nodes.indexOf(this) === -1) {
-        property.nodes.push(this);
-        property.props.push(propertyName);
+    let property, properties = this.properties;
+    for (let key in properties) {
+      property = properties[key];
+
+      if (property instanceof Array) {
+        property.forEach(function (item) {
+          if (item.nodes.indexOf(this) === -1) {
+            item.nodes.push(this);
+            item.props.push(key);
+          }
+        });
+      } else {
+        if (property.value.nodes.indexOf(this) === -1) {
+          property.value.nodes.push(this);
+          property.value.props.push(key);
+        }
       }
     }
   };
