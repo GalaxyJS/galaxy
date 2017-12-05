@@ -394,7 +394,6 @@
         // the expression it self will be treated as a BoundProperty
         if (expression) {
           boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, '[' + targetKeyName + ']', false, null, null);
-
         }
         // console.info(boundPropertyReference.value,referenceName );
         // Otherwise the data is going to be bound through alias.

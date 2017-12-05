@@ -4,7 +4,7 @@
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
       node.uiManipulationSequence.next(function (nextUIAction) {
-        GV.ViewNode.destroyNodes(node, cache.nodes);
+        GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
 
         const bus = node.domManipulationBus.slice(0);
         cache.nodes = [];
