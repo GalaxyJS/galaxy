@@ -133,6 +133,10 @@
     }
   };
 
+  ViewNode.prototype.broadcast = function (event) {
+    this.node.dispatchEvent(event);
+  };
+
   ViewNode.prototype.cloneSchema = function () {
     let schemaClone = Object.assign({}, this.schema);
     ViewNode.cleanReferenceNode(schemaClone);
