@@ -74,6 +74,7 @@
 
     Promise.all(node.parent.domManipulationBus).then(function () {
       node.parent.domManipulationBus = [];
+      node.domManipulationBus = [];
     });
   };
 
@@ -94,7 +95,6 @@
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
     this.behaviors = {};
-    // this.values = {};
     this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     this.setters = {};
     this.parent = null;
@@ -202,8 +202,6 @@
   ViewNode.prototype.registerChild = function (viewNode, position) {
     let _this = this;
     viewNode.parent = _this;
-
-    // _this.activityState.add(viewNode.activityState);
 
     _this.node.insertBefore(viewNode.placeholder, position);
   };

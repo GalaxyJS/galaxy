@@ -225,8 +225,9 @@
 
       let imports = [];
       // extract imports from the source code
-      let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
-      moduleContent = moduleContentWithoutComments.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+      // removing comments cause an bug
+      // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
+      moduleContent = moduleContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
         let query = path.match(/([\S]+)/gm);
         imports.push({
           url: query[query.length - 1],

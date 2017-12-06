@@ -689,22 +689,22 @@
 
   /**
    *
-   * @param {GalaxyView.ViewNode} parentViewNode
+   * @param {Galaxy.GalaxyView.ViewNode} parentViewNode
    * @param {Object} scopeData
    * @param {Object} nodeSchema
    * @param position
    * @param {Array} domManipulationBus
    */
-  GalaxyView.createNode = function (parentViewNode, scopeData, nodeSchema, position, domManipulationBus) {
+  GalaxyView.createNode = function (parentViewNode, scopeData, nodeSchema, position) {
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        GalaxyView.createNode(parentViewNode, scopeData, nodeSchema[i], null, domManipulationBus);
+        GalaxyView.createNode(parentViewNode, scopeData, nodeSchema[i], null);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let viewNode = new GalaxyView.ViewNode(null, nodeSchema, null);
-      viewNode.domManipulationBus = domManipulationBus || [];
+      viewNode.domManipulationBus = parentViewNode.domManipulationBus;
       parentViewNode.registerChild(viewNode, position);
 
       if (nodeSchema['mutator']) {
@@ -737,22 +737,25 @@
       }
 
       if (!viewNode.virtual) {
+        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
+
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
-
-        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null, domManipulationBus);
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered
       viewNode.domManipulationSequence.finish(function () {
+        viewNode.domManipulationBus = [];
         viewNode.ready();
       });
 
-      if (domManipulationBus) {
-        domManipulationBus.push(viewNode.domManipulationSequence.line);
-      }
+      // if (domManipulationBus) {
+      //   domManipulationBus.push(viewNode.domManipulationSequence.line);
+      // }
+
+      viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
 
       return viewNode;
     }
@@ -776,6 +779,9 @@
         tag: scope.element.tagName
       }, scope.element);
     }
+
+    this.uiManipulationSequence = this.container.uiManipulationSequence;
+    this.domManipulationSequence = this.container.domManipulationSequence;
   }
 
   GalaxyView.prototype.setupRepos = function (repos) {
