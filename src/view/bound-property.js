@@ -1,12 +1,6 @@
 /* global Galaxy */
 
-(function (GV) {
-  /**
-   *
-   * @type {Galaxy.GalaxyView.BoundProperty}
-   */
-  GV.BoundProperty = BoundProperty;
-
+Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.GalaxyView.BoundProperty} bp
@@ -14,7 +8,7 @@
    */
   BoundProperty.installContainerList = function (bp, list) {
     list.forEach(function (item) {
-      if (item.hasOwnProperty('__lists__')) {
+      if (item['__lists__'] !== undefined) {
         if (item['__lists__'].indexOf(bp) === -1) {
           item['__lists__'].push(bp);
         }
@@ -30,7 +24,7 @@
 
   BoundProperty.uninstallContainerList = function (bp, list) {
     list.forEach(function (item) {
-      if (item.hasOwnProperty('__lists__')) {
+      if (item['__lists__'] !== undefined) {
         let i = item['__lists__'].indexOf(bp);
         if (i !== -1) {
           item['__lists__'].splice(i, 1);
@@ -43,7 +37,7 @@
    *
    * @param {Object} host
    * @param {string} name
-   * @param {} value
+   * @param {any} value
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
@@ -187,8 +181,8 @@
       // console.info('notify', attributeName, changes);
       Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
     }
-
-
   };
+
+  return BoundProperty;
 
 })(Galaxy.GalaxyView);

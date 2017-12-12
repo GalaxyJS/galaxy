@@ -1,13 +1,7 @@
 /* global Galaxy, Promise */
 'use strict';
 
-(function (G) {
-  /**
-   *
-   * @type {Galaxy.GalaxySequence}
-   */
-  G.GalaxySequence = GalaxySequence;
-
+Galaxy.GalaxySequence = /** @class */ (function (G) {
   /**
    *
    * @constructor
@@ -31,33 +25,22 @@
 
   GalaxySequence.prototype.reset = function () {
     const _this = this;
-    // _this.offset = 0;
     _this.children = [];
 
     _this.line = new Promise(function (resolve) {
       _this.firstStepResolve = resolve;
     });
-this.startP = _this.line;
+    this.startP = _this.line;
     this.started = false;
     return _this;
   };
 
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
+
     let thunk;
-    // _this.offset++;
     let promise = new Promise(function (resolve, reject) {
-      // const timestamp = Date.now();
-      // if (_this.lastTimestamp !== timestamp) {
-      //   _this.lastTimestamp = timestamp;
-      //   _this.offset = 0;
-      // } else {
-      //   _this.offset++;
-      // }
-      //
-      // const id = _this.lastTimestamp + '-' + _this.offset;
       thunk = function () {
-        // _this.offset--;
         action.call(null, resolve, reject);
       };
     });
@@ -87,5 +70,5 @@ this.startP = _this.line;
     });
   };
 
-
+  return GalaxySequence;
 })(Galaxy);

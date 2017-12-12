@@ -1,7 +1,7 @@
 /* global Galaxy, Promise */
 'use strict';
 
-(function (GV) {
+Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   function createElem(t) {
     return document.createElement(t);
   }
@@ -32,14 +32,8 @@
     enumerable: false
   };
 
-  /**
-   *
-   * @type {Galaxy.GalaxyView.ViewNode}
-   */
-  GV.ViewNode = ViewNode;
-
   GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
-    type: 'none'
+    type: 'attr'
   };
 
   GV.NODE_SCHEMA_PROPERTY_MAP['lifeCycle'] = {
@@ -63,6 +57,14 @@
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {Array} toBeRemoved
+   * @param {Galaxy.GalaxySequence} sequence
+   * @memberOf Galaxy.GalaxyView.ViewNode
+   * @static
+   */
   ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
     node.domManipulationBus = node.parent.domManipulationBus;
     let remove = null;
@@ -100,7 +102,7 @@
     this.parent = null;
     this.dependedObjects = [];
     this.domManipulationBus = [];
-    this.uiManipulationSequence = new Galaxy.GalaxySequence().start();
+    this.renderingFlow = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {
       ':enter': new Galaxy.GalaxySequence().start(),
@@ -360,10 +362,11 @@
 
   ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
-    for (let i = this.node.childNodes.length - 1; i >= 0; i--) {
-      node = this.node.childNodes[i];
+    const cn = Array.prototype.slice(this.node.childNodes, 0);
+    for (let i = cn.length - 1; i >= 0; i--) {
+      node = cn[i];
 
-      if (node.hasOwnProperty('__viewNode__')) {
+      if (node['__viewNode__'] !== undefined) {
         toBeRemoved.push(node['__viewNode__']);
       }
     }
@@ -373,10 +376,10 @@
     if (leaveSequence) {
       ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
 
-      return _this.uiManipulationSequence;
+      return _this.renderingFlow;
     }
 
-    _this.uiManipulationSequence.next(function (nextUIAction) {
+    _this.renderingFlow.next(function (nextUIAction) {
       if (!toBeRemoved.length) {
         nextUIAction();
       }
@@ -389,7 +392,7 @@
       });
     });
 
-    return this.uiManipulationSequence;
+    return this.renderingFlow;
   };
 
   ViewNode.prototype.getPlaceholder = function () {
@@ -403,5 +406,8 @@
   ViewNode.prototype.notifyObserver = function (name, value, oldValue) {
     this.observer.notify(name, value, oldValue);
   };
+
+
+  return ViewNode;
 
 })(Galaxy.GalaxyView);

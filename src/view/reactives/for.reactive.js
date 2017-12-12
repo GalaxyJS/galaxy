@@ -1,16 +1,24 @@
 /* global Galaxy */
 
 (function (GV) {
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param cache
+   * @param changes
+   * @param nodeScopeData
+   */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
-      node.uiManipulationSequence.next(function (nextUIAction) {
+      node.renderingFlow.next(function (next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
 
-        const bus = node.domManipulationBus.slice(0);
-        cache.nodes = [];
+        // const bus = node.parent.domManipulationBus.slice(0);
+        // cache.nodes = [];
 
-        Promise.all(bus).then(function () {
-          nextUIAction();
+        Promise.all(node.parent.domManipulationBus).then(function () {
+          cache.nodes = [];
+          next();
         });
       });
 
@@ -26,7 +34,7 @@
     let position = null;
     let newItems = [];
     let action = Array.prototype.push;
-    node.uiManipulationSequence.next(function (nextUIAction) {
+    node.renderingFlow.next(function (next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
@@ -61,16 +69,17 @@
 
       let valueEntity, itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
-
+      const templateSchema = node.cloneSchema();
+      Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
+        const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = newItems[i];
+          valueEntity = c[i];
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = valueEntity;
-          cns = node.cloneSchema();
-          Reflect.deleteProperty(cns, '$for');
+          cns = Object.assign({}, templateSchema);
 
-          let vn = GV.createNode(parentNode, itemDataScope, cns, position, node.domManipulationBus);
+          let vn = GV.createNode(parentNode, itemDataScope, cns, position);
 
           vn.data['$for'] = {};
           vn.data['$for'][p] = valueEntity;
@@ -78,9 +87,14 @@
         }
       }
 
-      Promise.all(node.domManipulationBus).then(function () {
-        nextUIAction();
-      });
+      next();
+    });
+
+    // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
+    // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
+    // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
+    node.renderingFlow.next(function (next) {
+      Promise.all(parentNode.domManipulationBus).then(next);
     });
   };
 
