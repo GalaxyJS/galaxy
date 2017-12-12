@@ -72,22 +72,24 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        const c = newItems.slice(0);
-        for (let i = 0, len = newItems.length; i < len; i++) {
-          valueEntity = c[i];
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = valueEntity;
-          cns = Object.assign({}, templateSchema);
+        requestAnimationFrame(function () {
+          const c = newItems.slice(0);
+          for (let i = 0, len = newItems.length; i < len; i++) {
+            // valueEntity = c[i];
+            itemDataScope = GV.createMirror(nodeScopeData);
+            itemDataScope[p] = c[i];
+            cns = Object.assign({}, templateSchema);
 
-          let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+            let vn = GV.createNode(parentNode, itemDataScope, cns, position);
 
-          vn.data['$for'] = {};
-          vn.data['$for'][p] = valueEntity;
-          action.call(n, vn);
-        }
+            vn.data['$for'] = {};
+            vn.data['$for'][p] = c[i];
+            action.call(n, vn);
+          }
+
+          next();
+        });
       }
-
-      next();
     });
 
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set

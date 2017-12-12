@@ -174,28 +174,32 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
-        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-        removeChild(_this.placeholder.parentNode, _this.placeholder);
-        _this.populateEnterSequence(_this.sequences[':enter']);
-        // Go to next dom manipulation step when the whole :enter sequence is done
-        _this.sequences[':enter'].nextAction(function () {
-          done();
-        });
-        _this.callLifeCycleEvent('inserted');
+        // requestAnimationFrame(function () {
+          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+          removeChild(_this.placeholder.parentNode, _this.placeholder);
+          _this.populateEnterSequence(_this.sequences[':enter']);
+          // Go to next dom manipulation step when the whole :enter sequence is done
+          _this.sequences[':enter'].nextAction(function () {
+            done();
+          });
+          _this.callLifeCycleEvent('inserted');
+        // });
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
         _this.origin = true;
-        _this.populateLeaveSequence(_this.sequences[':leave']);
-        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-        _this.sequences[':leave'].start().finish(function () {
-          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-          removeChild(_this.node.parentNode, _this.node);
-          done();
-          _this.sequences[':leave'].reset();
-          _this.origin = false;
-          _this.callLifeCycleEvent('removed');
-        });
+        // requestAnimationFrame(function () {
+          _this.populateLeaveSequence(_this.sequences[':leave']);
+          // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
+          _this.sequences[':leave'].start().finish(function () {
+            insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+            removeChild(_this.node.parentNode, _this.node);
+            done();
+            _this.sequences[':leave'].reset();
+            _this.origin = false;
+            _this.callLifeCycleEvent('removed');
+          });
+        // });
       });
     }
   };
@@ -330,7 +334,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       });
     });
 
-    _this.schema.__node__ = undefined;
+    // _this.schema.__node__ = undefined;
   };
 
   ViewNode.prototype.addDependedObject = function (item) {

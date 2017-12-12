@@ -16,8 +16,26 @@ let sources = {
     'src/*.js',
     'src/view/view.js',
     'src/view/**/*.js'
+  ],
+  galaxyWebWorker: [
+    'src/web-worker.js',
   ]
 };
+
+gulp.task('build-galaxy-web-worker', function () {
+  return pump([
+    gulp.src(sources.galaxyWebWorker),
+    concat('galaxy-web-worker.js'),
+    gulp.dest('dist/'),
+    gulp.dest('site/galaxyjs/')
+  ], function (error) {
+    if (error) {
+      console.error('error in: ', error.plugin);
+      console.error(error.message);
+      console.info(error.stack);
+    }
+  });
+});
 
 gulp.task('build-galaxy', function () {
   return pump([
@@ -71,13 +89,13 @@ gulp.task('start-development', ['build-galaxy'], function () {
   ], ['build-galaxy']);
 });
 
-gulp.task('generate-docs', function () {
-  return gulp.src(sources.galaxy)
-    .pipe(gulpDocumentation('html', {
-      filename: 'galaxy-doc.html'
-    }))
-    .pipe(gulp.dest('docs'));
-});
+// gulp.task('generate-docs', function () {
+//   return gulp.src(sources.galaxy)
+//     .pipe(gulpDocumentation('html', {
+//       filename: 'galaxy-doc.html'
+//     }))
+//     .pipe(gulp.dest('docs'));
+// });
 
 gulp.task('tdd', function (done) {
   new Server({

@@ -5,6 +5,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   const defineProp = Object.defineProperty;
   const setAttr = Element.prototype.setAttribute;
   const removeAttr = Element.prototype.removeAttribute;
+  // const worker = new Worker('galaxyjs/galaxy-web-worker.js');
 
   let setterAndGetter = {
     configurable: true,
@@ -95,7 +96,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     delete obj[key];
   };
 
-  GalaxyView.createMirror = function (obj) {
+  GalaxyView.createMirror = function (obj, newProp) {
     let result = {};
 
     defineProp(result, '__parent__', {
@@ -653,7 +654,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
     let newValue = value;
-
+    // worker.postMessage({viewNode: viewNode});
     switch (property.type) {
       case 'attr':
         GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
@@ -730,7 +731,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
 
         if (viewNode.inDOM) {
+          // requestAnimationFrame(function () {
           viewNode.setInDOM(true);
+          // });
         }
       }
 
