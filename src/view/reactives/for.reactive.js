@@ -16,7 +16,7 @@
         // const bus = node.parent.domManipulationBus.slice(0);
         // cache.nodes = [];
 
-        Promise.all(node.parent.domManipulationBus).then(function () {
+        Promise.all(node.parent.domBus).then(function () {
           cache.nodes = [];
           next();
         });
@@ -96,7 +96,7 @@
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
     node.renderingFlow.next(function (next) {
-      Promise.all(parentNode.domManipulationBus).then(next);
+      Promise.all(parentNode.domBus).then(next);
     });
   };
 

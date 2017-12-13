@@ -66,17 +66,17 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @static
    */
   ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
-    node.domManipulationBus = node.parent.domManipulationBus;
+    node.domBus = node.parent.domBus;
     let remove = null;
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
       remove.destroy(sequence);
-      node.domManipulationBus.push(remove.domManipulationSequence.line);
+      node.domBus.push(remove.domManipulationSequence.line);
     }
 
-    Promise.all(node.parent.domManipulationBus).then(function () {
-      node.parent.domManipulationBus = [];
-      node.domManipulationBus = [];
+    Promise.all(node.parent.domBus).then(function () {
+      node.parent.domBus = [];
+      node.domBus = [];
     });
   };
 
@@ -101,7 +101,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.setters = {};
     this.parent = null;
     this.dependedObjects = [];
-    this.domManipulationBus = [];
+    this.domBus = [];
     this.renderingFlow = new Galaxy.GalaxySequence().start();
     this.domManipulationSequence = new Galaxy.GalaxySequence().start();
     this.sequences = {
@@ -167,6 +167,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   };
 
+  /**
+   *
+   * @param {Promise} promise
+   */
+  ViewNode.prototype.addToDOMBus = function (promise) {
+    this.domBus.push(promise);
+  };
+
   ViewNode.prototype.setInDOM = function (flag, nextUIAction) {
     let _this = this;
     _this.inDOM = flag;
@@ -175,30 +183,30 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
       _this.domManipulationSequence.next(function (done) {
         // requestAnimationFrame(function () {
-          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-          removeChild(_this.placeholder.parentNode, _this.placeholder);
-          _this.populateEnterSequence(_this.sequences[':enter']);
-          // Go to next dom manipulation step when the whole :enter sequence is done
-          _this.sequences[':enter'].nextAction(function () {
-            done();
-          });
-          _this.callLifeCycleEvent('inserted');
+        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        removeChild(_this.placeholder.parentNode, _this.placeholder);
+        _this.populateEnterSequence(_this.sequences[':enter']);
+        // Go to next dom manipulation step when the whole :enter sequence is done
+        _this.sequences[':enter'].nextAction(function () {
+          done();
+        });
+        _this.callLifeCycleEvent('inserted');
         // });
       });
     } else if (!flag && _this.node.parentNode) {
       _this.domManipulationSequence.next(function (done) {
         _this.origin = true;
         // requestAnimationFrame(function () {
-          _this.populateLeaveSequence(_this.sequences[':leave']);
-          // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-          _this.sequences[':leave'].start().finish(function () {
-            insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-            removeChild(_this.node.parentNode, _this.node);
-            done();
-            _this.sequences[':leave'].reset();
-            _this.origin = false;
-            _this.callLifeCycleEvent('removed');
-          });
+        _this.populateLeaveSequence(_this.sequences[':leave']);
+        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
+        _this.sequences[':leave'].start().finish(function () {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+          removeChild(_this.node.parentNode, _this.node);
+          done();
+          _this.sequences[':leave'].reset();
+          _this.origin = false;
+          _this.callLifeCycleEvent('removed');
+        });
         // });
       });
     }
@@ -210,9 +218,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param position
    */
   ViewNode.prototype.registerChild = function (viewNode, position) {
-    let _this = this;
+    const _this = this;
     viewNode.parent = _this;
-
+    viewNode.domBus = _this.domBus;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
 
@@ -390,8 +398,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       ViewNode.destroyNodes(_this, toBeRemoved);
 
-      Promise.all(_this.domManipulationBus).then(function () {
-        _this.domManipulationBus = [];
+      Promise.all(_this.domBus).then(function () {
+        _this.domBus = [];
         nextUIAction();
       });
     });
