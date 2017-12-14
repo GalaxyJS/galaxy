@@ -30,7 +30,7 @@
   };
 
   const createPushProcess = function (node, cache, changes, nodeScopeData) {
-    let parentNode = node.parent;
+    const parentNode = node.parent;
     let position = null;
     let newItems = [];
     let action = Array.prototype.push;
@@ -67,7 +67,7 @@
         newItems = changes.original;
       }
 
-      let valueEntity, itemDataScope = nodeScopeData;
+      let itemDataScope = nodeScopeData;
       let p = cache.propName, n = cache.nodes, cns;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');

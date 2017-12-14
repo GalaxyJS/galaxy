@@ -68,7 +68,9 @@ gulp.task('build-galaxy', function () {
 gulp.task('build-galaxy-production', function () {
   return pump([
     gulp.src(sources.galaxy),
-    babel({presets: ['es2015']}),
+    babel({
+      presets: ['es2015-script']
+    }),
     concat('galaxy.min.js'),
     uglify({compress: true}),
     gulp.dest('dist/'),
