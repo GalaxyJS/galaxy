@@ -219,6 +219,29 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return target;
   };
 
+  GalaxyView.exactPropertyLookup = function (data, property) {
+    property = property.split('.')[0];
+    let target = data;
+    let temp = data;
+    // var nestingLevel = 0;
+    if (data[property] === undefined) {
+      while (temp.__parent__) {
+        if (temp.__parent__.hasOwnProperty(property)) {
+          target = temp.__parent__;
+          break;
+        }
+
+        // if (nestingLevel++ >= 1000) {
+        //   throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
+        // }
+
+        temp = temp.__parent__;
+      }
+    }
+
+    return target[property];
+  };
+
   GalaxyView.createBoundProperty = function (dataObject, propertyName, referenceName, enumerable, childProperty, initValue) {
     let boundProperty = new GalaxyView.BoundProperty(dataObject, propertyName, initValue);
     boundPropertyReference.value = boundProperty;
@@ -296,7 +319,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return func;
   };
 
-  GalaxyView.createExpressionFunction = function (host, handler, variables, scope) {
+  GalaxyView.createExpressionFunction = function (host, handler, variables, scope, on) {
     let getExpressionArguments = Galaxy.GalaxyView.createExpressionArgumentsProvider(variables);
 
     return function () {
@@ -319,6 +342,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     let dataObject = data;
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
+
     // expression === true means that a expression function is available and should be extracted
     if (expression === true) {
       let handler = variables[variables.length - 1];
@@ -335,7 +359,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       // Generate expression arguments
       try {
-        expression = Galaxy.GalaxyView.createExpressionFunction(target, handler, variables, dataObject);
+        expression = Galaxy.GalaxyView.createExpressionFunction(target, handler, variables, dataObject, targetKeyName);
       }
       catch (exception) {
         throw console.error(exception.message + '\n', variables);
@@ -348,6 +372,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
+
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
@@ -359,7 +384,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         childProperty = variableName.join('.');
       }
 
-      dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
+      if (i === 0 && propertyName === 'this') {
+        i++;
+        propertyName = variableName.shift();
+        childProperty = variableName.join('.');
+        dataObject = GalaxyView.propertyLookup(target.localScope, propertyName);
+      } else {
+        dataObject = GalaxyView.propertyLookup(data, propertyName);
+      }
 
       initValue = dataObject[propertyName];
 
@@ -373,6 +405,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
+        // if(targetKeyName === 'src')debugger;
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
       }
 
@@ -481,7 +514,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        let newValue = property.parser ? property.parser(value) : value;
+        const newValue = property.parser ? property.parser(value) : value;
         node.node[property.name] = newValue;
         node.notifyObserver(property.name, newValue, oldValue);
       }
@@ -518,13 +551,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
-        let asyncCall = function (asyncValue) {
-          let newValue = parser ? parser(asyncValue) : asyncValue;
+        const asyncCall = function (asyncValue) {
+          const newValue = parser ? parser(asyncValue) : asyncValue;
+          node.data[attributeName] = newValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        let newValue = parser ? parser(value) : value;
+        const newValue = parser ? parser(value) : value;
+        node.data[attributeName] = newValue;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
       }
     };
@@ -691,20 +726,31 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
     const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
-    let newValue = value;
+    // let newValue = value;
+    let parser = property.parser;
     // worker.postMessage({viewNode: viewNode});
 
     switch (property.type) {
       case 'attr':
-        GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
+        // GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
+        if (value instanceof Promise) {
+          const asyncCall = function (asyncValue) {
+            const newValue = parser ? parser(asyncValue) : asyncValue;
+            GalaxyView.setAttr(viewNode, attributeName, newValue, null);
+          };
+          value.then(asyncCall).catch(asyncCall);
+        } else {
+          const newValue = parser ? parser(value) : value;
+          GalaxyView.setAttr(viewNode, attributeName, newValue, null);
+        }
         break;
 
       case 'prop':
-        GalaxyView.createPropertySetter(viewNode, property)(newValue, null);
+        GalaxyView.createPropertySetter(viewNode, property)(value, null);
         break;
 
       case 'reactive':
-        viewNode.behaviors[property.name](viewNode, newValue, null);
+        viewNode.behaviors[property.name](viewNode, value, null);
         break;
 
       case 'event':

@@ -96,7 +96,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
 
       if (target instanceof GV.ViewNode) {
-        target.data[key] = value;
+        // target.data[key] = value;
         _this.setUpdateFor(target, key, init);
       }
     } else {
@@ -153,7 +153,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
    */
   BoundProperty.prototype.setValueFor = function (host, attributeName, value, oldValue, scopeData) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      host.data[attributeName] = value;
+      // host.data[attributeName] = value;
       if (!host.setters[attributeName]) {
         console.info(host, attributeName, value);
       }

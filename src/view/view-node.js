@@ -93,6 +93,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.node = node || createElem(schema.tag || 'div');
     this.schema = schema;
     this.data = {};
+    this.arguments = {};
+    this.localScope = {};
     this.virtual = false;
     this.placeholder = createComment(schema.tag || 'div');
     this.properties = {};
@@ -131,7 +133,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   ViewNode.prototype.callLifeCycleEvent = function (id) {
     if (this.schema.lifeCycle && typeof this.schema.lifeCycle[id] === 'function') {
-      this.schema.lifeCycle[id].call(this);
+      this.schema.lifeCycle[id].call(this, this.domManipulationSequence, this.localScope);
     }
   };
 
