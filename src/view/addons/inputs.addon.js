@@ -22,38 +22,36 @@
     onApply: function (cache, value, oldValue, context) {
       if (this.virtual) return;
 
-      let clone = GV.bindSubjectsToData(value, context, true);
+      let live = GV.bindSubjectsToData(value, context, true);
 
-      if (this.hasOwnProperty('[addon/inputs]') && clone !== this['[addon/inputs]'].clone) {
-        Galaxy.resetObjectTo(this['[addon/inputs]'], {
-          clone: clone,
+      if (this.addons.inputs && live !== this.addons.inputs.live) {
+        Galaxy.resetObjectTo(this.addons.inputs, {
+          live: live,
           original: value
         });
-      } else if (!this.hasOwnProperty('[addon/inputs]')) {
-        Object.defineProperty(this, '[addon/inputs]', {
-          value: {
-            clone: clone,
-            original: value
-          },
-          enumerable: false
-        });
+      } else if (this.addons.inputs === undefined) {
+        this.addons.inputs = {
+          live: live,
+          original: value
+        };
       }
 
-      this.addDependedObject(clone);
+      this.inputs = live;
+      this.addDependedObject(live);
     }
   };
 
   Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
-        scope.inputs = scope.element['[addon/inputs]'].clone;
+        scope.inputs = scope.element.addons.inputs.live;
 
         return scope.inputs;
       },
       finalize: function () {
-        // By linking the clone to original we make sure that changes on the local copy of the input data will be
+        // By linking the live to original we make sure that changes on the local copy of the input data will be
         // reflected to the original one
-        GV.link(scope.element['[addon/inputs]'].clone, scope.element['[addon/inputs]'].original);
+        GV.link(scope.element.addons.inputs.live, scope.element.addons.inputs.original);
       }
     };
   });

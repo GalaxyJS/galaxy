@@ -180,7 +180,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let type = typeof(value);
 
     if (type === 'string') {
-      variableNamePaths = value.match(/^\[\s*([^\[\]]*)\s*\]$/);
+      variableNamePaths = value.match(/^<>\s*([^\[\]]*)\s*$/);
+      variableNamePaths = variableNamePaths || value.match(/^\[\s*([^\[\]]*)\s*]$/);
       variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
     }
     else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
@@ -198,6 +199,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   GalaxyView.propertyLookup = function (data, property) {
     property = property.split('.')[0];
+    let original = data;
     let target = data;
     let temp = data;
     // var nestingLevel = 0;
@@ -213,6 +215,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         // }
 
         temp = temp.__parent__;
+      }
+
+      // if the property is not found in the parents then return the original object as the context
+      if (target[property] === undefined) {
+        return original;
       }
     }
 
@@ -220,30 +227,28 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.exactPropertyLookup = function (data, property) {
-    property = property.split('.')[0];
+    const properties = property.split('.');
     let target = data;
-    let temp = data;
-    // var nestingLevel = 0;
-    if (data[property] === undefined) {
-      while (temp.__parent__) {
-        if (temp.__parent__.hasOwnProperty(property)) {
-          target = temp.__parent__;
-          break;
-        }
+    properties.forEach(function (p) {
+      target = GalaxyView.propertyLookup(target, p)[p];
+    });
 
-        // if (nestingLevel++ >= 1000) {
-        //   throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
-        // }
-
-        temp = temp.__parent__;
-      }
-    }
-
-    return target[property];
+    return target;
   };
 
-  GalaxyView.createBoundProperty = function (dataObject, propertyName, referenceName, enumerable, childProperty, initValue) {
-    let boundProperty = new GalaxyView.BoundProperty(dataObject, propertyName, initValue);
+  /**
+   *
+   * @param dataObject
+   * @param {string} propertyName
+   * @param {string} referenceName
+   * @param {boolean} enumerable
+   * @param childProperty
+   * @param initValue
+   * @param {boolean} useLocalScope
+   * @returns {Galaxy.GalaxyView.BoundProperty}
+   */
+  GalaxyView.createBoundProperty = function (dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue) {
+    let boundProperty = new GalaxyView.BoundProperty(dataObject, useLocalScope ? 'this.' + propertyName : propertyName, initValue);
     boundPropertyReference.value = boundProperty;
     defineProp(dataObject, referenceName, boundPropertyReference);
 
@@ -372,11 +377,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
+    let useLocalScope = false;
 
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
       childProperty = null;
+      useLocalScope = false;
 
       let variableName = variableNamePath.split('.');
       if (variableName.length > 1) {
@@ -387,7 +394,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       if (i === 0 && propertyName === 'this') {
         i++;
         propertyName = variableName.shift();
-        childProperty = variableName.join('.');
+        childProperty = null;
+        useLocalScope = true;
         dataObject = GalaxyView.propertyLookup(target.localScope, propertyName);
       } else {
         dataObject = GalaxyView.propertyLookup(data, propertyName);
@@ -405,8 +413,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
-        // if(targetKeyName === 'src')debugger;
-        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, referenceName, enumerable, childProperty, initValue);
+        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue);
       }
 
       if (dataObject['__lists__'] !== undefined) {
@@ -415,11 +422,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
         boundPropertyReference.value = boundProperty;
-        // debugger;
         // Create a BoundProperty for targetKeyName if the value is an expression
         // the expression it self will be treated as a BoundProperty
         if (expression) {
-          boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, '[' + targetKeyName + ']', false, null, null);
+          boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, false, '[' + targetKeyName + ']', false, null, null);
         }
         // console.info(boundPropertyReference.value,referenceName );
         // Otherwise the data is going to be bound through alias.
@@ -770,8 +776,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {Object} nodeSchema
    * @param position
    * @param {Array} domManipulationBus
+   * @param {null|Object} localScope
    */
-  GalaxyView.createNode = function (parent, scopeData, nodeSchema, position) {
+  GalaxyView.createNode = function (parent, scopeData, nodeSchema, position, localScope) {
     let i = 0, len = 0;
 
     if (nodeSchema instanceof Array) {
@@ -779,7 +786,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         GalaxyView.createNode(parent, scopeData, nodeSchema[i], null);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      let viewNode = new GalaxyView.ViewNode(null, nodeSchema, null);
+      let viewNode = new GalaxyView.ViewNode(null, nodeSchema, null, localScope);
       // viewNode.domManipulationBus = parent.domManipulationBus;
       parent.registerChild(viewNode, position);
 
