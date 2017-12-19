@@ -11,8 +11,8 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
-    this.reset();
     this.children = [];
+    this.reset();
   }
 
   GalaxySequence.prototype.start = function () {

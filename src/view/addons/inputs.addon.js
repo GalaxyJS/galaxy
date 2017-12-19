@@ -11,17 +11,13 @@
     /**
      *
      * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param scopeData
+     * @param context
      * @param value
      */
-    bind: function (scopeData, value) {
+    bind: function (context, value) {
       if (value !== null && typeof  value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
-    },
-    onApply: function (cache, value, oldValue, context) {
-      if (this.virtual) return;
-
       let live = GV.bindSubjectsToData(value, context, true);
 
       if (this.addons.inputs && live !== this.addons.inputs.live) {
@@ -38,6 +34,26 @@
 
       this.inputs = live;
       this.addDependedObject(live);
+    },
+    onApply: function (cache, value, oldValue, context) {
+      // if (this.virtual) return;
+
+      // let live = GV.bindSubjectsToData(value, context, true);
+      //
+      // if (this.addons.inputs && live !== this.addons.inputs.live) {
+      //   Galaxy.resetObjectTo(this.addons.inputs, {
+      //     live: live,
+      //     original: value
+      //   });
+      // } else if (this.addons.inputs === undefined) {
+      //   this.addons.inputs = {
+      //     live: live,
+      //     original: value
+      //   };
+      // }
+      //
+      // this.inputs = live;
+      // this.addDependedObject(live);
     }
   };
 

@@ -396,7 +396,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         propertyName = variableName.shift();
         childProperty = null;
         useLocalScope = true;
-        dataObject = GalaxyView.propertyLookup(target.localScope, propertyName);
+        dataObject = GalaxyView.propertyLookup(target.inputs, propertyName);
       } else {
         dataObject = GalaxyView.propertyLookup(data, propertyName);
       }
@@ -821,12 +821,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       if (!viewNode.virtual) {
         GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
+        viewNode.callLifecycleEvent('postInit');
 
         if (viewNode.inDOM) {
           // requestAnimationFrame(function () {
           viewNode.setInDOM(true);
           // });
         }
+      } else {
+        viewNode.callLifecycleEvent('postInit');
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
@@ -850,20 +853,25 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @memberOf Galaxy
    */
   function GalaxyView(scope) {
-    this.scope = scope;
-    this.dataRepos = {};
+    const _this = this;
+    _this.scope = scope;
+    _this.dataRepos = {};
 
     if (scope.element instanceof GalaxyView.ViewNode) {
-      this.container = scope.element;
+      _this.container = scope.element;
     } else {
       scope.element.innerHTML = '';
-      this.container = new GalaxyView.ViewNode(null, {
+      _this.container = new GalaxyView.ViewNode(null, {
         tag: scope.element.tagName
       }, scope.element);
+
+      _this.container.domManipulationSequence.finish(function () {
+        _this.container.ready();
+      });
     }
 
-    this.renderingFlow = this.container.renderingFlow;
-    this.domManipulationSequence = this.container.domManipulationSequence;
+    _this.renderingFlow = this.container.renderingFlow;
+    _this.domManipulationSequence = this.container.domManipulationSequence;
   }
 
   GalaxyView.prototype.setupRepos = function (repos) {
