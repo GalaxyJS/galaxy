@@ -826,9 +826,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         viewNode.callLifecycleEvent('postInit');
 
         if (viewNode.inDOM) {
-          // requestAnimationFrame(function () {
           viewNode.setInDOM(true);
-          // });
         }
       } else {
         viewNode.callLifecycleEvent('postInit');

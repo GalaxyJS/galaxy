@@ -10,6 +10,7 @@
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
+      // debugger;
       node.renderingFlow.next(function (next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
 
@@ -72,7 +73,7 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        requestAnimationFrame(function () {
+        // requestAnimationFrame(function () {
           const c = newItems.slice(0);
           for (let i = 0, len = newItems.length; i < len; i++) {
             // valueEntity = c[i];
@@ -88,7 +89,7 @@
           }
 
           next();
-        });
+        // });
       }
     });
 
