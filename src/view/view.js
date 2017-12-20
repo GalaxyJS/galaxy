@@ -19,6 +19,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     value: null
   };
 
+  GalaxyView.BINDING_SYNTAX_REGEX = /^<>\s*([^\[\]]*)\s*$/;
+
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
   GalaxyView.NODE_SCHEMA_PROPERTY_MAP = {
@@ -180,8 +182,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let type = typeof(value);
 
     if (type === 'string') {
-      variableNamePaths = value.match(/^<>\s*([^\[\]]*)\s*$/);
-      variableNamePaths = variableNamePaths || value.match(/^\[\s*([^\[\]]*)\s*]$/);
+      variableNamePaths = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
+      // variableNamePaths = variableNamePaths || value.match(/^\[\s*([^\[\]]*)\s*]$/);
       variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
     }
     else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
@@ -314,7 +316,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     // Take care of variables that contain square brackets like '[variable_name]'
     // for the convenience of the programmer
-    middle = middle.substring(0, middle.length - 1).replace(/\[|\]/g, '');
+    middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
 
     functionContent += middle + ']';
 
@@ -396,7 +398,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         propertyName = variableName.shift();
         childProperty = null;
         useLocalScope = true;
-        dataObject = GalaxyView.propertyLookup(target.inputs, propertyName);
+        dataObject = GalaxyView.propertyLookup(target.localScope, propertyName);
       } else {
         dataObject = GalaxyView.propertyLookup(data, propertyName);
       }
@@ -659,8 +661,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           _cache = _behavior.getCache.call(node, _matches, _scopeData);
         }
 
-        return function (vn, value, oldValue) {
-          return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData);
+        return function (vn, value, oldValue, expression) {
+          return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData, expression);
         };
       })(behavior, matches, scopeData);
 
@@ -681,7 +683,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       return setter;
     },
-    'reactive': function (viewNode, property) {
+    'reactive': function (viewNode, property, expression) {
       const reactiveFunction = viewNode.behaviors[property.name];
 
       if (!reactiveFunction) {
@@ -689,7 +691,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       return function (value, oldValue) {
-        reactiveFunction(viewNode, value, oldValue);
+        reactiveFunction(viewNode, value, oldValue, expression);
       };
     },
     'custom': function (viewNode, property, expression, attributeName) {

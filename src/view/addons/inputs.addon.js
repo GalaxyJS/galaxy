@@ -19,6 +19,11 @@
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
       let live = GV.bindSubjectsToData(value, context, true);
+      // Object.preventExtensions(live);
+      // console.info(Object.isSealed(live), live);
+      if(this.virtual) {
+        console.info(this);
+      }
 
       if (this.addons.inputs && live !== this.addons.inputs.live) {
         Galaxy.resetObjectTo(this.addons.inputs, {
@@ -36,24 +41,6 @@
       this.addDependedObject(live);
     },
     onApply: function (cache, value, oldValue, context) {
-      // if (this.virtual) return;
-
-      // let live = GV.bindSubjectsToData(value, context, true);
-      //
-      // if (this.addons.inputs && live !== this.addons.inputs.live) {
-      //   Galaxy.resetObjectTo(this.addons.inputs, {
-      //     live: live,
-      //     original: value
-      //   });
-      // } else if (this.addons.inputs === undefined) {
-      //   this.addons.inputs = {
-      //     live: live,
-      //     original: value
-      //   };
-      // }
-      //
-      // this.inputs = live;
-      // this.addDependedObject(live);
     }
   };
 

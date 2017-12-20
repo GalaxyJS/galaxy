@@ -7,7 +7,7 @@
   };
 
   GV.REACTIVE_BEHAVIORS['checked'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    regex: GV.BINDING_SYNTAX_REGEX,
     bind: function (nodeScopeData, matches) {
       const _this = this;
       let parts = matches[1].split('.');

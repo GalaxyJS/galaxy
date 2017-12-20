@@ -109,11 +109,19 @@
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
     bind: function (nodeScopeData, matches) {
       this.toTemplate();
-      GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
+      if (matches instanceof Array) {
+        GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
+      } else if (matches) {
+        const bindings = GV.getBindings(matches.data);
+
+        if (bindings.variableNamePaths) {
+          GV.makeBinding(this, nodeScopeData, '$for', bindings.variableNamePaths, bindings.isExpression);
+        }
+      }
     },
     getCache: function (matches) {
       return {
-        propName: matches[1],
+        propName: matches.as || matches[1],
         nodes: []
       };
     },
@@ -125,9 +133,13 @@
      * @param matches
      * @param nodeScopeData
      */
-    onApply: function (cache, changes, oldChanges, nodeScopeData) {
+    onApply: function (cache, changes, oldChanges, nodeScopeData, expression) {
       if (!changes || typeof changes === 'string') {
         return;
+      }
+
+      if (expression) {
+        changes.params = expression();
       }
 
       createResetProcess(this, cache, changes, nodeScopeData);

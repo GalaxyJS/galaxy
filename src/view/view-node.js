@@ -249,7 +249,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       this.properties[boundProperty.name] = [boundProperty];
     }
 
-    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, this.virtual ? false : expression);
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, /*this.virtual ? false :*/ expression);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {

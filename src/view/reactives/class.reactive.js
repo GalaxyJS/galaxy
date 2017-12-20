@@ -7,7 +7,7 @@
   };
 
   GV.REACTIVE_BEHAVIORS['class'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    regex: GV.BINDING_SYNTAX_REGEX,
     /**
      *
      * @param {Galaxy.GalaxyView.ViewNode} viewNode
@@ -17,7 +17,7 @@
     bind: function (scopeData, matches) {
 
     },
-    onApply: function (cache,  value, oldValue, context) {
+    onApply: function (cache, value, oldValue, context) {
       if (this.virtual) {
         return;
       }

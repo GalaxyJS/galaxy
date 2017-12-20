@@ -7,7 +7,7 @@
   };
 
   GV.REACTIVE_BEHAVIORS['value'] = {
-    regex: /^\[\s*([^\[\]]*)\s*\]$/,
+    regex: GV.BINDING_SYNTAX_REGEX,
     bind: function (nodeScopeData, matches) {
       if (this.node.type === 'text') {
         const _this = this;
