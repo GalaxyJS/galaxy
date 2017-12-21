@@ -7,7 +7,8 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxySequence() {
+  function GalaxySequence(continues) {
+    this.continues = continues || false;
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
@@ -45,7 +46,9 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
       };
     });
 
-    this.children.push(promise);
+    if (!this.continues) {
+      this.children.push(promise);
+    }
 
     this.line.then(thunk).catch(function (e) {
       console.error(e);

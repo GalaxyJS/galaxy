@@ -10,13 +10,12 @@
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
-      // debugger;
       node.renderingFlow.next(function (next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
+        next();
+      });
 
-        // const bus = node.parent.domManipulationBus.slice(0);
-        // cache.nodes = [];
-
+      node.renderingFlow.next(function (next) {
         Promise.all(node.parent.domBus).then(function () {
           cache.nodes = [];
           next();
@@ -73,7 +72,7 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        // requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
           const c = newItems.slice(0);
           for (let i = 0, len = newItems.length; i < len; i++) {
             // valueEntity = c[i];
@@ -89,7 +88,7 @@
           }
 
           next();
-        // });
+        });
       }
     });
 
@@ -97,7 +96,11 @@
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
     node.renderingFlow.next(function (next) {
-      Promise.all(parentNode.domBus).then(next);
+      requestAnimationFrame(function () {
+        Promise.all(parentNode.domBus).then(function () {
+          next();
+        });
+      });
     });
   };
 
@@ -114,11 +117,11 @@
         GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
       } else if (matches) {
         const bindings = GV.getBindings(matches.data);
-
         if (bindings.variableNamePaths) {
           GV.makeBinding(this, nodeScopeData, '$for', bindings.variableNamePaths, bindings.isExpression);
         }
       }
+
     },
     getCache: function (matches) {
       return {

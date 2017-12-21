@@ -21,7 +21,7 @@
       let live = GV.bindSubjectsToData(value, context, true);
       // Object.preventExtensions(live);
       // console.info(Object.isSealed(live), live);
-      if(this.virtual) {
+      if (this.virtual) {
         console.info(this);
       }
 

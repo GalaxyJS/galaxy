@@ -46,81 +46,27 @@
 
       let leaveAnimationConfig = config[':leave'];
       if (leaveAnimationConfig) {
-        // Set view node as destroyed whenever the node is leaving the dom
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
+              // debugger;
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               animationMeta.duration = leaveAnimationConfig.duration;
               animationMeta.position = leaveAnimationConfig.position;
-              animationMeta.sequuuu = leaveAnimationConfig.sequence;
               animationMeta.NODE = viewNode;
 
-              // if the animation has order it will be added to the queue according to its order.
-              // No order means lowest order
-              if (typeof leaveAnimationConfig.order === 'number') {
-                animationMeta.addToQueue(leaveAnimationConfig.order,
-                  viewNode.node, (function (viewNode, am, conf) {
-                    return function () {
-                      am.add(viewNode.node, conf, done);
-                      animationMeta.NODE = viewNode;
-
-                      if (conf.parent) {
-                        const parent = AnimationMeta.get(conf.parent);
-                        parent.addChild(am, true);
-                      }
-                    };
-                  })(viewNode, animationMeta, leaveAnimationConfig));
-
-                // When viewNode is the one which is the origin, then run the queue
-                // The queue will never run if the destroyed viewNode has the lowest order
-                if (viewNode.origin) {
-                  let finishImmediately = false;
-                  while (animationMeta.parent) {
-                    animationMeta = animationMeta.parent;
-                  }
-                  let queue = animationMeta.queue;
-
-                  // let item = null;
-                  // for (let i = 0, len = animationMeta.list.length; i < len; i++) {
-                  //   item = animationMeta.list[i];
-                  //   item.operation();
-                  //
-                  //   if (item.node === viewNode.node) {
-                  //     finishImmediately = true;
-                  //     break;
-                  //   }
-                  //
-                  //   if (finishImmediately) break;
-                  // }
-                  for (let key in queue) {
-                    let item;
-                    for (let i = 0, len = queue[key].length; i < len; i++) {
-                      item = queue[key][i];
-                      item.operation();
-
-                      // If the the current queue item.node is the destroyed node, then all the animations in
-                      // queue should be ignored
-                      if (item.node === viewNode.node) {
-                        finishImmediately = true;
-                        break;
-                      }
-                    }
-
-                    if (finishImmediately) break;
-                  }
-                  // debugger;
-
-                  animationMeta.queue = {};
-                  animationMeta.list = [];
-                  viewNode.origin = false;
-                }
-
-                return;
-              }
-
+              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+              // lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+
+              // Add to parent should happen after the animation is added to the child
+              if (leaveAnimationConfig.parent) {
+                const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+                parent.addChild(animationMeta);
+              }
             } else {
+              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+              // lastStep.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
             }
           });

@@ -316,8 +316,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     // Take care of variables that contain square brackets like '[variable_name]'
     // for the convenience of the programmer
-    middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
 
+    // middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
     functionContent += middle + ']';
 
     const func = new Function('prop, scope', functionContent);
@@ -355,6 +355,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let handler = variables[variables.length - 1];
       variables = variables.slice(0, variables.length - 1);
       expressionArgumentsCount = variables.length;
+      variables = variables.map(function (name) {
+        return name.replace(/<>/g, '');
+      });
       // let functionContent = 'return [';
       // functionContent += variables.map(function (path) {
       //   // Take care of variables that contain square brackets like '[variable_name]'
@@ -724,8 +727,20 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
-      return function (value) {
-        setAttr.call(viewNode.node, attributeName, value);
+      // return function (value) {
+      //   setAttr.call(viewNode.node, attributeName, value);
+      // };
+      property = {
+        type: 'attr'
+      };
+    }
+
+    // expressing for reactive property should be handled by that property handler
+    // if viewNode is virtual, then the expression should be ignored
+    if (property.type !== 'reactive' && viewNode.virtual) {
+      // return console.info('virtual node, attr: ', attributeName, property.name);
+      return function () {
+
       };
     }
 
@@ -834,7 +849,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its children elements are rendered
-      viewNode.domManipulationSequence.finish(function () {
+      viewNode.domManipulationSequence.nextAction(function () {
         viewNode.domBus = [];
         viewNode.ready();
       });

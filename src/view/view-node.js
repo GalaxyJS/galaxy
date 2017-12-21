@@ -74,12 +74,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       node.domBus.push(remove.domManipulationSequence.line);
     }
 
-    // setTimeout(function () {
-    Promise.all(node.parent.domBus).then(function () {
-      node.parent.domBus = [];
-      node.domBus = [];
+    setTimeout(function () {
+      Promise.all(node.parent.domBus).then(function () {
+        node.parent.domBus = [];
+        node.domBus = [];
+      });
     });
-    // });
   };
 
   /**
@@ -108,12 +108,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.parent = null;
     this.dependedObjects = [];
     this.domBus = [];
-    this.renderingFlow = new Galaxy.GalaxySequence().start();
-    this.domManipulationSequence = new Galaxy.GalaxySequence().start();
+    this.renderingFlow = new Galaxy.GalaxySequence(true).start();
+    this.domManipulationSequence = new Galaxy.GalaxySequence(true).start();
     this.sequences = {
-      ':enter': new Galaxy.GalaxySequence().start(),
-      ':leave': new Galaxy.GalaxySequence(),
-      ':destroy': new Galaxy.GalaxySequence(),
+      ':enter': new Galaxy.GalaxySequence(true).start(),
+      ':leave': new Galaxy.GalaxySequence(true).start(),
+      ':destroy': new Galaxy.GalaxySequence(true),
       ':class': new Galaxy.GalaxySequence().start()
     };
     this.observer = new Galaxy.GalaxyObserver(this);
@@ -185,7 +185,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.domBus.push(promise);
   };
 
-  ViewNode.prototype.setInDOM = function (flag, nextUIAction) {
+  ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
 
@@ -208,11 +208,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         _this.origin = true;
         _this.populateLeaveSequence(_this.sequences[':leave']);
         // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-        _this.sequences[':leave'].start().finish(function () {
+        _this.sequences[':leave'].nextAction(function () {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
           removeChild(_this.node.parentNode, _this.node);
           done();
-          _this.sequences[':leave'].reset();
+          // _this.sequences[':leave'].reset();
           _this.origin = false;
           _this.callLifecycleEvent('postRemove');
         });
@@ -273,17 +273,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         _this.domManipulationSequence.next(function (done) {
           // Add children leave sequence to this node(parent node) leave sequence
           _this.clean(_this.sequences[':leave']);
-
           _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start()
-            .finish(function () {
+          _this.sequences[':leave']
+            .nextAction(function () {
               removeChild(_this.node.parentNode, _this.node);
               done();
-
               _this.origin = false;
-
-              _this.sequences[':leave'].reset();
-
+              // _this.sequences[':leave'].reset();
               _this.callLifecycleEvent('postRemove');
               _this.callLifecycleEvent('postDestroy');
             });
@@ -298,14 +294,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       if (_this.inDOM) {
         _this.callLifecycleEvent('preDestroy');
-        leaveSequence.nextAction(function () {
+        leaveSequence.next(function (next) {
           _this.populateLeaveSequence(_this.sequences[':leave']);
-          _this.sequences[':leave'].start()
-            .finish(function () {
-              _this.sequences[':leave'].reset();
-
+          _this.sequences[':leave']
+            .nextAction(function () {
+              // _this.sequences[':leave'].reset();
               _this.callLifecycleEvent('postRemove');
               _this.callLifecycleEvent('postDestroy');
+              next();
             });
         });
       }
@@ -387,7 +383,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       ViewNode.destroyNodes(_this, toBeRemoved);
 
       Promise.all(_this.domBus).then(function () {
-        // _this.parent.domBus = [];
         _this.domBus = [];
         next();
       });

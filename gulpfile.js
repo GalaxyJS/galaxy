@@ -40,22 +40,10 @@ gulp.task('build-galaxy-web-worker', function () {
 gulp.task('build-galaxy', function () {
   return pump([
     gulp.src(sources.galaxy),
-    // babel({
-    //   'plugins': ['transform-es2015-modules-commonjs'],
-    //   presets: ['es2015', {
-    //     loose: true,
-    //     'modules': false
-    //   }]
-    // }),
     concat('galaxy.js'),
-    // uglify({
-    //   compress: {
-    //     drop_debugger: false
-    //   },
-    //   mangle: false
-    // }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/')
+
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
