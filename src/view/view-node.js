@@ -285,10 +285,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
             });
         });
       }
-
-      _this.domManipulationSequence.nextAction(function () {
-        _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-      });
     } else if (leaveSequence) {
       _this.clean(leaveSequence);
 
@@ -306,6 +302,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
       }
     }
+
+    _this.domManipulationSequence.nextAction(function () {
+      _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+    });
 
     let property, properties = _this.properties;
     const removeItem = function (item) {

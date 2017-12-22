@@ -132,6 +132,7 @@
 
     this.timeline = new TimelineLite({
       autoRemoveChildren: true,
+      smoothChildTiming: true,
       onComplete: function () {
         _this.lastChildPosition = 0;
         if (_this.parent) {

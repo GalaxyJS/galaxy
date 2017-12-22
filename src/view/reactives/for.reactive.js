@@ -10,15 +10,14 @@
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
     if (changes.type === 'reset') {
-      node.renderingFlow.next(function (next) {
+      node.renderingFlow.nextAction(function () {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
-        next();
+        cache.nodes = [];
       });
 
       node.renderingFlow.next(function (next) {
-        Promise.all(node.parent.domBus).then(function () {
-          cache.nodes = [];
-          next();
+        requestAnimationFrame(function () {
+          Promise.all(node.parent.domBus).then(next);
         });
       });
 
@@ -72,23 +71,20 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
       if (newItems instanceof Array) {
-        requestAnimationFrame(function () {
-          const c = newItems.slice(0);
-          for (let i = 0, len = newItems.length; i < len; i++) {
-            // valueEntity = c[i];
-            itemDataScope = GV.createMirror(nodeScopeData);
-            itemDataScope[p] = c[i];
-            cns = Object.assign({}, templateSchema);
+        const c = newItems.slice(0);
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          // valueEntity = c[i];
+          itemDataScope = GV.createMirror(nodeScopeData);
+          itemDataScope[p] = c[i];
+          cns = Object.assign({}, templateSchema);
 
-            let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+          let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+          vn.data['$for'] = {};
+          vn.data['$for'][p] = c[i];
+          action.call(n, vn);
+        }
 
-            vn.data['$for'] = {};
-            vn.data['$for'][p] = c[i];
-            action.call(n, vn);
-          }
-
-          next();
-        });
+        requestAnimationFrame(next);
       }
     });
 
@@ -97,9 +93,7 @@
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
     node.renderingFlow.next(function (next) {
       requestAnimationFrame(function () {
-        Promise.all(parentNode.domBus).then(function () {
-          next();
-        });
+        Promise.all(parentNode.domBus).then(next);
       });
     });
   };
@@ -121,7 +115,6 @@
           GV.makeBinding(this, nodeScopeData, '$for', bindings.variableNamePaths, bindings.isExpression);
         }
       }
-
     },
     getCache: function (matches) {
       return {
@@ -146,7 +139,8 @@
         changes.params = expression();
       }
 
-      createResetProcess(this, cache, changes, nodeScopeData);
+      const _this = this;
+      createResetProcess(_this, cache, changes, nodeScopeData);
     }
   };
 })(Galaxy.GalaxyView);
