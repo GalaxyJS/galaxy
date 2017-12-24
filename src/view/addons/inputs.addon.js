@@ -10,7 +10,7 @@
     regex: null,
     /**
      *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @this {Galaxy.GalaxyView.ViewNode}
      * @param context
      * @param value
      */
@@ -21,9 +21,9 @@
       let live = GV.bindSubjectsToData(value, context, true);
       // Object.preventExtensions(live);
       // console.info(Object.isSealed(live), live);
-      if (this.virtual) {
-        console.info(this);
-      }
+      // if (this.virtual) {
+      //   console.info(this);
+      // }
 
       if (this.addons.inputs && live !== this.addons.inputs.live) {
         Galaxy.resetObjectTo(this.addons.inputs, {

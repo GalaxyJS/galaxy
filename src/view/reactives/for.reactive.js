@@ -73,14 +73,11 @@
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
-          // valueEntity = c[i];
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = c[i];
+          itemDataScope['$forIndex'] = i;
           cns = Object.assign({}, templateSchema);
-
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
-          vn.data['$for'] = {};
-          vn.data['$for'][p] = c[i];
           action.call(n, vn);
         }
 

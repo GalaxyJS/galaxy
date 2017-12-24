@@ -16,7 +16,7 @@
       if (viewNode.virtual || !config) {
         return;
       }
-      let enterAnimationConfig = config[':enter'];
+      let enterAnimationConfig = config.enter;
       if (enterAnimationConfig) {
         viewNode.populateEnterSequence = function (sequence) {
           sequence.next(function (done) {
@@ -44,7 +44,7 @@
         };
       }
 
-      let leaveAnimationConfig = config[':leave'];
+      let leaveAnimationConfig = config.leave;
       if (leaveAnimationConfig) {
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.next(function (done) {

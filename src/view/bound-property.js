@@ -104,26 +104,29 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
   };
 
   BoundProperty.prototype.setValue = function (value, scopeData) {
-    if (value !== this.value) {
-      let oldValue = this.value;
-      this.value = value;
-      if (value instanceof Array) {
-        let change = GV.createActiveArray(value, this.updateValue.bind(this));
-        change.type = 'reset';
-        change.result = oldValue;
-        this.updateValue(change, {original: oldValue});
-        Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
-      } else {
-        for (let i = 0, len = this.nodes.length; i < len; i++) {
-          this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
-        }
-        Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
-
-        this.lists.forEach(function (con) {
-          con.updateValue();
-        });
-      }
+    if (value === this.value) {
+      return;
     }
+
+    let oldValue = this.value;
+    this.value = value;
+    if (value instanceof Array) {
+      let change = GV.createActiveArray(value, this.updateValue.bind(this));
+      change.type = 'reset';
+      change.result = oldValue;
+      this.updateValue(change, {original: oldValue});
+      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
+    } else {
+      for (let i = 0, len = this.nodes.length; i < len; i++) {
+        this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
+      }
+      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
+
+      this.lists.forEach(function (con) {
+        con.updateValue();
+      });
+    }
+
   };
 
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {

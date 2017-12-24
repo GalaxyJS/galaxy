@@ -20,6 +20,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.BINDING_SYNTAX_REGEX = /^<>\s*([^\[\]]*)\s*$/;
+  GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp(/(?:[\"\'][\w\s]*[\'\"])|([^\d\s=+\-|&%{}()<>!/]+)/, 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
@@ -119,9 +120,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
   GalaxyView.link = function (from, to) {
     for (let key in from) {
-      if (from.hasOwnProperty('[' + key + ']')) {
-        boundPropertyReference.value = from['[' + key + ']'];
-        defineProp(to, '[' + key + ']', boundPropertyReference);
+      if (from.hasOwnProperty('<>' + key)) {
+        boundPropertyReference.value = from['<>' + key];
+        defineProp(to, '<>' + key, boundPropertyReference);
         defineProp(to, key, Object.getOwnPropertyDescriptor(from, key));
       }
     }
@@ -183,8 +184,24 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     if (type === 'string') {
       variableNamePaths = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
-      // variableNamePaths = variableNamePaths || value.match(/^\[\s*([^\[\]]*)\s*]$/);
       variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
+
+      if (/\s*{\s*(.*)\s*}\s*/.test(value)) {
+        variableNamePaths = [];
+
+        let match = null;
+        const args = [];
+        let functionBody = value.match(/\s*{\s*(.*)\s*}\s*/)[1];
+        while ((match = GalaxyView.BINDING_EXPRESSION_REGEX.exec(value)) !== null) {
+          variableNamePaths.push(match[1]);
+          args.push(match[1].replace(/\./g, '_'));
+        }
+
+        functionBody = functionBody.replace(variableNamePaths, args);
+
+        isExpression = true;
+        variableNamePaths.push(new Function(args.join(','), 'return ' + functionBody + ';'));
+      }
     }
     else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
       variableNamePaths = value;
@@ -252,6 +269,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.createBoundProperty = function (dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue) {
     let boundProperty = new GalaxyView.BoundProperty(dataObject, useLocalScope ? 'this.' + propertyName : propertyName, initValue);
     boundPropertyReference.value = boundProperty;
+
     defineProp(dataObject, referenceName, boundPropertyReference);
 
     setterAndGetter.enumerable = enumerable;
@@ -275,10 +293,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
             });
 
             newVisible.forEach(function (key) {
-              if (hidden.indexOf('[' + key + ']') !== -1) {
-                descriptors['[' + key + ']'].value.setValue(newValue[key], dataObject);
+              if (hidden.indexOf('<>' + key) !== -1) {
+                descriptors['<>' + key].value.setValue(newValue[key], dataObject);
 
-                defineProp(newValue, '[' + key + ']', descriptors['[' + key + ']']);
+                defineProp(newValue, '<>' + key, descriptors['<>' + key]);
                 defineProp(newValue, key, descriptors[key]);
               }
             });
@@ -318,7 +336,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // for the convenience of the programmer
 
     // middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
-    functionContent += middle + ']';
+    functionContent += middle.substring(0, middle.length - 1) + ']';
 
     const func = new Function('prop, scope', functionContent);
     GalaxyView.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
@@ -358,14 +376,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       variables = variables.map(function (name) {
         return name.replace(/<>/g, '');
       });
-      // let functionContent = 'return [';
-      // functionContent += variables.map(function (path) {
-      //   // Take care of variables that contain square brackets like '[variable_name]'
-      //   // for the convenience of the programmer
-      //   path = path.replace(/\[|\]/g, '');
-      //   return 'prop(scope, "' + path + '").' + path;
-      // }).join(', ');
-      // functionContent += ']';
+
+      // \{\s*(.*)\s*\}
+      // ((\w+)[\w\.]*)
 
       // Generate expression arguments
       try {
@@ -401,7 +414,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         propertyName = variableName.shift();
         childProperty = null;
         useLocalScope = true;
-        dataObject = GalaxyView.propertyLookup(target.localScope, propertyName);
+        dataObject = GalaxyView.propertyLookup(target.data, propertyName);
       } else {
         dataObject = GalaxyView.propertyLookup(data, propertyName);
       }
@@ -414,7 +427,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         enumerable = false;
       }
 
-      const referenceName = '[' + propertyName + ']';
+      const referenceName = '<>' + propertyName;
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
@@ -425,18 +438,18 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         boundProperty.lists = dataObject['__lists__'];
       }
       // When target is not a ViewNode, then add target['[targetKeyName]']
-      if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('[' + targetKeyName + ']')) {
+      if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('<>' + targetKeyName)) {
         boundPropertyReference.value = boundProperty;
         // Create a BoundProperty for targetKeyName if the value is an expression
         // the expression it self will be treated as a BoundProperty
         if (expression) {
-          boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, false, '[' + targetKeyName + ']', false, null, null);
+          boundPropertyReference.value = GalaxyView.createBoundProperty({}, targetKeyName, false, '<>' + targetKeyName, false, null, null);
         }
         // console.info(boundPropertyReference.value,referenceName );
         // Otherwise the data is going to be bound through alias.
         // In other word, [targetKeyName] will refer to original BoundProperty.
         // This will make sure that there is always one BoundProperty for each data entry
-        defineProp(target, '[' + targetKeyName + ']', boundPropertyReference);
+        defineProp(target, '<>' + targetKeyName, boundPropertyReference);
 
         setterAndGetter.enumerable = enumerable;
         setterAndGetter.get = (function (_boundProperty, _expression) {
@@ -561,16 +574,17 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    */
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
+      // console.info(value, oldValue);
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           const newValue = parser ? parser(asyncValue) : asyncValue;
-          node.data[attributeName] = newValue;
+          // node.data['_' + attributeName] = newValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
         const newValue = parser ? parser(value) : value;
-        node.data[attributeName] = newValue;
+        // node.data['_' + attributeName] = newValue;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
       }
     };

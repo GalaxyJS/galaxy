@@ -1,17 +1,19 @@
 /* global Galaxy */
 'use strict';
 
-(function (G) {
-  /**
-   *
-   * @type {Galaxy.GalaxyObserver}
-   */
-  G.GalaxyObserver = GalaxyObserver;
+Galaxy.GalaxyObserver = /** @class */ (function (G) {
+
 
   GalaxyObserver.notify = function (obj, key, value, oldValue) {
-    if (obj.hasOwnProperty('__observers__')) {
+    if (obj.__observers__ !== undefined) {
       obj.__observers__.forEach(function (observer) {
         observer.notify(key, value, oldValue);
+      });
+    }
+
+    if (obj.__lists__ !== undefined) {
+      obj.__lists__.forEach(function (bp) {
+        GalaxyObserver.notify(bp.host[bp.name], key, value, oldValue);
       });
     }
   };
@@ -46,7 +48,8 @@
   };
 
   GalaxyObserver.prototype.notify = function (key, value, oldValue) {
-    let _this = this;
+    const _this = this;
+
     if (_this.subjectsActions.hasOwnProperty(key)) {
       _this.subjectsActions[key].call(_this.context, value, oldValue);
     }
@@ -65,4 +68,6 @@
       this.allSubjectAction.push(action);
     }
   };
+
+  return GalaxyObserver;
 })(Galaxy);
