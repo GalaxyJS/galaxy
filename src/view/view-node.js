@@ -199,8 +199,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         // Go to next dom manipulation step when the whole :enter sequence is done
         _this.sequences.enter.nextAction(function () {
           done();
+          _this.callLifecycleEvent('postInsert');
         });
-        _this.callLifecycleEvent('postInsert');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.callLifecycleEvent('preRemove');
@@ -229,6 +229,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     const _this = this;
     viewNode.parent = _this;
     viewNode.domBus = _this.domBus;
+    // viewNode.renderingFlow = _this.renderingFlow;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
 
@@ -274,33 +275,32 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           // Add children leave sequence to this node(parent node) leave sequence
           _this.clean(_this.sequences.leave);
           _this.populateLeaveSequence(_this.sequences.leave);
-          _this.sequences.leave
-            .nextAction(function () {
-              removeChild(_this.node.parentNode, _this.node);
-              done();
-              _this.origin = false;
-              // _this.sequences.leave.reset();
-              _this.callLifecycleEvent('postRemove');
-              _this.callLifecycleEvent('postDestroy');
-            });
+          _this.sequences.leave.nextAction(function () {
+            removeChild(_this.node.parentNode, _this.node);
+            done();
+            _this.origin = false;
+            _this.callLifecycleEvent('postRemove');
+            _this.callLifecycleEvent('postDestroy');
+          });
         });
       }
     } else if (leaveSequence) {
+      // _this.domManipulationSequence.next(function (done) {
       _this.clean(leaveSequence);
 
       if (_this.inDOM) {
         _this.callLifecycleEvent('preDestroy');
+        _this.populateLeaveSequence(_this.sequences.leave);
+
         leaveSequence.next(function (next) {
-          _this.populateLeaveSequence(_this.sequences.leave);
-          _this.sequences.leave
-            .nextAction(function () {
-              // _this.sequences.leave.reset();
-              _this.callLifecycleEvent('postRemove');
-              _this.callLifecycleEvent('postDestroy');
-              next();
-            });
+          _this.sequences.leave.nextAction(function () {
+            _this.callLifecycleEvent('postRemove');
+            _this.callLifecycleEvent('postDestroy');
+            next();
+          });
         });
       }
+      // });
     }
 
     _this.domManipulationSequence.nextAction(function () {
@@ -371,7 +371,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
+      // _this.renderingFlow.next(function (done) {
       ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
+      // leaveSequence.nextAction(done);
+      // });
+
       return _this.renderingFlow;
     }
 

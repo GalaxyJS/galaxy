@@ -127,9 +127,9 @@
     }
   };
 
-  function AnimationMeta(onComplete) {
+  function AnimationMeta(name) {
     const _this = this;
-
+    _this.name = name;
     this.timeline = new TimelineLite({
       autoRemoveChildren: true,
       smoothChildTiming: true,
@@ -166,7 +166,7 @@
 
   AnimationMeta.get = function (name) {
     if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta();
+      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
     }
 
     return AnimationMeta.ANIMATIONS[name];
@@ -221,46 +221,12 @@
     const children = this.timeline.getChildren(false);
 
     if (children.indexOf(child.timeline) === -1) {
-      if (prior) {
-        // console.info(child.NODE.node, child.lastChildPosition, _this.duration);
-        _this.timeline.add(child.timeline, _this.lastChildPosition);
-        _this.calculateLastChildPosition(child.lastChildPosition || child.duration, _this.position);
-      } else {
-        _this.timeline.add(child.timeline, _this.lastChildPosition);
-        _this.calculateLastChildPosition(_this.duration, _this.position);
-      }
+      // debugger;
+      _this.timeline.add(child.timeline, _this.lastChildPosition);
+      _this.calculateLastChildPosition(child.duration, child.position);
     } else {
-      if (prior) {
-        _this.calculateLastChildPosition(child.duration, child.position);
-        console.info(child.NODE.node, _this.lastChildPosition);
-      }
+      // _this.calculateLastChildPosition(child.duration, child.position);
     }
-
-
-    // if (children.indexOf(child.timeline) === -1) {
-    //   if (prior) {
-    //     // _this.lastChildPosition = ((child.lastChildPosition * 10)  ) / 10;
-    //     // console.info(child.NODE.node, child.lastChildPosition,
-    //     //   '\n====\n', _this.NODE.node.tagName, _this.lastChildPosition);
-    //     //
-    //     // _this.timeline.add(child.timeline, _this.lastChildPosition);
-    //     // const calc = AnimationMeta.calculateDuration(child.lastChildPosition, _this.position);
-    //     // let c = ( (calc * 10) - (_this.duration * 10) ) / 10;
-    //     // _this.calculateLastChildPosition(calc, child.position);
-    //
-    //     _this.timeline.add(child.timeline, _this.lastChildPosition);
-    //     _this.calculateLastChildPosition(child.duration, child.position);
-    //   }
-    //   else {
-    //     _this.calculateLastChildPosition(child.duration, child.position);
-    //     _this.timeline.add(child.timeline, _this.lastChildPosition);
-    //   }
-    // } else {
-    //   if (prior) {
-    //     _this.calculateLastChildPosition(child.duration, child.position);
-    //     _this.lastChildPosition = ((child.lastChildPosition * 10) + (child.duration * 10) ) / 10;
-    //   }
-    // }
   };
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
@@ -290,8 +256,6 @@
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false).length === 0) {
       _this.lastChildPosition = 0;
-      // _this.calculateLastChildPosition(config.duration, config.position);
-      // _this.calculateLastChildPosition(config.duration, config.position);
       _this.timeline.add(tween, 0);
     } else {
       _this.calculateLastChildPosition(config.duration, config.position);

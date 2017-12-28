@@ -1,33 +1,41 @@
 /* global Galaxy */
 
-Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
+Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
+  const GV = Galaxy.GalaxyView;
   /**
    *
+   * @param {Array} parent
    * @param {Galaxy.GalaxyView.BoundProperty} bp
-   * @param {Array} list
    */
-  BoundProperty.installContainerList = function (bp, list) {
-    list.forEach(function (item) {
-      if (item['__lists__'] !== undefined) {
-        if (item['__lists__'].indexOf(bp) === -1) {
-          item['__lists__'].push(bp);
-        }
-      } else {
-        GV.defineProp(item, '__lists__', {
+  BoundProperty.installParentFor = function (parent, bp) {
+    let i = 0, len = parent.length, item, itemParent;
+    for (; i < len; i++) {
+      item = parent[i];
+      itemParent = item['__parents__'];
+
+      if (itemParent === undefined) {
+        GV.defineProp(item, '__parents__', {
           configurable: false,
           enumerable: false,
           value: [bp]
         });
+      } else if (itemParent.indexOf(bp) === -1) {
+        itemParent.push(bp);
       }
-    });
+    }
   };
 
-  BoundProperty.uninstallContainerList = function (bp, list) {
+  /**
+   *
+   * @param {Array} list
+   * @param {Galaxy.GalaxyView.BoundProperty} bp
+   */
+  BoundProperty.uninstallParentFor = function (list, bp) {
     list.forEach(function (item) {
-      if (item['__lists__'] !== undefined) {
-        let i = item['__lists__'].indexOf(bp);
+      if (item['__parents__'] !== undefined) {
+        let i = item['__parents__'].indexOf(bp);
         if (i !== -1) {
-          item['__lists__'].splice(i, 1);
+          item['__parents__'].splice(i, 1);
         }
       }
     });
@@ -37,7 +45,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
    *
    * @param {Object} host
    * @param {string} name
-   * @param {any} value
+   * @param {*} value
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
@@ -48,10 +56,9 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
     this.props = [];
     /**
      *
-     * @type {Array<Galaxy.GalaxyView.ViewNode>}
+     * @type {Array<Galaxy.GalaxyView.ViewNode|Object>}
      */
     this.nodes = [];
-    this.lists = [];
   }
 
   /**
@@ -92,7 +99,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
     let oldValue = _this.value;
     _this.value = value;
     if (value instanceof Array) {
-      BoundProperty.installContainerList(_this, value);
+      BoundProperty.installParentFor(value, _this);
       let init = GV.createActiveArray(value, this.updateValue.bind(this));
 
       if (target instanceof GV.ViewNode) {
@@ -122,9 +129,11 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
       }
       Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
 
-      this.lists.forEach(function (con) {
-        con.updateValue();
-      });
+      if (this.host['__parents__'] !== undefined) {
+        this.host['__parents__'].forEach(function (con) {
+          con.updateValue();
+        });
+      }
     }
 
   };
@@ -132,11 +141,11 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
   BoundProperty.prototype.updateValue = function (changes, oldChanges) {
     if (changes) {
       if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
-        BoundProperty.installContainerList(this, changes.params);
+        BoundProperty.installParentFor(changes.params, this);
       } else if (changes.type === 'shift' || changes.type === 'pop') {
-        BoundProperty.uninstallContainerList(this, [changes.result]);
+        BoundProperty.uninstallParentFor([changes.result], this);
       } else if (changes.type === 'splice' || changes.type === 'reset') {
-        BoundProperty.uninstallContainerList(this, changes.result);
+        BoundProperty.uninstallParentFor(changes.result, this);
       }
     }
 
@@ -170,8 +179,8 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
    *
    * @param {(Galaxy.GalaxyView.ViewNode|Object)} host
    * @param {string} attributeName
-   * @param {} changes
-   * @param {} oldChanges
+   * @param {*} changes
+   * @param {*} oldChanges
    */
   BoundProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
@@ -183,4 +192,4 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function (GV) {
 
   return BoundProperty;
 
-})(Galaxy.GalaxyView);
+})();

@@ -20,7 +20,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.BINDING_SYNTAX_REGEX = /^<>\s*([^\[\]]*)\s*$/;
-  GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp(/(?:[\"\'][\w\s]*[\'\"])|([^\d\s=+\-|&%{}()<>!/]+)/, 'g');
+  GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp(/(?:["'][\w\s]*['"])|([^\d\s=+\-|&%{}()<>!/]+)/, 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
 
@@ -192,6 +192,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         let match = null;
         const args = [];
         let functionBody = value.match(/\s*{\s*(.*)\s*}\s*/)[1];
+        value = value.replace(/["'](.*["'])/g, '');
         while ((match = GalaxyView.BINDING_EXPRESSION_REGEX.exec(value)) !== null) {
           variableNamePaths.push(match[1]);
           args.push(match[1].replace(/\./g, '_'));
@@ -434,9 +435,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue);
       }
 
-      if (dataObject['__lists__'] !== undefined) {
-        boundProperty.lists = dataObject['__lists__'];
-      }
+      // if (dataObject['__lists__'] !== undefined) {
+      //   boundProperty.lists = dataObject['__lists__'];
+      // }
       // When target is not a ViewNode, then add target['[targetKeyName]']
       if (!(target instanceof Galaxy.GalaxyView.ViewNode) && !childProperty && !target.hasOwnProperty('<>' + targetKeyName)) {
         boundPropertyReference.value = boundProperty;
@@ -605,7 +606,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     let oldChanges = Object.assign({}, changes);
 
-    if (value.hasOwnProperty('[live]')) {
+    if (value['live']) {
       return changes;
     }
 
@@ -624,7 +625,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let args;
 
     boundPropertyReference.value = true;
-    defineProp(value, '[live]', boundPropertyReference);
+    defineProp(value, 'live', boundPropertyReference);
 
     methods.forEach(function (method) {
       let original = arrayProto[method];

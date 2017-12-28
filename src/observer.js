@@ -1,18 +1,21 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyObserver = /** @class */ (function (G) {
-
+Galaxy.GalaxyObserver = /** @class */ (function () {
+  const G = Galaxy;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue) {
-    if (obj.__observers__ !== undefined) {
-      obj.__observers__.forEach(function (observer) {
+    const observers = obj.__observers__;
+    const parents = obj.__parents__;
+
+    if (observers !== undefined) {
+      observers.forEach(function (observer) {
         observer.notify(key, value, oldValue);
       });
     }
 
-    if (obj.__lists__ !== undefined) {
-      obj.__lists__.forEach(function (bp) {
+    if (parents !== undefined) {
+      parents.forEach(function (bp) {
         GalaxyObserver.notify(bp.host[bp.name], key, value, oldValue);
       });
     }
@@ -70,4 +73,4 @@ Galaxy.GalaxyObserver = /** @class */ (function (G) {
   };
 
   return GalaxyObserver;
-})(Galaxy);
+})();
