@@ -9,6 +9,8 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
    */
   function GalaxySequence(continues) {
     this.continues = continues || false;
+    this.truncated = false;
+    this.truncateHandlers = [];
     this.line = null;
     this.firstStepResolve = null;
     this.started = false;
@@ -19,7 +21,7 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
   GalaxySequence.prototype.start = function () {
     if (this.started) return this;
 
-    this.firstStepResolve();
+    this.firstStepResolve('sequence-start');
     this.started = true;
     return this;
   };
@@ -38,10 +40,15 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
 
   GalaxySequence.prototype.next = function (action) {
     const _this = this;
+    _this.truncated = false;
 
     let thunk;
     let promise = new Promise(function (resolve, reject) {
       thunk = function () {
+        if (_this.truncated) {
+          return;
+        }
+
         action.call(null, resolve, reject);
       };
     });
@@ -58,10 +65,31 @@ Galaxy.GalaxySequence = /** @class */ (function (G) {
     return _this;
   };
 
+  GalaxySequence.prototype.onTruncate = function (act) {
+    if (this.truncateHandlers.indexOf(act) === -1) {
+      this.truncateHandlers.push(act);
+    }
+  };
+
+  GalaxySequence.prototype.truncate = function () {
+    const _this = this;
+    _this.truncated = true;
+
+    let i = 0, len = this.truncateHandlers.length;
+    for (; i < len; i++) {
+      this.truncateHandlers[i].call(this);
+    }
+
+    this.truncateHandlers = [];
+    _this.reset();
+
+    return _this;
+  };
+
   GalaxySequence.prototype.nextAction = function (action) {
     this.next(function (done) {
       action.call();
-      done();
+      done('sequence-action');
     });
   };
 

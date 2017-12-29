@@ -19,6 +19,18 @@
       let enterAnimationConfig = config.enter;
       if (enterAnimationConfig) {
         viewNode.populateEnterSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+            // console.info(enterAnimationConfig.sequence, enterAnimationConfig.parent);
+            if (enterAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
+            }
+
+            if (enterAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
+            }
+          });
+
           sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
@@ -47,6 +59,17 @@
       let leaveAnimationConfig = config.leave;
       if (leaveAnimationConfig) {
         viewNode.populateLeaveSequence = function (sequence) {
+          sequence.onTruncate(function () {
+            TweenLite.killTweensOf(viewNode.node);
+            if (leaveAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
+            }
+
+            if (leaveAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+            }
+          });
+
           sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
               // debugger;
@@ -135,6 +158,7 @@
       smoothChildTiming: true,
       onComplete: function () {
         _this.lastChildPosition = 0;
+        // console.info(_this);
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -152,7 +176,7 @@
 
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
-
+  // console.info(AnimationMeta.ANIMATIONS);
   AnimationMeta.getTimeline = function (name, onComplete) {
     if (!AnimationMeta.TIMELINES[name]) {
       AnimationMeta.TIMELINES[name] = new TimelineLite({

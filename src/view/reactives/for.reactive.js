@@ -9,13 +9,15 @@
    * @param nodeScopeData
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
+    const parentNode = node.parent;
     if (changes.type === 'reset') {
-      node.renderingFlow.nextAction(function () {
-        GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
+      parentNode.renderingFlow.truncate().start();
+      parentNode.renderingFlow.nextAction(function () {
+        GV.ViewNode.destroyNodes(parentNode, cache.nodes.reverse());
         cache.nodes = [];
       });
 
-      node.renderingFlow.next(function (next) {
+      parentNode.renderingFlow.next(function (next) {
         requestAnimationFrame(function () {
           Promise.all(node.parent.domBus).then(next);
         });
@@ -33,7 +35,7 @@
     let position = null;
     let newItems = [];
     let action = Array.prototype.push;
-    node.renderingFlow.next(function (next) {
+    parentNode.renderingFlow.next(function (next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
@@ -70,6 +72,7 @@
       let p = cache.propName, n = cache.nodes, cns;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
+
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
@@ -88,7 +91,7 @@
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
-    node.renderingFlow.next(function (next) {
+    parentNode.renderingFlow.next(function (next) {
       requestAnimationFrame(function () {
         Promise.all(parentNode.domBus).then(next);
       });
