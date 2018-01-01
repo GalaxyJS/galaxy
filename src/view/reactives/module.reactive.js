@@ -44,9 +44,9 @@
 
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
-    bind: function ( nodeScopeData, matches) {
+    bind: function (nodeScopeData, matches) {
     },
-    getCache: function ( matches, scopeData) {
+    getCache: function (matches, scopeData) {
       return {
         module: null,
         moduleMeta: null,

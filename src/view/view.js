@@ -863,14 +863,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      // this make sure that the viewNode and its children elements are rendered
+      // this make sure that the viewNode and its child elements are rendered
       viewNode.domManipulationSequence.nextAction(function () {
         viewNode.domBus = [];
         viewNode.ready();
       });
 
       // viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
-      parent.addToDOMBus(viewNode.domManipulationSequence.line);
+      parent.addToDOMBus(viewNode.domManipulationSequence.activeState);
 
       return viewNode;
     }
@@ -895,7 +895,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         tag: scope.element.tagName
       }, scope.element);
 
-      _this.container.domManipulationSequence.finish(function () {
+      _this.container.domManipulationSequence.nextAction(function () {
         _this.container.ready();
       });
     }
@@ -911,12 +911,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.prototype.init = function (schema) {
     const _this = this;
 
-    _this.container.renderingFlow.next(function (nextUIAction) {
-      GalaxyView.createNode(_this.container, _this.scope, schema, null, _this.container.domBus);
+    _this.container.renderingFlow.next(function (next) {
+      GalaxyView.createNode(_this.container, _this.scope, schema, null);
 
       Promise.all(_this.container.domBus).then(function () {
         _this.container.domBus = [];
-        nextUIAction();
+        next();
       });
     });
   };

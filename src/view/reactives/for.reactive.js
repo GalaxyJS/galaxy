@@ -9,25 +9,29 @@
    * @param nodeScopeData
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
-    const parentNode = node.parent;
+    // const parentNode = node.parent;
+    node.renderingFlow.truncate();
     if (changes.type === 'reset') {
-      parentNode.renderingFlow.truncate().start();
-      parentNode.renderingFlow.nextAction(function () {
-        GV.ViewNode.destroyNodes(parentNode, cache.nodes.reverse());
+      node.renderingFlow.next(function (next) {
+        // console.info('delete process');
+        GV.ViewNode.destroyNodes(node, cache.nodes.reverse() ,null , 1);
         cache.nodes = [];
-      });
 
-      parentNode.renderingFlow.next(function (next) {
-        requestAnimationFrame(function () {
-          Promise.all(node.parent.domBus).then(next);
+        setTimeout(function () {
+          debugger;
+          Promise.all(node.domBus).then(next);
         });
       });
 
       changes = Object.assign({}, changes);
       changes.type = 'push';
-    }
 
-    createPushProcess(node, cache, changes, nodeScopeData);
+      if (changes.params.length) {
+        createPushProcess(node, cache, changes, nodeScopeData);
+      }
+    } else {
+      createPushProcess(node, cache, changes, nodeScopeData);
+    }
   };
 
   const createPushProcess = function (node, cache, changes, nodeScopeData) {
@@ -35,7 +39,8 @@
     let position = null;
     let newItems = [];
     let action = Array.prototype.push;
-    parentNode.renderingFlow.next(function (next) {
+
+    node.renderingFlow.next(function (next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {
@@ -84,18 +89,21 @@
           action.call(n, vn);
         }
 
-        requestAnimationFrame(next);
+        setTimeout(function () {
+          Promise.all(parentNode.domBus).then(function () {
+            next();
+          });
+        });
       }
     });
-
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
     // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
-    parentNode.renderingFlow.next(function (next) {
-      requestAnimationFrame(function () {
-        Promise.all(parentNode.domBus).then(next);
-      });
-    });
+    // parentNode.renderingFlow.next(function (next) {
+    // setTimeout(function () {
+    // Promise.all(parentNode.domBus).then(next);
+    // });
+    // });
   };
 
   GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {

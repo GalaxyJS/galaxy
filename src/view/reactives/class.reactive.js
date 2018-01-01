@@ -85,10 +85,10 @@
     let _this = this;
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    _this.sequences[':class'].start().finish(function () {
+    // _this.sequences[':class'].start().finish(function () {
       _this.node.setAttribute('class', newClasses.join(' '));
-      _this.sequences[':class'].reset();
-    });
+    //   _this.sequences[':class'].reset();
+    // });
   }
 })(Galaxy.GalaxyView);
 

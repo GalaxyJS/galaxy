@@ -1,13 +1,26 @@
 /* global Galaxy */
 'use strict';
 
-(function (G) {
+Galaxy.GalaxyURI = /**@class*/(function () {
   /**
    *
-   * @typedef {Galaxy.GalaxyScope}
+   * @param url
+   * @constructor
    */
-  G.GalaxyScope = GalaxyScope;
+  function GalaxyURI(url) {
+    let urlParser = document.createElement('a');
+    urlParser.href = url;
+    let myRegexp = /([^\t\n]+)\//g;
+    let match = myRegexp.exec(urlParser.pathname);
 
+    this.paresdURL = urlParser.href;
+    this.path = match ? match[0] : '/';
+  }
+
+  return GalaxyURI;
+})();
+
+Galaxy.GalaxyScope = /** @class*/(function () {
   /**
    *
    * @param {Object} module
@@ -20,7 +33,7 @@
     this.parentScope = module.parentScope || null;
     this.element = element || null;
     this.imports = {};
-    this.uri = new GalaxyURI(module.url);
+    this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
@@ -40,7 +53,7 @@
 
     newModuleMetaData.parentScope = this;
     newModuleMetaData.domain = newModuleMetaData.domain || Galaxy;
-    return G.load(newModuleMetaData);
+    return Galaxy.load(newModuleMetaData);
   };
 
   GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, viewNode) {
@@ -81,21 +94,5 @@
     return observer;
   };
 
-  /**
-   *
-   * @returns {Galaxy.GalaxyURI}
-   */
-  G.GalaxyURI = GalaxyURI;
-
-  function GalaxyURI(url) {
-    let urlParser = document.createElement('a');
-    urlParser.href = url;
-    let myRegexp = /([^\t\n]+)\//g;
-    let match = myRegexp.exec(urlParser.pathname);
-
-
-    this.paresdURL = urlParser.href;
-    this.path = match ? match[0] : '/';
-  }
-
-}(Galaxy || {}));
+  return GalaxyScope;
+})();
