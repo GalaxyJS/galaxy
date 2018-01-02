@@ -29,6 +29,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     _this.activeState = Promise.resolve('sequence-constructor');
     // _this.children = [];
     _this.actions = [];
+    _this.res = Promise.resolve();
 
     this.reset();
   }
@@ -83,17 +84,21 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     //     action.call(null, resolve, reject);
     //   };
     // });
-
-    // let promise = new Promise(function (resolve, reject) {
-
+    let done;
+    let promise = new Promise(function (resolve, reject) {
+      done = resolve;
+    });
     // we create an act object in order to be able to change the process on the fly
     // when this sequence is truncated, then the process of any active action should be disabled
     const act = {
+      promise: promise,
+      done: done,
       process: this.proceed,
       run: function () {
         const local = this;
         action.call(null, function () {
           local.process.call(_this);
+          done();
         }, function (e) {
           console.error(e);
         });
@@ -117,7 +122,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
 
     if (!_this.processing) {
       _this.processing = true;
-      Promise.resolve().then(act.run.bind(act));
+      _this.res.then(act.run.bind(act));
       // requestAnimationFrame(act.run.bind(act));
       // setTimeout(act.run.bind(act));
       // act.run();
@@ -147,13 +152,20 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     const oldAction = _this.actions.shift();
     const firstAction = _this.actions[0];
     if (firstAction) {
-      Promise.resolve().then(firstAction.run.bind(firstAction));
+      // oldAction.promise.then(function () {
+      //   firstAction.run();
+      // });
+      _this.res.then(firstAction.run.bind(firstAction));
       // requestAnimationFrame(firstAction.run.bind(firstAction));
       // setTimeout(firstAction.run.bind(firstAction));
       // firstAction.run();
     } else if (oldAction) {
-      // Promise.resolve().then(_this.activeStateResolve);
-      _this.activeStateResolve();
+      // oldAction.promise.then(function () {
+      //   _this.activeStateResolve();
+      // });
+      _this.res.then(_this.activeStateResolve.bind(_this));
+      // _this.activeStateResolve();
+      // setTimeout(_this.activeStateResolve.bind(_this));
     }
   };
 
@@ -165,6 +177,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
 
   GalaxySequence.prototype.truncate = function () {
     const _this = this;
+
     _this.actions.forEach(function (item) {
       item.process = disabledProcess;
     });
@@ -175,8 +188,14 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     }
 
     this.truncateHandlers = [];
-    _this.activeStateResolve();
-    _this.reset();
+    _this.isFinished = true;
+    _this.processing = false;
+    // setTimeout(function () {
+    //   _this.activeStateResolve();
+    // });
+    // setTimeout(function () {
+    // _this.reset();
+    // });
 
     return _this;
   };

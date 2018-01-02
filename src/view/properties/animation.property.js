@@ -21,15 +21,14 @@
         viewNode.populateEnterSequence = function (sequence) {
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
-            // debugger;
-            // console.info(enterAnimationConfig.sequence, enterAnimationConfig.parent);
-            // if (enterAnimationConfig.sequence) {
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
-            // }
-            //
-            // if (enterAnimationConfig.parent) {
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
-            // }
+
+            if (enterAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
+            }
+
+            if (enterAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
+            }
           });
 
           sequence.next(function (done) {
@@ -62,14 +61,14 @@
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
-            // debugger;
-            // if (leaveAnimationConfig.sequence) {
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
-            // }
-            //
-            // if (leaveAnimationConfig.parent) {
-            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
-            // }
+
+            if (leaveAnimationConfig.sequence) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
+            }
+
+            if (leaveAnimationConfig.parent) {
+              AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+            }
           });
 
           sequence.next(function (done) {
@@ -80,9 +79,9 @@
               animationMeta.duration = leaveAnimationConfig.duration;
               animationMeta.position = leaveAnimationConfig.position;
               animationMeta.NODE = viewNode;
-              if(leaveAnimationConfig.sequence === 'items-leave') {
-                debugger;
-              }
+              // if(leaveAnimationConfig.sequence === 'items-leave') {
+              //   debugger;
+              // }
               // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
               // lastStep.clearProps = 'all';
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
@@ -90,10 +89,7 @@
               // Add to parent should happen after the animation is added to the child
               if (leaveAnimationConfig.parent) {
                 const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-                // debugger;
                 parent.addChild(animationMeta);
-              } else {
-                // debugger;
               }
             } else {
               // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
@@ -167,6 +163,7 @@
       onComplete: function () {
         _this.lastChildPosition = 0;
         // console.info(_this);
+        // debugger;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -254,8 +251,8 @@
 
     if (children.indexOf(child.timeline) === -1) {
       // debugger;
-      _this.timeline.add(child.timeline, _this.lastChildPosition);
       _this.calculateLastChildPosition(child.duration, child.position);
+      _this.timeline.add(child.timeline, _this.lastChildPosition);
     } else {
       // _this.calculateLastChildPosition(child.duration, child.position);
     }

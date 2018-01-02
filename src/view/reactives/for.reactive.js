@@ -13,13 +13,11 @@
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function (next) {
-        // console.info('delete process');
-        GV.ViewNode.destroyNodes(node, cache.nodes.reverse() ,null , 1);
+        GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
         cache.nodes = [];
 
-        setTimeout(function () {
-          debugger;
-          Promise.all(node.domBus).then(next);
+        node.parent.sequences.leave.nextAction(function () {
+          next();
         });
       });
 
@@ -89,11 +87,7 @@
           action.call(n, vn);
         }
 
-        setTimeout(function () {
-          Promise.all(parentNode.domBus).then(function () {
-            next();
-          });
-        });
+        parentNode.sequences.enter.nextAction(next);
       }
     });
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
