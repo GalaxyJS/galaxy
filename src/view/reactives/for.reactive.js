@@ -12,7 +12,7 @@
     // const parentNode = node.parent;
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
-      node.renderingFlow.next(function (next) {
+      node.renderingFlow.next(function forResetProcess(next) {
         GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
         cache.nodes = [];
 
@@ -38,7 +38,7 @@
     let newItems = [];
     let action = Array.prototype.push;
 
-    node.renderingFlow.next(function (next) {
+    node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
         let length = cache.nodes.length;
         if (length) {

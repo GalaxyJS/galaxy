@@ -907,7 +907,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
 
     _this.renderingFlow = this.container.renderingFlow;
-    _this.domManipulationSequence = this.container.domManipulationSequence;
+    // _this.domManipulationSequence = this.container.domManipulationSequence;
   }
 
   GalaxyView.prototype.setupRepos = function (repos) {
