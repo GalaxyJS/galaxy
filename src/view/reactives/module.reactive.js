@@ -10,19 +10,30 @@
         cache.module.destroy();
       }
       // Check for circular module loading
-      let tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-      let scope = cache.scope;
+      const tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+      let moduleScope = cache.scope;
+      let currentScope = cache.scope;
 
-      while (scope) {
-        if (tempURI.parsedURL === cache.scope.uri.paresdURL) {
-          return console.error('Circular module loading detected and stopped. \n' + cache.scope.uri.paresdURL + ' tries to load itself.');
+      while (moduleScope) {
+        // In the case where module is a part of $for, cache.scope will be NOT an instance of GalaxyScope
+        // but its __parent__ is
+        if (!(currentScope instanceof Galaxy.GalaxyScope)) {
+          currentScope = new Galaxy.GalaxyScope({
+            systemId: '$for-item',
+            url: moduleMeta.url,
+            parentScope: cache.scope.__parent__
+          });
         }
 
-        scope = scope.parentScope;
+        if (tempURI.parsedURL === currentScope.uri.paresdURL) {
+          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.paresdURL + ' tries to load itself.');
+        }
+
+        moduleScope = moduleScope.parentScope;
       }
 
       window.requestAnimationFrame(function () {
-        cache.scope.load(moduleMeta, {
+        currentScope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {
           cache.module = module;
@@ -44,7 +55,13 @@
 
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
-    bind: function (nodeScopeData, matches) {
+    bind: function (context, value) {
+      // if (value !== null && typeof  value !== 'object') {
+      //   throw console.error('module property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
+      // }
+      //
+      // const live = GV.bindSubjectsToData(value, context, true);
+      // this.addDependedObject(live);
     },
     getCache: function (matches, scopeData) {
       return {
@@ -53,15 +70,23 @@
         scope: scopeData
       };
     },
-    onApply: function (cache, moduleMeta) {
+    onApply: function handleModule(cache, moduleMeta, oldModuleMeta, nodeScopeData, expression) {
       const _this = this;
+
+      if (expression) {
+        moduleMeta = expression();
+      }
+
+      if (typeof moduleMeta !== 'object') {
+        return console.error('module property only accept objects as value');
+      }
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         _this.rendered.then(function () {
           // Add the new module request to the sequence
           loadModuleQueue.next(function (nextCall) {
             // Wait till all viewNode animation are done
-            console.info('Added to queue:', moduleMeta.id);
+            // console.info('Added to queue:', moduleMeta.id || moduleMeta.url);
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue

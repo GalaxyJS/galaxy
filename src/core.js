@@ -40,6 +40,17 @@
    */
   Galaxy.defineProp = Object.defineProperty;
 
+  Galaxy.clone = function (obj) {
+    let clone = obj instanceof Array ? [] : {};
+    for (let i in obj) {
+      if (typeof(obj[i]) === 'object' && obj[i] !== null)
+        clone[i] = Galaxy.clone(obj[i]);
+      else
+        clone[i] = obj[i];
+    }
+    return clone;
+  };
+
   let importedLibraries = {};
 
   /**
@@ -141,6 +152,9 @@
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
         resolve(module);
+      }).catch(function (error) {
+        console.error('Something went wrong', error);
+        reject();
       });
     });
 

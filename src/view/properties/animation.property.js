@@ -181,7 +181,7 @@
 
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
-  console.info(AnimationMeta.ANIMATIONS);
+
   AnimationMeta.getTimeline = function (name, onComplete) {
     if (!AnimationMeta.TIMELINES[name]) {
       AnimationMeta.TIMELINES[name] = new TimelineLite({

@@ -76,19 +76,20 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
+
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
           itemDataScope = GV.createMirror(nodeScopeData);
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
-          cns = Object.assign({}, templateSchema);
+          cns = Galaxy.clone(templateSchema);
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
           action.call(n, vn);
         }
-
-        parentNode.sequences.enter.nextAction(next);
       }
+
+      parentNode.sequences.enter.nextAction(next);
     });
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
