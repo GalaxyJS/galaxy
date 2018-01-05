@@ -40,6 +40,8 @@
 
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
+              // enterAnimationConfig.to = enterAnimationConfig.to || {};
+              // enterAnimationConfig.to.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
@@ -50,6 +52,9 @@
             } else {
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
+
+              // enterAnimationConfig.to = enterAnimationConfig.to || {};
+              // enterAnimationConfig.to.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
             }
           });
@@ -207,7 +212,16 @@
 
   AnimationMeta.createTween = function (node, config, onComplete) {
     let to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
+
+    if (to.onComplete) {
+      const userOnComplete = to.onComplete;
+      to.onComplete = function () {
+        userOnComplete();
+        onComplete();
+      };
+    } else {
+      to.onComplete = onComplete;
+    }
     let tween = null;
 
     if (config.from && config.to) {
@@ -217,7 +231,17 @@
         to);
     } else if (config.from) {
       let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
+
+      if (from.onComplete) {
+        const userOnComplete = to.onComplete;
+        from.onComplete = function () {
+          userOnComplete();
+          onComplete();
+        };
+      } else {
+        from.onComplete = onComplete;
+      }
+
       tween = TweenLite.from(node,
         config.duration || 0,
         from || {});

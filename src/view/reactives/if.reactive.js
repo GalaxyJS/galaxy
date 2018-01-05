@@ -7,19 +7,36 @@
   };
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
-    bind: function (nodeScopeData, matches,) {
+    bind: function (nodeScopeData, matches) {
     },
     onApply: function (cache, value, oldValue, scopeData, expression) {
       if (expression) {
         value = expression();
       }
 
-      if (value && !this.inDOM) {
-        this.setInDOM(true);
-      } else if (!value && this.inDOM) {
-        this.setInDOM(false);
-      }
+      createProcess(this, value);
     }
   };
+
+  function createProcess(node, value) {
+    node.rendered.then(function () {
+      node.renderingFlow.truncate();
+      node.renderingFlow.next(function ifProcess(next) {
+        if (value && !node.inDOM) {
+          // debugger;
+          node.setInDOM(true);
+          node.sequences.enter.next(function () {
+            next();
+          });
+        } else if (!value && node.inDOM) {
+          // debugger;
+          node.setInDOM(false);
+          node.sequences.leave.next(next);
+        }        else {
+          next();
+        }
+      });
+    });
+  }
 })(Galaxy.GalaxyView);
 

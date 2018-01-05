@@ -191,8 +191,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.callLifecycleEvent('preInsert');
 
       _this.sequences.enter.nextAction(function () {
-        insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-        removeChild(_this.placeholder.parentNode, _this.placeholder);
+        if (!_this.node.parentNode) {
+          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        }
+
+        if (_this.placeholder.parentNode) {
+          removeChild(_this.placeholder.parentNode, _this.placeholder);
+        }
       });
 
       let animationDone;
@@ -228,8 +233,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       _this.populateLeaveSequence(_this.sequences.leave);
       // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
       _this.sequences.leave.nextAction(function () {
-        insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-        removeChild(_this.node.parentNode, _this.node);
+        if (!_this.placeholder.parentNode) {
+          insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+        }
+
+        if (_this.node.parentNode) {
+          removeChild(_this.node.parentNode, _this.node);
+        }
+
         _this.origin = false;
         _this.callLifecycleEvent('postRemove');
         animationDone();
