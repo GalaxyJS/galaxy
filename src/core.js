@@ -137,7 +137,7 @@
    * @param {Element} rootElement
    */
   GalaxyCore.prototype.boot = function (bootModule) {
-    let _this = this;
+    const _this = this;
     _this.rootElement = bootModule.element;
 
     bootModule.domain = this;
@@ -147,7 +147,7 @@
       throw new Error('element property is mandatory');
     }
 
-    let promise = new Promise(function (resolve, reject) {
+    const promise = new Promise(function (resolve, reject) {
       _this.load(bootModule).then(function (module) {
         // Replace galaxy temporary  bootModule with user specified bootModule
         _this.bootModule = module;
