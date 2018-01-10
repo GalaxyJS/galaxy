@@ -186,7 +186,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       variableNamePaths = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
       variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
 
-      if (/\s*{\s*(.*)\s*}\s*/.test(value)) {
+      if (/^\s*{\s*(.*)\s*}\s*/g.test(value)) {
         variableNamePaths = [];
 
         let match = null;
