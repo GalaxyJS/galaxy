@@ -60,7 +60,7 @@
   function GalaxyCore() {
     this.bootModule = null;
     this.modules = {};
-    this.onLoadQueue = [];
+    // this.onLoadQueue = [];
     this.moduleContents = {};
     this.addOnProviders = [];
     this.app = null;
@@ -195,13 +195,15 @@
         invokers.push(module.url);
       }
 
-      Galaxy.onLoadQueue[module.systemId] = true;
+      // Galaxy.onLoadQueue[module.systemId] = true;
       let url = module.url + '?' + _this.convertToURIString(module.params || {});
       // var fetcher = root.Galaxy.onModuleLoaded[url];
-      let fetcherContent = root.Galaxy.moduleContents[url];
+
+      // fetcherContent makes sure that any module gets loaded from network only once unless fresh property is present
+      let fetcherContent = Galaxy.moduleContents[url];
 
       if (!fetcherContent || module.fresh) {
-        root.Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
+        Galaxy.moduleContents[url] = fetcherContent = fetch(url).then(function (response) {
           if (response.status !== 200) {
             reject(response);
             return '';
@@ -213,9 +215,9 @@
 
       // fetcherContent.then(resolve);
       fetcherContent.then(function (moduleContent) {
-        _this.moduleContents[module.systemId] = moduleContent;
-        _this.compileModuleContent(module, moduleContent, invokers).then(function (module) {
-          return _this.executeCompiledModule(module).then(resolve);
+        // _this.moduleContents[module.systemId] = moduleContent;
+        _this.compileModuleContent(module, moduleContent, invokers).then(function (compiledModule) {
+          return _this.executeCompiledModule(compiledModule).then(resolve);
         });
 
         return moduleContent;
@@ -224,12 +226,18 @@
 
     return promise;
   };
-
+  /**
+   *
+   * @param {Object} moduleMetaData
+   * @param moduleContent
+   * @param invokers
+   * @returns {Promise<Galaxy.GalaxyModule>}
+   */
   GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
     let _this = this;
     let promise = new Promise(function (resolve, reject) {
       let doneImporting = function (module, imports) {
-        imports.splice(imports.indexOf(module.url) - 1, 1);
+        imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
 
         if (imports.length === 0) {
           // This will load the original initilizer
@@ -271,7 +279,13 @@
           } else if (importedLibraries[item.url] && !item.fresh) {
             doneImporting(module, importsCopy);
           } else {
+            const importId = item.url;
+            if (item.url.indexOf('./') === 0) {
+              item.url = scope.uri.path + item.url.substr(2);
+            }
+
             Galaxy.load({
+              importId: importId,
               name: item.name,
               url: item.url,
               fresh: item.fresh,
@@ -323,13 +337,14 @@
 
       Reflect.deleteProperty(module, 'addOnProviders');
 
-      if (!importedLibraries[module.url]) {
-        importedLibraries[module.url] = {
-          name: module.name || module.url,
+      const mId = module.importId || module.url;
+      if (!importedLibraries[mId]) {
+        importedLibraries[mId] = {
+          name: module.name || mId,
           module: module.scope.export
         };
       } else if (module.fresh) {
-        importedLibraries[module.url].module = module.scope.export;
+        importedLibraries[mId].module = module.scope.export;
       } else {
         // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }
@@ -347,7 +362,7 @@
 
       resolve(currentModule);
 
-      Reflect.deleteProperty(Galaxy.onLoadQueue, module.systemId);
+      // Reflect.deleteProperty(Galaxy.onLoadQueue, module.systemId);
     });
 
     return promise;

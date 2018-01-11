@@ -63,11 +63,11 @@
       // const live = GV.bindSubjectsToData(value, context, true);
       // this.addDependedObject(live);
     },
-    getCache: function (matches, scopeData) {
+    getCache: function (matches, scope) {
       return {
         module: null,
         moduleMeta: null,
-        scope: scopeData
+        scope: scope
       };
     },
     onApply: function handleModule(cache, moduleMeta, oldModuleMeta, nodeScopeData, expression) {

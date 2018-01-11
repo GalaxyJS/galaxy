@@ -21,6 +21,7 @@
     this.systemId = module.systemId;
     this.source = source;
     this.url = module.url || null;
+    this.importId = module.importId || module.url;
     this.addOns = module.addOns || {};
     this.domain = module.domain;
     this.addOnProviders = [];
