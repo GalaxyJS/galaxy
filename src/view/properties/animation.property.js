@@ -18,6 +18,10 @@
       }
       let enterAnimationConfig = config.enter;
       if (enterAnimationConfig) {
+        if (enterAnimationConfig.sequence) {
+          AnimationMeta.get(enterAnimationConfig.sequence).configs.enter = enterAnimationConfig;
+        }
+
         viewNode.populateEnterSequence = function (sequence) {
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
@@ -34,27 +38,20 @@
           sequence.next(function (done) {
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
-              animationMeta.duration = enterAnimationConfig.duration;
-              animationMeta.position = enterAnimationConfig.position;
-              animationMeta.NODE = viewNode;
-
+              // animationMeta.NODE = viewNode;
+              // if(enterAnimationConfig.sequence ==='card')debugger;
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
-              // enterAnimationConfig.to = enterAnimationConfig.to || {};
-              // enterAnimationConfig.to.clearProps = 'all';
               animationMeta.add(viewNode.node, enterAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
               if (enterAnimationConfig.parent) {
                 const parent = AnimationMeta.get(enterAnimationConfig.parent);
-                parent.addChild(animationMeta);
+                parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
               }
             } else {
               let lastStep = enterAnimationConfig.to || enterAnimationConfig.from;
               lastStep.clearProps = 'all';
-
-              // enterAnimationConfig.to = enterAnimationConfig.to || {};
-              // enterAnimationConfig.to.clearProps = 'all';
               AnimationMeta.createTween(viewNode.node, enterAnimationConfig, done);
             }
           });
@@ -63,6 +60,10 @@
 
       let leaveAnimationConfig = config.leave;
       if (leaveAnimationConfig) {
+        if (leaveAnimationConfig.sequence) {
+          AnimationMeta.get(leaveAnimationConfig.sequence).configs.leave = leaveAnimationConfig;
+        }
+
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
@@ -78,23 +79,14 @@
 
           sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
-              // debugger;
-
               let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-              animationMeta.duration = leaveAnimationConfig.duration;
-              animationMeta.position = leaveAnimationConfig.position;
-              animationMeta.NODE = viewNode;
-              // if(leaveAnimationConfig.sequence === 'items-leave') {
-              //   debugger;
-              // }
-              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-              // lastStep.clearProps = 'all';
+              // animationMeta.NODE = viewNode;
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
               if (leaveAnimationConfig.parent) {
                 const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-                parent.addChild(animationMeta);
+                parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
               }
             } else {
               // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
@@ -167,8 +159,6 @@
       smoothChildTiming: true,
       onComplete: function () {
         _this.lastChildPosition = 0;
-        // console.info(_this);
-        // debugger;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -176,10 +166,9 @@
     });
 
     this.timeline.addLabel('beginning', 0);
-    this.duration = 0;
-    this.position = '+=0';
-    this.queue = {};
-    this.list = [];
+    // this.duration = 0;
+    // this.position = '+=0';
+    this.configs = {};
     this.lastChildPosition = 0;
     this.parent = null;
   }
@@ -267,16 +256,22 @@
 
   };
 
-  AnimationMeta.prototype.addChild = function (child, prior) {
+  AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
     const _this = this;
     child.parent = _this;
 
     const children = this.timeline.getChildren(false);
 
     if (children.indexOf(child.timeline) === -1) {
-      // debugger;
-      _this.calculateLastChildPosition(child.duration, child.position);
-      _this.timeline.add(child.timeline, _this.lastChildPosition);
+      if (_this.timeline.getChildren(false, true, false).length === 0) {
+        // _this.calculateLastChildPosition(parentConf.duration);
+        // debugger;
+        _this.timeline.add(child.timeline, 0);
+      } else {
+        // _this.calculateLastChildPosition(childConf.duration, childConf.position);
+        _this.calculateLastChildPosition(parentConf.duration, childConf.chainToParent ? childConf.position : null);
+        _this.timeline.add(child.timeline, _this.lastChildPosition);
+      }
     } else {
       // _this.calculateLastChildPosition(child.duration, child.position);
     }
@@ -310,6 +305,7 @@
       _this.lastChildPosition = 0;
       let progress = _this.timeline.progress();
       _this.timeline.add(tween, 0);
+      // debugger;
       if (!progress) {
         _this.timeline.play(0);
       }
@@ -324,15 +320,15 @@
    * @param {number} order
    * @param {callback} operation
    */
-  AnimationMeta.prototype.addToQueue = function (order, node, operation) {
-    if (this.parent) {
-      return this.parent.addToQueue(order, node, operation);
-    }
-
-    if (!this.queue[order]) {
-      this.queue[order] = [];
-    }
-    this.queue[order].push({node: node, operation: operation});
-    this.list.push({node: node, operation: operation, order: order});
-  };
+  // AnimationMeta.prototype.addToQueue = function (order, node, operation) {
+  //   if (this.parent) {
+  //     return this.parent.addToQueue(order, node, operation);
+  //   }
+  //
+  //   if (!this.queue[order]) {
+  //     this.queue[order] = [];
+  //   }
+  //   this.queue[order].push({node: node, operation: operation});
+  //   this.list.push({node: node, operation: operation, order: order});
+  // };
 })(Galaxy);

@@ -37,6 +37,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
+    this.data = {};
   }
 
   GalaxyScope.prototype.destroy = function () {
@@ -87,8 +88,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.observe = function (object) {
-    let observer = new Galaxy.GalaxyObserver(object);
-
+    const observer = new Galaxy.GalaxyObserver(object);
     this.observers.push(observer);
 
     return observer;

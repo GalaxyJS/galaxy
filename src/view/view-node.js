@@ -66,24 +66,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @static
    */
   ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
-    // node.domBus = node.parent.domBus;
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      // remove.domManipulationSequence.truncate();
       remove.renderingFlow.truncate();
       remove.destroy(sequence);
-      // console.info(remove.node);
-      // node.addToDOMBus(remove.domManipulationSequence.activeState);
     }
-
-    // setTimeout(function () {
-    //   Promise.all(node.parent.domBus).then(function () {
-    //     node.parent.domBus = [];
-    //     node.domBus = [];
-    //   });
-    // });
   };
 
   /**

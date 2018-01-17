@@ -267,8 +267,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {boolean} useLocalScope
    * @returns {Galaxy.GalaxyView.BoundProperty}
    */
-  GalaxyView.createBoundProperty = function (dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue) {
-    let boundProperty = new GalaxyView.BoundProperty(dataObject, useLocalScope ? 'this.' + propertyName : propertyName, initValue);
+  GalaxyView.createBoundProperty = function (dataObject, propertyName, aliasName, referenceName, enumerable, childProperty, initValue) {
+    let boundProperty = new GalaxyView.BoundProperty(dataObject, aliasName || propertyName, initValue);
     boundPropertyReference.value = boundProperty;
 
     defineProp(dataObject, referenceName, boundPropertyReference);
@@ -396,13 +396,13 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let propertyName = null;
     let childProperty = null;
     let initValue = null;
-    let useLocalScope = false;
+    let aliasPropertyName = false;
 
     for (let i = 0, len = variables.length; i < len; i++) {
       variableNamePath = variables[i];
       propertyName = variableNamePath;
       childProperty = null;
-      useLocalScope = false;
+      aliasPropertyName = false;
 
       let variableName = variableNamePath.split('.');
       if (variableName.length > 1) {
@@ -414,7 +414,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         i++;
         propertyName = variableName.shift();
         childProperty = null;
-        useLocalScope = true;
+        aliasPropertyName = 'this.' + propertyName;
         dataObject = GalaxyView.propertyLookup(target.data, propertyName);
       } else {
         dataObject = GalaxyView.propertyLookup(data, propertyName);
@@ -425,6 +425,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let enumerable = true;
       if (propertyName === 'length' && dataObject instanceof Array) {
         propertyName = '_length';
+        aliasPropertyName = 'length';
         enumerable = false;
       }
 
@@ -432,7 +433,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
-        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, useLocalScope, referenceName, enumerable, childProperty, initValue);
+        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, aliasPropertyName, referenceName, enumerable, childProperty, initValue);
       }
 
       // if (dataObject['__lists__'] !== undefined) {
@@ -852,12 +853,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!viewNode.virtual) {
-        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
-        viewNode.callLifecycleEvent('postInit');
-
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
+        viewNode.callLifecycleEvent('postInit');
+        GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
+
+
+
       } else {
         viewNode.callLifecycleEvent('postInit');
       }
