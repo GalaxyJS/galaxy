@@ -49,7 +49,7 @@
 
       let id = bindings.variableNamePaths.split('.').pop()
       // let setter = new Function('data, value', 'data.' + bindings.variableNamePaths + ' = value;');
-      debugger;
+      // debugger;
       console.info(dataObject)
       viewNode.node.addEventListener('keyup', function () {
         dataObject[id] = viewNode.node.value;

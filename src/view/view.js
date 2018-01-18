@@ -754,6 +754,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       };
     }
 
+    property.name = property.name || attributeName;
+
     if (property.util) {
       property.util(viewNode, attributeName, expression, dataObject);
     }
