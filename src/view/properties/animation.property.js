@@ -36,6 +36,7 @@
           });
 
           sequence.next(function (done) {
+            viewNode.visible = true;
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               // animationMeta.NODE = viewNode;
@@ -79,13 +80,22 @@
 
           sequence.next(function (done) {
             if (leaveAnimationConfig.sequence) {
-              let animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+              // in the case which the viewNode is not visible, then ignore its animation
+              if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+                return done();
+              }
+
+              const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
               // animationMeta.NODE = viewNode;
+              // if (enterAnimationConfig.sequence === 'card') debugger;
+
               animationMeta.add(viewNode.node, leaveAnimationConfig, done);
 
               // Add to parent should happen after the animation is added to the child
               if (leaveAnimationConfig.parent) {
                 const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+                // viewNode;
+                // debugger;
                 parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
               }
             } else {
@@ -265,7 +275,6 @@
     if (children.indexOf(child.timeline) === -1) {
       if (_this.timeline.getChildren(false, true, false).length === 0) {
         // _this.calculateLastChildPosition(parentConf.duration);
-        // debugger;
         _this.timeline.add(child.timeline, 0);
       } else {
         // _this.calculateLastChildPosition(childConf.duration, childConf.position);

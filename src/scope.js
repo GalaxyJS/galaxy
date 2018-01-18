@@ -33,11 +33,13 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.parentScope = module.parentScope || null;
     this.element = element || null;
     this.imports = {};
+    this.exports = {};
     this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
+    // Object.preventExtensions(this);
   }
 
   GalaxyScope.prototype.destroy = function () {

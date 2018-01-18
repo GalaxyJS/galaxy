@@ -13,7 +13,7 @@
       let parts = matches[1].split('.');
       let setter = new Function('data, value', 'data.' + matches[1] + ' = value;');
       _this.node.addEventListener('change', function () {
-        setter.call(null, GV.getPropertyContainer(nodeScopeData, parts[0]), _this.node.checked);
+        setter.call(null, GV.getPropertyContainer(nodeScopeData.data, parts[0]), _this.node.checked);
       });
     },
     onApply: function (cache, value) {

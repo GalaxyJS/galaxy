@@ -2,7 +2,7 @@
 
 (function (GV) {
   const loadModuleQueue = new Galaxy.GalaxySequence();
-  loadModuleQueue.start();
+  // loadModuleQueue.start();
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
     return function (done) {
@@ -83,6 +83,7 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         _this.rendered.then(function () {
+          // loadModuleQueue.truncate();
           // Add the new module request to the sequence
           loadModuleQueue.next(function (nextCall) {
             // Wait till all viewNode animation are done
@@ -90,6 +91,7 @@
             // Empty the node and wait till all animation are finished
             // Then load the next requested module in the queue
             // and after that proceed to next request in the queue
+            _this.renderingFlow.truncate();
             _this.clean().next(moduleLoaderGenerator(_this, cache, moduleMeta))
               .next(function (done) {
                 // module loader may add animations to the viewNode. if that is the case we will wait for the animations

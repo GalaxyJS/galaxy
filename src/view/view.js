@@ -79,6 +79,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     checked: {
       type: 'prop'
     },
+    value: {
+      type: 'prop'
+    },
     disabled: {
       type: 'attr'
     }
@@ -361,12 +364,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {String} targetKeyName
    * @param {string|Array<string>} variableNamePaths
    */
-  GalaxyView.makeBinding = function (target, data, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
-    if (typeof data !== 'object') {
+  GalaxyView.makeBinding = function (target, scopeData, targetKeyName, variableNamePaths, expression, expressionArgumentsCount) {
+    if (typeof scopeData !== 'object') {
       return;
     }
 
-    let dataObject = data;
+    let dataObject = scopeData;
     let variables = variableNamePaths instanceof Array ? variableNamePaths : [variableNamePaths];
 
     // expression === true means that a expression function is available and should be extracted
@@ -417,7 +420,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         aliasPropertyName = 'this.' + propertyName;
         dataObject = GalaxyView.propertyLookup(target.data, propertyName);
       } else {
-        dataObject = GalaxyView.propertyLookup(data, propertyName);
+        dataObject = GalaxyView.propertyLookup(dataObject, propertyName);
       }
 
       initValue = dataObject[propertyName];
@@ -478,7 +481,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName, expression);
+        boundProperty.addNode(target, targetKeyName, expression, dataObject);
       }
 
       if (childProperty !== null) {
@@ -739,7 +742,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
-  GalaxyView.getPropertySetter = function (viewNode, attributeName, expression) {
+  GalaxyView.getPropertySetter = function (viewNode, attributeName, expression, dataObject) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
@@ -749,6 +752,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       property = {
         type: 'attr'
       };
+    }
+
+    if (property.util) {
+      property.util(viewNode, attributeName, expression, dataObject);
     }
 
     // expressing for reactive property should be handled by that property handler
@@ -853,14 +860,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!viewNode.virtual) {
+        viewNode.callLifecycleEvent('postInit');
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
-        viewNode.callLifecycleEvent('postInit');
+
         GalaxyView.createNode(viewNode, scopeData, nodeSchema.children, null);
-
-
-
+        viewNode.inserted.then(function () {
+          viewNode.callLifecycleEvent('postChildrenInsert');
+        });
       } else {
         viewNode.callLifecycleEvent('postInit');
       }
@@ -869,13 +877,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // this make sure that the viewNode and its child elements are rendered
       // setTimeout(function () {
       viewNode.sequences.enter.nextAction(function () {
-        // viewNode.domBus = [];
-        viewNode.ready();
+        viewNode.callLifecycleEvent('rendered');
+        viewNode.hasBeenRendered();
       });
-      // });
-
-      // viewNode.domManipulationBus.push(viewNode.domManipulationSequence.line);
-      // parent.addToDOMBus(viewNode.domManipulationSequence.activeState);
 
       return viewNode;
     }
@@ -901,11 +905,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }, scope.element);
 
       // _this.container.domManipulationSequence.nextAction(function () {
-      //   _this.container.ready();
+      //   _this.container.hasBeenRendered();
       // });
 
       _this.container.sequences.enter.nextAction(function () {
-        _this.container.ready();
+        _this.container.hasBeenRendered();
       });
     }
 

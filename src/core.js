@@ -341,10 +341,10 @@
       if (!importedLibraries[mId]) {
         importedLibraries[mId] = {
           name: module.name || mId,
-          module: module.scope.export
+          module: module.scope.exports
         };
       } else if (module.fresh) {
-        importedLibraries[mId].module = module.scope.export;
+        importedLibraries[mId].module = module.scope.exports;
       } else {
         // module.scope.imports[module.url] = importedLibraries[module.url].module;
       }

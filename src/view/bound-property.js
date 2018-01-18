@@ -68,13 +68,13 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
    * @param {Function} expression
    * @public
    */
-  BoundProperty.prototype.addNode = function (node, attributeName, expression) {
+  BoundProperty.prototype.addNode = function (node, attributeName, expression, dataObject) {
     let index = this.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || this.props[index] !== attributeName) {
       if (node instanceof Galaxy.GalaxyView.ViewNode) {
-        node.installPropertySetter(this, attributeName, expression);
+        node.installPropertySetter(this, attributeName, expression,dataObject);
       }
 
       this.props.push(attributeName);

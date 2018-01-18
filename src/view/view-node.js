@@ -85,38 +85,50 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @memberOf Galaxy.GalaxyView
    */
   function ViewNode(root, schema, node) {
+    const _this = this;
     // this.root = root;
-    this.node = node || createElem(schema.tag || 'div');
-    this.schema = schema;
-    this.data = {};
-    this.addons = {};
-    this.inputs = {};
-    // this.localScope = {};
-    this.virtual = false;
-    this.placeholder = createComment(schema.tag || 'div');
-    this.properties = {};
-    this.behaviors = {};
-    this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
-    this.setters = {};
-    this.parent = null;
-    this.dependedObjects = [];
-    // this.domBus = [];
-    this.renderingFlow = new Galaxy.GalaxySequence();
-    // this.domManipulationSequence = new Galaxy.GalaxySequence();
-    this.sequences = {
+    _this.node = node || createElem(schema.tag || 'div');
+    _this.schema = schema;
+    _this.data = {};
+    _this.addons = {};
+    _this.inputs = {};
+    // _this.localScope = {};
+    _this.virtual = false;
+    _this.placeholder = createComment(schema.tag || 'div');
+    _this.properties = {};
+    _this.behaviors = {};
+    _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
+    _this.setters = {};
+    _this.parent = null;
+    _this.dependedObjects = [];
+    // _this.domBus = [];
+    _this.renderingFlow = new Galaxy.GalaxySequence();
+    // _this.domManipulationSequence = new Galaxy.GalaxySequence();
+    _this.sequences = {
       enter: new Galaxy.GalaxySequence(),
       leave: new Galaxy.GalaxySequence(),
       ':destroy': new Galaxy.GalaxySequence(true),
       ':class': new Galaxy.GalaxySequence().start()
     };
-    this.observer = new Galaxy.GalaxyObserver(this);
-    this.origin = false;
+    _this.observer = new Galaxy.GalaxyObserver(_this);
+    _this.origin = false;
 
-    let _this = this;
-    this.rendered = new Promise(function (ready) {
-      _this.ready = ready;
-      _this.callLifecycleEvent('rendered');
+    _this.hasBeenRendered = null;
+    _this.rendered = new Promise(function (done) {
+      _this.hasBeenRendered = function () {
+        _this.rendered.resolved = true;
+        done();
+      };
     });
+    _this.rendered.resolved = false;
+
+    _this.inserted = new Promise(function (done) {
+      _this.hasBeenInserted = function () {
+        _this.inserted.resolved = true;
+        done();
+      };
+    });
+    _this.inserted.resolved = false;
 
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
@@ -125,7 +137,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     GV.defineProp(this.node, '__viewNode__', referenceToThis);
     GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
 
-    this.callLifecycleEvent('postCreate');
+    _this.callLifecycleEvent('postCreate');
   }
 
   /**
@@ -189,6 +201,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
+        _this.hasBeenInserted();
+        _this.visible = false;
       });
 
       let animationDone;
@@ -200,6 +214,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         waitForNodeAnimation.then(next);
       });
 
+      _this.sequences.enter.nextAction(function () {
+        _this.visible = true;
+      });
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {
@@ -255,7 +272,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {string} propertyName
    * @param {Function} expression
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression) {
+  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, dataObject) {
     // This cause memory leak for expressions
     let exist = this.properties[boundProperty.name];
     if (exist) {
@@ -266,7 +283,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       this.properties[boundProperty.name] = [boundProperty];
     }
 
-    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, /*this.virtual ? false :*/ expression);
+    this.setters[propertyName] = GV.getPropertySetter(this, propertyName, /*this.virtual ? false :*/ expression, dataObject);
     if (!this.setters[propertyName]) {
       let _this = this;
       this.setters[propertyName] = function () {
