@@ -53,7 +53,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       type: 'attr'
     },
     style: {
-      type: 'prop'
+      type: 'prop',
+      name: 'style'
     },
     css: {
       type: 'attr',
@@ -77,10 +78,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
     },
     checked: {
-      type: 'prop'
+      type: 'prop',
+      name: 'checked'
     },
     value: {
-      type: 'prop'
+      type: 'prop',
+      name: 'value'
     },
     disabled: {
       type: 'attr'
@@ -481,7 +484,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (!childProperty) {
-        boundProperty.addNode(target, targetKeyName, expression, dataObject);
+        boundProperty.addNode(target, targetKeyName, expression);
       }
 
       if (childProperty !== null) {
@@ -534,6 +537,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @returns {Function}
    */
   GalaxyView.createPropertySetter = function (node, property) {
+    if (!property.name) {
+      throw new Error('createPropertySetter: property.name is mandatory in order to create property setter');
+    }
+
     return function (value, oldValue) {
       if (value instanceof Promise) {
         let asyncCall = function (asyncValue) {
@@ -579,17 +586,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    */
   GalaxyView.createDefaultSetter = function (node, attributeName, parser) {
     return function (value, oldValue) {
-      // console.info(value, oldValue);
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           const newValue = parser ? parser(asyncValue) : asyncValue;
-          // node.data['_' + attributeName] = newValue;
           GalaxyView.setAttr(node, attributeName, newValue, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
         const newValue = parser ? parser(value) : value;
-        // node.data['_' + attributeName] = newValue;
         GalaxyView.setAttr(node, attributeName, newValue, oldValue);
       }
     };
@@ -739,10 +743,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       return setter;
+    },
+    'none': function () {
+      return function () {
+
+      };
     }
   };
 
-  GalaxyView.getPropertySetter = function (viewNode, attributeName, expression, dataObject) {
+  GalaxyView.createSetter = function (viewNode, attributeName, expression, dataObject) {
     let property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName];
 
     if (!property) {
@@ -753,8 +762,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         type: 'attr'
       };
     }
-
-    property.name = property.name || attributeName;
 
     if (property.util) {
       property.util(viewNode, attributeName, expression, dataObject);
@@ -780,17 +787,17 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     switch (property.type) {
       case 'attr':
-        // GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(newValue, null);
-        if (value instanceof Promise) {
-          const asyncCall = function (asyncValue) {
-            const newValue = parser ? parser(asyncValue) : asyncValue;
-            GalaxyView.setAttr(viewNode, attributeName, newValue, null);
-          };
-          value.then(asyncCall).catch(asyncCall);
-        } else {
-          const newValue = parser ? parser(value) : value;
-          GalaxyView.setAttr(viewNode, attributeName, newValue, null);
-        }
+        GalaxyView.createDefaultSetter(viewNode, attributeName, property.parser)(value, null);
+        // if (value instanceof Promise) {
+        //   const asyncCall = function (asyncValue) {
+        //     const newValue = parser ? parser(asyncValue) : asyncValue;
+        //     GalaxyView.setAttr(viewNode, attributeName, newValue, null);
+        //   };
+        //   value.then(asyncCall).catch(asyncCall);
+        // } else {
+        //   const newValue = parser ? parser(value) : value;
+        //   GalaxyView.setAttr(viewNode, attributeName, newValue, null);
+        // }
         break;
 
       case 'prop':

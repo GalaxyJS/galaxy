@@ -39,21 +39,24 @@
   //     this.node.value = value || '';
   //   }
   // };
+  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+    type: 'none'
+  };
+
   GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
     type: 'prop',
+    name: 'value',
     util: function (viewNode, prop, expression, dataObject) {
       if (expression) {
-        throw new Error('value property can not be bound to an expression');
+        throw new Error('input.value property does not support binding expressions ' +
+          'because it must be able to change its data.\n' +
+          'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
-      let bindings = GV.getBindings(viewNode.schema.value);
 
-      let id = bindings.variableNamePaths.split('.').pop()
-      // let setter = new Function('data, value', 'data.' + bindings.variableNamePaths + ' = value;');
-      // debugger;
-      console.info(dataObject)
+      let bindings = GV.getBindings(viewNode.schema.value);
+      let id = bindings.variableNamePaths.split('.').pop();
       viewNode.node.addEventListener('keyup', function () {
         dataObject[id] = viewNode.node.value;
-        // setter.call(null, GV.getPropertyContainer(data, propertyName), _this.node.value);
       });
     }
   };
