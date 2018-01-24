@@ -782,7 +782,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
     const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
     // let newValue = value;
-    let parser = property.parser;
+    // let parser = property.parser;
     // worker.postMessage({viewNode: viewNode});
 
     switch (property.type) {
