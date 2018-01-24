@@ -908,7 +908,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     if (scope.element instanceof GalaxyView.ViewNode) {
       _this.container = scope.element;
     } else {
-      scope.element.innerHTML = '';
+      // removing the content of element seems not necessary
+      // scope.element.innerHTML = '';
       _this.container = new GalaxyView.ViewNode(null, {
         tag: scope.element.tagName
       }, scope.element);

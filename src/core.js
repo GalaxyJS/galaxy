@@ -178,7 +178,23 @@
 
   GalaxyCore.prototype.load = function (module) {
     let _this = this;
+
+    if (!module) {
+      throw new Error('Module meta data or constructor is missing');
+    }
+
     let promise = new Promise(function (resolve, reject) {
+
+
+      if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
+        module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+        module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
+
+        return _this.compileModuleContent(module, module.constructor, []).then(function (compiledModule) {
+          return _this.executeCompiledModule(compiledModule).then(resolve);
+        });
+      }
+
       module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
       module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
@@ -229,11 +245,11 @@
   /**
    *
    * @param {Object} moduleMetaData
-   * @param moduleContent
+   * @param moduleConstructor
    * @param invokers
    * @returns {Promise<Galaxy.GalaxyModule>}
    */
-  GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleContent, invokers) {
+  GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleConstructor, invokers) {
     let _this = this;
     let promise = new Promise(function (resolve, reject) {
       let doneImporting = function (module, imports) {
@@ -246,23 +262,31 @@
       };
 
       let imports = [];
-      // extract imports from the source code
-      // removing comments cause an bug
-      // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
-      moduleContent = moduleContent.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
-        let query = path.match(/([\S]+)/gm);
-        imports.push({
-          url: query[query.length - 1],
-          fresh: query.indexOf('new') !== -1
-        });
 
-        return 'Scope.imports[\'' + query[query.length - 1] + '\']';
-      });
+      if (typeof moduleConstructor === 'function') {
+        imports = moduleMetaData.imports ? moduleMetaData.imports.slice(0) : [];
+        imports = imports.map(function (item) {
+          return {url: item};
+        });
+      } else {
+        // extract imports from the source code
+        // removing comments cause an bug
+        // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
+        moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+          let query = path.match(/([\S]+)/gm);
+          imports.push({
+            url: query[query.length - 1],
+            fresh: query.indexOf('new') !== -1
+          });
+
+          return 'Scope.imports[\'' + query[query.length - 1] + '\']';
+        });
+      }
 
       let scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
       // var view = new Galaxy.GalaxyView(scope);
       // Create module from moduleMetaData
-      let module = new Galaxy.GalaxyModule(moduleMetaData, moduleContent, scope);
+      let module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
@@ -326,7 +350,7 @@
         }
       }
 
-      let moduleSource = new Function('Scope', module.source);
+      let moduleSource = typeof module.source === 'function' ? module.source : new Function('Scope', module.source);
       moduleSource.call(null, module.scope);
 
       Reflect.deleteProperty(module, 'source');
