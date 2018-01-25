@@ -934,6 +934,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.prototype.init = function (schema) {
     const _this = this;
 
+    // _this.container.renderingFlow.truncate();
     _this.container.renderingFlow.next(function (next) {
       GalaxyView.createNode(_this.container, _this.scope, schema, null);
 

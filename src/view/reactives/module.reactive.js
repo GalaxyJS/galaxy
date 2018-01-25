@@ -5,7 +5,9 @@
   // loadModuleQueue.start();
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
+    // viewNode.renderingFlow.truncate();
     return function (done) {
+      // viewNode.renderingFlow.truncate();
       if (cache.module) {
         cache.module.destroy();
       }
@@ -33,6 +35,7 @@
       }
 
       window.requestAnimationFrame(function () {
+        viewNode.renderingFlow.truncate();
         currentScope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {
@@ -85,21 +88,34 @@
         _this.rendered.then(function () {
           // loadModuleQueue.truncate();
           // Add the new module request to the sequence
-          loadModuleQueue.next(function (nextCall) {
-            // Wait till all viewNode animation are done
-            // console.info('Added to queue:', moduleMeta.id || moduleMeta.url);
-            // Empty the node and wait till all animation are finished
-            // Then load the next requested module in the queue
-            // and after that proceed to next request in the queue
-            _this.renderingFlow.truncate();
-            _this.clean().next(moduleLoaderGenerator(_this, cache, moduleMeta))
-              .next(function (done) {
-                // module loader may add animations to the viewNode. if that is the case we will wait for the animations
-                // to finish at the beginning of the next module request
-                done();
-                nextCall();
-              });
+          // loadModuleQueue.next(function (nextCall) {
+          // Wait till all viewNode animation are done
+          // console.info('Added to queue:', moduleMeta.id || moduleMeta.url);
+          // Empty the node and wait till all animation are finished
+          // Then load the next requested module in the queue
+          // and after that proceed to next request in the queue
+          // debugger;
+          _this.renderingFlow.truncate();
+          // debugger;
+          _this.clean();
+
+          moduleLoaderGenerator(_this, cache, moduleMeta)(function () {
+            // debugger;
           });
+          // _this.renderingFlow.truncate();
+          // .next(function (done) {
+          //   debugger;
+          //   done();
+          // })
+          // .next(moduleLoaderGenerator(_this, cache, moduleMeta))
+          // .next(function (done) {
+          //   // module loader may add animations to the viewNode. if that is the case we will wait for the animations
+          //   // to finish at the beginning of the next module request
+          //   done();
+          //
+          //   // nextCall();
+          // });
+          // });
         });
       } else if (!moduleMeta) {
         _this.clean();

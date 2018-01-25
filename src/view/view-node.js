@@ -348,6 +348,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+          // debugger;
           animationDone();
         });
       }

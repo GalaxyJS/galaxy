@@ -26,13 +26,17 @@
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
 
-            if (enterAnimationConfig.sequence) {
-              AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
-            }
-
-            if (enterAnimationConfig.parent) {
-              AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
-            }
+            // if (enterAnimationConfig.sequence && AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence]) {
+            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
+            // }
+            //
+            // if (enterAnimationConfig.parent && AnimationMeta.ANIMATIONS[enterAnimationConfig.parent]) {
+            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
+            // }
           });
 
           sequence.next(function (done) {
@@ -68,42 +72,88 @@
         viewNode.populateLeaveSequence = function (sequence) {
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
+            // debugger;
+            // if (leaveAnimationConfig.sequence && AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence]) {
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence].parent = null;
+            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
+            // }
+            //
+            // if (leaveAnimationConfig.parent && AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent]) {
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].lastChildPosition = 0;
+            //   AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent].parent = null;
+            //   // AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+            // }
+          });
 
-            if (leaveAnimationConfig.sequence) {
-              AnimationMeta.ANIMATIONS[leaveAnimationConfig.sequence] = null;
-            }
+          // debugger;
+          // in the case which the viewNode is not visible, then ignore its animation
+          if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+            return sequence.next(function (done) {
+              done();
+            });
+          }
 
+          let animationDone;
+          const pr = new Promise(function (res) {
+            animationDone = res;
+          });
+
+          sequence.next((function (promise) {
+            return function (done) {
+              promise.then(done);
+            };
+          })(pr));
+
+          if (leaveAnimationConfig.sequence) {
+            // in the case which the viewNode is not visible, then ignore its animation
+            // if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+            //   return animationDone();
+            // }
+
+            const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+            // animationMeta.NODE = viewNode;
+            // if (enterAnimationConfig.sequence === 'card') debugger;
+
+            animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
+
+            // Add to parent should happen after the animation is added to the child
             if (leaveAnimationConfig.parent) {
-              AnimationMeta.ANIMATIONS[leaveAnimationConfig.parent] = null;
+              const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+              parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
             }
-          });
+          } else {
+            // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+            // lastStep.clearProps = 'all';
+            AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, animationDone);
+          }
 
-          sequence.next(function (done) {
-            if (leaveAnimationConfig.sequence) {
-              // in the case which the viewNode is not visible, then ignore its animation
-              if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-                return done();
-              }
-
-              const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-              // animationMeta.NODE = viewNode;
-              // if (enterAnimationConfig.sequence === 'card') debugger;
-
-              animationMeta.add(viewNode.node, leaveAnimationConfig, done);
-
-              // Add to parent should happen after the animation is added to the child
-              if (leaveAnimationConfig.parent) {
-                const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-                // viewNode;
-                // debugger;
-                parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
-              }
-            } else {
-              // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
-              // lastStep.clearProps = 'all';
-              AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
-            }
-          });
+          // sequence.next(function (done) {
+          //   if (leaveAnimationConfig.sequence) {
+          //
+          //     // in the case which the viewNode is not visible, then ignore its animation
+          //     if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
+          //       return done();
+          //     }
+          //
+          //     const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
+          //     // animationMeta.NODE = viewNode;
+          //     // if (enterAnimationConfig.sequence === 'card') debugger;
+          //
+          //     animationMeta.add(viewNode.node, leaveAnimationConfig, done);
+          //
+          //     // Add to parent should happen after the animation is added to the child
+          //     if (leaveAnimationConfig.parent) {
+          //       const parent = AnimationMeta.get(leaveAnimationConfig.parent);
+          //       // debugger;
+          //       parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
+          //     }
+          //   } else {
+          //     // let lastStep = leaveAnimationConfig.to || leaveAnimationConfig.from;
+          //     // lastStep.clearProps = 'all';
+          //     AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, done);
+          //   }
+          // });
         };
       }
 
@@ -277,12 +327,14 @@
         // _this.calculateLastChildPosition(parentConf.duration);
         _this.timeline.add(child.timeline, 0);
       } else {
+        // debugger
         // _this.calculateLastChildPosition(childConf.duration, childConf.position);
-        _this.calculateLastChildPosition(parentConf.duration, childConf.chainToParent ? childConf.position : null);
+        // _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
+        _this.lastChildPosition = AnimationMeta.calculateDuration(_this.lastChildPosition, childConf.chainToParent ? childConf.position : '+=0');
         _this.timeline.add(child.timeline, _this.lastChildPosition);
       }
     } else {
-      // _this.calculateLastChildPosition(child.duration, child.position);
+      _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
     }
   };
 
@@ -311,16 +363,20 @@
 
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false, true, false).length === 0) {
-      _this.lastChildPosition = 0;
+      // let a = this.timeline.getChildren(true, true, true);
+      // debugger;
+      // _this.lastChildPosition = 0;
       let progress = _this.timeline.progress();
-      _this.timeline.add(tween, 0);
+      _this.timeline.add(tween, _this.lastChildPosition);
       // debugger;
       if (!progress) {
         _this.timeline.play(0);
       }
-    } else {
       _this.calculateLastChildPosition(config.duration, config.position);
+    } else {
+      // debugger;
       _this.timeline.add(tween, _this.lastChildPosition);
+      _this.calculateLastChildPosition(config.duration, config.position);
     }
   };
 
