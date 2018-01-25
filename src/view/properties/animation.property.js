@@ -27,14 +27,14 @@
             TweenLite.killTweensOf(viewNode.node);
 
             // if (enterAnimationConfig.sequence && AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence]) {
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].lastChildPosition = 0;
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].lastChildPosition = 0;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence].parent = null;
             //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.sequence] = null;
             // }
             //
             // if (enterAnimationConfig.parent && AnimationMeta.ANIMATIONS[enterAnimationConfig.parent]) {
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].lastChildPosition = 0;
-            //   AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].parent = null;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].lastChildPosition = 0;
+            //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent].parent = null;
             //   // AnimationMeta.ANIMATIONS[enterAnimationConfig.parent] = null;
             // }
           });
@@ -114,7 +114,7 @@
             const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
             // animationMeta.NODE = viewNode;
             // if (enterAnimationConfig.sequence === 'card') debugger;
-
+            // debugger;
             animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
 
             // Add to parent should happen after the animation is added to the child
@@ -328,13 +328,14 @@
         _this.timeline.add(child.timeline, 0);
       } else {
         // debugger
-        // _this.calculateLastChildPosition(childConf.duration, childConf.position);
-        // _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
-        _this.lastChildPosition = AnimationMeta.calculateDuration(_this.lastChildPosition, childConf.chainToParent ? childConf.position : '+=0');
-        _this.timeline.add(child.timeline, _this.lastChildPosition);
+
+        _this.timeline.add(child.timeline, childConf.chainToParent ? childConf.position : '+=0');
+
+        // _this.lastChildPosition = AnimationMeta.calculateDuration(_this.lastChildPosition, childConf.chainToParent ? childConf.position : '+=0');
+        // _this.timeline.add(child.timeline, _this.lastChildPosition);
       }
     } else {
-      _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
+      // _this.calculateLastChildPosition(childConf.duration, childConf.chainToParent ? childConf.position : null);
     }
   };
 
@@ -361,22 +362,28 @@
         to || {});
     }
 
+    tween.data = {
+      am: _this,
+      config: config
+    };
+
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false, true, false).length === 0) {
-      // let a = this.timeline.getChildren(true, true, true);
       // debugger;
       // _this.lastChildPosition = 0;
       let progress = _this.timeline.progress();
-      _this.timeline.add(tween, _this.lastChildPosition);
+      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // _this.timeline.add(tween, _this.lastChildPosition);
       // debugger;
       if (!progress) {
         _this.timeline.play(0);
       }
-      _this.calculateLastChildPosition(config.duration, config.position);
+      // _this.calculateLastChildPosition(config.duration, config.position);
     } else {
       // debugger;
-      _this.timeline.add(tween, _this.lastChildPosition);
-      _this.calculateLastChildPosition(config.duration, config.position);
+      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // _this.timeline.add(tween, _this.lastChildPosition);
+      // _this.calculateLastChildPosition(config.duration, config.position);
     }
   };
 
