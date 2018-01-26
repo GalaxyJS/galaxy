@@ -343,6 +343,8 @@
     const _this = this;
     let to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
+    to.onStartParams = [node['__viewNode__']];
+    to.onStart = config.onStart;
 
     let tween = null;
     if (config.from && config.to) {
@@ -353,6 +355,8 @@
     } else if (config.from) {
       let from = Object.assign({}, config.from || {});
       from.onComplete = onComplete;
+      from.onStartParams = [node['__viewNode__']];
+      from.onStart = config.onStart;
       tween = TweenLite.from(node,
         config.duration || 0,
         from || {});
