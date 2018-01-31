@@ -1,4 +1,5 @@
 /* global Galaxy */
+'use strict';
 
 (function (G) {
 
@@ -110,7 +111,6 @@
   function Tag(tag) {
     const _this = this;
     _this.tag = tag;
-
   }
 
   Object.defineProperty(Tag.prototype, '_decorate', {

@@ -11,11 +11,16 @@ let Server = require('karma').Server;
 
 let sources = {
   galaxy: [
+    // Polyfills
     'src/polyfills/*.js',
+    // Core
     'src/core.js',
     'src/*.js',
+    // GalaxyView
     'src/view/view.js',
-    'src/view/**/*.js'
+    'src/view/**/*.js',
+    // Module addons
+    'src/addons/*.js'
   ],
   galaxyWebWorker: [
     'src/web-worker.js',

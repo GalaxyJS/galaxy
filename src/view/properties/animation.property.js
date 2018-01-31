@@ -2,6 +2,10 @@
 'use strict';
 
 (function (G) {
+  if(!window.TweenLite || !window.TimelineLite) {
+    return console.warn('please load GSAP - GreenSock in order to activate animations');
+  }
+
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animation'] = {
     type: 'custom',
     name: 'animation',

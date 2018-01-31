@@ -261,25 +261,38 @@
         }
       };
 
+      const unique = [];
       let imports = [];
 
       if (typeof moduleConstructor === 'function') {
         imports = moduleMetaData.imports ? moduleMetaData.imports.slice(0) : [];
         imports = imports.map(function (item) {
+          if (unique.indexOf(item) !== -1) {
+            return null;
+          }
+
+          unique.push(item);
           return {url: item};
-        });
+        }).filter(Boolean);
       } else {
         // extract imports from the source code
         // removing comments cause an bug
-        // let moduleContentWithoutComments = moduleContent.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)\n?\/\/.*\n?$/gm, '');
-        moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\)\;/gm, function (match, path) {
+
+        moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
+        moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
           let query = path.match(/([\S]+)/gm);
+          let url = query[query.length - 1];
+          if (unique.indexOf(url) !== -1) {
+            return 'Scope.imports[\'' + url + '\']';
+          }
+
+          unique.push(url);
           imports.push({
-            url: query[query.length - 1],
+            url: url,
             fresh: query.indexOf('new') !== -1
           });
 
-          return 'Scope.imports[\'' + query[query.length - 1] + '\']';
+          return 'Scope.imports[\'' + url + '\']';
         });
       }
 

@@ -1,4 +1,5 @@
 /* global Galaxy */
+'use strict';
 
 (function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {

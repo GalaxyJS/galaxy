@@ -1,25 +1,6 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyURI = /**@class*/(function () {
-  /**
-   *
-   * @param url
-   * @constructor
-   */
-  function GalaxyURI(url) {
-    let urlParser = document.createElement('a');
-    urlParser.href = url;
-    let myRegexp = /([^\t\n]+)\//g;
-    let match = myRegexp.exec(urlParser.pathname);
-
-    this.paresdURL = urlParser.href;
-    this.path = match ? match[0] : '/';
-  }
-
-  return GalaxyURI;
-})();
-
 Galaxy.GalaxyScope = /** @class*/(function () {
   /**
    *
@@ -39,8 +20,11 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
-    // Object.preventExtensions(this);
   }
+
+  GalaxyScope.prototype.import = function (libId) {
+    return this.imports[libId];
+  };
 
   GalaxyScope.prototype.destroy = function () {
     this.observers.forEach(function (observer) {
