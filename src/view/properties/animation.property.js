@@ -2,7 +2,7 @@
 'use strict';
 
 (function (G) {
-  if(!window.TweenLite || !window.TimelineLite) {
+  if (!window.TweenLite || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
@@ -348,7 +348,32 @@
     let to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
     to.onStartParams = [node['__viewNode__']];
-    to.onStart = config.onStart;
+
+    let onStart = config.onStart;
+
+    if (config.fixedPosition) {
+      onStart = function (viewNode) {
+        // let hiddenPlaceholder = document.createElement('div');
+        // hiddenPlaceholder.style.backgroundColor = 'red';
+        // let viewNodeStyle = window.getComputedStyle(viewNode.node);
+        // hiddenPlaceholder.style.display = viewNodeStyle.display;
+        // hiddenPlaceholder.style.width = viewNodeStyle.width;
+        // hiddenPlaceholder.style.height = viewNodeStyle.height;
+        // hiddenPlaceholder.style.margin = viewNodeStyle.margin;
+        // hiddenPlaceholder.style.visibility = 'hidden';
+
+        // debugger;
+        let pn = viewNode.node.getBoundingClientRect();
+
+        // debugger;
+        // pn.appendChild(hiddenPlaceholder, viewNode.getPlaceholder());
+        // viewNode.destroyed.then(function () {
+        //   pn.style.height = null;
+        // });
+        // if(config.onStart).call(this, arguments);
+      };
+    }
+    to.onStart = onStart;
 
     let tween = null;
     if (config.from && config.to) {
@@ -360,7 +385,7 @@
       let from = Object.assign({}, config.from || {});
       from.onComplete = onComplete;
       from.onStartParams = [node['__viewNode__']];
-      from.onStart = config.onStart;
+      from.onStart = onStart;
       tween = TweenLite.from(node,
         config.duration || 0,
         from || {});

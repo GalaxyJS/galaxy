@@ -130,6 +130,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     });
     _this.inserted.resolved = false;
 
+    _this.destroyed = new Promise(function (done) {
+      _this.hasBeenDestroyed = function () {
+        _this.destroyed.resolved = true;
+        done();
+      };
+    });
+    _this.destroyed.resolved = false;
+
     __node__.value = this.node;
     GV.defineProp(this.schema, '__node__', __node__);
 
@@ -312,7 +320,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
 
         _this.parent.sequences.leave.next(function (next) {
-          waitForNodeAnimation.then(next);
+          waitForNodeAnimation.then(function () {
+            _this.hasBeenDestroyed();
+            next();
+          });
         });
 
         // Add children leave sequence to this node(parent node) leave sequence
@@ -323,6 +334,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
+
           animationDone();
           _this.origin = false;
         });
@@ -341,7 +353,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
 
         leaveSequence.next(function (next) {
-          waitForNodeAnimation.then(next);
+
+          waitForNodeAnimation.then(function () {
+            _this.hasBeenDestroyed();
+            next();
+          });
         });
 
         _this.sequences.leave.nextAction(function () {
@@ -438,6 +454,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     return _this.renderingFlow;
   };
 
+  /**
+   *
+   * @returns {*}
+   */
   ViewNode.prototype.getPlaceholder = function () {
     if (this.inDOM) {
       return this.node;
