@@ -42,11 +42,14 @@
 
   Galaxy.clone = function (obj) {
     let clone = obj instanceof Array ? [] : {};
+    clone.__proto__ = obj.__proto__;
     for (let i in obj) {
-      if (typeof(obj[i]) === 'object' && obj[i] !== null)
-        clone[i] = Galaxy.clone(obj[i]);
-      else
-        clone[i] = obj[i];
+      if (obj.hasOwnProperty(i)) {
+        if (typeof(obj[i]) === 'object' && obj[i] !== null)
+          clone[i] = Galaxy.clone(obj[i]);
+        else
+          clone[i] = obj[i];
+      }
     }
     return clone;
   };
