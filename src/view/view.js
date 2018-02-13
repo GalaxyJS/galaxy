@@ -830,6 +830,17 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.createNode = function (parent, scopeData, nodeSchema, position, localScope) {
     let i = 0, len = 0;
 
+    if (typeof nodeSchema === 'string') {
+      const content = document.createElement('div');
+      content.innerHTML = nodeSchema;
+      const nodes = Array.prototype.slice.call(content.childNodes);
+      nodes.forEach(function (node) {
+        parent.node.appendChild(node);
+      });
+
+      return nodes;
+    }
+
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
         GalaxyView.createNode(parent, scopeData, nodeSchema[i], null);
