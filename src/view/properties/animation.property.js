@@ -351,28 +351,28 @@
 
     let onStart = config.onStart;
 
-    if (config.fixedPosition) {
-      onStart = function (viewNode) {
-        // let hiddenPlaceholder = document.createElement('div');
-        // hiddenPlaceholder.style.backgroundColor = 'red';
-        // let viewNodeStyle = window.getComputedStyle(viewNode.node);
-        // hiddenPlaceholder.style.display = viewNodeStyle.display;
-        // hiddenPlaceholder.style.width = viewNodeStyle.width;
-        // hiddenPlaceholder.style.height = viewNodeStyle.height;
-        // hiddenPlaceholder.style.margin = viewNodeStyle.margin;
-        // hiddenPlaceholder.style.visibility = 'hidden';
-
-        // debugger;
-        let pn = viewNode.node.getBoundingClientRect();
-
-        // debugger;
-        // pn.appendChild(hiddenPlaceholder, viewNode.getPlaceholder());
-        // viewNode.destroyed.then(function () {
-        //   pn.style.height = null;
-        // });
-        // if(config.onStart).call(this, arguments);
-      };
-    }
+    // if (config.fixedPosition) {
+    //   onStart = function (viewNode) {
+    //     // let hiddenPlaceholder = document.createElement('div');
+    //     // hiddenPlaceholder.style.backgroundColor = 'red';
+    //     // let viewNodeStyle = window.getComputedStyle(viewNode.node);
+    //     // hiddenPlaceholder.style.display = viewNodeStyle.display;
+    //     // hiddenPlaceholder.style.width = viewNodeStyle.width;
+    //     // hiddenPlaceholder.style.height = viewNodeStyle.height;
+    //     // hiddenPlaceholder.style.margin = viewNodeStyle.margin;
+    //     // hiddenPlaceholder.style.visibility = 'hidden';
+    //
+    //     // debugger;
+    //     let pn = viewNode.node.getBoundingClientRect();
+    //
+    //     // debugger;
+    //     // pn.appendChild(hiddenPlaceholder, viewNode.getPlaceholder());
+    //     // viewNode.destroyed.then(function () {
+    //     //   pn.style.height = null;
+    //     // });
+    //     // if(config.onStart).call(this, arguments);
+    //   };
+    // }
     to.onStart = onStart;
 
     let tween = null;
@@ -399,24 +399,25 @@
       am: _this,
       config: config
     };
-
+    // debugger;
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false, true, false).length === 0) {
-      // debugger;
-      // _this.lastChildPosition = 0;
       let progress = _this.timeline.progress();
-      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // _this.timeline.add(tween, _this.lastChildPosition);
-      // debugger;
+      if (config.parent) {
+        _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      } else {
+        _this.timeline.add(tween, config.position);
+      }
+
       if (!progress) {
         _this.timeline.play(0);
       }
-      // _this.calculateLastChildPosition(config.duration, config.position);
     } else {
-      // debugger;
-      _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // _this.timeline.add(tween, _this.lastChildPosition);
-      // _this.calculateLastChildPosition(config.duration, config.position);
+      // if (config.parent) {
+      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
+      // } else {
+      _this.timeline.add(tween, config.position);
+      // }
     }
   };
 
