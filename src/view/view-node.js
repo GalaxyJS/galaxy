@@ -96,7 +96,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
     _this.properties = {};
-    _this.behaviors = {};
+    // _this.behaviors = {};
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     _this.parent = null;
@@ -210,7 +210,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
         _this.callLifecycleEvent('postInsert');
         _this.hasBeenInserted();
-        _this.visible = false;
       });
 
       let animationDone;
@@ -222,9 +221,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         waitForNodeAnimation.then(next);
       });
 
-      _this.sequences.enter.nextAction(function () {
-        _this.visible = true;
-      });
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {

@@ -53,11 +53,17 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      let bindings = GV.getBindings(viewNode.schema.value);
-      let id = bindings.variableNamePaths.split('.').pop();
-      viewNode.node.addEventListener('keyup', function () {
-        dataObject[id] = viewNode.node.value;
-      });
+      const bindings = GV.getBindings(viewNode.schema.value);
+      const id = bindings.variableNamePaths.split('.').pop();
+      if (bindings.modifiers === 'number') {
+        viewNode.node.addEventListener('keyup', function () {
+          dataObject[id] = Number(viewNode.node.value) || 0;
+        });
+      } else {
+        viewNode.node.addEventListener('keyup', function () {
+          dataObject[id] = viewNode.node.value;
+        });
+      }
     }
   };
 })(Galaxy.GalaxyView);

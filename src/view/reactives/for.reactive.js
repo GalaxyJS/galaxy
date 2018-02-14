@@ -76,12 +76,6 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
-      // let processFinished;
-      // const process = new Promise(function (resolve) {
-      //   processFinished = resolve;
-      // });
-
-      // requestAnimationFrame(function () {
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
@@ -90,18 +84,14 @@
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+          // vn.data['$for'] = {};
+          // vn.data['$for'][p] = c[i];
+          // vn.data['$for']['index'] = i;
           action.call(n, vn);
         }
       }
 
-      // processFinished();
       parentNode.sequences.enter.nextAction(next);
-      // });
-
-
-      // process.then(function () {
-
-      // });
     });
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that

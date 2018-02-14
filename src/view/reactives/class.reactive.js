@@ -43,10 +43,10 @@
 
       const clone = GV.bindSubjectsToData(value, context, true);
 
-      if (_this.behaviors.hasOwnProperty('class.data') && clone !== _this.behaviors['class.data']) {
-        Galaxy.resetObjectTo(_this['class.data'], clone);
-      } else if (!_this.behaviors.hasOwnProperty('class.data')) {
-        _this.behaviors['class.data'] = clone;
+      if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
+        Galaxy.resetObjectTo(_this.setters.class['data'], clone);
+      } else if (!_this.setters.class.hasOwnProperty('data')) {
+        _this.setters.class['data'] = clone;
         // Object.defineProperty(_this, 'class.data', {
         //   value: clone,
         //   enumerable: false

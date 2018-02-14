@@ -44,7 +44,7 @@
           });
 
           sequence.next(function (done) {
-            viewNode.visible = true;
+            // viewNode.visible = true;
             if (enterAnimationConfig.sequence) {
               let animationMeta = AnimationMeta.get(enterAnimationConfig.sequence);
               // animationMeta.NODE = viewNode;

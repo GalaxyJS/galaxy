@@ -19,7 +19,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     value: null
   };
 
-  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<>\\s*([^\\[\\]]*)\\s*$');
+  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<(.*)>\\s*([^\\[\\]]*)\\s*$');
   GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
@@ -186,29 +186,37 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.getBindings = function (value) {
     let variableNamePaths = null;
     let isExpression = false;
-    let type = typeof(value);
+    const type = typeof(value);
+    let modifiers = null;
 
     if (type === 'string') {
-      variableNamePaths = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
-      variableNamePaths = variableNamePaths ? variableNamePaths[1] : null;
-
-      if (/^\s*{\s*(.*)\s*}\s*/g.test(value)) {
-        variableNamePaths = [];
-
-        let match = null;
-        const args = [];
-        let functionBody = value.match(/\s*{\s*(.*)\s*}\s*/)[1];
-        value = value.replace(/["'](.*["'])/g, '');
-        while ((match = GalaxyView.BINDING_EXPRESSION_REGEX.exec(value)) !== null) {
-          variableNamePaths.push(match[1]);
-          args.push(match[1].replace(/\./g, '_'));
-        }
-
-        functionBody = functionBody.replace(variableNamePaths, args);
-
-        isExpression = true;
-        variableNamePaths.push(new Function(args.join(','), 'return ' + functionBody + ';'));
+      const props = value.match(GalaxyView.BINDING_SYNTAX_REGEX);
+      if (props) {
+        modifiers = props[1] || null;
+        variableNamePaths = props[2];
+      } else {
+        modifiers = null;
+        variableNamePaths = null;
       }
+
+      // if (/^\s*{\s*(.*)\s*}\s*/g.test(value)) {
+      //   variableNamePaths = [];
+      //   isExpression = true;
+      //   const args = [];
+      //   const parsedValue = value.replace(/["'](.*["'])/g, '');
+      //   let match = null;
+      //   let functionBody = value.match(/\s*{\s*(.*)\s*}\s*/)[1];
+      //
+      //   while ((match = GalaxyView.BINDING_EXPRESSION_REGEX.exec(parsedValue)) !== null) {
+      //     variableNamePaths.push(match[1]);
+      //     args.push(match[1].replace(/\./g, '_'));
+      //   }
+      //
+      //   functionBody = functionBody.replace(variableNamePaths, args);
+      //
+      //
+      //   variableNamePaths.push(new Function(args.join(','), 'return ' + functionBody + ';'));
+      // }
     }
     else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
       variableNamePaths = value;
@@ -218,6 +226,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
 
     return {
+      modifiers: modifiers,
       variableNamePaths: variableNamePaths,
       isExpression: isExpression
     };
@@ -681,7 +690,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     if (behavior) {
       let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      node.behaviors[key] = (function (_behavior, _matches, _scopeData) {
+      node.setters[key] = (function (_behavior, _matches, _scopeData) {
         let _cache = {};
         if (_behavior.getCache) {
           _cache = _behavior.getCache.call(node, _matches, _scopeData);
@@ -710,7 +719,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       return setter;
     },
     'reactive': function (viewNode, property, expression) {
-      const reactiveFunction = viewNode.behaviors[property.name];
+      const reactiveFunction = viewNode.setters[property.name];
 
       if (!reactiveFunction) {
         console.error('Reactive handler not found for: ' + property.name);
@@ -805,7 +814,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         break;
 
       case 'reactive':
-        viewNode.behaviors[property.name](viewNode, value, null);
+        viewNode.setters[property.name](viewNode, value, null);
         break;
 
       case 'event':
