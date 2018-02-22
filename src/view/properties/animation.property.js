@@ -98,13 +98,15 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
 
                     if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position || '+=0');
+                      animationMeta =
+                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
+                          '+=0');
                     }
 
                     animationMeta.add(viewNode.node, classAnimationConfig, done);
@@ -122,7 +124,7 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
+                  classAnimationConfig.to = { className: '-=' + item || '' };
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);

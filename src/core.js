@@ -9,8 +9,9 @@
     let a = this.concat();
     for (let i = 0; i < a.length; ++i) {
       for (let j = i + 1; j < a.length; ++j) {
-        if (a[i] === a[j])
+        if (a[i] === a[j]) {
           a.splice(j--, 1);
+        }
       }
     }
 
@@ -45,10 +46,11 @@
     clone.__proto__ = obj.__proto__;
     for (let i in obj) {
       if (obj.hasOwnProperty(i)) {
-        if (typeof(obj[i]) === 'object' && obj[i] !== null)
+        if (typeof(obj[i]) === 'object' && obj[i] !== null) {
           clone[i] = Galaxy.clone(obj[i]);
-        else
+        } else {
           clone[i] = obj[i];
+        }
       }
     }
     return clone;
@@ -80,17 +82,19 @@
     for (let i = 1; i < arguments.length; i++) {
       obj = arguments[i];
 
-      if (!obj)
+      if (!obj) {
         continue;
+      }
 
       for (let key in obj) {
         if (obj.hasOwnProperty(key)) {
-          if (obj[key] instanceof Array)
+          if (obj[key] instanceof Array) {
             result[key] = this.extend(result[key] || [], obj[key]);
-          else if (typeof obj[key] === 'object' && obj[key] !== null)
+          } else if (typeof obj[key] === 'object' && obj[key] !== null) {
             result[key] = this.extend(result[key] || {}, obj[key]);
-          else
+          } else {
             result[key] = obj[key];
+          }
         }
       }
     }
@@ -170,9 +174,8 @@
     for (p in obj) {
       if (obj.hasOwnProperty(p)) {
         let k = prefix ? prefix + '[' + p + ']' : p, v = obj[p];
-        str.push((v !== null && typeof v === 'object') ?
-          _this.convertToURIString(v, k) :
-          encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        str.push((v !== null && typeof v === 'object') ? _this.convertToURIString(v, k) : encodeURIComponent(k) + '=' +
+          encodeURIComponent(v));
       }
     }
 
@@ -187,7 +190,6 @@
     }
 
     let promise = new Promise(function (resolve, reject) {
-
 
       if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
         module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -275,7 +277,7 @@
           }
 
           unique.push(item);
-          return {url: item};
+          return { url: item };
         }).filter(Boolean);
       } else {
         // extract imports from the source code
@@ -286,7 +288,7 @@
           let query = path.match(/([\S]+)/gm);
           let url = query[query.length - 1];
           if (unique.indexOf(url) !== -1) {
-            return 'Scope.imports[\'' + url + '\']';
+            return 'Scope.__imports__[\'' + url + '\']';
           }
 
           unique.push(url);
@@ -295,7 +297,7 @@
             fresh: query.indexOf('new') !== -1
           });
 
-          return 'Scope.imports[\'' + url + '\']';
+          return 'Scope.__imports__[\'' + url + '\']';
         });
       }
 
@@ -354,14 +356,14 @@
   GalaxyCore.prototype.executeCompiledModule = function (module) {
     let promise = new Promise(function (resolve, reject) {
       for (let item in module.addOns) {
-        module.scope.imports[item] = module.addOns[item];
+        module.scope.inject(item, module.addOns[item]);
       }
 
       for (let item in importedLibraries) {
         if (importedLibraries.hasOwnProperty(item)) {
           let asset = importedLibraries[item];
           if (asset.module) {
-            module.scope.imports[asset.name] = asset.module;
+            module.scope.inject(asset.name, asset.module);
           }
         }
       }

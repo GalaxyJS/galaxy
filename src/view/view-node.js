@@ -223,9 +223,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
-      _this.sequences.enter.nextAction(function () {
-        animationDone();
-      });
+      _this.sequences.enter.nextAction(animationDone);
     } else if (!flag && _this.node.parentNode) {
       _this.sequences.enter.truncate();
       _this.callLifecycleEvent('preRemove');
@@ -360,7 +358,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-          // debugger;
           animationDone();
         });
       }

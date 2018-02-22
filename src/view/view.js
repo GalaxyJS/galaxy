@@ -19,7 +19,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     value: null
   };
 
-  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<(.*)>\\s*([^\\[\\]]*)\\s*$');
+  GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]<>]*)>\\s*([^\\[\\]<>]*)\\s*$');
   GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
   GalaxyView.REACTIVE_BEHAVIORS = {};
@@ -880,7 +880,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = GalaxyView.getBindings(attributeValue);
-
         if (bindings.variableNamePaths) {
           GalaxyView.makeBinding(viewNode, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         } else {

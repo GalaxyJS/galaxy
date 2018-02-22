@@ -2,6 +2,8 @@
 'use strict';
 
 Galaxy.GalaxyScope = /** @class*/(function () {
+  const defineProp = Object.defineProperty;
+
   /**
    *
    * @param {Object} module
@@ -13,17 +15,32 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
-    this.imports = {};
     this.exports = {};
     this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
     this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
+
+    defineProp(this, '__imports__', {
+      value: {},
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
   }
 
+  /**
+   *
+   * @param id ID string which is going to be used for importing
+   * @param instance The assigned object to this id
+   */
+  GalaxyScope.prototype.inject = function (id, instance) {
+    this['__imports__'][id] = instance;
+  };
+
   GalaxyScope.prototype.import = function (libId) {
-    return this.imports[libId];
+    return this['__imports__'][libId];
   };
 
   GalaxyScope.prototype.destroy = function () {
