@@ -105,8 +105,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     delete obj[key];
   };
 
-  GalaxyView.createMirror = function (obj, newProp) {
-    let result = {};
+  GalaxyView.createMirror = function (obj, forObj) {
+    let result = forObj || {};
 
     defineProp(result, '__parent__', {
       enumerable: false,
@@ -448,7 +448,19 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       let boundProperty = dataObject[referenceName];
 
       if (typeof boundProperty === 'undefined') {
-        boundProperty = GalaxyView.createBoundProperty(dataObject, propertyName, aliasPropertyName, referenceName, enumerable, childProperty, initValue);
+        boundProperty =
+          GalaxyView.createBoundProperty(dataObject, propertyName, aliasPropertyName, referenceName, enumerable, childProperty, initValue);
+      }
+
+      if (initValue !== null && typeof initValue === 'object' && !(initValue instanceof Array)) {
+        if (!initValue.hasOwnProperty('__parents__')) {
+          Galaxy.GalaxyView.BoundProperty.installParentFor(initValue, boundProperty);
+        }
+        for (let key in initValue) {
+          if (initValue.hasOwnProperty(key) && !initValue.hasOwnProperty('<>' + key)) {
+            GalaxyView.createBoundProperty(initValue, key, false, '<>' + key, true, null, initValue[key]);
+          }
+        }
       }
 
       // if (dataObject['__lists__'] !== undefined) {
@@ -559,7 +571,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        const newValue = property.parser ? property.parser(value) : value;
+        const newValue = property.parser ? property.parser(value, GalaxyView.getBindings(node.schema[property.name])) : value;
         node.node[property.name] = newValue;
         node.notifyObserver(property.name, newValue, oldValue);
       }
@@ -789,7 +801,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
     // let newValue = value;
     // let parser = property.parser;
     // worker.postMessage({viewNode: viewNode});

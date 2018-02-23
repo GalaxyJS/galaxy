@@ -4,23 +4,39 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
   const GV = Galaxy.GalaxyView;
   /**
    *
-   * @param {Array} parent
+   * @param {Array|Object} host
    * @param {Galaxy.GalaxyView.BoundProperty} bp
    */
-  BoundProperty.installParentFor = function (parent, bp) {
-    let i = 0, len = parent.length, item, itemParent;
-    for (; i < len; i++) {
-      item = parent[i];
-      itemParent = item['__parents__'];
+  BoundProperty.installParentFor = function (host, bp) {
+    if (host instanceof Array) {
+      let i = 0, len = host.length, item, itemParent;
+      for (; i < len; i++) {
+        item = host[i];
+        itemParent = item['__parents__'];
+
+        if (itemParent === undefined) {
+          GV.defineProp(item, '__parents__', {
+            configurable: false,
+            enumerable: false,
+            value: [bp]
+          });
+        } else if (itemParent.indexOf(bp) === -1) {
+          itemParent.push(bp);
+        }
+      }
+    } else {
+      // debugger;
+      const itemParent = host['__parents__'];
 
       if (itemParent === undefined) {
-        GV.defineProp(item, '__parents__', {
+
+        GV.defineProp(host, '__parents__', {
           configurable: false,
           enumerable: false,
           value: [bp]
         });
       } else if (itemParent.indexOf(bp) === -1) {
-        itemParent.push(bp);
+        // itemParent.push(bp);
       }
     }
   };
@@ -121,13 +137,13 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.updateValue(change, {original: oldValue});
-      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue);
+      this.updateValue(change, { original: oldValue });
+      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue, this);
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setValueFor(this.nodes[i], this.props[i], value, oldValue, scopeData);
       }
-      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue);
+      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue, this);
 
       if (this.host['__parents__'] !== undefined) {
         this.host['__parents__'].forEach(function (con) {
@@ -171,7 +187,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
       host[attributeName] = value;
-      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue);
+      Galaxy.GalaxyObserver.notify(host, attributeName, value, oldValue, this);
     }
   };
 
@@ -186,7 +202,7 @@ Galaxy.GalaxyView.BoundProperty = /** @class */ (function () {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
       host.setters[attributeName](changes);
     } else {
-      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges);
+      Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
     }
   };
 

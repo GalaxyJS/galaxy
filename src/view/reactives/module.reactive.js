@@ -80,8 +80,12 @@
         moduleMeta = expression();
       }
 
+      if (moduleMeta === undefined) {
+        // return;
+      }
+
       if (typeof moduleMeta !== 'object') {
-        return console.error('module property only accept objects as value');
+        return console.error('module property only accept objects as value', moduleMeta);
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
