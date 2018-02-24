@@ -50,10 +50,8 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
-    // debugger
     let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
-    Galaxy.GalaxyView.link(moduleMeta, newModuleMetaData);
-    // debugger;
+    // Galaxy.GalaxyView.link(moduleMeta, newModuleMetaData);
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
     }

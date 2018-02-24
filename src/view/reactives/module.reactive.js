@@ -1,7 +1,7 @@
 /* global Galaxy */
 
 (function (GV) {
-  const loadModuleQueue = new Galaxy.GalaxySequence();
+  // const loadModuleQueue = new Galaxy.GalaxySequence();
   // loadModuleQueue.start();
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
@@ -59,12 +59,6 @@
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
     bind: function (context, value) {
-      // if (value !== null && typeof  value !== 'object') {
-      //   throw console.error('module property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
-      // }
-      //
-      // const live = GV.bindSubjectsToData(value, context, true);
-      // this.addDependedObject(live);
     },
     getCache: function (matches, scope) {
       return {
@@ -81,7 +75,7 @@
       }
 
       if (moduleMeta === undefined) {
-        // return;
+        return;
       }
 
       if (typeof moduleMeta !== 'object') {
@@ -90,36 +84,10 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
         _this.rendered.then(function () {
-          // loadModuleQueue.truncate();
-          // Add the new module request to the sequence
-          // loadModuleQueue.next(function (nextCall) {
-          // Wait till all viewNode animation are done
-          // console.info('Added to queue:', moduleMeta.id || moduleMeta.url);
-          // Empty the node and wait till all animation are finished
-          // Then load the next requested module in the queue
-          // and after that proceed to next request in the queue
-          // debugger;
           _this.renderingFlow.truncate();
-          // debugger;
           _this.clean();
 
-          moduleLoaderGenerator(_this, cache, moduleMeta)(function () {
-            // debugger;
-          });
-          // _this.renderingFlow.truncate();
-          // .next(function (done) {
-          //   debugger;
-          //   done();
-          // })
-          // .next(moduleLoaderGenerator(_this, cache, moduleMeta))
-          // .next(function (done) {
-          //   // module loader may add animations to the viewNode. if that is the case we will wait for the animations
-          //   // to finish at the beginning of the next module request
-          //   done();
-          //
-          //   // nextCall();
-          // });
-          // });
+          moduleLoaderGenerator(_this, cache, moduleMeta)(function () {});
         });
       } else if (!moduleMeta) {
         _this.clean();

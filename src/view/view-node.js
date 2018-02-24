@@ -270,7 +270,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView.BoundProperty} boundProperty
+   * @param {Galaxy.GalaxyView.ReactiveProperty} boundProperty
    * @param {string} propertyName
    * @param {Function} expression
    */
