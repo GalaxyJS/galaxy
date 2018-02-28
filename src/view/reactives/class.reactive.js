@@ -36,7 +36,7 @@
       }
 
       const clone = GV.bindSubjectsToData(value, scope, true);
-
+// debugger;
       if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
         Galaxy.resetObjectTo(_this.setters.class['data'], clone);
       } else if (!_this.setters.class.hasOwnProperty('data')) {
@@ -49,7 +49,10 @@
 
       node.setAttribute('class', []);
       const observer = new Galaxy.GalaxyObserver(clone);
+      observer._node = _this.node;
+      // debugger;
       observer.onAll(function (key, value, oldValue) {
+        // debugger
         toggles.call(_this, key, value, oldValue, clone);
       });
 
@@ -76,7 +79,9 @@
       let newClasses = [];
 
       for (let key in classes) {
-        if (classes.hasOwnProperty(key) && classes[key]) newClasses.push(key);
+        if (classes.hasOwnProperty(key) && classes[key]) {
+          newClasses.push(key);
+        }
       }
 
       return newClasses;
@@ -84,7 +89,9 @@
   }
 
   function toggles(key, value, oldValue, classes) {
-    if (oldValue === value) return;
+    if (oldValue === value) {
+      return;
+    }
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
     let newClasses = getClasses(classes);

@@ -376,6 +376,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
     _this.dependedObjects.forEach(function (item) {
       let temp = GV.getBoundProperties(item);
+      // debugger
       temp.forEach(function (property) {
         property.removeNode(item);
       });
@@ -401,13 +402,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         property.forEach(function (item) {
           if (item.nodes.indexOf(this) === -1) {
             item.nodes.push(this);
-            item.props.push(key);
+            item.keys.push(key);
           }
         });
       } else {
         if (property.value.nodes.indexOf(this) === -1) {
           property.value.nodes.push(this);
-          property.value.props.push(key);
+          property.value.keys.push(key);
         }
       }
     }

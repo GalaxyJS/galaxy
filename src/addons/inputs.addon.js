@@ -31,9 +31,9 @@
       }
       const subjects = data.subjects;
       const scope = data.scope;
-
+// debugger
       let live = GV.bindSubjectsToData(subjects, scope, true);
-
+// debugger;
       // Object.preventExtensions(live);
       // console.info(Object.isSealed(live), live);
       // if (this.virtual) {
@@ -70,7 +70,7 @@
       finalize: function () {
         // By linking the live to original we make sure that changes on the local copy of the input data will be
         // reflected to the original one
-        GV.link(scope.element.addons.inputs.live, scope.element.addons.inputs.original);
+        // GV.link(scope.element.addons.inputs.live, scope.element.addons.inputs.original);
       }
     };
   });

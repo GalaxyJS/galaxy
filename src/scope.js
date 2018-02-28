@@ -53,7 +53,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
     // Galaxy.GalaxyView.link(moduleMeta, newModuleMetaData);
     if (newModuleMetaData.url.indexOf('./') === 0) {
-      newModuleMetaData.url = this.path + moduleMeta.url.substr(2);
+      newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
     }
 
     newModuleMetaData.parentScope = this;
