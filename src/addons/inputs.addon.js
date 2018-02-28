@@ -15,11 +15,25 @@
      * @param context
      * @param value
      */
-    bind: function (context, value) {
-      if (value !== null && typeof  value !== 'object') {
+    prepareData: function (matches, scope) {
+      if (matches !== null && typeof  matches !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
-      let live = GV.bindSubjectsToData(value, context, true);
+
+      return {
+        subjects: matches,
+        scope: scope
+      };
+    },
+    install: function (data) {
+      if (this.virtual) {
+        return;
+      }
+      const subjects = data.subjects;
+      const scope = data.scope;
+
+      let live = GV.bindSubjectsToData(subjects, scope, true);
+
       // Object.preventExtensions(live);
       // console.info(Object.isSealed(live), live);
       // if (this.virtual) {
@@ -29,19 +43,20 @@
       if (this.addons.inputs && live !== this.addons.inputs.live) {
         Galaxy.resetObjectTo(this.addons.inputs, {
           live: live,
-          original: value
+          original: subjects
         });
       } else if (this.addons.inputs === undefined) {
         this.addons.inputs = {
           live: live,
-          original: value
+          original: subjects
         };
       }
 
       this.inputs = live;
       this.addDependedObject(live);
     },
-    onApply: function (cache, value, oldValue, context) {
+    apply: function (cache, value, oldValue, context) {
+
     }
   };
 

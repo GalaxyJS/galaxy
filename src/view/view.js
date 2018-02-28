@@ -126,14 +126,21 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.link = function (from, to) {
-    for (let key in from) {
-      const refKey = '<>' + key;
-      if (from.hasOwnProperty(refKey)) {
-        boundPropertyReference.value = from[refKey];
-        defineProp(to, refKey, boundPropertyReference);
-        defineProp(to, key, Object.getOwnPropertyDescriptor(from, key));
-      }
-    }
+    // for (let key in from) {
+    //   const refKey = '<>' + key;
+    //   if (from.hasOwnProperty(refKey)) {
+    //     boundPropertyReference.value = from[refKey];
+    //     defineProp(to, refKey, boundPropertyReference);
+    //     defineProp(to, key, Object.getOwnPropertyDescriptor(from, key));
+    //   }
+    // }
+
+    defineProp(to, '__medium__', {
+      writable: true,
+      configurable: true,
+      enumerable: false,
+      value: GalaxyView.getMedium(from)
+    });
   };
 
   // GalaxyView.getPropertyContainer = function (data, propertyName) {
@@ -172,17 +179,19 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.getBoundProperties = function (host) {
-    let all = Object.getOwnPropertyNames(host);
-    let visible = Object.keys(host);
-    let properties = [];
+    // let all = Object.getOwnPropertyNames(host);
+    // let visible = Object.keys(host);
+    // let prop = [];
+    //
+    // all.forEach(function (key) {
+    //   if (host[key] instanceof GalaxyView.ReactiveProperty && visible.indexOf(key) === -1) {
+    //     prop.push(host[key]);
+    //   }
+    // });
+    //
+    // return prop;
 
-    all.forEach(function (key) {
-      if (host[key] instanceof GalaxyView.ReactiveProperty && visible.indexOf(key) === -1) {
-        properties.push(host[key]);
-      }
-    });
-
-    return properties;
+    return host.__medium__ || [];
   };
 
   GalaxyView.getBindings = function (value) {
@@ -338,7 +347,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           newValueMedium.__owner__.props = newValueMedium.__owner__.props.concat(oldValueMedium.__owner__.props);
 
           medium[referenceName] = newValue.__medium__.__owner__;
-          //copy properties with same key from old value to the new value
+          //copy prop with same key from old value to the new value
           const oldKeys = Object.keys(oldValue);
           const newKeys = Object.keys(newValue);
 
@@ -531,7 +540,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       if (childProperty !== null) {
-        // if(targetKeyName === 'module')debugger;
         GalaxyView.makeBinding(target, dataObject[propertyName] || {}, targetKeyName, childProperty, expression, expressionArgumentsCount);
       }
       // Call init value only on the last variable binding,
@@ -718,76 +726,38 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {string} key
    * @param scopeData
    */
-  GalaxyView.addReactiveBehavior = function (node, key, scopeData) {
+  GalaxyView.installReactiveBehavior = function (node, key, scopeData) {
     let behavior = GalaxyView.REACTIVE_BEHAVIORS[key];
     let bindTo = node.schema[key];
 
     if (behavior) {
-      let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+      // let matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
 
-      node.setters[key] = (function (_behavior, _matches, _scopeData) {
-        let _cache = {};
-        if (_behavior.getCache) {
-          _cache = _behavior.getCache.call(node, _matches, _scopeData);
+      // node.setters[key] = (function (_behavior, _matches, _scopeData) {
+      //   let _cache = {};
+      //   if (_behavior.getCache) {
+      //     _cache = _behavior.getCache.call(node, _matches, _scopeData);
+      //   }
+
+      // return function (vn, value, oldValue, expression) {
+      //   return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData, expression);
+      // };
+      // })(behavior, matches, scopeData);
+
+      const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+      let data;
+      if (behavior.prepareData) {
+        data = behavior.prepareData.call(node, matches, scopeData);
+        if (data !== undefined) {
+          node.cache[key] = data;
         }
+      }
 
-        return function (vn, value, oldValue, expression) {
-          return _behavior.onApply.call(vn, _cache, value, oldValue, _scopeData, expression);
-        };
-      })(behavior, matches, scopeData);
-
-      behavior.bind.call(node, scopeData, matches);
+      behavior.install.call(node, data);
     }
   };
 
   GalaxyView.PROPERTY_SETTERS = {
-    'prop': function (viewNode, property, expression) {
-      const setter = GalaxyView.createPropertySetter(viewNode, property);
-
-      if (expression) {
-        return function (none, oldValue) {
-          let expressionValue = expression(none);
-          setter(expressionValue, oldValue);
-        };
-      }
-
-      return setter;
-    },
-    'reactive': function (viewNode, property, expression) {
-      const reactiveFunction = viewNode.setters[property.name];
-
-      if (!reactiveFunction) {
-        console.error('Reactive handler not found for: ' + property.name);
-      }
-
-      return function (value, oldValue) {
-        reactiveFunction(viewNode, value, oldValue, expression);
-      };
-    },
-    'custom': function (viewNode, property, expression, attributeName) {
-      const setter = GalaxyView.createCustomSetter(viewNode, attributeName, property);
-
-      if (expression) {
-        return function (none, oldValue, scopeData) {
-          let expressionValue = expression(none);
-          setter(expressionValue, oldValue, scopeData);
-        };
-      }
-
-      return setter;
-    },
-    'attr': function (viewNode, property, expression, attributeName) {
-      let parser = property.parser;
-      const setter = GalaxyView.createDefaultSetter(viewNode, attributeName, parser);
-      if (expression) {
-        return function (none, oldValue) {
-          let expressionValue = expression(none);
-          setter(expressionValue, oldValue);
-        };
-      }
-
-      return setter;
-    },
     'none': function () {
       return function () {
 
@@ -808,17 +778,16 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       property.util(viewNode, attributeName, expression, dataObject);
     }
 
-    // expressing for reactive property should be handled by that property handler
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
       return function () { };
     }
 
-    return GalaxyView.PROPERTY_SETTERS[property.type](viewNode, property, expression, attributeName);
+    return GalaxyView.PROPERTY_SETTERS[property.type](viewNode, attributeName, property, expression, dataObject);
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -830,7 +799,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         break;
 
       case 'reactive':
-        viewNode.setters[property.name](viewNode, value, null);
+        // if (attributeName === 'module') debugger;
+        //  viewNode.setters[property.name](viewNode, value, null);
+        const reactiveApply = GalaxyView.createSetter(viewNode, attributeName, null, scopeData);
+        viewNode.setters[property.name] = reactiveApply;
+        reactiveApply(value, null);
         break;
 
       case 'event':
@@ -886,7 +859,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       for (i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
-          GalaxyView.addReactiveBehavior(viewNode, attributeName, scopeData);
+          GalaxyView.installReactiveBehavior(viewNode, attributeName, scopeData);
         }
       }
 
@@ -896,6 +869,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = GalaxyView.getBindings(attributeValue);
+
         if (bindings.variableNamePaths) {
           GalaxyView.makeBinding(viewNode, scopeData, attributeName, bindings.variableNamePaths, bindings.isExpression);
         } else {

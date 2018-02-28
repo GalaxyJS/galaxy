@@ -183,7 +183,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       if (!host.setters[attributeName]) {
         return console.info(host, attributeName, value);
       }
-// if(attributeName==='module')debugger;
+
       host.setters[attributeName](value, oldValue, scopeData);
     } else {
       host[attributeName] = value;

@@ -1,8 +1,52 @@
 /* global Galaxy */
 
 (function (GV) {
-  // const loadModuleQueue = new Galaxy.GalaxySequence();
-  // loadModuleQueue.start();
+  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+    type: 'reactive',
+    name: 'module'
+  };
+
+  GV.REACTIVE_BEHAVIORS['module'] = {
+    regex: null,
+    prepareData: function (matches, scope) {
+      return {
+        module: null,
+        moduleMeta: null,
+        scope: scope
+      };
+    },
+    install: function (data) {
+
+    },
+    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression, scope) {
+      const _this = this;
+
+      if (expression) {
+        moduleMeta = expression();
+      }
+
+      if (moduleMeta === undefined) {
+        return;
+      }
+
+      if (typeof moduleMeta !== 'object') {
+        return console.error('module property only accept objects as value', moduleMeta);
+      }
+
+      if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
+        _this.rendered.then(function () {
+          _this.renderingFlow.truncate();
+          _this.clean();
+
+          moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+        });
+      } else if (!moduleMeta) {
+        _this.clean();
+      }
+
+      data.moduleMeta = moduleMeta;
+    }
+  };
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
     // viewNode.renderingFlow.truncate();
@@ -49,52 +93,6 @@
         });
       });
     };
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
-    type: 'reactive',
-    name: 'module'
-  };
-
-  GV.REACTIVE_BEHAVIORS['module'] = {
-    regex: null,
-    bind: function (context, value) {
-    },
-    getCache: function (matches, scope) {
-      return {
-        module: null,
-        moduleMeta: null,
-        scope: scope
-      };
-    },
-    onApply: function handleModule(cache, moduleMeta, oldModuleMeta, nodeScopeData, expression) {
-      const _this = this;
-
-      if (expression) {
-        moduleMeta = expression();
-      }
-
-      if (moduleMeta === undefined) {
-        return;
-      }
-
-      if (typeof moduleMeta !== 'object') {
-        return console.error('module property only accept objects as value', moduleMeta);
-      }
-
-      if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== cache.moduleMeta) {
-        _this.rendered.then(function () {
-          _this.renderingFlow.truncate();
-          _this.clean();
-
-          moduleLoaderGenerator(_this, cache, moduleMeta)(function () {});
-        });
-      } else if (!moduleMeta) {
-        _this.clean();
-      }
-
-      cache.moduleMeta = moduleMeta;
-    }
   };
 })(Galaxy.GalaxyView);
 

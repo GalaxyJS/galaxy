@@ -7,9 +7,9 @@
   };
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
-    bind: function (nodeScopeData, matches) {
+    install: function (data) {
     },
-    onApply: function (cache, value, oldValue, scopeData, expression) {
+    apply: function (data, value, oldValue, expression, scope) {
       if (expression) {
         value = expression();
       }
@@ -32,7 +32,7 @@
           // debugger;
           node.setInDOM(false);
           node.sequences.leave.next(next);
-        }        else {
+        } else {
           next();
         }
       });

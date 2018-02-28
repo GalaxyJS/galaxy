@@ -8,24 +8,18 @@
 
   GV.REACTIVE_BEHAVIORS['class'] = {
     regex: GV.BINDING_SYNTAX_REGEX,
-    /**
-     *
-     * @param scopeData
-     * @param matches
-     * @this {Galaxy.GalaxyView.ViewNode}
-     */
-    bind: function (scopeData, matches) {
+    install: function (data) {
 
     },
     /**
      *
-     * @param cache
+     * @param data
      * @param value
      * @param oldValue
-     * @param context
+     * @param scope
      * @this {Galaxy.GalaxyView.ViewNode}
      */
-    onApply: function (cache, value, oldValue, context) {
+    apply: function (data, value, oldValue, expression, scope) {
       if (this.virtual) {
         return;
       }
@@ -41,7 +35,7 @@
         return node.removeAttribute('class');
       }
 
-      const clone = GV.bindSubjectsToData(value, context, true);
+      const clone = GV.bindSubjectsToData(value, scope, true);
 
       if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
         Galaxy.resetObjectTo(_this.setters.class['data'], clone);

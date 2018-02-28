@@ -1,6 +1,55 @@
 /* global Galaxy */
 
 (function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+    type: 'reactive',
+    name: '$for'
+  };
+
+  GV.REACTIVE_BEHAVIORS['$for'] = {
+    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
+    prepareData: function (matches, scope) {
+      this.virtualize();
+
+      return {
+        propName: matches.as || matches[1],
+        nodes: [],
+        scope: scope,
+        matches: matches
+      };
+    },
+    install: function (data) {
+      if (data.matches instanceof Array) {
+        GV.makeBinding(this, data.scope, '$for', data.matches[2]);
+      } else if (data.matches) {
+        const bindings = GV.getBindings(data.matches.data);
+        if (bindings.variableNamePaths) {
+          GV.makeBinding(this, data.scope, '$for', bindings.variableNamePaths, bindings.isExpression);
+        }
+      }
+    },
+    /**
+     *
+     * @param data
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param changes
+     * @param matches
+     * @param scope
+     */
+    apply: function (data, changes, oldChanges, expression, scope) {
+      if (!changes || typeof changes === 'string') {
+        return;
+      }
+
+      if (expression) {
+        changes.params = expression();
+      }
+
+      const _this = this;
+      createResetProcess(_this, data, changes, data.scope);
+    }
+  };
+
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
@@ -83,6 +132,7 @@
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
+
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
           // vn.data['$for'] = {};
           // vn.data['$for'][p] = c[i];
@@ -101,52 +151,6 @@
     // Promise.all(parentNode.domBus).then(next);
     // });
     // });
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
-    type: 'reactive',
-    name: '$for'
-  };
-
-  GV.REACTIVE_BEHAVIORS['$for'] = {
-    regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    bind: function (nodeScopeData, matches) {
-      this.toTemplate();
-      if (matches instanceof Array) {
-        GV.makeBinding(this, nodeScopeData, '$for', matches[2]);
-      } else if (matches) {
-        const bindings = GV.getBindings(matches.data);
-        if (bindings.variableNamePaths) {
-          GV.makeBinding(this, nodeScopeData, '$for', bindings.variableNamePaths, bindings.isExpression);
-        }
-      }
-    },
-    getCache: function (matches) {
-      return {
-        propName: matches.as || matches[1],
-        nodes: []
-      };
-    },
-    /**
-     *
-     * @param cache
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param changes
-     * @param matches
-     * @param nodeScopeData
-     */
-    onApply: function (cache, changes, oldChanges, nodeScopeData, expression) {
-      if (!changes || typeof changes === 'string') {
-        return;
-      }
-
-      if (expression) {
-        changes.params = expression();
-      }
-
-      const _this = this;
-      createResetProcess(_this, cache, changes, nodeScopeData);
-    }
   };
 })(Galaxy.GalaxyView);
 

@@ -90,6 +90,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     _this.node = node || createElem(schema.tag || 'div');
     _this.schema = schema;
     _this.data = {};
+    _this.cache = {};
     _this.addons = {};
     _this.inputs = {};
     // _this.localScope = {};
@@ -176,7 +177,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     return schemaClone;
   };
 
-  ViewNode.prototype.toTemplate = function () {
+  ViewNode.prototype.virtualize = function () {
     this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
     this.virtual = true;
     this.setInDOM(false);
