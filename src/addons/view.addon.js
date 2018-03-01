@@ -5,7 +5,7 @@
   G.registerAddOnProvider('galaxy/view', function (scope) {
     return {
       create: function () {
-        let view = new Galaxy.GalaxyView(scope);
+        const view = new Galaxy.GalaxyView(scope);
 
         return view;
       },

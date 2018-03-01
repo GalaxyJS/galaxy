@@ -8,6 +8,9 @@
 
   GV.REACTIVE_BEHAVIORS['class'] = {
     regex: GV.BINDING_SYNTAX_REGEX,
+    prepareData: function () {
+
+    },
     install: function (data) {
 
     },
@@ -36,23 +39,18 @@
       }
 
       const clone = GV.bindSubjectsToData(value, scope, true);
-// debugger;
+
       if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
         Galaxy.resetObjectTo(_this.setters.class['data'], clone);
       } else if (!_this.setters.class.hasOwnProperty('data')) {
         _this.setters.class['data'] = clone;
-        // Object.defineProperty(_this, 'class.data', {
-        //   value: clone,
-        //   enumerable: false
-        // });
       }
 
       node.setAttribute('class', []);
       const observer = new Galaxy.GalaxyObserver(clone);
       observer._node = _this.node;
-      // debugger;
+
       observer.onAll(function (key, value, oldValue) {
-        // debugger
         toggles.call(_this, key, value, oldValue, clone);
       });
 

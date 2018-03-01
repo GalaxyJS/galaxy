@@ -7,6 +7,9 @@
   };
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
+    prepareData: function () {
+
+    },
     install: function (data) {
     },
     apply: function (data, value, oldValue, expression, scope) {

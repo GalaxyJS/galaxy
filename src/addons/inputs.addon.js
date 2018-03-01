@@ -20,7 +20,10 @@
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
 
+      const reactive = GV.bindSubjectsToData(matches, scope, true);
+
       return {
+        reactive: reactive,
         subjects: matches,
         scope: scope
       };
@@ -29,31 +32,15 @@
       if (this.virtual) {
         return;
       }
-      const subjects = data.subjects;
-      const scope = data.scope;
-// debugger
-      let live = GV.bindSubjectsToData(subjects, scope, true);
-// debugger;
-      // Object.preventExtensions(live);
-      // console.info(Object.isSealed(live), live);
-      // if (this.virtual) {
-      //   console.info(this);
-      // }
 
-      if (this.addons.inputs && live !== this.addons.inputs.live) {
-        Galaxy.resetObjectTo(this.addons.inputs, {
-          live: live,
-          original: subjects
-        });
-      } else if (this.addons.inputs === undefined) {
-        this.addons.inputs = {
-          live: live,
-          original: subjects
-        };
+      if (this.cache.inputs && this.cache.inputs.reactive !== data.reactive) {
+        Galaxy.resetObjectTo(this.cache.inputs, data);
+      } else if (this.cache.inputs === undefined) {
+        this.cache.inputs = data;
       }
 
-      this.inputs = live;
-      this.addDependedObject(live);
+      this.inputs = data.reactive;
+      this.addDependedObject(data.reactive);
     },
     apply: function (cache, value, oldValue, context) {
 
@@ -63,7 +50,7 @@
   Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
       create: function () {
-        scope.inputs = scope.element.addons.inputs.live;
+        scope.inputs = scope.element.cache.inputs.reactive;
 
         return scope.inputs;
       },

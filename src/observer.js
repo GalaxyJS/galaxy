@@ -4,9 +4,9 @@
 Galaxy.GalaxyObserver = /** @class */ (function () {
   const G = Galaxy;
 
-  GalaxyObserver.notify = function (obj, key, value, oldValue,caller) {
+  GalaxyObserver.notify = function (obj, key, value, oldValue, caller) {
     const observers = obj.__observers__;
-    const parents = obj.__parents__;
+    const portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
 
     if (observers !== undefined) {
       observers.forEach(function (observer) {
@@ -14,10 +14,15 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
       });
     }
 
-    if (parents !== undefined) {
-      parents.forEach(function (bp) {
-        if(bp.host[bp.name] !== caller) {
-          GalaxyObserver.notify(bp.host[bp.name], key, value, oldValue, bp.host[bp.name]);
+    if (portal !== undefined) {
+      portal.getAllOwners().forEach(function (rp) {
+        let item = rp.host[rp.name];
+        if (item !== caller) {
+          GalaxyObserver.notify(item, key, value, oldValue, item);
+        } else if (item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER]) {
+          item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].getAllOwners().forEach(function (con) {
+            con.updateValue();
+          });
         }
       });
     }
