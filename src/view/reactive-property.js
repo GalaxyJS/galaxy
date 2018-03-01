@@ -123,8 +123,8 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     }
   };
 
-  ReactiveProperty.prototype.apply = function (value, scopeData, old) {
-    let oldValue = old || this.value;
+  ReactiveProperty.prototype.apply = function (value, scopeData, oldValueOverwrite) {
+    let oldValue = oldValueOverwrite || this.value;
     this.value = value;
     if (value instanceof Array) {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
@@ -205,6 +205,15 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     } else {
       Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this);
     }
+  };
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ReactiveProperty} property
+   */
+  ReactiveProperty.prototype.concat = function (property) {
+    this.nodes = this.nodes.concat(property.nodes);
+    this.keys = this.keys.concat(property.keys);
   };
 
   return ReactiveProperty;

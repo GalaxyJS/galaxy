@@ -57,7 +57,7 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
-  Portal.prototype.addProperty = function (property, key) {
+  Portal.prototype.setProperty = function (property, key) {
     this.props[key] = property;
   };
 
@@ -66,5 +66,6 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
 
     return prop ? prop.value : undefined;
   };
+
   return Portal;
 }());

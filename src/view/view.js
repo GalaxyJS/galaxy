@@ -329,54 +329,71 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       const portal = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
       const oldValue = portal.getValueOf(referenceName);
 
+      if (oldValue === newValue) return;
+
       if (newValue && oldValue !== null && typeof oldValue === 'object') {
-        const oldValueMedium = oldValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-        let newValueMedium = newValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+        const oldValuePortal = oldValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+        let newValuePortal = newValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
 
         // newValue is a new object
-        if (!newValueMedium) {
-          newValueMedium = GalaxyView.getPortal(newValue, oldValueMedium.owner);
-          const oldKeys = Object.keys(oldValue);
-          const newKeys = Object.keys(newValue);
+        if (!newValuePortal) {
+          if (newValue instanceof Array) {
+            // GalaxyView.bindSubjectsToData(newValue, scope);
+            // debugger;
+            // newValue.forEach(function (item) {
+            //   if (typeof item === 'object' && item !== null && !item.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
+            //     GalaxyView.createReactiveProperty(initValue, key, {
+            //       enumerable: true,
+            //       initValue: initValue[key]
+            //     });
+            //   }
+            // });
+          } else {
+            newValuePortal = GalaxyView.getPortal(newValue, oldValuePortal.owner);
 
-          newKeys.forEach(function (key) {
-            // There is a property with the same key in old value
-            // setup reactive property for it
-            if (oldKeys.indexOf(key) !== -1) {
-              let value = newValue[key];
-              let setterAndGetter = Object.getOwnPropertyDescriptor(oldValue, key);
-              let property = oldValueMedium.props[key];
-              newValueMedium.props[key] = property;
-              defineProp(newValue, key, setterAndGetter);
-              property.setValue(value, scope);
-            }
-          });
-        } else if (oldValueMedium && oldValueMedium !== newValueMedium) {
-          newValueMedium.owner.nodes = newValueMedium.owner.nodes.concat(oldValueMedium.owner.nodes);
-          newValueMedium.owner.keys = newValueMedium.owner.keys.concat(oldValueMedium.owner.keys);
+            const oldKeys = Object.keys(oldValue);
+            const newKeys = Object.keys(newValue);
+            newKeys.forEach(function (key) {
+              // There is a property with the same key in old value
+              // setup reactive property for it
+              if (oldKeys.indexOf(key) !== -1) {
+                const value = newValue[key];
+                defineProp(newValue, key, Object.getOwnPropertyDescriptor(oldValue, key));
 
-          const ov = portal.props[referenceName].value;
-          portal.props[referenceName] = newValueMedium.owner;
+                const property = oldValuePortal.props[key];
+                newValuePortal.setProperty(property, key);
+                property.setValue(value, scope);
+              }
+            });
+          }
+        } else if (oldValuePortal && oldValuePortal !== newValuePortal) {
+          if (newValue instanceof Array) {
 
-          const oldKeys = Object.keys(oldValue);
-          const newKeys = Object.keys(newValue);
+          } else {
+            newValuePortal.owner.concat(oldValuePortal.owner);
 
-          newKeys.forEach(function (key) {
-            // There is a property with the same key in old value
-            // Copy its nodes to the new property
-            const oldProperty = oldValueMedium.props[key];
-            if (oldKeys.indexOf(key) !== -1 && oldProperty) {
-              const newProperty = newValueMedium.props[key];
-              oldProperty.nodes.forEach(function (node, index) {
-                newProperty.addNode(node, oldProperty.keys[index]);
-              });
+            // const oldVal = portal.getValueOf(referenceName);
+            // portal.setProperty(newValuePortal.owner, referenceName);
 
-              newProperty.apply(newProperty.value, scope);
-            }
-          });
+            const oldKeys = Object.keys(oldValue);
+            const newKeys = Object.keys(newValue);
+            newKeys.forEach(function (key) {
+              // Copy the nodes of properties with the same key in the new value to the new properties
+              const oldProperty = oldValuePortal.props[key];
+              if (oldKeys.indexOf(key) !== -1 && oldProperty) {
+                const newProperty = newValuePortal.props[key];
+                oldProperty.nodes.forEach(function (node, index) {
+                  newProperty.addNode(node, oldProperty.keys[index]);
+                });
 
-          return portal.props[referenceName].apply(newValue, scope, ov);
-        } else if (oldValueMedium === newValueMedium) {
+                newProperty.apply(newProperty.value, scope);
+              }
+            });
+
+            portal.props[referenceName].setValue(newValue, scope);
+            return portal.setProperty(newValuePortal.owner, referenceName);
+          }
+        } else if (oldValuePortal === newValuePortal) {
           return;
         }
       }
@@ -401,7 +418,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // if (reactiveProperty.name !== propertyName) {
     //   debugger;
     // }
-    portal.addProperty(reactiveProperty, propertyName);
+    portal.setProperty(reactiveProperty, propertyName);
 
     setterAndGetter.enumerable = config.enumerable;
     setterAndGetter.get = getter;
@@ -692,12 +709,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     let oldChanges = Object.assign({}, changes);
 
-    if (value['live']) {
+    if (value['reactive']) {
       return changes;
     }
 
-    let arrayProto = Array.prototype;
-    let methods = [
+    const arrayProto = Array.prototype;
+    const methods = [
       'push',
       'pop',
       'shift',
@@ -711,7 +728,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     let args;
 
     boundPropertyReference.value = true;
-    defineProp(value, 'live', boundPropertyReference);
+    defineProp(value, 'reactive', boundPropertyReference);
 
     methods.forEach(function (method) {
       let original = arrayProto[method];
@@ -813,7 +830,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
