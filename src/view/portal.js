@@ -47,12 +47,12 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
       this.owners.splice(index, 1);
     }
   };
+
   /**
    *
-   * @param property
    * @return {Array<Galaxy.GalaxyView.ReactiveProperty>}
    */
-  Portal.prototype.getPropsList = function () {
+  Portal.prototype.getPropertiesList = function () {
     let list = [];
     const keys = Object.keys(this.props);
     let i = 0;
@@ -76,6 +76,14 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
     const prop = this.props[key];
 
     return prop ? prop.value : undefined;
+  };
+
+  Portal.prototype.setValue = function (value, scope) {
+    const props = this.getPropertiesList();
+    let i = 0, len = props.length;
+    for (; i < len; i++) {
+      props[i].setValue(value, scope);
+    }
   };
 
   return Portal;

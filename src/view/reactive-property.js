@@ -12,20 +12,20 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let i = 0, len = host.length, itemPortal, ppp;
       for (; i < len; i++) {
         itemPortal = GV.getPortal(host[i]);
-        ppp = host[i]['__parents__'];
+        // ppp = host[i]['__parents__'];
 
         if (itemPortal !== undefined) {
           itemPortal.addOwner(rp);
         }
-        if (ppp === undefined) {
-          GV.defineProp(host[i], '__parents__', {
-            configurable: false,
-            enumerable: false,
-            value: [rp]
-          });
-        } else if (ppp.indexOf(rp) === -1) {
-          ppp.push(rp);
-        }
+        // if (ppp === undefined) {
+        //   GV.defineProp(host[i], '__parents__', {
+        //     configurable: false,
+        //     enumerable: false,
+        //     value: [rp]
+        //   });
+        // } else if (ppp.indexOf(rp) === -1) {
+        //   ppp.push(rp);
+        // }
       }
     } else {
       const itemPortal = GV.getPortal(host);
@@ -130,6 +130,12 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.revive = function () {
     this.value = {};
     Object.defineProperties(this.value, this.descriptors);
+
+    return this.value;
+  };
+
+  ReactiveProperty.prototype.shouldBeRevived = function () {
+    return (this.value === null || typeof this.value !== 'object') && this.descriptors;
   };
 
   ReactiveProperty.prototype.initValueFor = function (target, key, value, scopeData) {

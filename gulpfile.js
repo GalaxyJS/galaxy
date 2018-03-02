@@ -47,7 +47,8 @@ gulp.task('build-galaxy', function () {
     gulp.src(sources.galaxy),
     concat('galaxy.js'),
     gulp.dest('dist/'),
-    gulp.dest('site/galaxyjs/')
+    gulp.dest('site/galaxyjs/'),
+    gulp.dest('../imerce-viewer/assets/')
 
   ], function (error) {
     if (error) {

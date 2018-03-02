@@ -38,7 +38,10 @@
      */
     apply: function (data, changes, oldChanges, expression, scope) {
       if (!changes || typeof changes === 'string') {
-        return;
+        changes = {
+          type: 'reset',
+          params: []
+        };
       }
 
       if (expression) {
