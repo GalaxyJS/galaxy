@@ -18,6 +18,10 @@
         matches: matches
       };
     },
+    /**
+     *
+     * @param data Return of prepareData method
+     */
     install: function (data) {
       if (data.matches instanceof Array) {
         GV.makeBinding(this, data.scope, '$for', data.matches[2]);
@@ -30,10 +34,11 @@
     },
     /**
      *
-     * @param data
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @this {Galaxy.GalaxyView.ViewNode}
+     * @param data The return of prepareData
      * @param changes
-     * @param matches
+     * @param oldChanges
+     * @param expression
      * @param scope
      */
     apply: function (data, changes, oldChanges, expression, scope) {
@@ -61,7 +66,6 @@
    * @param nodeScopeData
    */
   const createResetProcess = function (node, cache, changes, nodeScopeData) {
-    // const parentNode = node.parent;
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {

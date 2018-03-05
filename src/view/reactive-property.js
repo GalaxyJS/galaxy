@@ -9,39 +9,18 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    */
   ReactiveProperty.installOwnerFor = function (host, rp) {
     if (host instanceof Array) {
-      let i = 0, len = host.length, itemPortal, ppp;
+      let i = 0, len = host.length, itemPortal;
       for (; i < len; i++) {
         itemPortal = GV.getPortal(host[i]);
-        // ppp = host[i]['__parents__'];
-
         if (itemPortal !== undefined) {
-          itemPortal.addOwner(rp);
+          itemPortal.addOwnerArray(rp);
         }
-        // if (ppp === undefined) {
-        //   GV.defineProp(host[i], '__parents__', {
-        //     configurable: false,
-        //     enumerable: false,
-        //     value: [rp]
-        //   });
-        // } else if (ppp.indexOf(rp) === -1) {
-        //   ppp.push(rp);
-        // }
       }
     } else {
       const itemPortal = GV.getPortal(host);
-
       if (itemPortal !== undefined) {
-        itemPortal.addOwner(rp);
+        itemPortal.addOwnerArray(rp);
       }
-      // if (itemParent === undefined) {
-      //   GV.defineProp(host, '__parents__', {
-      //     configurable: false,
-      //     enumerable: false,
-      //     value: [bp]
-      //   });
-      // } else if (itemParent.indexOf(bp) === -1) {
-      //   itemParent.push(bp);
-      // }
     }
   };
 
@@ -56,10 +35,6 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       itemPortal = item[GV.PORTAL_PROPERTY_IDENTIFIER];
       if (itemPortal !== undefined) {
         itemPortal.removeOwner(rp);
-        // let i = item['__parents__'].indexOf(bp);
-        // if (i !== -1) {
-        //   item['__parents__'].splice(i, 1);
-        // }
       }
     });
   };
@@ -73,16 +48,16 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    * @memberOf Galaxy.GalaxyView
    */
   function ReactiveProperty(host, name, value) {
-    this.host = host;
     this.name = name;
+
     this.value = value;
-    this.descriptors = null;
+    this.valueHost = host;
+    this.valueStructure = null;
+
     this.keys = [];
-    /**
-     *
-     * @type {Array<Galaxy.GalaxyView.ViewNode|Object>}
-     */
     this.nodes = [];
+
+    this.placeholderFor = null;
   }
 
   /**
@@ -119,12 +94,18 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   /**
-   * Save the value descriptors if it has portal(in other word, it's an object)
+   *
+   * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
-  ReactiveProperty.prototype.save = function () {
-    if (this.value && this.value.hasOwnProperty(GV.PORTAL_PROPERTY_IDENTIFIER)) {
-      this.descriptors = Object.getOwnPropertyDescriptors(this.value);
-    }
+  ReactiveProperty.prototype.removeNodesByProperty = function (property) {
+    const _this = this;
+    property.nodes.forEach(function (node) {
+      _this.removeNode(node);
+    });
+  };
+
+  ReactiveProperty.prototype.setValueStructure = function (structure) {
+    this.valueStructure = (structure !== null && typeof structure === 'object') ? structure : null;
   };
 
   ReactiveProperty.prototype.revive = function () {
@@ -141,17 +122,16 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.initValueFor = function (target, key, value, scopeData) {
     const oldValue = this.value;
     this.value = value;
-    this.save();
 
-    if (value instanceof Array) {
-      ReactiveProperty.installOwnerFor(value, this);
-      let init = GV.createActiveArray(value, this.updateValue.bind(this));
+    if (this.value instanceof Array) {
+      ReactiveProperty.installOwnerFor(this.value, this);
+      let init = GV.createActiveArray(this.value, this.updateValue.bind(this));
 
       if (target instanceof GV.ViewNode) {
         this.setUpdateFor(target, key, init);
       }
     } else {
-      this.setValueFor(target, key, value, oldValue, scopeData);
+      this.setValueFor(target, key, this.value, oldValue, scopeData);
     }
   };
 
@@ -162,19 +142,34 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
 
     const oldValue = this.value;
     this.value = value;
-    this.save();
 
     if (value instanceof Array) {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.updateValue(change, { original: oldValue });
-      Galaxy.GalaxyObserver.notify(this.host, this.name, change, oldValue, this);
+      this.updateValue(change, {original: oldValue});
+      Galaxy.GalaxyObserver.notify(this.valueHost, this.name, change, oldValue, this);
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setValueFor(this.nodes[i], this.keys[i], value, oldValue, scopeData);
       }
-      Galaxy.GalaxyObserver.notify(this.host, this.name, value, oldValue, this);
+      Galaxy.GalaxyObserver.notify(this.valueHost, this.name, value, oldValue, this);
+    }
+  };
+
+  ReactiveProperty.prototype.apply = function (value, scopeData) {
+    const oldValue = this.value;
+    if (value instanceof Array) {
+      let change = GV.createActiveArray(value, this.updateValue.bind(this));
+      change.type = 'reset';
+      change.result = oldValue;
+      this.updateValue(change, {original: oldValue});
+      Galaxy.GalaxyObserver.notify(this.valueHost, this.name, change, oldValue, this);
+    } else {
+      for (let i = 0, len = this.nodes.length; i < len; i++) {
+        this.setValueFor(this.nodes[i], this.keys[i], value, oldValue, scopeData);
+      }
+      Galaxy.GalaxyObserver.notify(this.valueHost, this.name, value, oldValue, this);
     }
   };
 
@@ -238,6 +233,17 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.concat = function (property) {
     this.nodes = this.nodes.concat(property.nodes);
     this.keys = this.keys.concat(property.keys);
+  };
+
+  ReactiveProperty.prototype.clone = function (host) {
+    const clone = new Galaxy.GalaxyView.ReactiveProperty(host, this.name, null);
+    clone.concat(this);
+
+    return clone;
+  };
+
+  ReactiveProperty.prototype.removePlaceholder = function () {
+    this.placeholderFor = null;
   };
 
   return ReactiveProperty;

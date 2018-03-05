@@ -7,8 +7,9 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    * @constructor
    */
   function Portal(owner) {
+    /** @type Galaxy.GalaxyView.ReactiveProperty */
     this.owner = null;
-    this.owners = [];
+    this.arrays = [];
     this.props = {};
 
     this.setOwner(owner);
@@ -17,23 +18,22 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   Portal.prototype.setOwner = function (owner) {
     if (owner) {
       this.removeOwner(this.owner);
-      this.addOwner(owner);
     }
 
     this.owner = owner;
   };
 
-  Portal.prototype.getAllOwners = function () {
-    return this.owners;
+  Portal.prototype.getArrays = function () {
+    return this.arrays;
   };
 
   /**
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} owner
    */
-  Portal.prototype.addOwner = function (owner) {
-    if (this.owners.indexOf(owner) === -1) {
-      this.owners.push(owner);
+  Portal.prototype.addOwnerArray = function (owner) {
+    if (this.arrays.indexOf(owner) === -1) {
+      this.arrays.push(owner);
     }
   };
 
@@ -42,9 +42,9 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    * @param {Galaxy.GalaxyView.ReactiveProperty} owner
    */
   Portal.prototype.removeOwner = function (owner) {
-    let index = this.owners.indexOf(owner);
+    let index = this.arrays.indexOf(owner);
     if (index !== -1) {
-      this.owners.splice(index, 1);
+      this.arrays.splice(index, 1);
     }
   };
 
