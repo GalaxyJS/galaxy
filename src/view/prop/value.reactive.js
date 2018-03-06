@@ -16,7 +16,7 @@
       }
 
       const bindings = GV.getBindings(viewNode.schema.value);
-      const id = bindings.variableNamePaths.split('.').pop();
+      const id = bindings.propertyKeysPaths.split('.').pop();
       if (bindings.modifiers === 'number') {
         viewNode.node.addEventListener('keyup', function () {
           dataObject[id] = viewNode.node.value ? Number(viewNode.node.value) : null;

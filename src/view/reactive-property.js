@@ -44,10 +44,11 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    * @param {Object} host
    * @param {string} name
    * @param {*} value
+   * @param {any?} valueStructure
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
-  function ReactiveProperty(host, name, value) {
+  function ReactiveProperty(host, name, value, valueStructure) {
     this.name = name;
 
     this.value = value;
@@ -58,6 +59,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.nodes = [];
 
     this.placeholderFor = null;
+    this.valueStructure = valueStructure || null;
   }
 
   /**
@@ -147,7 +149,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.updateValue(change, {original: oldValue});
+      this.updateValue(change, { original: oldValue });
       Galaxy.GalaxyObserver.notify(this.valueHost, this.name, change, oldValue, this);
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
@@ -163,7 +165,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.updateValue.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.updateValue(change, {original: oldValue});
+      this.updateValue(change, { original: oldValue });
       Galaxy.GalaxyObserver.notify(this.valueHost, this.name, change, oldValue, this);
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
@@ -186,6 +188,12 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
 
     for (let i = 0, len = this.nodes.length; i < len; i++) {
       this.setUpdateFor(this.nodes[i], this.keys[i], changes, oldChanges);
+    }
+  };
+
+  ReactiveProperty.prototype.update = function () {
+    for (let i = 0, len = this.nodes.length; i < len; i++) {
+      this.setUpdateFor(this.nodes[i], this.keys[i], this.value, null);
     }
   };
 
@@ -238,6 +246,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.clone = function (host) {
     const clone = new Galaxy.GalaxyView.ReactiveProperty(host, this.name, null);
     clone.concat(this);
+    clone.valueStructure = this.valueStructure;
 
     return clone;
   };

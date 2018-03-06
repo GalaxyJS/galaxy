@@ -24,11 +24,11 @@
      */
     install: function (data) {
       if (data.matches instanceof Array) {
-        GV.makeBinding(this, data.scope, '$for', data.matches[2]);
+        GV.makeBinding(this, '$for', data.scope, data.matches[2]);
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
-        if (bindings.variableNamePaths) {
-          GV.makeBinding(this, data.scope, '$for', bindings.variableNamePaths, bindings.isExpression);
+        if (bindings.propertyKeysPaths) {
+          GV.makeBinding(this, '$for', data.scope, bindings);
         }
       }
     },

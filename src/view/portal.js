@@ -24,6 +24,9 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   };
 
   Portal.prototype.getArrays = function () {
+    if (this.owner) {
+      return this.arrays.concat(this.owner);
+    }
     return this.arrays;
   };
 

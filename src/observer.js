@@ -15,16 +15,19 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     }
 
     if (portal !== undefined) {
-
       portal.getArrays().forEach(function (rp) {
         let item = rp.valueHost[rp.name];
         if (item !== caller) {
           GalaxyObserver.notify(item, key, value, oldValue, item);
         } else if (item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER]) {
-          if(key==='children') debugger
+          if (key === 'children') {
+            debugger
+          }
           item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].getArrays().forEach(function (con) {
-            if(key==='children') debugger
-            con.updateValue();
+            if (key === 'children') {
+              debugger
+            }
+            con.update();
           });
         }
       });
