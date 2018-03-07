@@ -5,31 +5,36 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
   const G = Galaxy;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue, caller) {
-    const observers = obj.__observers__;
-    const portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-
-    if (observers !== undefined) {
-      observers.forEach(function (observer) {
-        observer.notify(key, value, oldValue);
-      });
+    // const observers = obj.__observers__;
+    let portal;
+    if (obj instanceof Galaxy.GalaxyView.Portal) {
+      portal = obj;
+    } else {
+      portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
     }
 
+    // if (observers !== undefined) {
+    //   observers.forEach(function (observer) {
+    //     observer.notify(key, value, oldValue);
+    //   });
+    // }
+
     if (portal !== undefined) {
-      portal.getArrays().forEach(function (rp) {
-        let item = rp.valueHost[rp.name];
-        if (item !== caller) {
-          GalaxyObserver.notify(item, key, value, oldValue, item);
-        } else if (item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER]) {
-          if (key === 'children') {
-            debugger
-          }
-          item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].getArrays().forEach(function (con) {
-            if (key === 'children') {
-              debugger
-            }
-            con.update();
-          });
-        }
+      // debugger;
+      portal.getParents().forEach(function (reactive) {
+        let item = reactive.portal.props[reactive.name];
+        // if (item.portal !== caller) {
+        //   debugger
+        //   GalaxyObserver.notify(item.portal, key, value, oldValue, item.portal);
+        // } else if (item.portal) {
+        //   debugger
+        //   item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].getArrays().forEach(function (con) {
+        //     if (key === 'children') {
+        //       debugger
+        //     }
+        //     con.refresh();
+        //   });
+        // }
       });
     }
   };

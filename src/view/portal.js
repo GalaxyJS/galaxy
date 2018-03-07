@@ -3,40 +3,37 @@
 Galaxy.GalaxyView.Portal = /** @class */(function () {
   /**
    *
-   * @param owner
    * @constructor
    */
-  function Portal(owner) {
+  function Portal() {
     /** @type Galaxy.GalaxyView.ReactiveProperty */
-    this.owner = null;
-    this.arrays = [];
+    this.parents = [];
     this.props = {};
-
-    this.setOwner(owner);
   }
 
-  Portal.prototype.setOwner = function (owner) {
-    if (owner) {
-      this.removeOwner(this.owner);
-    }
+  //
+  // Portal.prototype.setOwner = function (owner) {
+  //   if (owner) {
+  //     this.removeOwner(this.owner);
+  //   }
+  //
+  //   this.owner = owner;
+  // };
 
-    this.owner = owner;
-  };
-
-  Portal.prototype.getArrays = function () {
+  Portal.prototype.getParents = function () {
     if (this.owner) {
-      return this.arrays.concat(this.owner);
+      return this.parents.concat(this.owner);
     }
-    return this.arrays;
+    return this.parents;
   };
 
   /**
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} owner
    */
-  Portal.prototype.addOwnerArray = function (owner) {
-    if (this.arrays.indexOf(owner) === -1) {
-      this.arrays.push(owner);
+  Portal.prototype.addParent = function (owner) {
+    if (this.parents.indexOf(owner) === -1) {
+      this.parents.push(owner);
     }
   };
 
@@ -44,10 +41,10 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} owner
    */
-  Portal.prototype.removeOwner = function (owner) {
-    let index = this.arrays.indexOf(owner);
+  Portal.prototype.removeParent = function (owner) {
+    let index = this.parents.indexOf(owner);
     if (index !== -1) {
-      this.arrays.splice(index, 1);
+      this.parents.splice(index, 1);
     }
   };
 

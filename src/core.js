@@ -6,9 +6,9 @@
  */
 (function (root) {
   Array.prototype.unique = function () {
-    let a = this.concat();
-    for (let i = 0; i < a.length; ++i) {
-      for (let j = i + 1; j < a.length; ++j) {
+    const a = this.concat();
+    for (let i = 0, lenI = a.length; i < lenI; ++i) {
+      for (let j = i + 1, lenJ = a.length; j < lenJ; ++j) {
         if (a[i] === a[j]) {
           a.splice(j--, 1);
         }
