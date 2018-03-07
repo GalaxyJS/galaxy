@@ -54,13 +54,13 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.oldValue = undefined;
     this.value = value;
     this.portal = portal;
-    this.valueStructure = null;
+    this.structure = null;
 
     this.keys = [];
     this.nodes = [];
 
     this.placeholderFor = null;
-    this.valueStructure = valueStructure || null;
+    this.structure = valueStructure || null;
   }
 
   /**
@@ -108,7 +108,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.setValueStructure = function (structure) {
-    this.valueStructure = (structure !== null && typeof structure === 'object' && !(structure instanceof Array)) ? structure : null;
+    this.structure = (structure !== null && typeof structure === 'object' && !(structure instanceof Array)) ? structure : null;
   };
 
   ReactiveProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -227,7 +227,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.clone = function (portal) {
     const clone = new Galaxy.GalaxyView.ReactiveProperty(portal, this.name, null);
     clone.concat(this);
-    clone.valueStructure = this.valueStructure;
+    clone.structure = this.structure;
 
     return clone;
   };
