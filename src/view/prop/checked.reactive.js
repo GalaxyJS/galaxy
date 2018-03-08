@@ -12,7 +12,7 @@
       }
 
       const bindings = GV.getBindings(viewNode.schema.checked);
-      const id = bindings.propertyKeysPaths.split('.').pop();
+      const id = bindings.propertyKeysPaths[0].split('.').pop();
       viewNode.node.addEventListener('change', function () {
         dataObject[id] = viewNode.node.checked;
       });

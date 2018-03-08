@@ -54,13 +54,13 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.oldValue = undefined;
     this.value = value;
     this.portal = portal;
-    this.structure = null;
+    this.valueStructure = null;
 
     this.keys = [];
     this.nodes = [];
 
     this.placeholderFor = null;
-    this.structure = valueStructure || null;
+    this.valueStructure = valueStructure || null;
   }
 
   /**
@@ -70,13 +70,13 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    * @param {Function} expression
    * @public
    */
-  ReactiveProperty.prototype.addNode = function (node, attributeName, expression) {
+  ReactiveProperty.prototype.addNode = function (node, attributeName, expression,scope) {
     let index = this.nodes.indexOf(node);
     // Check if the node with the same property already exist
     // Insure that same node with different property bind can exist
     if (index === -1 || this.keys[index] !== attributeName) {
       if (node instanceof Galaxy.GalaxyView.ViewNode && !node.setters[attributeName]) {
-        node.installPropertySetter(this, attributeName, expression);
+        node.installPropertySetter(this, attributeName, expression,scope);
       }
 
       this.keys.push(attributeName);
@@ -108,7 +108,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.setValueStructure = function (structure) {
-    this.structure = (structure !== null && typeof structure === 'object' && !(structure instanceof Array)) ? structure : null;
+    this.valueStructure = (structure !== null && typeof structure === 'object') ? structure : null;
   };
 
   ReactiveProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -132,10 +132,6 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       return;
     }
 
-    if (this.name === 'personOne') {
-      debugger;
-    }
-
     const oldValue = this.oldValue = this.value;
     this.value = value;
     if (value instanceof Array) {
@@ -145,13 +141,35 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       this.updateValue(change, { original: oldValue });
       Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue, this.portal);
     } else {
-      if (this.name === 'personOne') {
-        debugger;
-      }
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setValueFor(this.nodes[i], this.keys[i], value, oldValue, scopeData);
       }
       Galaxy.GalaxyObserver.notify(this.portal, this.name, value, oldValue, this.portal);
+    }
+  };
+
+  ReactiveProperty.prototype.applyValue = function (value, scopeData) {
+    let oldValue = this.oldValue;
+    if (value !== this.value) {
+      oldValue = this.oldValue = this.value;
+    }
+
+    this.value = value;
+    if (value instanceof Array) {
+      let change = GV.createActiveArray(value, this.updateValue.bind(this));
+      change.type = 'reset';
+      change.result = oldValue;
+      this.updateValue(change, { original: oldValue });
+      Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue, this.portal);
+    } else {
+      let i = 0, len = this.nodes.length;
+      for (; i < len; i++) {
+        this.setValueFor(this.nodes[i], this.keys[i], value, oldValue, scopeData);
+      }
+
+      if (len === 0) {
+        Galaxy.GalaxyObserver.notify(this.portal, this.name, value, oldValue, this.portal);
+      }
     }
   };
 
@@ -175,6 +193,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     for (let i = 0, len = this.nodes.length; i < len; i++) {
       this.setUpdateFor(this.nodes[i], this.keys[i], this.value, this.oldValue);
     }
+    // this.applyValue(this.value);
   };
 
   /**
@@ -208,7 +227,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    */
   ReactiveProperty.prototype.setUpdateFor = function (host, attributeName, changes, oldChanges) {
     if (host instanceof Galaxy.GalaxyView.ViewNode) {
-      host.setters[attributeName](changes);
+      host.setters[attributeName](changes, oldChanges);
     } else {
       // host[attributeName]=changes;
       Galaxy.GalaxyObserver.notify(host, attributeName, changes, oldChanges, this.portal);
@@ -227,7 +246,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   ReactiveProperty.prototype.clone = function (portal) {
     const clone = new Galaxy.GalaxyView.ReactiveProperty(portal, this.name, null);
     clone.concat(this);
-    clone.structure = this.structure;
+    clone.valueStructure = this.valueStructure;
 
     return clone;
   };
