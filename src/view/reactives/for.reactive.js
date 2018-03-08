@@ -24,7 +24,11 @@
      */
     install: function (data) {
       if (data.matches instanceof Array) {
-        GV.makeBinding(this, '$for', data.scope, data.matches[2]);
+        GV.makeBinding(this, '$for', data.scope, {
+          isExpression: false,
+          modifiers: null,
+          propertyKeysPaths: [data.matches[2]]
+        });
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
@@ -61,16 +65,16 @@
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param cache
+   * @param data
    * @param changes
    * @param nodeScopeData
    */
-  const createResetProcess = function (node, cache, changes, nodeScopeData) {
+  const createResetProcess = function (node, data, changes, nodeScopeData) {
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
-        GV.ViewNode.destroyNodes(node, cache.nodes.reverse());
-        cache.nodes = [];
+        GV.ViewNode.destroyNodes(node, data.nodes.reverse());
+        data.nodes = [];
 
         node.parent.sequences.leave.nextAction(function () {
           next();
@@ -81,14 +85,14 @@
       changes.type = 'push';
 
       if (changes.params.length) {
-        createPushProcess(node, cache, changes, nodeScopeData);
+        createPushProcess(node, data, changes, nodeScopeData);
       }
     } else {
-      createPushProcess(node, cache, changes, nodeScopeData);
+      createPushProcess(node, data, changes, nodeScopeData);
     }
   };
 
-  const createPushProcess = function (node, cache, changes, nodeScopeData) {
+  const createPushProcess = function (node, data, changes, nodeScopeData) {
     const parentNode = node.parent;
     let position = null;
     let newItems = [];
@@ -96,39 +100,39 @@
 
     node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
-        let length = cache.nodes.length;
+        let length = data.nodes.length;
         if (length) {
-          position = cache.nodes[length - 1].getPlaceholder().nextSibling;
+          position = data.nodes[length - 1].getPlaceholder().nextSibling;
         } else {
           position = node.placeholder.nextSibling;
         }
 
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = cache.nodes[0] ? cache.nodes[0].getPlaceholder() : null;
+        position = data.nodes[0] ? data.nodes[0].getPlaceholder() : null;
         newItems = changes.params;
         action = Array.prototype.unshift;
       } else if (changes.type === 'splice') {
-        let removedItems = Array.prototype.splice.apply(cache.nodes, changes.params.slice(0, 2));
+        let removedItems = Array.prototype.splice.apply(data.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
         removedItems.forEach(function (node) {
           node.destroy();
         });
       } else if (changes.type === 'pop') {
-        cache.nodes.pop().destroy();
+        data.nodes.pop().destroy();
       } else if (changes.type === 'shift') {
-        cache.nodes.shift().destroy();
+        data.nodes.shift().destroy();
       } else if (changes.type === 'sort' || changes.type === 'reverse') {
-        cache.nodes.forEach(function (viewNode) {
+        data.nodes.forEach(function (viewNode) {
           viewNode.destroy();
         });
 
-        cache.nodes = [];
+        data.nodes = [];
         newItems = changes.original;
       }
 
       let itemDataScope = nodeScopeData;
-      let p = cache.propName, n = cache.nodes, cns;
+      let p = data.propName, n = data.nodes, cns;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
@@ -139,11 +143,7 @@
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
-
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
-          // vn.data['$for'] = {};
-          // vn.data['$for'][p] = c[i];
-          // vn.data['$for']['index'] = i;
           action.call(n, vn);
         }
       }

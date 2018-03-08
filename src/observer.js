@@ -5,35 +5,50 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
   const G = Galaxy;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue, caller) {
-    // const observers = obj.__observers__;
+    const observers = obj.__observers__;
     let portal;
     if (obj instanceof Galaxy.GalaxyView.Portal) {
       portal = obj;
     } else {
       portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
     }
-
-    // if (observers !== undefined) {
-    //   observers.forEach(function (observer) {
-    //     observer.notify(key, value, oldValue);
-    //   });
-    // }
+// debugger;
+    if (observers !== undefined) {
+      observers.forEach(function (observer) {
+        observer.notify(key, value, oldValue);
+      });
+    }
 
     if (portal !== undefined) {
       // debugger;
       portal.getParents().forEach(function (reactive) {
-        let item = reactive.portal.props[reactive.name];
+        // portal;
+        // key;
+        // caller
+        // console.info(reactive.portal === caller, portal === caller);
+        //
+        // if (portal !== caller) {
+        //   debugger;
+        //   reactive.refresh();
+        // } else {
+        //   debugger;
+        //   // GalaxyObserver.notify(reactive.portal, key, value, oldValue, caller);
+        // }
+
+        // let item = reactive.portal.props[reactive.name];
+        // // let item = reactive.portal;
         // if (item.portal !== caller) {
         //   debugger
-        //   GalaxyObserver.notify(item.portal, key, value, oldValue, item.portal);
-        // } else if (item.portal) {
+        //   GalaxyObserver.notify(item.valueStructure, key, value, oldValue, item.portal);
+        // } else {
+        //   item.valueStructure
         //   debugger
-        //   item[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].getArrays().forEach(function (con) {
-        //     if (key === 'children') {
-        //       debugger
-        //     }
-        //     con.refresh();
-        //   });
+        //   // item.valueStructure[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props.forEach(function (con) {
+        //   //   if (key === 'children') {
+        //   //     debugger
+        //   //   }
+        //   //   con.refresh();
+        //   // });
         // }
       });
     }
