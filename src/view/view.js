@@ -414,8 +414,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           }
 
           referencePortalProperty.placeholderFor = newValue;
+          referencePortalProperty.portal.addParent(newValue.__portal__.parents[0]);
           const oldKeys = Object.keys(valueStructure);
-          // debugger;
+          debugger;
           oldKeys.forEach(function (key) {
             valueStructure[key] = newValue[key];
           });

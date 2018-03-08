@@ -13,6 +13,7 @@ module.exports = function (config) {
     frameworks: ['jasmine'],
 
     plugins: [
+      require('karma-babel-preprocessor'),
       require('karma-jasmine'),
       require('karma-phantomjs-launcher'),
       require('karma-jasmine-html-reporter')
@@ -20,8 +21,8 @@ module.exports = function (config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'node_modules/babel-polyfill/dist/polyfill.js',
       'dist/galaxy.js',
-      'node_modules/fetch-mock/es5/client-browserified.js',
       'spec/**/*.spec.js'
     ],
 
@@ -32,8 +33,22 @@ module.exports = function (config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       // 'spec/**/*.spec.js': [require('browserify')]
+      'dist/galaxy.js': ['babel'],
+      'spec/**/*.spec.js': ['babel']
     },
 
+    babelPreprocessor: {
+      options: {
+        presets: ['es2015'],
+        sourceMap: 'inline'
+      },
+      filename: function (file) {
+        return file.originalPath.replace(/\.js$/, '.es5.js');
+      },
+      sourceFileName: function (file) {
+        return file.originalPath;
+      }
+    },
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter

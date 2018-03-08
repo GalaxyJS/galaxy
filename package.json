@@ -20,7 +20,7 @@
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
-    "babel-preset-env": "^1.6.0",
+    "babel-preset-env": "^1.6.1",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-es2015-script": "^1.1.0",
     "chai": "^3.5.0",
@@ -44,6 +44,7 @@
     "jasmine": "^2.99.0",
     "jasmine-core": "^2.99.1",
     "karma": "^1.7.1",
+    "karma-babel-preprocessor": "^7.0.0",
     "karma-browserify": "^5.1.1",
     "karma-jasmine": "^1.1.1",
     "karma-jasmine-html-reporter": "^0.2.2",

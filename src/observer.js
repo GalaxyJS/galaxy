@@ -18,38 +18,23 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
         observer.notify(key, value, oldValue);
       });
     }
-
+    debugger;
     if (portal !== undefined) {
-      // debugger;
-      portal.getParents().forEach(function (reactive) {
-        // portal;
-        // key;
-        // caller
-        // console.info(reactive.portal === caller, portal === caller);
-        //
-        // if (portal !== caller) {
-        //   debugger;
-        //   reactive.refresh();
-        // } else {
-        //   debugger;
-        //   // GalaxyObserver.notify(reactive.portal, key, value, oldValue, caller);
-        // }
 
-        // let item = reactive.portal.props[reactive.name];
-        // // let item = reactive.portal;
-        // if (item.portal !== caller) {
-        //   debugger
-        //   GalaxyObserver.notify(item.valueStructure, key, value, oldValue, item.portal);
-        // } else {
-        //   item.valueStructure
-        //   debugger
-        //   // item.valueStructure[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].props.forEach(function (con) {
-        //   //   if (key === 'children') {
-        //   //     debugger
-        //   //   }
-        //   //   con.refresh();
-        //   // });
-        // }
+      portal.getParents().forEach(function (reactive) {
+        portal;
+        obj;
+        key;
+        value;
+        console.info(reactive.portal !== caller);
+        // debugger;
+        // reactive.refresh();
+        if (reactive.portal !== caller) {
+          GalaxyObserver.notify(reactive.portal, key, value, oldValue, reactive.portal);
+        } else {
+          // debugger;
+        }
+
       });
     }
   };
