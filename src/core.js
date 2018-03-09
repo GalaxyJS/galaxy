@@ -1,6 +1,5 @@
 /* global Galaxy, Promise */
 'use strict';
-
 /**
  * @exports Galaxy
  */

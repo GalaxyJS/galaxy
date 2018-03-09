@@ -13,15 +13,17 @@ module.exports = function (config) {
     frameworks: ['jasmine'],
 
     plugins: [
-      require('karma-babel-preprocessor'),
+      // require('karma-babel-preprocessor'),
       require('karma-jasmine'),
       require('karma-phantomjs-launcher'),
+      require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter')
     ],
 
     // list of files / patterns to load in the browser
     files: [
-      'node_modules/babel-polyfill/dist/polyfill.js',
+      // 'node_modules/babel-polyfill/dist/polyfill.js',
+      // 'src/polyfills/promise.js',
       'dist/galaxy.js',
       'spec/**/*.spec.js'
     ],
@@ -33,22 +35,22 @@ module.exports = function (config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       // 'spec/**/*.spec.js': [require('browserify')]
-      'dist/galaxy.js': ['babel'],
-      'spec/**/*.spec.js': ['babel']
+      // 'dist/galaxy.js': ['babel'],
+      // 'spec/**/*.spec.js': ['babel']
     },
 
-    babelPreprocessor: {
-      options: {
-        presets: ['es2015'],
-        sourceMap: 'inline'
-      },
-      filename: function (file) {
-        return file.originalPath.replace(/\.js$/, '.es5.js');
-      },
-      sourceFileName: function (file) {
-        return file.originalPath;
-      }
-    },
+    // babelPreprocessor: {
+    //   options: {
+    //     presets: ['es2015'],
+    //     sourceMap: 'inline'
+    //   },
+    //   filename: function (file) {
+    //     return file.originalPath.replace(/\.js$/, '.es5.js');
+    //   },
+    //   sourceFileName: function (file) {
+    //     return file.originalPath;
+    //   }
+    // },
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
@@ -69,7 +71,7 @@ module.exports = function (config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

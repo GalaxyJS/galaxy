@@ -8,7 +8,7 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   function Portal() {
     /** @type Galaxy.GalaxyView.ReactiveProperty */
     this.parents = [];
-    this.props = {};
+    this.refs = {};
   }
 
   //
@@ -21,9 +21,6 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   // };
 
   Portal.prototype.getParents = function () {
-    if (this.owner) {
-      return this.parents.concat(this.owner);
-    }
     return this.parents;
   };
 
@@ -54,11 +51,11 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    */
   Portal.prototype.getPropertiesList = function () {
     let list = [];
-    const keys = Object.keys(this.props);
+    const keys = Object.keys(this.refs);
     let i = 0;
 
     for (const len = keys.length; i < len; i++) {
-      list.push(this.props[keys[i]]);
+      list.push(this.refs[keys[i]]);
     }
 
     return list;
@@ -69,11 +66,11 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
   Portal.prototype.setProperty = function (property, key) {
-    this.props[key] = property;
+    this.refs[key] = property;
   };
 
   Portal.prototype.getValueOf = function (key) {
-    const prop = this.props[key];
+    const prop = this.refs[key];
 
     return prop ? prop.value : undefined;
   };

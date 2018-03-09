@@ -275,9 +275,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {string} propertyName
    * @param {Function} expression
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression,scope) {
-    // This cause memory leak for expressions
-    let exist = this.properties[boundProperty.name];
+  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, scope, expression) {
+    const exist = this.properties[boundProperty.name];
     if (exist) {
       if (exist.indexOf(boundProperty) === -1) {
         exist.push(boundProperty);
@@ -286,7 +285,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       this.properties[boundProperty.name] = [boundProperty];
     }
 
-    this.setters[propertyName] = GV.createSetter(this, propertyName, expression,scope);
+    this.setters[propertyName] = GV.createSetter(this, propertyName, expression, scope);
     if (!this.setters[propertyName]) {
       const _this = this;
       this.setters[propertyName] = function () {

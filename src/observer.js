@@ -12,29 +12,20 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     } else {
       portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
     }
-// debugger;
+
     if (observers !== undefined) {
       observers.forEach(function (observer) {
         observer.notify(key, value, oldValue);
       });
     }
-    debugger;
+
     if (portal !== undefined) {
-
       portal.getParents().forEach(function (reactive) {
-        portal;
-        obj;
-        key;
-        value;
-        console.info(reactive.portal !== caller);
-        // debugger;
-        // reactive.refresh();
+        // console.info(reactive.portal !== caller);
+        // TODO: this if could be removed but more test is needed
         if (reactive.portal !== caller) {
-          GalaxyObserver.notify(reactive.portal, key, value, oldValue, reactive.portal);
-        } else {
-          // debugger;
+          reactive.notify(caller);
         }
-
       });
     }
   };

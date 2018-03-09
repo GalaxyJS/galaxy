@@ -5,14 +5,7 @@ Galaxy.GalaxyView.PROPERTY_SETTERS.custom = function (viewNode, attrName, proper
 
   if (expression) {
     return function (none, oldValue, scopeData) {
-      console.info('none->', none, oldValue, scopeData);
-      // if (scopeData && scopeData.hasOwnProperty('personOne')) {
-      //   let asd = expression(none);
-      //   viewNode
-      //
-      // }
-      // debugger;
-      let expressionValue = expression(none);
+      const expressionValue = expression(none);
       setter(expressionValue, oldValue, scopeData);
     };
   }

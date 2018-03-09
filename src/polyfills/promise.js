@@ -1,18 +1,20 @@
 /* eslint-disable */
-/**
- * @link https://github.com/taylorhakes/promise-polyfill
- */
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined'
+    ? module.exports = factory()
+    : typeof define === 'function' && define.amd
+    ? define(factory)
+    : (global.Promise = factory());
+}(this, (function () {
+  'use strict';
 
-
-(function (root) {
-
-  // Store setTimeout reference so promise-polyfill will be unaffected by
-  // other code modifying setTimeout (like sinon.useFakeTimers())
+// Store setTimeout reference so promise-polyfill will be unaffected by
+// other code modifying setTimeout (like sinon.useFakeTimers())
   var setTimeoutFunc = setTimeout;
 
   function noop() {}
 
-  // Polyfill for Function.prototype.bind
+// Polyfill for Function.prototype.bind
   function bind(fn, thisArg) {
     return function () {
       fn.apply(thisArg, arguments);
@@ -20,8 +22,12 @@
   }
 
   function Promise(fn) {
-    if (typeof this !== 'object') throw new TypeError('Promises must be constructed via new');
-    if (typeof fn !== 'function') throw new TypeError('not a function');
+    if (!(this instanceof Promise)) {
+      throw new TypeError('Promises must be constructed via new');
+    }
+    if (typeof fn !== 'function') {
+      throw new TypeError('not a function');
+    }
     this._state = 0;
     this._handled = false;
     this._value = undefined;
@@ -59,8 +65,13 @@
   function resolve(self, newValue) {
     try {
       // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
-      if (newValue === self) throw new TypeError('A promise cannot be resolved with itself.');
-      if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
+      if (newValue === self) {
+        throw new TypeError('A promise cannot be resolved with itself.');
+      }
+      if (
+        newValue &&
+        (typeof newValue === 'object' || typeof newValue === 'function')
+      ) {
         var then = newValue.then;
         if (newValue instanceof Promise) {
           self._state = 3;
@@ -88,7 +99,7 @@
 
   function finale(self) {
     if (self._state === 2 && self._deferreds.length === 0) {
-      Promise._immediateFn(function() {
+      Promise._immediateFn(function () {
         if (!self._handled) {
           Promise._unhandledRejectionFn(self._value);
         }
@@ -116,17 +127,26 @@
   function doResolve(fn, self) {
     var done = false;
     try {
-      fn(function (value) {
-        if (done) return;
-        done = true;
-        resolve(self, value);
-      }, function (reason) {
-        if (done) return;
-        done = true;
-        reject(self, reason);
-      });
+      fn(
+        function (value) {
+          if (done) {
+            return;
+          }
+          done = true;
+          resolve(self, value);
+        },
+        function (reason) {
+          if (done) {
+            return;
+          }
+          done = true;
+          reject(self, reason);
+        }
+      );
     } catch (ex) {
-      if (done) return;
+      if (done) {
+        return;
+      }
       done = true;
       reject(self, ex);
     }
@@ -137,17 +157,37 @@
   };
 
   Promise.prototype.then = function (onFulfilled, onRejected) {
-    var prom = new (this.constructor)(noop);
+    var prom = new this.constructor(noop);
 
     handle(this, new Handler(onFulfilled, onRejected, prom));
     return prom;
   };
 
-  Promise.all = function (arr) {
-    var args = Array.prototype.slice.call(arr);
+  Promise.prototype['finally'] = function (callback) {
+    var constructor = this.constructor;
+    return this.then(
+      function (value) {
+        return constructor.resolve(callback()).then(function () {
+          return value;
+        });
+      },
+      function (reason) {
+        return constructor.resolve(callback()).then(function () {
+          return constructor.reject(reason);
+        });
+      }
+    );
+  };
 
+  Promise.all = function (arr) {
     return new Promise(function (resolve, reject) {
-      if (args.length === 0) return resolve([]);
+      if (!arr || typeof arr.length === 'undefined') {
+        throw new TypeError('Promise.all accepts an array');
+      }
+      var args = Array.prototype.slice.call(arr);
+      if (args.length === 0) {
+        return resolve([]);
+      }
       var remaining = args.length;
 
       function res(i, val) {
@@ -155,9 +195,13 @@
           if (val && (typeof val === 'object' || typeof val === 'function')) {
             var then = val.then;
             if (typeof then === 'function') {
-              then.call(val, function (val) {
-                res(i, val);
-              }, reject);
+              then.call(
+                val,
+                function (val) {
+                  res(i, val);
+                },
+                reject
+              );
               return;
             }
           }
@@ -200,8 +244,12 @@
     });
   };
 
-  // Use polyfill for setImmediate for performance gains
-  Promise._immediateFn = (typeof setImmediate === 'function' && function (fn) { setImmediate(fn); }) ||
+// Use polyfill for setImmediate for performance gains
+  Promise._immediateFn =
+    (typeof setImmediate === 'function' &&
+      function (fn) {
+        setImmediate(fn);
+      }) ||
     function (fn) {
       setTimeoutFunc(fn, 0);
     };
@@ -212,28 +260,6 @@
     }
   };
 
-  /**
-   * Set the immediate function to execute callbacks
-   * @param fn {function} Function to execute
-   * @deprecated
-   */
-  Promise._setImmediateFn = function _setImmediateFn(fn) {
-    Promise._immediateFn = fn;
-  };
+  return Promise;
 
-  /**
-   * Change the function to execute on unhandled rejection
-   * @param {function} fn Function to execute on unhandled rejection
-   * @deprecated
-   */
-  Promise._setUnhandledRejectionFn = function _setUnhandledRejectionFn(fn) {
-    Promise._unhandledRejectionFn = fn;
-  };
-
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = Promise;
-  } else if (!root.Promise) {
-    root.Promise = Promise;
-  }
-
-})(this);
+})));
