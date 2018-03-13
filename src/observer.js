@@ -19,15 +19,15 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
       });
     }
 
-    if (portal !== undefined) {
-      portal.getParents().forEach(function (reactive) {
-        // console.info(reactive.portal !== caller);
-        // TODO: this if could be removed but more test is needed
-        if (reactive.portal !== caller) {
-          reactive.notify(caller);
-        }
-      });
-    }
+    // if (portal !== undefined) {
+    //   portal.getParents().forEach(function (reactive) {
+    //     // console.info(reactive.portal !== caller);
+    //     // TODO: this if could be removed but more test is needed
+    //     if (reactive.portal !== caller) {
+    //       reactive.notify(caller);
+    //     }
+    //   });
+    // }
   };
 
   /**

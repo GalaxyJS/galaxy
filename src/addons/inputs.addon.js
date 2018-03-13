@@ -21,6 +21,7 @@
       }
 
       const reactive = GV.bindSubjectsToData(matches, scope, true);
+      debugger;
 
       return {
         reactive: reactive,
