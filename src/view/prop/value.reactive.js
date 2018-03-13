@@ -23,6 +23,7 @@
         });
       } else {
         viewNode.node.addEventListener('keyup', function () {
+          console.info(dataObject, id)
           dataObject[id] = viewNode.node.value;
         });
       }

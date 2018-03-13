@@ -41,6 +41,8 @@
 
       this.inputs = data.reactive;
       this.addDependedObject(data.reactive);
+
+      return false;
     },
     apply: function (cache, value, oldValue, context) {
 

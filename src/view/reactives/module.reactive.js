@@ -16,7 +16,7 @@
       };
     },
     install: function (data) {
-
+      return true;
     },
     apply: function handleModule(data, moduleMeta, oldModuleMeta, expression, scope) {
       const _this = this;

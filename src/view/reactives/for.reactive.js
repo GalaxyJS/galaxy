@@ -35,6 +35,8 @@
           GV.makeBinding(this, '$for', data.scope, bindings);
         }
       }
+
+      return false;
     },
     /**
      *
@@ -58,7 +60,7 @@
       }
 
       const _this = this;
-      debugger
+
       createResetProcess(_this, data, changes, data.scope);
     }
   };

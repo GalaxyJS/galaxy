@@ -48,19 +48,18 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
-  function ReactiveProperty(portal, name, value, valueStructure) {
+  function ReactiveProperty(portal, name, value) {
     this.name = name;
 
     this.oldValue = undefined;
     this.value = value;
     this.portal = portal;
-    this.valueStructure = null;
 
     this.keys = [];
     this.nodes = [];
 
     this.placeholderFor = null;
-    this.valueStructure = valueStructure || null;
+    this.valueStructure = null;
   }
 
   /**
@@ -109,7 +108,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.setValueStructure = function (structure) {
-    this.valueStructure = (structure !== null && typeof structure === 'object') ? structure : null;
+    this.valueStructure = structure;
   };
 
   ReactiveProperty.prototype.initValueFor = function (target, key, value, scopeData) {
@@ -257,19 +256,24 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.setPlaceholder = function (value) {
+    this.placeholderFor = value;
     const valuePortal = value[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+
     valuePortal.addParent(this);
     const oldKeys = Object.keys(this.valueStructure);
     const valueStructurePortal = this.valueStructure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-    debugger;
+
     oldKeys.forEach(function (key) {
       // We use soft just to update UI and leave the actual data of
       // the valueStructurePortal intact
       if (valuePortal.refs[key]) {
         valuePortal.refs[key].concat(valueStructurePortal.refs[key]);
       }
+      debugger;
       valueStructurePortal.refs[key].softUpdate(value[key]);
     });
+
+    this.notify(this);
   };
 
   ReactiveProperty.prototype.removePlaceholder = function () {

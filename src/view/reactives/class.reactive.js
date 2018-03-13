@@ -12,7 +12,7 @@
 
     },
     install: function (data) {
-
+      return true;
     },
     /**
      *
@@ -51,6 +51,7 @@
       observer._node = _this.node;
 
       observer.onAll(function (key, value, oldValue) {
+        debugger;
         toggles.call(_this, key, value, oldValue, clone);
       });
 
