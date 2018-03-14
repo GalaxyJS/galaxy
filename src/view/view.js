@@ -297,11 +297,10 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
     // Default getter
     let getter = function () {
-      // debugger;
       const property = this[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs[referenceName];
       if (!property) {
         console.info('lets do it from here', referenceName);
-        return undefined;
+        return property;
       }
 
       if (property.placeholderFor) {
@@ -319,33 +318,30 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       if (rp.value === newValue) {
         return;
       }
-
-
-      if (newValue !== null) {
+debugger;
+      if (newValue !== null && newValue !== undefined) {
         if (typeof newValue === 'object') {
           if (!newValue.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
-            debugger;
+            rp.unbindValue();
             rp.setValue(newValue);
 
             const desc = Object.getOwnPropertyDescriptors(rp.structure);
             Object.defineProperties(newValue, desc);
           } else {
             console.info('placeholder');
+            debugger;
             rp.setPlaceholder(newValue);
             debugger;
           }
         } else {
           rp.setValue(newValue);
           debugger;
-          // rp.setUIValue(newValue);
         }
       } else {
         // TODO: oldValue should remain intact if it is an object
         // so break all the relationships to value
-        const sss = Object.getOwnPropertyDescriptors(rp.value);
-        rp.setEmpty(newValue);
-        // rp.setValue(newValue);
-        debugger;
+        rp.unbindValue();
+        rp.setValue(newValue);
       }
     };
 
@@ -448,6 +444,9 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     if (scopeData instanceof GalaxyView.ReactiveProperty) {
       structure = scopeData.structure;
       value = scopeData.value;
+    } else if (scopeData.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
+      // If scopeData has a portal already, then set that portal as the structure portal
+      GalaxyView.setPortalFor(structure, scopeData[GalaxyView.PORTAL_PROPERTY_IDENTIFIER]);
     }
 
     let propertyKeysPaths = bindings.propertyKeysPaths;
@@ -827,7 +826,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value, scopeData) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
