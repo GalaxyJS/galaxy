@@ -1,7 +1,7 @@
 /* global Galaxy */
 
 Galaxy.GalaxyView.Portal = /** @class */(function () {
-  /**
+    /**
    *
    * @constructor
    */

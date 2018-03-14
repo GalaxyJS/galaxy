@@ -21,7 +21,6 @@
       }
 
       const reactive = GV.bindSubjectsToData(matches, scope, true);
-      debugger;
 
       return {
         reactive: reactive,
@@ -54,7 +53,6 @@
     return {
       create: function () {
         scope.inputs = scope.element.cache.inputs.reactive;
-
         return scope.inputs;
       },
       finalize: function () {
