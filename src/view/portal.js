@@ -1,24 +1,25 @@
 /* global Galaxy */
 
 Galaxy.GalaxyView.Portal = /** @class */(function () {
-    /**
-   *
+  const GV = Galaxy.GalaxyView;
+
+  /**
+   * @param {Galaxy.GalaxyView.ReactiveProperty} self
    * @constructor
    */
   function Portal() {
     /** @type Galaxy.GalaxyView.ReactiveProperty */
     this.parents = [];
     this.refs = {};
+    this.self = null;
   }
 
-  //
-  // Portal.prototype.setOwner = function (owner) {
-  //   if (owner) {
-  //     this.removeOwner(this.owner);
-  //   }
-  //
-  //   this.owner = owner;
-  // };
+  Portal.prototype.setSelf = function (self) {
+    this.removeParent(self);
+
+    this.self = self;
+    this.addParent(self);
+  };
 
   Portal.prototype.getParents = function () {
     return this.parents;
@@ -65,8 +66,21 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
-  Portal.prototype.setProperty = function (property, key) {
-    this.refs[key] = property;
+  Portal.prototype.setProperty = function (property, key, name, refs) {
+    if (name) {
+      // _this.
+      GV.defineProp(this.refs, key, {
+        configurable: true,
+        enumerable: true,
+        get: function dynamicRef() {
+          return refs[name];
+        }
+      });
+
+      this.refs[key] = 'test';
+    } else {
+      this.refs[key] = property;
+    }
   };
 
   Portal.prototype.getValueOf = function (key) {

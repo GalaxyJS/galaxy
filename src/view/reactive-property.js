@@ -61,6 +61,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.nodes = [];
 
     this.placeholderFor = null;
+    // Holds the structure of bindings
     this.structure = {};
     if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
       GV.setPortalFor(this.structure, value[GV.PORTAL_PROPERTY_IDENTIFIER]);
@@ -190,7 +191,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.update.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.update(change, {original: oldValue});
+      this.update(change, { original: oldValue });
       Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue, this.portal);
     } else {
       let i = 0, len = this.nodes.length;
@@ -271,7 +272,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       change.type = 'reset';
       change.result = this.oldValue;
       debugger;
-      this.update(change, {original: this.oldValue});
+      this.update(change, { original: this.oldValue });
     } else {
       for (let i = 0, len = this.nodes.length; i < len; i++) {
         this.setUpdateFor(this.nodes[i], this.keys[i], value, this.oldValue);
@@ -297,27 +298,35 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.setPlaceholder = function (value) {
-    this.placeholderFor = value;
+    const _this = this;
+    // this.placeholderFor = value;
     const valuePortal = value[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    const valueStructure = valuePortal.self.structure;
+    const valueRefs = valuePortal.refs;
+    const oldKeys = Object.keys(_this.structure);
+    const currentStructurePortalRefs = _this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER].refs;
 
-    valuePortal.addParent(this);
-    const oldKeys = Object.keys(this.structure);
-    const structurePortal = this.structure[Galaxy.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    _this.unbindValue();
+
+    valuePortal.self.concat(_this);
+    _this.portal.refs[_this.name] = valuePortal.self;
 
     oldKeys.forEach(function (key) {
-      // We use soft just to update UI and leave the actual data of
-      // the valueStructurePortal intact
-      if (valuePortal.refs[key]) {
-        valuePortal.refs[key].concat(structurePortal.refs[key]);
-        GV.defineProp
+      if (valueRefs[key]) {
+        valueRefs[key].concat(currentStructurePortalRefs[key]);
+      } else if (currentStructurePortalRefs[key]) {
+        const cloned = currentStructurePortalRefs[key].clone(valuePortal);
+        cloned.value = value[key];
+        valuePortal.setProperty(cloned, key);
+        if (!valueStructure[key]) {
+          GV.defineProp(valueStructure, key, Object.getOwnPropertyDescriptor(_this.structure, key));
+        }
+
+        GV.defineProp(value, key, Object.getOwnPropertyDescriptor(_this.structure, key));
       }
 
-      structurePortal.refs[key].syncNodes(value[key]);
+      valuePortal.refs[key].syncNodes(value[key]);
     });
-
-    this.value;
-
-    debugger;
 
     this.notify(this);
   };
