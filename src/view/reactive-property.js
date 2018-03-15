@@ -54,6 +54,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
 
     this.oldValue = undefined;
     this.value = value;
+
     /** @type {Galaxy.GalaxyView.Portal} */
     this.portal = portal;
 
@@ -63,6 +64,8 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.placeholderFor = null;
     // Holds the structure of bindings
     this.structure = {};
+
+    // this.syncNodes(value);
     if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
       GV.setPortalFor(this.structure, value[GV.PORTAL_PROPERTY_IDENTIFIER]);
     } else {
