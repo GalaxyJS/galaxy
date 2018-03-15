@@ -317,24 +317,27 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       if (rp.value === newValue) {
         return;
       }
-debugger;
+
+      rp.removePlaceholder();
+
       if (newValue !== null && newValue !== undefined) {
         if (typeof newValue === 'object') {
           if (!newValue.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
             rp.unbindValue();
+            debugger;
             rp.setValue(newValue);
 
             const desc = Object.getOwnPropertyDescriptors(rp.structure);
             Object.defineProperties(newValue, desc);
             newValue[GalaxyView.PORTAL_PROPERTY_IDENTIFIER].setSelf(rp);
           } else {
-            debugger;
+
             rp.setPlaceholder(newValue);
             debugger;
           }
         } else {
-          rp.setValue(newValue);
           debugger;
+          rp.setValue(newValue);
         }
       } else {
         // break all the relationships to value so it remains intact

@@ -67,20 +67,20 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
    */
   Portal.prototype.setProperty = function (property, key, name, refs) {
-    if (name) {
-      // _this.
-      GV.defineProp(this.refs, key, {
-        configurable: true,
-        enumerable: true,
-        get: function dynamicRef() {
-          return refs[name];
-        }
-      });
-
-      this.refs[key] = 'test';
-    } else {
+    // if (name) {
+    //   // _this.
+    //   GV.defineProp(this.refs, key, {
+    //     configurable: true,
+    //     enumerable: true,
+    //     get: function dynamicRef() {
+    //       return refs[name];
+    //     }
+    //   });
+    //
+    //   this.refs[key] = 'test';
+    // } else {
       this.refs[key] = property;
-    }
+    // }
   };
 
   Portal.prototype.getValueOf = function (key) {
