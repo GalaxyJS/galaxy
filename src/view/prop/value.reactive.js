@@ -8,7 +8,7 @@
   GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
     type: 'prop',
     name: 'value',
-    util: function (viewNode, prop, expression, dataObject) {
+    util: function (viewNode, scopeProperty, prop, expression) {
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -17,14 +17,14 @@
 
       const bindings = GV.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const nativeNode = viewNode.node;
       if (bindings.modifiers === 'number') {
-        viewNode.node.addEventListener('keyup', function () {
-          dataObject[id] = viewNode.node.value ? Number(viewNode.node.value) : null;
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.valueScope[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
       } else {
-        viewNode.node.addEventListener('keyup', function () {
-          console.info(dataObject, id)
-          dataObject[id] = viewNode.node.value;
+        nativeNode.addEventListener('keyup', function () {
+          scopeProperty.valueScope[id] = nativeNode.value;
         });
       }
     }

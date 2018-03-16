@@ -6,7 +6,8 @@
     name: 'text',
     handler: function (viewNode, attr, value) {
       const textNode = viewNode.node['<>text'];
-      const textValue = typeof value === 'undefined' ? '' : value;
+      const textValue = typeof value === 'undefined' || value === null ? '' : value;
+
       if (textNode) {
         textNode.textContent = textValue;
       } else {

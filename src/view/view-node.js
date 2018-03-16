@@ -78,15 +78,13 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.GalaxyView} root
-   * @param {Node|Element} node
    * @param schema
-   * @param {null|Object} localScope
+   * @param {Node|Element} node
    * @constructor
    * @memberOf Galaxy.GalaxyView
    */
-  function ViewNode(root, schema, node) {
+  function ViewNode(schema, node) {
     const _this = this;
-    // this.root = root;
     _this.node = node || createElem(schema.tag || 'div');
     _this.schema = schema;
     _this.data = {};
@@ -274,8 +272,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxyView.ReactiveProperty} boundProperty
    * @param {string} propertyName
    * @param {Function} expression
+   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, scope, expression) {
+  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
     const exist = this.properties[boundProperty.name];
     if (exist) {
       if (exist.indexOf(boundProperty) === -1) {
@@ -285,7 +284,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       this.properties[boundProperty.name] = [boundProperty];
     }
 
-    this.setters[propertyName] = GV.createSetter(this, propertyName, expression, scope);
+    this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
     if (!this.setters[propertyName]) {
       const _this = this;
       this.setters[propertyName] = function () {

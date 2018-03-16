@@ -24,11 +24,13 @@
      */
     install: function (data) {
       if (data.matches instanceof Array) {
+        // debugger
         GV.makeBinding(this, '$for', data.scope, {
           isExpression: false,
           modifiers: null,
           propertyKeysPaths: [data.matches[2]]
         });
+        // debugger;
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
@@ -45,9 +47,11 @@
      * @param changes
      * @param oldChanges
      * @param expression
-     * @param scope
      */
-    apply: function (data, changes, oldChanges, expression, scope) {
+    apply: function (data, changes, oldChanges, expression) {
+      if(changes instanceof Array){
+        debugger;
+      }
       if (!changes || typeof changes === 'string') {
         changes = {
           type: 'reset',

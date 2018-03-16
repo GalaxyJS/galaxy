@@ -12,7 +12,7 @@
     },
     install: function (data) {
     },
-    apply: function (data, value, oldValue, expression, scope) {
+    apply: function (data, value, oldValue, expression) {
       if (expression) {
         value = expression();
       }

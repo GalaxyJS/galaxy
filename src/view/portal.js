@@ -15,7 +15,7 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   }
 
   Portal.prototype.setSelf = function (self) {
-    this.removeParent(self);
+    this.removeParent(this.self);
 
     this.self = self;
     this.addParent(self);
@@ -79,7 +79,7 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
     //
     //   this.refs[key] = 'test';
     // } else {
-      this.refs[key] = property;
+    this.refs[key] = property;
     // }
   };
 

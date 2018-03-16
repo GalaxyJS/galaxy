@@ -18,7 +18,7 @@
     install: function (data) {
       return true;
     },
-    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression, scope) {
+    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
