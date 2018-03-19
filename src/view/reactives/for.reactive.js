@@ -49,8 +49,9 @@
      * @param expression
      */
     apply: function (data, changes, oldChanges, expression) {
-      if(changes instanceof Array){
-        debugger;
+      debugger;
+      if (changes instanceof Array) {
+        return;
       }
       if (!changes || typeof changes === 'string') {
         changes = {
@@ -64,7 +65,6 @@
       }
 
       const _this = this;
-
       createResetProcess(_this, data, changes, data.scope);
     }
   };
@@ -150,7 +150,9 @@
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
+          // debugger
           let vn = GV.createNode(parentNode, itemDataScope, cns, position);
+          // debugger;
           action.call(n, vn);
         }
       }

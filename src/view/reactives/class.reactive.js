@@ -21,7 +21,7 @@
      * @param data
      * @param value
      * @param oldValue
-     * @param scope
+     * @param expression
      * @this {Galaxy.GalaxyView.ViewNode}
      */
     apply: function (data, value, oldValue, expression) {

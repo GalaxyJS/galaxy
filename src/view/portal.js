@@ -1,25 +1,16 @@
 /* global Galaxy */
 
-Galaxy.GalaxyView.Portal = /** @class */(function () {
+Galaxy.GalaxyView.Portal = /** @class */ (function () {
   const GV = Galaxy.GalaxyView;
 
   /**
-   * @param {Galaxy.GalaxyView.ReactiveProperty} self
    * @constructor
    */
   function Portal() {
     /** @type Galaxy.GalaxyView.ReactiveProperty */
     this.parents = [];
-    this.refs = {};
-    this.self = null;
+    this.props = {};
   }
-
-  Portal.prototype.setSelf = function (self) {
-    this.removeParent(this.self);
-
-    this.self = self;
-    this.addParent(self);
-  };
 
   Portal.prototype.getParents = function () {
     return this.parents;
@@ -52,11 +43,11 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
    */
   Portal.prototype.getPropertiesList = function () {
     let list = [];
-    const keys = Object.keys(this.refs);
+    const keys = Object.keys(this.props);
     let i = 0;
 
     for (const len = keys.length; i < len; i++) {
-      list.push(this.refs[keys[i]]);
+      list.push(this.props[keys[i]]);
     }
 
     return list;
@@ -65,26 +56,27 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
   /**
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} property
+   * @param {string} key
    */
-  Portal.prototype.setProperty = function (property, key, name, refs) {
+  Portal.prototype.setProperty = function (property, key) {
     // if (name) {
     //   // _this.
-    //   GV.defineProp(this.refs, key, {
+    //   GV.defineProp(this.props, key, {
     //     configurable: true,
     //     enumerable: true,
     //     get: function dynamicRef() {
-    //       return refs[name];
+    //       return props[name];
     //     }
     //   });
     //
-    //   this.refs[key] = 'test';
+    //   this.props[key] = 'test';
     // } else {
-    this.refs[key] = property;
+    this.props[key] = property;
     // }
   };
 
   Portal.prototype.getValueOf = function (key) {
-    const prop = this.refs[key];
+    const prop = this.props[key];
 
     return prop ? prop.value : undefined;
   };
@@ -95,6 +87,20 @@ Galaxy.GalaxyView.Portal = /** @class */(function () {
     for (; i < len; i++) {
       props[i].setValue(value, scope);
     }
+  };
+
+  Portal.prototype.clone = function () {
+    const clone = new Portal();
+    clone.props = Object.assign({}, this.props);
+    let prop, cloneProp;
+    for (let key in this.props) {
+      prop = this.props[key];
+      cloneProp = prop.clone(clone);
+      cloneProp.value = prop.value;
+      clone.setProperty(cloneProp, key);
+    }
+
+    return clone;
   };
 
   return Portal;

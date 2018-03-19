@@ -62,6 +62,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, viewNode) {
+    debugger;
     return this.load(moduleMetaData, {
       element: viewNode
     }).then(function (module) {
