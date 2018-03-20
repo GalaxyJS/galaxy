@@ -81,7 +81,18 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   }
 
   ReactiveProperty.prototype.initValue = function (value) {
-    GV.initPortalFor(this.structure);
+    // Orphan values are also representing their structure.
+    // If detected, we will define this property structure with the value, so any changes to the value
+    // will also be reflected on structure and they will stay in sync. This means that from this point further,
+    // value is not orphan anymore
+    if (value && value.__orphan__ === true) {
+      Reflect.deleteProperty(value, '__orphan__');
+      Object.defineProperties(this.structure, Object.getOwnPropertyDescriptors(value));
+    } else {
+      GV.initPortalFor(this.structure);
+    }
+
+    GV.makeReactive(value, this);
 
     if (value && value[GV.PORTAL_PROPERTY_IDENTIFIER]) {
       const valuePortal = value[GV.PORTAL_PROPERTY_IDENTIFIER];
@@ -108,18 +119,18 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     return this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props[key];
   };
 
-  ReactiveProperty.prototype.allNodes = function (alias) {
-    const key = alias || this.name;
-    const clones = [];
-    this.portal.parents.forEach(function (parent) {
-      const prop = parent.getProperty(key);
-      if (prop) {
-        clones.push(prop);
-      }
-    });
-
-    return clones;
-  };
+  // ReactiveProperty.prototype.allNodes = function (alias) {
+  //   const key = alias || this.name;
+  //   const clones = [];
+  //   this.portal.parents.forEach(function (parent) {
+  //     const prop = parent.getProperty(key);
+  //     if (prop) {
+  //       clones.push(prop);
+  //     }
+  //   });
+  //
+  //   return clones;
+  // };
 
   ReactiveProperty.prototype.unbindValue = function () {
     const _this = this;
@@ -247,7 +258,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       let change = GV.createActiveArray(value, this.update.bind(this));
       change.type = 'reset';
       change.result = oldValue;
-      this.update(change, {original: oldValue});
+      this.update(change, { original: oldValue });
       Galaxy.GalaxyObserver.notify(this.portal, this.name, change, oldValue);
     } else {
       let i = 0, len = this.nodes.length;
@@ -262,8 +273,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     const _this = this;
     const keys = objKeys(_this.structure);
     const props = _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].props;
-    console.info(_this.value[GV.PORTAL_PROPERTY_IDENTIFIER] === _this.structure[GV.PORTAL_PROPERTY_IDENTIFIER]);
-    debugger
+
     if (value === null || value === undefined) {
       keys.forEach(function (key) {
         props[key].setValue(undefined);
@@ -277,6 +287,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
   };
 
   ReactiveProperty.prototype.update = function (changes, oldChanges) {
+    debugger;
     if (changes) {
       if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
         ReactiveProperty.installParentFor(changes.params, this);
@@ -292,18 +303,17 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     }
   };
 
-  ReactiveProperty.prototype.sync = function () {
-    debugger;
+  ReactiveProperty.prototype.syncUI = function () {
     // if (this.value instanceof Array) {
     //   // Ignore when the value is type of array because the value will take care of the changes itself
     // } else {
-      for (let i = 0, len = this.nodes.length; i < len; i++) {
-        this.setUpdateFor(this.nodes[i], this.keys[i], this.value, this.oldValue);
-      }
+    for (let i = 0, len = this.nodes.length; i < len; i++) {
+      this.setUpdateFor(this.nodes[i], this.keys[i], this.value, this.oldValue);
+    }
     // }
   };
 
-  ReactiveProperty.prototype.notify = function (value, key) {
+  ReactiveProperty.prototype.notify = function (value) {
     const _this = this;
     const placeholders = this.getPlaceholders();
 
@@ -342,7 +352,9 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
     this.setValue(value);
     debugger;
     parents.forEach(function (parent) {
-      parent.sync(parent.value);
+      console.info('parents', parent.value[GV.PORTAL_PROPERTY_IDENTIFIER] === parent.structure[GV.PORTAL_PROPERTY_IDENTIFIER])
+      debugger;
+      parent.syncUI();
       parent.syncStructure(parent.value);
     });
 

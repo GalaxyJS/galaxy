@@ -12,6 +12,47 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
     this.props = {};
   }
 
+  Portal.prototype.notify = function (key, value) {
+    const props = this.getPropsByKey(key);
+    props.forEach(function (prop) {
+      prop.notify(value);
+    });
+  };
+
+  Portal.prototype.getPropsByKey = function (key) {
+    const properties = [];
+    this.parents.forEach(function (parent) {
+      const prop = parent.getProperty(key);
+      if (prop) {
+        properties.push(prop);
+      }
+    });
+
+    return properties;
+  };
+
+  Portal.prototype.setupProp = function (structure, key, value) {
+    const _this = this;
+    let _value = value;
+
+    Object.defineProperty(structure, key, {
+      get: function () {
+        return _value;
+      },
+      set: function (newValue) {
+        _value = newValue;
+        _this.notify(key);
+        _this.notifyParents();
+      },
+      enumerable: false,
+      configurable: true
+    });
+  };
+
+  Portal.prototype.getParents = function () {
+    return this.parents;
+  };
+
   Portal.prototype.getParents = function () {
     return this.parents;
   };
@@ -59,34 +100,13 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
    * @param {string} key
    */
   Portal.prototype.setProperty = function (property, key) {
-    // if (name) {
-    //   // _this.
-    //   GV.defineProp(this.props, key, {
-    //     configurable: true,
-    //     enumerable: true,
-    //     get: function dynamicRef() {
-    //       return props[name];
-    //     }
-    //   });
-    //
-    //   this.props[key] = 'test';
-    // } else {
     this.props[key] = property;
-    // }
   };
 
   Portal.prototype.getValueOf = function (key) {
     const prop = this.props[key];
 
     return prop ? prop.value : undefined;
-  };
-
-  Portal.prototype.setValue = function (value, scope) {
-    const props = this.getPropertiesList();
-    let i = 0, len = props.length;
-    for (; i < len; i++) {
-      props[i].setValue(value, scope);
-    }
   };
 
   Portal.prototype.clone = function () {
