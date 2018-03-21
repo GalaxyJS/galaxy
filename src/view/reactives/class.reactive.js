@@ -91,6 +91,7 @@
 
   function toggles(key, value, oldValue, classes) {
     if (oldValue === value) {
+      debugger;
       return;
     }
     let oldClasses = this.node.getAttribute('class');

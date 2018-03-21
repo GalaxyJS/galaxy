@@ -6,12 +6,12 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
 
   GalaxyObserver.notify = function (obj, key, value, oldValue, caller) {
     const observers = obj.__observers__;
-    let portal;
-    if (obj instanceof Galaxy.GalaxyView.Portal) {
-      portal = obj;
-    } else {
-      portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-    }
+    // let portal;
+    // if (obj instanceof Galaxy.GalaxyView.Portal) {
+    //   portal = obj;
+    // } else {
+    //   portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
+    // }
 
     if (observers !== undefined) {
       observers.forEach(function (observer) {

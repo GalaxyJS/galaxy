@@ -13,13 +13,36 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
   }
 
   Portal.prototype.notify = function (key, value) {
-    const props = this.getPropsByKey(key);
+    const props = this.getPropertiesByKey(key);
     props.forEach(function (prop) {
       prop.notify(value);
     });
   };
 
-  Portal.prototype.getPropsByKey = function (key) {
+  Portal.prototype.update = function (changes, oldChanges, newProperty) {
+    if (changes) {
+      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
+        // debugger
+        GV.installParentFor(changes.params, this);
+      } else if (changes.type === 'shift' || changes.type === 'pop') {
+        // GalaxyView_ReactiveProperty.uninstallParentFor([changes.result], this);
+      } else if (changes.type === 'splice' || changes.type === 'reset') {
+        // GalaxyView_ReactiveProperty.uninstallParentFor(changes.result, this);
+      }
+      // debugger;
+    }
+
+    if (newProperty) {
+      return newProperty.setValueChange(changes, oldChanges);
+    }
+    debugger;
+    for (let i = 0, len = this.parents.length; i < len; i++) {
+      this.parents[i].setValueChange(changes, oldChanges);
+    }
+    debugger;
+  };
+
+  Portal.prototype.getPropertiesByKey = function (key) {
     const properties = [];
     this.parents.forEach(function (parent) {
       const prop = parent.getProperty(key);
@@ -60,10 +83,15 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
   /**
    *
    * @param {Galaxy.GalaxyView.ReactiveProperty} owner
+   * @param {boolean} inIsolation
    */
-  Portal.prototype.addParent = function (owner) {
+  Portal.prototype.addParent = function (owner, inIsolation) {
     if (this.parents.indexOf(owner) === -1) {
       this.parents.push(owner);
+    }
+
+    if (!inIsolation) {
+      owner.structure[GV.PORTAL_PROPERTY_IDENTIFIER].parents = this.parents;
     }
   };
 
@@ -111,7 +139,7 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
 
   Portal.prototype.clone = function () {
     const clone = new Portal();
-    clone.props = Object.assign({}, this.props);
+    clone.props = {};
     let prop, cloneProp;
     for (let key in this.props) {
       prop = this.props[key];

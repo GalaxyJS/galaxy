@@ -49,7 +49,6 @@
      * @param expression
      */
     apply: function (data, changes, oldChanges, expression) {
-      debugger
       if (changes instanceof Array) {
         return;
       }
@@ -150,7 +149,7 @@
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
-
+debugger;
           const vn = GV.createNode(parentNode, itemDataScope, cns, position);
           action.call(n, vn);
         }
