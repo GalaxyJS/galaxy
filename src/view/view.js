@@ -105,7 +105,15 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return result;
   };
 
-  GalaxyView.initPortalFor = function (host, orphan) {
+  GalaxyView.toShadow = function (host) {
+    defineProp(host, '__shadow__', {
+      enumerable: false,
+      configurable: true,
+      value: true
+    });
+  };
+
+  GalaxyView.initPortalFor = function (host, isShadow) {
     if (!host.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
       defineProp(host, GalaxyView.PORTAL_PROPERTY_IDENTIFIER, {
         writable: true,
@@ -114,12 +122,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         value: new GalaxyView.Portal()
       });
 
-      if (orphan) {
-        defineProp(host, '__orphan__', {
-          enumerable: false,
-          configurable: true,
-          value: true
-        });
+      if (isShadow) {
+        GalaxyView.toShadow(host);
       }
     }
 
@@ -324,7 +328,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // structure will be null if the direct parent og config.scopeValue is an array
     if (!structure) {
       structure = config.valueScope;
-      defineProp(config.valueScope, '__orphan__', {
+      defineProp(config.valueScope, '__shadow__', {
         enumerable: false,
         configurable: true,
         value: true
@@ -464,8 +468,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           });
         }
       }
-
-      // console.info('makeReactive', data[GalaxyView.PORTAL_PROPERTY_IDENTIFIER] === initValuePortal, self.name);
     }
   };
 

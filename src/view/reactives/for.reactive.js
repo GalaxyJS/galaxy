@@ -149,7 +149,8 @@
           itemDataScope[p] = c[i];
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
-debugger;
+
+          // if(cns.tag==='button')debugger;
           const vn = GV.createNode(parentNode, itemDataScope, cns, position);
           action.call(n, vn);
         }

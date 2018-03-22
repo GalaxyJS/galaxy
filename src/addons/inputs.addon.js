@@ -20,10 +20,10 @@
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
 
-      const reactive = GV.bindSubjectsToData(matches, scope, true);
+
 
       return {
-        reactive: reactive,
+        // reactive: reactive,
         subjects: matches,
         scope: scope
       };
@@ -32,12 +32,16 @@
       if (this.virtual) {
         return;
       }
+// debugger
+      const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
 
-      if (this.cache.inputs && this.cache.inputs.reactive !== data.reactive) {
-        Galaxy.resetObjectTo(this.cache.inputs, data);
-      } else if (this.cache.inputs === undefined) {
-        this.cache.inputs = data;
-      }
+      data.reactive = reactive;
+
+      // if (this.cache.inputs && this.cache.inputs.reactive !== data.reactive) {
+      //   Galaxy.resetObjectTo(this.cache.inputs, data);
+      // } else if (this.cache.inputs === undefined) {
+      //   this.cache.inputs = data;
+      // }
 
       this.inputs = data.reactive;
       this.addDependedObject(data.reactive);

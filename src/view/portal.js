@@ -14,6 +14,7 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
 
   Portal.prototype.notify = function (key, value) {
     const props = this.getPropertiesByKey(key);
+    // debugger;
     props.forEach(function (prop) {
       prop.notify(value);
     });
@@ -35,11 +36,10 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
     if (newProperty) {
       return newProperty.setValueChange(changes, oldChanges);
     }
-    debugger;
+
     for (let i = 0, len = this.parents.length; i < len; i++) {
       this.parents[i].setValueChange(changes, oldChanges);
     }
-    debugger;
   };
 
   Portal.prototype.getPropertiesByKey = function (key) {
@@ -137,13 +137,13 @@ Galaxy.GalaxyView.Portal = /** @class */ (function () {
     return prop ? prop.value : undefined;
   };
 
-  Portal.prototype.clone = function () {
+  Portal.prototype.clone = function (clean) {
     const clone = new Portal();
     clone.props = {};
     let prop, cloneProp;
     for (let key in this.props) {
       prop = this.props[key];
-      cloneProp = prop.clone(clone);
+      cloneProp = prop.clone(clone, clean);
       cloneProp.value = prop.value;
       clone.setProperty(cloneProp, key);
     }
