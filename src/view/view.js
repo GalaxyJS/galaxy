@@ -589,7 +589,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       // }
 
       if (scopeData instanceof Galaxy.GalaxyView.ReactiveProperty) {
-
         structurePortal.addParent(scopeData);
         // debugger;
         // TODO: Not sure if this is needed anymore
@@ -598,8 +597,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 // debugger;
       // GalaxyView.makeReactive(initValue, reactiveProperty);
 
+      // if(propertyKeyPath === 'personOne') debugger;
+      // if(propertyKeyPath === 'person') debugger;
+
       if (childPropertyKeyPath === null) {
         if (!(target instanceof Galaxy.GalaxyView.ViewNode)) {
+          target[targetKeyName] = value[propertyKeyPath];
           defineProp(target, targetKeyName, {
             // set: function (newValue) {
             //   // console.warn('wont work', targetKeyName, value);

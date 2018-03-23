@@ -21,7 +21,7 @@
       }
 
 
-
+      // const reactive = GV.bindSubjectsToData(matches, scope, true);
       return {
         // reactive: reactive,
         subjects: matches,
@@ -32,9 +32,9 @@
       if (this.virtual) {
         return;
       }
-// debugger
-      const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
 
+      const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
+debugger;
       data.reactive = reactive;
 
       // if (this.cache.inputs && this.cache.inputs.reactive !== data.reactive) {
@@ -42,7 +42,7 @@
       // } else if (this.cache.inputs === undefined) {
       //   this.cache.inputs = data;
       // }
-
+      //
       this.inputs = data.reactive;
       this.addDependedObject(data.reactive);
 
