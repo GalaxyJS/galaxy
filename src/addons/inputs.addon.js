@@ -34,7 +34,7 @@
       }
 
       const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
-debugger;
+// debugger;
       data.reactive = reactive;
 
       // if (this.cache.inputs && this.cache.inputs.reactive !== data.reactive) {
