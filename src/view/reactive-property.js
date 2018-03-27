@@ -67,7 +67,7 @@ Galaxy.GalaxyView.ReactiveProperty = /** @class */ (function () {
       this.structure[GV.PORTAL_PROPERTY_IDENTIFIER].addParent(this);
     }
 
-    GV.makeReactive(value, this);
+    // GV.makeReactive(value, this);
 
     this.value = value;
   };

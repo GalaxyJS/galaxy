@@ -486,11 +486,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {Galaxy.GalaxyView.ReactiveProperty} scopeData
    * @param {Object} bindings
    * @param {number} expressionArgumentsCount
+   * @param {Galaxy.GalaxyView.ReactiveData} parentReactiveData
    */
-  GalaxyView.makeBinding = function (target, targetKeyName, scopeData, bindings, expressionArgumentsCount) {
-    if (typeof scopeData !== 'object') {
-      return;
-    }
+  GalaxyView.makeBinding = function (target, targetKeyName, scopeData, bindings, expressionArgumentsCount, parentReactiveData) {
+    // if (typeof scopeData !== 'object') {
+    //   return;
+    // }
 
     // Create portal for scope data
     // Create reactive property for each property on the scope data
@@ -502,10 +503,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     if (scopeData instanceof GalaxyView.ReactiveProperty) {
       shadow = scopeData.structure;
       value = scopeData.value;
-    } else if (scopeData.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
+    }
+    // else if (scopeData.hasOwnProperty(GalaxyView.PORTAL_PROPERTY_IDENTIFIER)) {
       // If scopeData has a portal already, then set that portal as the structure portal
       // GalaxyView.setPortalFor(structure, scopeData[GalaxyView.PORTAL_PROPERTY_IDENTIFIER]);
-    }
+    // }
 
     let propertyKeysPaths = bindings.propertyKeysPaths;
     let expression = bindings.isExpression;
@@ -550,7 +552,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
 
-      let shadowPortal = GalaxyView.getPortal(shadow);
+      // let shadowPortal = GalaxyView.getPortal(shadow);
       // structurePortal = GalaxyView.Portal(structure);
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
@@ -559,16 +561,19 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         propertyKeyPath = propertyKeyPathItems.shift();
         childPropertyKeyPath = null;
         aliasPropertyName = 'this.' + propertyKeyPath;
-        shadow = GalaxyView.propertyLookup(target.data, propertyKeyPath);
+        // shadow = GalaxyView.propertyLookup(target.data, propertyKeyPath);
       } else {
-        shadow = GalaxyView.propertyLookup(shadow, propertyKeyPath);
-        shadowPortal = GalaxyView.getPortal(shadow);
+        // shadow = GalaxyView.propertyLookup(shadow, propertyKeyPath);
+        // shadowPortal = GalaxyView.getPortal(shadow);
         // structurePortal = GalaxyView.Portal(structure);
 
         if (value) {
           value = GalaxyView.propertyLookup(value, propertyKeyPath);
         }
       }
+      // if (!RD) {
+      //   RD = new Galaxy.GalaxyView.ReactiveData(propertyKeyPath, value);
+      // }
 
       initValue = value;
       if (value !== null && typeof value === 'object') {
@@ -583,22 +588,38 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       }
 
       /** @type Galaxy.GalaxyView.ReactiveProperty */
-      let reactiveProperty = shadowPortal.props[propertyKeyPath];
-      debugger;
-      if (typeof reactiveProperty === 'undefined') {
-        reactiveProperty = GalaxyView.createReactiveProperty(shadow, propertyKeyPath, {
-          alias: aliasPropertyName,
-          enumerable: enumerable,
-          valueScope: value,
-          initValue: initValue,
-          parentId: scopeData.id
-        });
-      }
+      // let reactiveProperty = shadowPortal.props[propertyKeyPath];
 
-      if (scopeData instanceof Galaxy.GalaxyView.ReactiveProperty) {
-        shadowPortal.addParent(scopeData);
+      let reactiveData;
 
+      // if (!(initValue instanceof Object) && childPropertyKeyPath) {
+      //   initValue = {};
+      // }
+
+      if (initValue instanceof Object) {
+        reactiveData = new Galaxy.GalaxyView.ReactiveData(propertyKeyPath, initValue, parentReactiveData);
+      } else if (childPropertyKeyPath) {
+        // debugger;
+        reactiveData = new Galaxy.GalaxyView.ReactiveData(propertyKeyPath, null, parentReactiveData);
+      } else {
+        parentReactiveData.addKeyToShadow(propertyKeyPath);
       }
+      parentReactiveData;
+      // debugger;
+      // if (typeof reactiveProperty === 'undefined') {
+      //   reactiveProperty = GalaxyView.createReactiveProperty(shadow, propertyKeyPath, {
+      //     alias: aliasPropertyName,
+      //     enumerable: enumerable,
+      //     valueScope: value,
+      //     initValue: initValue,
+      //     parentId: scopeData.id
+      //   });
+      // }
+
+      // if (scopeData instanceof Galaxy.GalaxyView.ReactiveProperty) {
+      //   shadowPortal.addParent(scopeData);
+      //
+      // }
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof Galaxy.GalaxyView.ViewNode)) {
@@ -622,23 +643,29 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           // TODO: you can somehow specify the interlink here, then you can implement a process that keeps the top-down data flow
           // reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
         }
-        reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
+        // reactiveProperty.addNode(target, targetKeyName, expression, scopeData);
+        parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expression, scopeData);
       }
 
       if (childPropertyKeyPath !== null) {
-        GalaxyView.makeBinding(target, targetKeyName, reactiveProperty, {
+        // GalaxyView.makeBinding(target, targetKeyName, reactiveProperty, {
+        //   propertyKeysPaths: [childPropertyKeyPath],
+        //   isExpression: expression
+        // }, expressionArgumentsCount, reactiveData);
+
+        GalaxyView.makeBinding(target, targetKeyName, initValue, {
           propertyKeysPaths: [childPropertyKeyPath],
           isExpression: expression
-        }, expressionArgumentsCount);
+        }, expressionArgumentsCount, reactiveData);
       }
       // Call init value only on the last variable binding,
       // so the expression with multiple arguments get called only once
       else if (expressionArgumentsCount === 1) {
         // reactiveProperty.setValueStructure(structure);
         if (initValue instanceof Array) {
-          GalaxyView.createActiveArray(initValue, reactiveProperty.structure[GalaxyView.PORTAL_PROPERTY_IDENTIFIER], reactiveProperty);
+          // GalaxyView.createActiveArray(initValue, reactiveProperty.structure[GalaxyView.PORTAL_PROPERTY_IDENTIFIER], reactiveProperty);
         } else if (typeof value === 'object') {
-          reactiveProperty.initValueFor(target, targetKeyName, initValue);
+          // reactiveProperty.initValueFor(target, targetKeyName, initValue);
         }
       }
       expressionArgumentsCount--;
@@ -868,7 +895,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
