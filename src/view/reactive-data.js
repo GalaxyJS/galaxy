@@ -13,10 +13,20 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       },
 
-      makeReactive: function () {
+      makeReactiveObject: function () {
 
       }
     };
+  };
+
+  const uninstallRefFor = function (list, ref) {
+    let itemRD;
+    list.forEach(function (item) {
+      itemRD = item.__rd__;
+      if (itemRD) {
+        itemRD.removeRef(ref);
+      }
+    });
   };
 
   /**
@@ -30,6 +40,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     const parent = p || scopeBuilder();
     this.data = data;
     this.id = parent.id + '.' + id;
+    this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
     this.refs = [];
@@ -48,9 +59,8 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       // data === null means that parent does not have this id
       if (this.data === null) {
-        debugger;
         this.data = {};
-        this.parent.makeReactive(this.parent.data, id);
+        this.parent.makeReactiveObject(this.parent.data, id, true);
       }
 
       defineProp(this.data, '__rd__', {
@@ -63,16 +73,30 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     }
 
     // this.parent.shadow[id] = this.shadow;
-    this.parent.shadow[id] = this;
+    if (this.parent.data instanceof Array) {
+
+    } else {
+      this.parent.shadow[id] = this;
+    }
   }
 
   ReactiveData.prototype.setData = function (data) {
     this.removeMyRef();
 
+    if (!(data instanceof Object)) {
+      this.data = {};
+      for (let key in this.shadow) {
+        this.notify(key);
+      }
+
+      return;
+    }
+
     this.data = data;
     if (data.hasOwnProperty('__rd__')) {
       this.data.__rd__.addRef(this);
       this.refs = this.data.__rd__.refs;
+      this.syncAll();
     } else {
       defineProp(this.data, '__rd__', {
         enumerable: false,
@@ -80,30 +104,31 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         value: this
       });
 
-      this.walk(this.data);
-      debugger;
-    }
-
-    // Setup shadow properties
-    for (let key in this.shadow) {
-      if (!this.data.hasOwnProperty(key)) {
-        this.makeReactive(this.data, key);
+      if (this.data instanceof Array) {
+        this.makeReactiveArray(this.data);
+      } else {
+        this.walk(this.data);
       }
     }
-    debugger;
+
+    this.setupShadowProperties();
   };
 
   ReactiveData.prototype.walk = function (data) {
+    const _this = this;
     if (data instanceof Array) {
-      throw Error('Not implemented yet');
+      _this.makeReactiveArray(data);
+      // data.forEach(function (item, i) {
+      //   new Galaxy.GalaxyView.ReactiveData(i, item, _this);
+      // });
     } else if (data instanceof Object) {
       for (let key in data) {
-        this.makeReactive(data, key);
+        _this.makeReactiveObject(data, key);
       }
     }
   };
 
-  ReactiveData.prototype.makeReactive = function (data, key) {
+  ReactiveData.prototype.makeReactiveObject = function (data, key, shadow) {
     const _this = this;
     let value = data[key];
 
@@ -112,7 +137,10 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
         return value;
       },
       set: function (val) {
+        // This means that the property suppose to be an object and there probably active binds to it
         if (_this.shadow[key]) {
+          _this.makeKeyEnum(key);
+          // setData provide downward data flow
           _this.shadow[key].setData(val);
         }
 
@@ -122,48 +150,188 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
         value = val;
 
-        _this.notify(key);
+        if (value instanceof Array) {
+          _this.updateNode(key, _this.makeReactiveArray(value));
+        } else {
+          _this.notify(key);
+        }
       },
-      enumerable: true,
+      enumerable: !shadow,
       configurable: true
     });
 
-    if (value instanceof Array) {
-      throw Error('Not implemented yet');
-    } else if (value instanceof Object) {
+    /*if (value instanceof Array) {
+      console.warn('makeReactive: Array is not implemented yet');
+      debugger;
+    } else*/
+    if (value instanceof Object) {
       this.data[key] = value;
-      // new Galaxy.GalaxyView.ReactiveData(key, value, _this);
     } else {
       this.shadow[key] = null;
     }
+
+    // Update the ui for this key
+    // This is for when the makeReactive method has been called by setData
+    this.sync(key);
   };
 
-  ReactiveData.prototype.notify = function (key) {
+  ReactiveData.prototype.makeReactiveArray = function (value) {
+    /**
+     *
+     * @type {Galaxy.GalaxyView.ReactiveData}
+     * @private
+     */
     const _this = this;
+    let changes = {
+      original: value,
+      type: 'reset',
+      params: value
+    };
+
+    let oldChanges = Object.assign({}, changes);
+
+    if (value.hasOwnProperty('live')) {
+      return changes;
+    }
+
+    const arrayProto = Array.prototype;
+    const methods = [
+      'push',
+      'pop',
+      'shift',
+      'unshift',
+      'splice',
+      'sort',
+      'reverse'
+    ];
+    // let arr = value;
+    let i = 0;
+    let args;
+
+    // boundPropertyReference.value = true;
+    // defineProp(value, 'reactive', boundPropertyReference);
+    _this.makeReactiveObject(value, 'live', true);
+    _this.sync('length');
+
+    methods.forEach(function (method) {
+      let original = arrayProto[method];
+      defineProp(value, method, {
+        value: function () {
+          i = arguments.length;
+          args = new Array(i);
+          while (i--) {
+            args[i] = arguments[i];
+          }
+
+          let result = original.apply(this, args);
+
+          // if (typeof arr._length !== 'undefined') {
+          //   arr._length = arr.length;
+          // }
+
+          changes.type = method;
+          changes.params = args;
+          changes.result = result;
+
+          // length nodes will be in this ReactiveData object
+          _this.sync('length');
+          // $for nodes will be in parent ReactiveData object
+          _this.parent.update(_this.keyInParent, changes, oldChanges);
+          oldChanges = Object.assign({}, changes);
+
+          return result;
+        },
+        writable: false,
+        configurable: true
+      });
+    });
+
+    return changes;
+  };
+
+  ReactiveData.prototype.notify = function (key, refs) {
+    const _this = this;
+
+    if (this.refs === refs) {
+      console.info('same refs', this.id);
+      // TODO: it seems that there is not need to sync ui here but test more to be sure!
+      // _this.sync(key);
+      return;
+    }
+
     _this.refs.forEach(function (ref) {
       if (_this === ref) {
         return;
       }
 
-      ref.notify(key);
+      ref.notify(key, _this.refs);
     });
 
-    // _this.sync(key);
-    _this.parent.sync(key);
+    _this.sync(key);
+    _this.parent.sync(_this.keyInParent);
   };
 
   ReactiveData.prototype.sync = function (key) {
+    const _this = this;
     const map = this.nodesMap[key];
     const value = this.data[key];
     if (map) {
       let key;
       map.nodes.forEach(function (node, i) {
         key = map.keys[i];
-        if (node instanceof Galaxy.GalaxyView.ViewNode) {
-          node.setters[key](value);
-        } else {
-          node[key] = value;
-        }
+        _this.syncNode(node, key, value);
+      });
+    }
+  };
+
+  ReactiveData.prototype.syncAll = function () {
+    const _this = this;
+    const keys = objKeys(this.data);
+    keys.forEach(function (key) {
+      _this.sync(key);
+    });
+  };
+
+  ReactiveData.prototype.syncNode = function (node, key, value) {
+    if (node instanceof Galaxy.GalaxyView.ViewNode) {
+      node.setters[key](value);
+    } else {
+      node[key] = value;
+    }
+  };
+
+  ReactiveData.prototype.update = function (key, changes) {
+    const _this = this;
+
+    if (changes) {
+      if (changes.type === 'push' || changes.type === 'reset' || changes.type === 'unshift') {
+        changes.params.forEach(function (item) {
+          new Galaxy.GalaxyView.ReactiveData(changes.original.indexOf(item), item, _this);
+        });
+        // GV.installParentFor(changes.params, this);
+      } else if (changes.type === 'shift' || changes.type === 'pop') {
+        // GV.uninstallParentFor([changes.result], this);
+        // debugger;
+        // uninstallRefFor([changes.result], _this);
+        // debugger;
+      } else if (changes.type === 'splice' || changes.type === 'reset') {
+        // GV.uninstallParentFor(changes.result, this);
+        // uninstallRefFor(changes.result, _this);
+      }
+    }
+
+    this.updateNode(key, changes);
+  };
+
+  ReactiveData.prototype.updateNode = function (key, changes) {
+    const _this = this;
+    const map = this.nodesMap[key];
+
+    if (map) {
+      let key;
+      map.nodes.forEach(function (node, i) {
+        key = map.keys[i];
+        _this.syncNode(node, key, changes);
       });
     }
   };
@@ -186,9 +354,14 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
   };
 
   ReactiveData.prototype.removeMyRef = function () {
-    if (this.data && this.data.hasOwnProperty('__rd__') && this.data.__rd__ !== this) {
-      this.refs = [this];
-      this.data.__rd__.removeRef(this);
+    if (this.data && this.data.hasOwnProperty('__rd__')) {
+      if (this.data.__rd__ !== this) {
+        this.refs = [this];
+        this.data.__rd__.removeRef(this);
+      } else if (this.refs.length === 1) {
+        // TODO: Should be tested as much as possible to make sure it works with no bug
+        delete this.data.__rd__;
+      }
     }
   };
 
@@ -198,7 +371,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     })[0];
   };
 
-  ReactiveData.prototype.addNode = function (node, nodeKey, dataKey, expression, scopeProperty) {
+  ReactiveData.prototype.addNode = function (node, nodeKey, dataKey, expression/*, scopeProperty*/) {
     console.info('rd', nodeKey, dataKey);
 
     let map = this.nodesMap[dataKey];
@@ -214,18 +387,64 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
     // Insure that same node with different property bind can exist
     if (index === -1 || map.keys[index] !== nodeKey) {
       if (node instanceof Galaxy.GalaxyView.ViewNode && !node.setters[nodeKey]) {
-        // node.installPropertySetter(this, nodeKey, expression, scopeProperty);
+        node.installSetter(this, nodeKey, expression);
       }
 
       map.keys.push(nodeKey);
       map.nodes.push(node);
+
+      let initValue = this.data[dataKey];
+      // We need initValue for cases where ui is bound to a property of an null object
+      if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
+        initValue = {};
+      }
+
+      if (initValue instanceof Array) {
+        // this can not be in the syncNode because in the case of array, it is only called once
+        if (node instanceof Galaxy.GalaxyView.ViewNode) {
+          node.setters[nodeKey](this.makeReactiveArray(initValue));
+        } else {
+          node[nodeKey] = initValue;
+        }
+      } else {
+        this.syncNode(node, nodeKey, initValue);
+      }
+    }
+  };
+
+  ReactiveData.prototype.removeNode = function (node) {
+    let map;
+    for (let prop in this.nodesMap) {
+      map = this.nodesMap[prop];
+
+      let index = -1;
+      while ((index = map.nodes.indexOf(node)) !== -1) {
+        map.nodes.splice(index, 1);
+        map.keys.splice(index, 1);
+      }
     }
   };
 
   ReactiveData.prototype.addKeyToShadow = function (key) {
     this.shadow[key] = null;
-    // debugger;
-    // this.makeReactive(this.data, key);
+  };
+
+  ReactiveData.prototype.setupShadowProperties = function () {
+    for (let key in this.shadow) {
+      if (!this.data.hasOwnProperty(key)) {
+        this.makeReactiveObject(this.data, key, true);
+      } else if (this.shadow[key] instanceof Galaxy.GalaxyView.ReactiveData) {
+        this.shadow[key].setData(this.data[key]);
+      }
+    }
+  };
+
+  ReactiveData.prototype.makeKeyEnum = function (key) {
+    const desc = Object.getOwnPropertyDescriptor(this.data, key);
+    if (desc && desc.enumerable === false) {
+      desc.enumerable = true;
+      defineProp(this.data, key, desc);
+    }
   };
 
   return ReactiveData;

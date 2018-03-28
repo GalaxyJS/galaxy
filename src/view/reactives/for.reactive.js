@@ -34,7 +34,9 @@
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
+          // debugger;
           GV.makeBinding(this, '$for', data.scope, bindings);
+          // debugger;
         }
       }
 
@@ -150,7 +152,6 @@
           itemDataScope['$forIndex'] = i;
           cns = Galaxy.clone(templateSchema);
 
-          // if(cns.tag==='button')debugger;
           const vn = GV.createNode(parentNode, itemDataScope, cns, position);
           action.call(n, vn);
         }

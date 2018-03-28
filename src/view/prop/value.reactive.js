@@ -20,11 +20,11 @@
       const nativeNode = viewNode.node;
       if (bindings.modifiers === 'number') {
         nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value ? Number(nativeNode.value) : null;
+          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
       } else {
         nativeNode.addEventListener('keyup', function () {
-          scopeProperty.valueScope[id] = nativeNode.value;
+          scopeProperty.data[id] = nativeNode.value;
         });
       }
     }

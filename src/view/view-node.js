@@ -94,7 +94,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     // _this.localScope = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
-    _this.properties = {};
+    _this.properties = [];
     // _this.behaviors = {};
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
@@ -274,17 +274,37 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Function} expression
    * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
    */
-  ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
-    const exist = this.properties[boundProperty.name];
-    if (exist) {
-      if (exist.indexOf(boundProperty) === -1) {
-        exist.push(boundProperty);
-      }
-    } else {
-      this.properties[boundProperty.name] = [boundProperty];
+  // ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
+  //   const exist = this.properties[boundProperty.name];
+  //   if (exist) {
+  //     if (exist.indexOf(boundProperty) === -1) {
+  //       exist.push(boundProperty);
+  //     }
+  //   } else {
+  //     this.properties[boundProperty.name] = [boundProperty];
+  //   }
+  //
+  //   this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
+  //   if (!this.setters[propertyName]) {
+  //     const _this = this;
+  //     this.setters[propertyName] = function () {
+  //       console.error('No setter for property :', propertyName, '\nNode:', _this);
+  //     };
+  //   }
+  // };
+
+  /**
+   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {string} propertyName
+   * @param {Function} expression
+   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
+   */
+  ViewNode.prototype.installSetter = function (reactiveData, propertyName, expression) {
+    if (this.properties.indexOf(reactiveData) === -1) {
+      this.properties.push(reactiveData);
     }
 
-    this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
+    this.setters[propertyName] = GV.createSetter(this, propertyName, reactiveData, expression);
     if (!this.setters[propertyName]) {
       const _this = this;
       this.setters[propertyName] = function () {
@@ -362,15 +382,20 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     }
 
-    let property, properties = _this.properties;
-    const removeItem = function (item) {
-      item.removeNode(_this);
-    };
+    // let property, properties = _this.properties;
+    // const removeItem = function (item) {
+    //   item.removeNode(_this);
+    // };
+    //
+    // for (let key in properties) {
+    //   property = properties[key];
+    //   property.forEach(removeItem);
+    // }
 
-    for (let key in properties) {
-      property = properties[key];
-      property.forEach(removeItem);
-    }
+    _this.properties.forEach(function (reactiveData) {
+      reactiveData.removeNode(_this);
+    });
+    _this.properties = [];
 
     _this.dependedObjects.forEach(function (item) {
       let temp = GV.getBoundProperties(item);
@@ -391,26 +416,26 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     }
   };
 
-  ViewNode.prototype.refreshBinds = function () {
-    let property, properties = this.properties;
-    for (let key in properties) {
-      property = properties[key];
-
-      if (property instanceof Array) {
-        property.forEach(function (item) {
-          if (item.nodes.indexOf(this) === -1) {
-            item.nodes.push(this);
-            item.keys.push(key);
-          }
-        });
-      } else {
-        if (property.value.nodes.indexOf(this) === -1) {
-          property.value.nodes.push(this);
-          property.value.keys.push(key);
-        }
-      }
-    }
-  };
+  // ViewNode.prototype.refreshBinds = function () {
+  //   let property, properties = this.properties;
+  //   for (let key in properties) {
+  //     property = properties[key];
+  //
+  //     if (property instanceof Array) {
+  //       property.forEach(function (item) {
+  //         if (item.nodes.indexOf(this) === -1) {
+  //           item.nodes.push(this);
+  //           item.keys.push(key);
+  //         }
+  //       });
+  //     } else {
+  //       if (property.value.nodes.indexOf(this) === -1) {
+  //         property.value.nodes.push(this);
+  //         property.value.keys.push(key);
+  //       }
+  //     }
+  //   }
+  // };
 
   ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;
