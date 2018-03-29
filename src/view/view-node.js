@@ -297,19 +297,26 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
    * @param {string} propertyName
    * @param {Function} expression
-   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
    */
   ViewNode.prototype.installSetter = function (reactiveData, propertyName, expression) {
-    if (this.properties.indexOf(reactiveData) === -1) {
-      this.properties.push(reactiveData);
-    }
+    const _this = this;
+    _this.registerProperty(reactiveData);
 
-    this.setters[propertyName] = GV.createSetter(this, propertyName, reactiveData, expression);
-    if (!this.setters[propertyName]) {
-      const _this = this;
-      this.setters[propertyName] = function () {
+    _this.setters[propertyName] = GV.createSetter(_this, propertyName, reactiveData, expression);
+    if (!_this.setters[propertyName]) {
+      _this.setters[propertyName] = function () {
         console.error('No setter for property :', propertyName, '\nNode:', _this);
       };
+    }
+  };
+
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   */
+  ViewNode.prototype.registerProperty = function (reactiveData) {
+    if (this.properties.indexOf(reactiveData) === -1) {
+      this.properties.push(reactiveData);
     }
   };
 
@@ -382,38 +389,27 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     }
 
-    // let property, properties = _this.properties;
-    // const removeItem = function (item) {
-    //   item.removeNode(_this);
-    // };
-    //
-    // for (let key in properties) {
-    //   property = properties[key];
-    //   property.forEach(removeItem);
-    // }
-
     _this.properties.forEach(function (reactiveData) {
       reactiveData.removeNode(_this);
     });
-    _this.properties = [];
 
-    _this.dependedObjects.forEach(function (item) {
-      let temp = GV.getBoundProperties(item);
-      // debugger
-      temp.forEach(function (property) {
-        property.removeNode(item);
-      });
+    _this.dependedObjects.forEach(function (dependent) {
+      dependent.reactiveData.removeNode(dependent.item);
     });
 
+    _this.properties = [];
     _this.inDOM = false;
     _this.schema.__node__ = undefined;
     _this.inputs = {};
   };
 
-  ViewNode.prototype.addDependedObject = function (item) {
-    if (this.dependedObjects.indexOf(item) === -1) {
-      this.dependedObjects.push(item);
-    }
+  /**
+   *
+   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {Object} item
+   */
+  ViewNode.prototype.addDependedObject = function (reactiveData, item) {
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   // ViewNode.prototype.refreshBinds = function () {

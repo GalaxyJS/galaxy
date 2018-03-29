@@ -20,7 +20,6 @@
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
 
-
       // const reactive = GV.bindSubjectsToData(matches, scope, true);
       return {
         // reactive: reactive,
@@ -33,7 +32,8 @@
         return;
       }
 
-      const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
+      // const reactive = GV.bindSubjectsToData(data.subjects, data.scope, true);
+      const reactive = GV.bindSubjectsToData2(this, data.subjects, data.scope, true);
 // debugger;
       data.reactive = reactive;
 
@@ -44,7 +44,7 @@
       // }
       //
       this.inputs = data.reactive;
-      this.addDependedObject(data.reactive);
+      // this.addDependedObject(data.reactive);
 
       return false;
     },

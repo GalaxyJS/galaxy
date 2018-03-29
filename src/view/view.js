@@ -265,6 +265,21 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     return target;
   };
 
+  GalaxyView.propertyScopeLookup = function (data, property) {
+    const properties = property.split('.');
+    const li = properties.length - 1;
+    let target = data;
+    properties.forEach(function (p, i) {
+      target = GalaxyView.propertyLookup(target, p);
+
+      if (i !== li) {
+        target = target[p];
+      }
+    });
+
+    return target;
+  };
+
   // /**
   //  *
   //  * @param {Array|Object} host
@@ -394,7 +409,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param {number} expressionArgumentsCount
    * @param {Galaxy.GalaxyView.ReactiveData} parentReactiveData
    */
-  GalaxyView.makeBinding = function (target, targetKeyName, scopeData, bindings, expressionArgumentsCount, parentReactiveData) {
+  GalaxyView.makeBinding = function (target, targetKeyName, scopeData, bindings, parentReactiveData, expressionArgumentsCount) {
     // if (typeof scopeData !== 'object') {
     //   return;
     // }
@@ -409,6 +424,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
+        // debugger;
       } else {
         parentReactiveData = new Galaxy.GalaxyView.ReactiveData(targetKeyName, value);
       }
@@ -519,6 +535,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       } else {
         parentReactiveData.addKeyToShadow(propertyKeyPath);
       }
+
       // parentReactiveData;
       // debugger;
       // if (typeof reactiveProperty === 'undefined') {
@@ -563,6 +580,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expression, scopeData);
       }
 
+      // if(targetKeyName === 'active' && expression) debugger;
+
       if (childPropertyKeyPath !== null) {
         // GalaxyView.makeBinding(target, targetKeyName, reactiveProperty, {
         //   propertyKeysPaths: [childPropertyKeyPath],
@@ -572,7 +591,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         GalaxyView.makeBinding(target, targetKeyName, initValue, {
           propertyKeysPaths: [childPropertyKeyPath],
           isExpression: expression
-        }, expressionArgumentsCount, reactiveData);
+        }, reactiveData, expressionArgumentsCount);
       }
       // Call init value only on the last variable binding,
       // so the expression with multiple arguments get called only once
@@ -602,6 +621,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     // let subjectsClone = cloneSubject ? GalaxyView.createClone(subjects) : subjects;
     let subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
 
+    let rd;
+    if (!(data instanceof Galaxy.GalaxyScope)) {
+      rd = new Galaxy.GalaxyView.ReactiveData('std', data);
+    }
+
     for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
       attributeValue = subjectsClone[attributeName];
@@ -609,11 +633,46 @@ Galaxy.GalaxyView = /** @class */(function (G) {
       const bindings = GalaxyView.getBindings(attributeValue);
 
       if (bindings.propertyKeysPaths) {
-        GalaxyView.makeBinding(subjectsClone, attributeName, data, bindings);
+        GalaxyView.makeBinding(subjectsClone, attributeName, data, bindings, rd);
       }
 
       if (attributeValue && typeof attributeValue === 'object' && !(attributeValue instanceof Array)) {
         GalaxyView.bindSubjectsToData(attributeValue, data);
+      }
+    }
+
+    return subjectsClone;
+  };
+
+  GalaxyView.bindSubjectsToData2 = function (viewNode, subjects, data, cloneSubject) {
+    let keys = Object.keys(subjects);
+    let attributeName;
+    let attributeValue;
+    // let subjectsClone = cloneSubject ? GalaxyView.createClone(subjects) : subjects;
+    let subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
+
+    let rd;
+    if (!(data instanceof Galaxy.GalaxyScope)) {
+      rd = new Galaxy.GalaxyView.ReactiveData('std', data);
+    }
+
+    for (let i = 0, len = keys.length; i < len; i++) {
+      attributeName = keys[i];
+      attributeValue = subjectsClone[attributeName];
+
+      const bindings = GalaxyView.getBindings(attributeValue);
+
+      if (bindings.propertyKeysPaths) {
+        GalaxyView.makeBinding(subjectsClone, attributeName, data, bindings, rd);
+        bindings.propertyKeysPaths.forEach(function (path) {
+          let temp = GalaxyView.propertyScopeLookup(data, path);
+          viewNode.addDependedObject(temp.__rd__, subjectsClone);
+          // viewNode.registerProperty(temp.__rd__);
+        });
+      }
+
+      if (attributeValue && typeof attributeValue === 'object' && !(attributeValue instanceof Array)) {
+        GalaxyView.bindSubjectsToData2(viewNode, attributeValue, data);
       }
     }
 

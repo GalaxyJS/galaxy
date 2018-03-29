@@ -41,33 +41,30 @@
       }
 
       // TODO: This should happen in the install
-      const clone = GV.bindSubjectsToData(value, data.scope, true);
+      const clone = GV.bindSubjectsToData2(_this, value, data.scope, true);
 
-      if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
-        Galaxy.resetObjectTo(_this.setters.class['data'], clone);
-      } else if (!_this.setters.class.hasOwnProperty('data')) {
-        _this.setters.class['data'] = clone;
-      }
+      // if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
+      //   Galaxy.resetObjectTo(_this.setters.class['data'], clone);
+      // } else if (!_this.setters.class.hasOwnProperty('data')) {
+      //   _this.setters.class['data'] = clone;
+      // }
 
       node.setAttribute('class', []);
       const observer = new Galaxy.GalaxyObserver(clone);
-      observer._node = _this.node;
-
+      // debugger;
+      // observer._node = _this.node;
+      //
       observer.onAll(function (key, value, oldValue) {
         toggles.call(_this, key, value, oldValue, clone);
       });
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         _this.rendered.then(function () {
-          toggles.call(_this, null, true, false, clone);
+          toggles.call(_this, '*', true, false, clone);
         });
       } else {
-        toggles.call(_this, null, true, false, clone);
+        toggles.call(_this, '*', true, false, clone);
       }
-
-      // We add clone as a depended object to this node so when the node is destroyed,
-      // its depended objects will be destroyed as well and prevents memory leak.
-      _this.addDependedObject(clone);
     }
   };
 
@@ -91,7 +88,6 @@
 
   function toggles(key, value, oldValue, classes) {
     if (oldValue === value) {
-      debugger;
       return;
     }
     let oldClasses = this.node.getAttribute('class');

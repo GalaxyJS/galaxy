@@ -14,7 +14,7 @@
       const bindings = GV.getBindings(viewNode.schema.checked);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       viewNode.node.addEventListener('change', function () {
-        scopeProperty.valueScope[id] = viewNode.node.checked;
+        scopeProperty.data[id] = viewNode.node.checked;
       });
     }
   };

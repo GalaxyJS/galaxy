@@ -51,6 +51,7 @@
      * @param expression
      */
     apply: function (data, changes, oldChanges, expression) {
+      debugger;
       if (changes instanceof Array) {
         return;
       }
