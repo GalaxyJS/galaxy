@@ -816,7 +816,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           debugger;
           return;
         }
-        // // if(value instanceof Array) debugger;
+        // if(value instanceof Array) debugger;
         const reactiveApply = GalaxyView.createSetter(viewNode, attributeName, null, null);
         viewNode.setters[property.name] = reactiveApply;
 
@@ -863,6 +863,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let attributeValue, attributeName;
       const keys = Object.keys(nodeSchema);
+      const needInitKeys = [];
       // keys.splice(keys.indexOf('tag'), 1);
 
       const viewNode = new GalaxyView.ViewNode(nodeSchema);
@@ -873,16 +874,18 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         attributeName = keys[i];
         if (GalaxyView.REACTIVE_BEHAVIORS[attributeName]) {
           const needValueAssign = GalaxyView.installReactiveBehavior(viewNode, attributeName, scopeData);
-          if (needValueAssign === false) {
-            keys.splice(i, 1);
+          if (needValueAssign !== false) {
+            needInitKeys.push(attributeName);
           }
+        } else {
+          needInitKeys.push(attributeName);
         }
       }
 
       let bindings;
       // Value assignment stage
-      for (i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
+      for (i = 0, len = needInitKeys.length; i < len; i++) {
+        attributeName = needInitKeys[i];
         attributeValue = nodeSchema[attributeName];
 
         bindings = GalaxyView.getBindings(attributeValue);

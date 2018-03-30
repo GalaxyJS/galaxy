@@ -28,12 +28,13 @@
         GV.makeBinding(this, '$for', data.scope, {
           isExpression: false,
           modifiers: null,
-          propertyKeysPaths: [data.matches[2]]
+          propertyKeysPaths: [data.matches[2] + '.changes']
         });
         // debugger;
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
+          bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
           // debugger;
           GV.makeBinding(this, '$for', data.scope, bindings);
           // debugger;
@@ -51,7 +52,7 @@
      * @param expression
      */
     apply: function (data, changes, oldChanges, expression) {
-      debugger;
+      // debugger;
       if (changes instanceof Array) {
         return;
       }
