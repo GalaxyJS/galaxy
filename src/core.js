@@ -46,12 +46,15 @@
     for (let i in obj) {
       if (obj.hasOwnProperty(i)) {
         if (typeof(obj[i]) === 'object' && obj[i] !== null) {
+
           clone[i] = Galaxy.clone(obj[i]);
         } else {
+          // console.info(Object.getOwnPropertyDescriptor(obj, i).enumerable, i);
           clone[i] = obj[i];
         }
       }
     }
+
     return clone;
   };
 
@@ -276,7 +279,7 @@
           }
 
           unique.push(item);
-          return { url: item };
+          return {url: item};
         }).filter(Boolean);
       } else {
         // extract imports from the source code

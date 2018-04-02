@@ -49,9 +49,7 @@
   };
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
-    // viewNode.renderingFlow.truncate();
     return function (done) {
-      // viewNode.renderingFlow.truncate();
       if (cache.module) {
         cache.module.destroy();
       }

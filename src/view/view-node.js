@@ -20,13 +20,15 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     node.removeChild(child);
   }
 
-  let referenceToThis = {
+  const defineProp = Object.defineProperty;
+
+  const referenceToThis = {
     value: this,
     configurable: false,
     enumerable: false
   };
 
-  let __node__ = {
+  const __node__ = {
     value: null,
     configurable: false,
     enumerable: false
@@ -52,7 +54,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         ViewNode.cleanReferenceNode(node);
       });
     } else if (schemas) {
-      schemas.__node__ = null;
+      __node__.value = null;
+      defineProp(schemas, '__node__', __node__);
       ViewNode.cleanReferenceNode(schemas.children);
     }
   };
@@ -138,11 +141,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     _this.destroyed.resolved = false;
 
     __node__.value = this.node;
-    GV.defineProp(this.schema, '__node__', __node__);
+    defineProp(this.schema, '__node__', __node__);
 
     referenceToThis.value = this;
-    GV.defineProp(this.node, '__viewNode__', referenceToThis);
-    GV.defineProp(this.placeholder, '__viewNode__', referenceToThis);
+    defineProp(this.node, '__viewNode__', referenceToThis);
+    defineProp(this.placeholder, '__viewNode__', referenceToThis);
 
     _this.callLifecycleEvent('postCreate');
   }
@@ -162,7 +165,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   };
 
   ViewNode.prototype.cloneSchema = function () {
-    let schemaClone = Object.assign({}, this.schema);
+    const schemaClone = Object.assign({}, this.schema);
     ViewNode.cleanReferenceNode(schemaClone);
 
     GV.defineProp(schemaClone, 'mother', {
@@ -266,32 +269,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     viewNode.parent = _this;
     _this.node.insertBefore(viewNode.placeholder, position);
   };
-
-  /**
-   *
-   * @param {Galaxy.GalaxyView.ReactiveProperty} boundProperty
-   * @param {string} propertyName
-   * @param {Function} expression
-   * @param {Galaxy.GalaxyView.ReactiveProperty} scopeProperty
-   */
-  // ViewNode.prototype.installPropertySetter = function (boundProperty, propertyName, expression, scopeProperty) {
-  //   const exist = this.properties[boundProperty.name];
-  //   if (exist) {
-  //     if (exist.indexOf(boundProperty) === -1) {
-  //       exist.push(boundProperty);
-  //     }
-  //   } else {
-  //     this.properties[boundProperty.name] = [boundProperty];
-  //   }
-  //
-  //   this.setters[propertyName] = GV.createSetter(this, propertyName, boundProperty, scopeProperty, expression);
-  //   if (!this.setters[propertyName]) {
-  //     const _this = this;
-  //     this.setters[propertyName] = function () {
-  //       console.error('No setter for property :', propertyName, '\nNode:', _this);
-  //     };
-  //   }
-  // };
 
   /**
    * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
@@ -409,29 +386,8 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
-
-  // ViewNode.prototype.refreshBinds = function () {
-  //   let property, properties = this.properties;
-  //   for (let key in properties) {
-  //     property = properties[key];
-  //
-  //     if (property instanceof Array) {
-  //       property.forEach(function (item) {
-  //         if (item.nodes.indexOf(this) === -1) {
-  //           item.nodes.push(this);
-  //           item.keys.push(key);
-  //         }
-  //       });
-  //     } else {
-  //       if (property.value.nodes.indexOf(this) === -1) {
-  //         property.value.nodes.push(this);
-  //         property.value.keys.push(key);
-  //       }
-  //     }
-  //   }
-  // };
 
   ViewNode.prototype.clean = function (leaveSequence) {
     let toBeRemoved = [], node, _this = this;

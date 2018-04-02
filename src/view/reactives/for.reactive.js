@@ -25,7 +25,7 @@
     install: function (data) {
       if (data.matches instanceof Array) {
         // debugger
-        GV.makeBinding(this, '$for', data.scope, {
+        GV.makeBinding(this, '$for', undefined, data.scope, {
           isExpression: false,
           modifiers: null,
           propertyKeysPaths: [data.matches[2] + '.changes']
@@ -36,7 +36,7 @@
         if (bindings.propertyKeysPaths) {
           bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
           // debugger;
-          GV.makeBinding(this, '$for', data.scope, bindings);
+          GV.makeBinding(this, '$for', undefined, data.scope, bindings);
           // debugger;
         }
       }

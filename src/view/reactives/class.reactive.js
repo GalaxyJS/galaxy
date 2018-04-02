@@ -41,19 +41,11 @@
       }
 
       // TODO: This should happen in the install
-      const clone = GV.bindSubjectsToData2(_this, value, data.scope, true);
-
-      // if (_this.setters.class.hasOwnProperty('data') && clone !== _this.setters.class['data']) {
-      //   Galaxy.resetObjectTo(_this.setters.class['data'], clone);
-      // } else if (!_this.setters.class.hasOwnProperty('data')) {
-      //   _this.setters.class['data'] = clone;
-      // }
+      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
 
       node.setAttribute('class', []);
       const observer = new Galaxy.GalaxyObserver(clone);
-      // debugger;
-      // observer._node = _this.node;
-      //
+
       observer.onAll(function (key, value, oldValue) {
         toggles.call(_this, key, value, oldValue, clone);
       });
