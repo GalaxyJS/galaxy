@@ -60,15 +60,15 @@
           }
 
           let animationDone;
-          const pr = new Promise(function (res) {
-            animationDone = res;
+          const waitForAnimation = new Promise(function (resolve) {
+            animationDone = resolve;
           });
 
           sequence.next((function (promise) {
             return function (done) {
               promise.then(done);
             };
-          })(pr));
+          })(waitForAnimation));
 
           if (leaveAnimationConfig.sequence) {
             // in the case which the viewNode is not visible, then ignore its animation

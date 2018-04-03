@@ -65,16 +65,17 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxyView.ViewNode} node
    * @param {Array} toBeRemoved
    * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.GalaxySequence} root
    * @memberOf Galaxy.GalaxyView.ViewNode
    * @static
    */
-  ViewNode.destroyNodes = function (node, toBeRemoved, sequence) {
+  ViewNode.destroyNodes = function (node, toBeRemoved, sequence, root) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
       remove.renderingFlow.truncate();
-      remove.destroy(sequence);
+      remove.destroy(sequence, root);
     }
   };
 
@@ -300,8 +301,9 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.GalaxySequence} leaveSequence
+   * @param {Galaxy.GalaxySequence} root
    */
-  ViewNode.prototype.destroy = function (leaveSequence) {
+  ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
 
     // The node is the original node that is being removed
@@ -324,10 +326,16 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         });
 
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.sequences.leave);
+        _this.clean(_this.sequences.leave, root);
         _this.populateLeaveSequence(_this.sequences.leave);
         _this.sequences.leave.nextAction(function () {
-          removeChild(_this.node.parentNode, _this.node);
+          if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+            root.nextAction(function () {
+              removeChild(_this.node.parentNode, _this.node);
+            });
+          } else {
+            removeChild(_this.node.parentNode, _this.node);
+          }
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
@@ -341,7 +349,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
-        _this.clean(_this.sequences.leave);
+        _this.clean(_this.sequences.leave, root);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         let animationDone;
@@ -386,10 +394,10 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
-  ViewNode.prototype.clean = function (leaveSequence) {
+  ViewNode.prototype.clean = function (leaveSequence, root) {
     let toBeRemoved = [], node, _this = this;
 
     const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
@@ -401,10 +409,16 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       }
     }
 
+    if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+      toBeRemoved.reverse().forEach(function (node) {
+        node.schema.renderConfig = node.schema.renderConfig || {};
+        node.schema.renderConfig.domManipulationOrder = 'cascade';
+      });
+    }
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
-      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence);
+      ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
       return _this.renderingFlow;
     }
 
@@ -414,7 +428,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
         return _this.renderingFlow;
       }
 
-      ViewNode.destroyNodes(_this, toBeRemoved);
+      ViewNode.destroyNodes(_this, toBeRemoved, null, root || _this.sequences.leave);
 
       _this.sequences.leave.nextAction(function () {
         next();

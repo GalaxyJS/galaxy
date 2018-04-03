@@ -13,11 +13,11 @@
     install: function (data) {
     },
     apply: function (data, value, oldValue, expression) {
+      const _this = this;
       if (expression) {
         value = expression();
       }
-
-      createProcess(this, value);
+      createProcess(_this, value);
     }
   };
 
@@ -32,7 +32,6 @@
       //   next();
       // });
     } else if (!value && node.inDOM) {
-      // debugger;
       node.setInDOM(false);
       // node.sequences.leave.next(next);
     } else {

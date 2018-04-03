@@ -83,9 +83,13 @@
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
-        GV.ViewNode.destroyNodes(node, data.nodes.reverse());
-        data.nodes = [];
+        if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
+          GV.ViewNode.destroyNodes(node, data.nodes, null, node.parent.sequences.leave);
+        } else {
+          GV.ViewNode.destroyNodes(node, data.nodes.reverse());
+        }
 
+        data.nodes = [];
         node.parent.sequences.leave.nextAction(function () {
           next();
         });
