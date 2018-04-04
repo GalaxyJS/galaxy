@@ -2,11 +2,25 @@
 'use strict';
 
 Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'attr'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['lifecycle'] = {
+    type: 'prop',
+    name: 'lifecycle'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
+    type: 'prop',
+    name: 'renderConfig'
+  };
+
   function createElem(t) {
     return document.createElement(t);
   }
 
-  let commentNode = document.createComment('');
+  const commentNode = document.createComment('');
 
   function createComment(t) {
     return commentNode.cloneNode(t);
@@ -34,20 +48,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     enumerable: false
   };
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
-    type: 'attr'
-  };
+  //------------------------------
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['lifecycle'] = {
-    type: 'prop',
-    name: 'lifecycle'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
-    type: 'prop',
-    name: 'renderConfig'
-  };
-
+  /**
+   *
+   * @param schemas
+   * @memberOf Galaxy.GalaxyView.ViewNode
+   * @static
+   */
   ViewNode.cleanReferenceNode = function (schemas) {
     if (schemas instanceof Array) {
       schemas.forEach(function (node) {
@@ -63,7 +71,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param {Array} toBeRemoved
+   * @param {Array<Galaxy.GalaxyView.ViewNode>} toBeRemoved
    * @param {Galaxy.GalaxySequence} sequence
    * @param {Galaxy.GalaxySequence} root
    * @memberOf Galaxy.GalaxyView.ViewNode
@@ -81,7 +89,6 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView} root
    * @param schema
    * @param {Node|Element} node
    * @constructor
@@ -93,25 +100,20 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     _this.schema = schema;
     _this.data = {};
     _this.cache = {};
-    // _this.addons = {};
     _this.inputs = {};
-    // _this.localScope = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
     _this.properties = [];
-    // _this.behaviors = {};
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     _this.parent = null;
     _this.dependedObjects = [];
-    // _this.domBus = [];
     _this.renderingFlow = new Galaxy.GalaxySequence();
-    // _this.domManipulationSequence = new Galaxy.GalaxySequence();
     _this.sequences = {
       enter: new Galaxy.GalaxySequence(),
       leave: new Galaxy.GalaxySequence(),
-      ':destroy': new Galaxy.GalaxySequence(true),
-      ':class': new Galaxy.GalaxySequence().start()
+      ':destroy': new Galaxy.GalaxySequence(),
+      ':class': new Galaxy.GalaxySequence()
     };
     _this.observer = new Galaxy.GalaxyObserver(_this);
     _this.origin = false;
@@ -185,14 +187,26 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.setInDOM(false);
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxySequence} sequence
+   */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
     this.node.style.visibility = '';
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxySequence} sequence
+   */
   ViewNode.prototype.populateLeaveSequence = function (sequence) {
 
   };
 
+  /**
+   *
+   * @param {boolean} flag
+   */
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
@@ -397,6 +411,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
+  /**
+   *
+   * @param {Galaxy.GalaxySequence} leaveSequence
+   * @param {Galaxy.GalaxySequence} root
+   * @return {Galaxy.GalaxySequence}
+   */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     let toBeRemoved = [], node, _this = this;
 
@@ -450,6 +470,12 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     return this.placeholder;
   };
 
+  /**
+   *
+   * @param {string} name
+   * @param value
+   * @param oldValue
+   */
   ViewNode.prototype.notifyObserver = function (name, value, oldValue) {
     this.observer.notify(name, value, oldValue);
   };

@@ -51,7 +51,7 @@ Galaxy.GalaxyScope = /** @class*/(function () {
 
   GalaxyScope.prototype.load = function (moduleMeta, config) {
     let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
-    // Galaxy.GalaxyView.link(moduleMeta, newModuleMetaData);
+
     if (newModuleMetaData.url.indexOf('./') === 0) {
       newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
     }
@@ -62,7 +62,6 @@ Galaxy.GalaxyScope = /** @class*/(function () {
   };
 
   GalaxyScope.prototype.loadModuleInto = function (moduleMetaData, viewNode) {
-    debugger;
     return this.load(moduleMetaData, {
       element: viewNode
     }).then(function (module) {

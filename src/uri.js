@@ -1,10 +1,10 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyURI = /**@class*/(function () {
+Galaxy.GalaxyURI = /**@class*/ (function () {
   /**
    *
-   * @param url
+   * @param {string} url
    * @constructor
    */
   function GalaxyURI(url) {

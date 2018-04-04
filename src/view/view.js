@@ -6,18 +6,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   const setAttr = Element.prototype.setAttribute;
   const removeAttr = Element.prototype.removeAttribute;
 
-  let setterAndGetter = {
-    configurable: true,
-    enumerable: false,
-    set: null,
-    get: null
-  };
-  let boundPropertyReference = {
-    configurable: false,
-    writable: true,
-    enumerable: true,
-    value: null
-  };
+  //------------------------------
 
   GalaxyView.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   GalaxyView.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
@@ -88,10 +77,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
-  GalaxyView.cleanProperty = function (obj, key) {
-    delete obj[key];
-  };
-
   GalaxyView.createMirror = function (obj, forObj) {
     let result = forObj || {};
 
@@ -101,14 +86,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     });
 
     return result;
-  };
-
-  GalaxyView.toShadow = function (host) {
-    defineProp(host, '__shadow__', {
-      enumerable: false,
-      configurable: true,
-      value: true
-    });
   };
 
   GalaxyView.getAllViewNodes = function (node) {
@@ -130,6 +107,11 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     });
   };
 
+  /**
+   *
+   * @param {string|Array} value
+   * @return {{modifiers: *, propertyKeysPaths: *[], isExpression: boolean, expressionFn: null}}
+   */
   GalaxyView.getBindings = function (value) {
     let propertyKeysPaths = null;
     let isExpression = false;
@@ -161,6 +143,12 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param data
+   * @param {string} properties
+   * @return {*}
+   */
   GalaxyView.safePropertyLookup = function (data, properties) {
     properties = properties.split('.');
     let property = properties[0];
@@ -223,16 +211,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
         return original;
       }
     }
-
-    return target;
-  };
-
-  GalaxyView.exactPropertyLookup = function (data, property) {
-    const properties = property.split('.');
-    let target = data;
-    properties.forEach(function (p) {
-      target = GalaxyView.propertyLookup(target, p)[p];
-    });
 
     return target;
   };
@@ -447,7 +425,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     const keys = Object.keys(subjects);
     let attributeName;
     let attributeValue;
-    let subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
+    const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
 
     let parentReactiveData;
     if (!(data instanceof Galaxy.GalaxyScope)) {

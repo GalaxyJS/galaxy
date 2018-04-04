@@ -4,30 +4,14 @@
 Galaxy.GalaxyObserver = /** @class */ (function () {
   const G = Galaxy;
 
-  GalaxyObserver.notify = function (obj, key, value, oldValue, caller) {
+  GalaxyObserver.notify = function (obj, key, value, oldValue) {
     const observers = obj.__observers__;
-    // let portal;
-    // if (obj instanceof Galaxy.GalaxyView.Portal) {
-    //   portal = obj;
-    // } else {
-    //   portal = obj[G.GalaxyView.PORTAL_PROPERTY_IDENTIFIER];
-    // }
 
     if (observers !== undefined) {
       observers.forEach(function (observer) {
         observer.notify(key, value, oldValue);
       });
     }
-
-    // if (portal !== undefined) {
-    //   portal.getParents().forEach(function (reactive) {
-    //     // console.info(reactive.portal !== caller);
-    //     // TODO: this if could be removed but more test is needed
-    //     // if (reactive.portal !== caller) {
-    //     reactive.reSync();
-    //     // }
-    //   });
-    // }
   };
 
   /**

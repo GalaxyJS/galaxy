@@ -58,7 +58,7 @@
     return clone;
   };
 
-  let importedLibraries = {};
+  const importedLibraries = {};
 
   /**
    *
@@ -67,7 +67,6 @@
   function GalaxyCore() {
     this.bootModule = null;
     this.modules = {};
-    // this.onLoadQueue = [];
     this.moduleContents = {};
     this.addOnProviders = [];
     this.app = null;
@@ -104,46 +103,10 @@
     return result;
   };
 
-  GalaxyCore.prototype.resetObjectTo = function (out, value) {
-    if (value !== null && typeof value !== 'object') {
-      return value;
-    }
-
-    if (value === null) {
-      for (let k in out) {
-        if (typeof out[k] === 'object') {
-          out[k] = this.resetObjectTo(out[k], null);
-        }
-        else {
-          out[k] = null;
-        }
-      }
-
-      return out;
-    }
-
-    let outKeys = Object.keys(out);
-    let keys = outKeys.concat(Object.keys(value)).unique();
-    for (let i = 0, len = keys.length; i < len; i++) {
-      let key = keys[i];
-      if (value.hasOwnProperty(key)) {
-        out[key] = this.resetObjectTo(out[key], value[key]);
-      }
-      else if (typeof out[key] === 'object') {
-        this.resetObjectTo(out[key], null);
-      }
-      else {
-        out[key] = null;
-      }
-    }
-
-    return out;
-  };
-
   /**
    *
    * @param {Object} bootModule
-   * @param {Element} rootElement
+   * @return {Promise<any>}
    */
   GalaxyCore.prototype.boot = function (bootModule) {
     const _this = this;
@@ -184,15 +147,19 @@
     return str.join('&');
   };
 
+  /**
+   *
+   * @param module
+   * @return {Promise<any>}
+   */
   GalaxyCore.prototype.load = function (module) {
-    let _this = this;
+    const _this = this;
 
     if (!module) {
       throw new Error('Module meta data or constructor is missing');
     }
 
-    let promise = new Promise(function (resolve, reject) {
-
+    const promise = new Promise(function (resolve, reject) {
       if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
         module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
@@ -236,9 +203,7 @@
         }).catch(reject);
       }
 
-      // fetcherContent.then(resolve);
       fetcherContent.then(function (moduleContent) {
-        // _this.moduleContents[module.systemId] = moduleContent;
         _this.compileModuleContent(module, moduleContent, invokers).then(function (compiledModule) {
           return _this.executeCompiledModule(compiledModule).then(resolve);
         });
@@ -249,6 +214,7 @@
 
     return promise;
   };
+
   /**
    *
    * @param {Object} moduleMetaData
@@ -257,13 +223,13 @@
    * @returns {Promise<Galaxy.GalaxyModule>}
    */
   GalaxyCore.prototype.compileModuleContent = function (moduleMetaData, moduleConstructor, invokers) {
-    let _this = this;
-    let promise = new Promise(function (resolve, reject) {
+    const _this = this;
+    const promise = new Promise(function (resolve, reject) {
       let doneImporting = function (module, imports) {
         imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
 
         if (imports.length === 0) {
-          // This will load the original initilizer
+          // This will load the original initializer
           resolve(module);
         }
       };
@@ -279,7 +245,7 @@
           }
 
           unique.push(item);
-          return {url: item};
+          return { url: item };
         }).filter(Boolean);
       } else {
         // extract imports from the source code
@@ -303,14 +269,13 @@
         });
       }
 
-      let scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
-      // var view = new Galaxy.GalaxyView(scope);
+      const scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
       // Create module from moduleMetaData
-      let module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
+      const module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
       Galaxy.modules[module.systemId] = module;
 
       if (imports.length) {
-        let importsCopy = imports.slice(0);
+        const importsCopy = imports.slice(0);
         imports.forEach(function (item) {
           let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
           if (moduleAddOnProvider) {
@@ -354,9 +319,10 @@
   /**
    *
    * @param {Galaxy.GalaxyModule}  module
+   * @return {Promise<any>}
    */
   GalaxyCore.prototype.executeCompiledModule = function (module) {
-    let promise = new Promise(function (resolve, reject) {
+    const promise = new Promise(function (resolve, reject) {
       for (let item in module.addOns) {
         module.scope.inject(item, module.addOns[item]);
       }
@@ -370,7 +336,8 @@
         }
       }
 
-      let moduleSource = typeof module.source === 'function' ? module.source : new Function('Scope', module.source);
+      const source = ['// ' + module.url, module.source];
+      const moduleSource = typeof module.source === 'function' ? module.source : new Function('Scope', source.join('\n'));
       moduleSource.call(null, module.scope);
 
       Reflect.deleteProperty(module, 'source');
@@ -405,8 +372,6 @@
       currentModule.init();
 
       resolve(currentModule);
-
-      // Reflect.deleteProperty(Galaxy.onLoadQueue, module.systemId);
     });
 
     return promise;
@@ -416,23 +381,6 @@
     return this.addOnProviders.filter(function (service) {
       return service.name === name;
     })[0];
-  };
-
-  GalaxyCore.prototype.getModulesByAddOnId = function (addOnId) {
-    let modules = [];
-    let module;
-
-    for (let moduleId in this.modules) {
-      module = this.modules[moduleId];
-      if (this.modules.hasOwnProperty(moduleId) && module.addOns.hasOwnProperty(addOnId)) {
-        modules.push({
-          addOn: module.addOns[addOnId],
-          module: module
-        });
-      }
-    }
-
-    return modules;
   };
 
   GalaxyCore.prototype.registerAddOnProvider = function (name, handler) {

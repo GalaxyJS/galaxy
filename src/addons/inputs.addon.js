@@ -12,8 +12,8 @@
     /**
      *
      * @this {Galaxy.GalaxyView.ViewNode}
-     * @param context
-     * @param value
+     * @param matches
+     * @param scope
      */
     prepareData: function (matches, scope) {
       if (matches !== null && typeof  matches !== 'object') {
