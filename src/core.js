@@ -323,55 +323,63 @@
    */
   GalaxyCore.prototype.executeCompiledModule = function (module) {
     const promise = new Promise(function (resolve, reject) {
-      for (let item in module.addOns) {
-        module.scope.inject(item, module.addOns[item]);
-      }
+      try {
+        for (let item in module.addOns) {
+          module.scope.inject(item, module.addOns[item]);
+        }
 
-      for (let item in importedLibraries) {
-        if (importedLibraries.hasOwnProperty(item)) {
-          let asset = importedLibraries[item];
-          if (asset.module) {
-            module.scope.inject(asset.name, asset.module);
+        for (let item in importedLibraries) {
+          if (importedLibraries.hasOwnProperty(item)) {
+            let asset = importedLibraries[item];
+            if (asset.module) {
+              module.scope.inject(asset.name, asset.module);
+            }
           }
         }
+
+        const source = module.source;
+        const moduleSource = typeof module.source === 'function' ?
+          module.source :
+          new Function('Scope', ['// ' + module.id, source].join('\n'));
+        moduleSource.call(null, module.scope);
+
+        Reflect.deleteProperty(module, 'source');
+
+        module.addOnProviders.forEach(function (item) {
+          item.finalize();
+        });
+
+        Reflect.deleteProperty(module, 'addOnProviders');
+
+        const mId = module.importId || module.url;
+        if (!importedLibraries[mId]) {
+          importedLibraries[mId] = {
+            name: module.name || mId,
+            module: module.scope.exports
+          };
+        } else if (module.fresh) {
+          importedLibraries[mId].module = module.scope.exports;
+        } else {
+          // module.scope.imports[module.url] = importedLibraries[module.url].module;
+        }
+
+        let currentModule = Galaxy.modules[module.systemId];
+        if (module.temporary || module.scope._doNotRegister) {
+          Reflect.deleteProperty(module, 'scope._doNotRegister');
+          currentModule = {
+            id: module.id,
+            scope: module.scope
+          };
+        }
+
+        currentModule.init();
+
+        resolve(currentModule);
       }
-
-      const source = ['// ' + module.url, module.source];
-      const moduleSource = typeof module.source === 'function' ? module.source : new Function('Scope', source.join('\n'));
-      moduleSource.call(null, module.scope);
-
-      Reflect.deleteProperty(module, 'source');
-
-      module.addOnProviders.forEach(function (item) {
-        item.finalize();
-      });
-
-      Reflect.deleteProperty(module, 'addOnProviders');
-
-      const mId = module.importId || module.url;
-      if (!importedLibraries[mId]) {
-        importedLibraries[mId] = {
-          name: module.name || mId,
-          module: module.scope.exports
-        };
-      } else if (module.fresh) {
-        importedLibraries[mId].module = module.scope.exports;
-      } else {
-        // module.scope.imports[module.url] = importedLibraries[module.url].module;
+      catch (error) {
+        reject(error);
+        throw new Error(error);
       }
-
-      let currentModule = Galaxy.modules[module.systemId];
-      if (module.temporary || module.scope._doNotRegister) {
-        Reflect.deleteProperty(module, 'scope._doNotRegister');
-        currentModule = {
-          id: module.id,
-          scope: module.scope
-        };
-      }
-
-      currentModule.init();
-
-      resolve(currentModule);
     });
 
     return promise;

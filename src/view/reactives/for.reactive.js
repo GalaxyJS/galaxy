@@ -49,7 +49,7 @@
      * @param data The return of prepareData
      * @param changes
      * @param oldChanges
-     * @param expression
+     * @param {Function} expression
      */
     apply: function (data, changes, oldChanges, expression) {
       // debugger;
@@ -68,7 +68,7 @@
       }
 
       const _this = this;
-      createResetProcess(_this, data, changes, data.scope);
+      runForProcess(_this, data, changes, data.scope);
     }
   };
 
@@ -79,7 +79,7 @@
    * @param changes
    * @param nodeScopeData
    */
-  const createResetProcess = function (node, data, changes, nodeScopeData) {
+  const runForProcess = function (node, data, changes, nodeScopeData) {
     node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {

@@ -2,7 +2,7 @@
 'use strict';
 
 Galaxy.GalaxyScope = /** @class*/(function () {
-  const defineProp = Object.defineProperty;
+  const defProp = Object.defineProperty;
 
   /**
    *
@@ -19,15 +19,16 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this.uri = new Galaxy.GalaxyURI(module.url);
     this.eventHandlers = {};
     this.observers = [];
-    this.on('module.destroy', this.destroy.bind(this));
     this.data = {};
 
-    defineProp(this, '__imports__', {
+    defProp(this, '__imports__', {
       value: {},
       writable: false,
       enumerable: false,
       configurable: false
     });
+
+    this.on('module.destroy', this.destroy.bind(this));
   }
 
   /**
@@ -39,6 +40,11 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     this['__imports__'][id] = instance;
   };
 
+  /**
+   *
+   * @param libId Path or id of the addon you want to import
+   * @return {*}
+   */
   GalaxyScope.prototype.import = function (libId) {
     return this['__imports__'][libId];
   };
@@ -69,9 +75,11 @@ Galaxy.GalaxyScope = /** @class*/(function () {
       return module;
     });
   };
+
   /**
    *
    * @param {string} event
+   * @param {Function} handler
    */
   GalaxyScope.prototype.on = function (event, handler) {
     if (!this.eventHandlers[event]) {
@@ -83,6 +91,11 @@ Galaxy.GalaxyScope = /** @class*/(function () {
     }
   };
 
+  /**
+   *
+   * @param {string} event
+   * @param {*} data
+   */
   GalaxyScope.prototype.trigger = function (event, data) {
     if (this.eventHandlers[event]) {
       this.eventHandlers[event].forEach(function (handler) {

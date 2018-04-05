@@ -15,7 +15,7 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
   const defProp = Object.defineProperty;
   const scopeBuilder = function () {
     return {
-      id: 'Scope',
+      id: '{}',
       shadow: {},
       data: {},
       notify: function () {
@@ -25,6 +25,9 @@ Galaxy.GalaxyView.ReactiveData = /** @class */ (function () {
 
       },
       makeReactiveObject: function () {
+
+      },
+      addKeyToShadow: function () {
 
       }
     };

@@ -4,7 +4,14 @@
   GV.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
     type: 'prop',
     name: 'checked',
-    util: function (viewNode, scopeProperty, prop, expression) {
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param {Galaxy.GalaxyView.ReactiveData} scopeReactiveData
+     * @param prop
+     * @param {Function} expression
+     */
+    util: function (viewNode, scopeReactiveData, prop, expression) {
       if (expression && viewNode.schema.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -14,7 +21,7 @@
       const bindings = GV.getBindings(viewNode.schema.checked);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       viewNode.node.addEventListener('change', function () {
-        scopeProperty.data[id] = viewNode.node.checked;
+        scopeReactiveData.data[id] = viewNode.node.checked;
       });
     }
   };

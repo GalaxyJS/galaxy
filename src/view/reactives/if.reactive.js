@@ -7,21 +7,18 @@
   };
 
   GV.REACTIVE_BEHAVIORS['$if'] = {
-    prepareData: function () {
-
-    },
-    install: function (data) {
-    },
+    prepareData: function () { },
+    install: function (data) { },
     apply: function (data, value, oldValue, expression) {
       const _this = this;
       if (expression) {
         value = expression();
       }
-      createProcess(_this, value);
+      runIfProcess(_this, value);
     }
   };
 
-  function createProcess(node, value) {
+  function runIfProcess(node, value) {
     // debugger
     // node.rendered.then(function () {
     // node.renderingFlow.truncate();

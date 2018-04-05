@@ -16,14 +16,14 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     name: 'renderConfig'
   };
 
-  function createElem(t) {
-    return document.createElement(t);
-  }
-
   const commentNode = document.createComment('');
 
   function createComment(t) {
     return commentNode.cloneNode(t);
+  }
+
+  function createElem(t) {
+    return document.createElement(t);
   }
 
   function insertBefore(parentNode, newNode, referenceNode) {
@@ -34,7 +34,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     node.removeChild(child);
   }
 
-  const defineProp = Object.defineProperty;
+  const defProp = Object.defineProperty;
 
   const referenceToThis = {
     value: this,
@@ -63,7 +63,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
       });
     } else if (schemas) {
       __node__.value = null;
-      defineProp(schemas, '__node__', __node__);
+      defProp(schemas, '__node__', __node__);
       ViewNode.cleanReferenceNode(schemas.children);
     }
   };
@@ -144,11 +144,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     _this.destroyed.resolved = false;
 
     __node__.value = this.node;
-    defineProp(this.schema, '__node__', __node__);
+    defProp(this.schema, '__node__', __node__);
 
     referenceToThis.value = this;
-    defineProp(this.node, '__viewNode__', referenceToThis);
-    defineProp(this.placeholder, '__viewNode__', referenceToThis);
+    defProp(this.node, '__viewNode__', referenceToThis);
+    defProp(this.placeholder, '__viewNode__', referenceToThis);
 
     _this.callLifecycleEvent('postCreate');
   }
@@ -171,7 +171,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
     const schemaClone = Object.assign({}, this.schema);
     ViewNode.cleanReferenceNode(schemaClone);
 
-    GV.defineProp(schemaClone, 'mother', {
+    defProp(schemaClone, 'mother', {
       value: this.schema,
       writable: false,
       enumerable: false,
@@ -192,7 +192,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxySequence} sequence
    */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
-    this.node.style.visibility = '';
+    // this.node.style.visibility = '';
   };
 
   /**

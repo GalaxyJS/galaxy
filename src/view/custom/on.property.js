@@ -4,7 +4,13 @@
   G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['on'] = {
     type: 'custom',
     name: 'on',
-    handler: function (viewNode, attr, events, oldEvents, scopeData) {
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param attr
+     * @param events
+     */
+    handler: function (viewNode, attr, events) {
       if (events !== null && typeof events === 'object') {
         for (let name in events) {
           if (events.hasOwnProperty(name)) {

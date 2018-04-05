@@ -2,7 +2,7 @@
 'use strict';
 
 Galaxy.GalaxyObserver = /** @class */ (function () {
-  const G = Galaxy;
+  const defProp = Object.defineProperty;
 
   GalaxyObserver.notify = function (obj, key, value, oldValue) {
     const observers = obj.__observers__;
@@ -26,7 +26,7 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     this.allSubjectAction = [];
 
     if (!this.context.hasOwnProperty('__observers__')) {
-      G.defineProp(context, '__observers__', {
+      defProp(context, '__observers__', {
         value: [],
         writable: true,
         configurable: true

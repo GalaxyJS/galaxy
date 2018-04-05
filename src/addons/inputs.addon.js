@@ -25,6 +25,12 @@
         scope: scope
       };
     },
+    /**
+     *
+     * @this {Galaxy.GalaxyView.ViewNode}
+     * @param data
+     * @return {boolean}
+     */
     install: function (data) {
       if (this.virtual) {
         return;
@@ -33,24 +39,24 @@
       const reactive = GV.bindSubjectsToData(this, data.subjects, data.scope, true);
       data.reactive = reactive;
 
-
       this.inputs = data.reactive;
 
       return false;
     },
-    apply: function (cache, value, oldValue, context) {
-
-    }
+    apply: function (cache, value, oldValue, context) { }
   };
 
   Galaxy.registerAddOnProvider('galaxy/inputs', function (scope) {
     return {
+      /**
+       *
+       * @return {*}
+       */
       create: function () {
         scope.inputs = scope.element.cache.inputs.reactive;
         return scope.inputs;
       },
-      finalize: function () {
-      }
+      finalize: function () { }
     };
   });
 })(Galaxy.GalaxyView);

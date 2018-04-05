@@ -2,7 +2,7 @@
 'use strict';
 
 Galaxy.GalaxyView = /** @class */(function (G) {
-  const defineProp = Object.defineProperty;
+  const defProp = Object.defineProperty;
   const setAttr = Element.prototype.setAttribute;
   const removeAttr = Element.prototype.removeAttribute;
 
@@ -66,8 +66,6 @@ Galaxy.GalaxyView = /** @class */(function (G) {
     }
   };
 
-  GalaxyView.defineProp = defineProp;
-
   GalaxyView.setAttr = function (viewNode, name, value, oldValue) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value) {
@@ -80,7 +78,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   GalaxyView.createMirror = function (obj, forObj) {
     let result = forObj || {};
 
-    defineProp(result, '__parent__', {
+    defProp(result, '__parent__', {
       enumerable: false,
       value: obj
     });
@@ -380,7 +378,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof Galaxy.GalaxyView.ViewNode)) {
-          defineProp(target, targetKeyName, {
+          defProp(target, targetKeyName, {
             // set: function (newValue) {
             // console.warn('It is not allowed', parentReactiveData.id, targetKeyName);
             // value[propertyKeyPath] = newValue;
@@ -400,6 +398,14 @@ Galaxy.GalaxyView = /** @class */(function (G) {
             configurable: true
           });
         }
+
+        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of GalaxyScope
+        if (!parentReactiveData && scopeData instanceof Galaxy.GalaxyScope) {
+          // if (scopeData instanceof Galaxy.GalaxyScope) {
+          throw new Error('Binding to Scope direct properties is not allowed.\n' +
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
+        }
+
         parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expressionFn, scopeData);
       }
 
@@ -577,7 +583,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
   };
 
   GalaxyView.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = GalaxyView.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -622,7 +628,7 @@ Galaxy.GalaxyView = /** @class */(function (G) {
    * @param position
    * @param {null|Object} localScope
    */
-  GalaxyView.createNode = function (parent, scopeData, nodeSchema, position, localScope) {
+  GalaxyView.createNode = function (parent, scopeData, nodeSchema, position) {
     let i = 0, len = 0;
 
     if (typeof nodeSchema === 'string') {
@@ -661,6 +667,8 @@ Galaxy.GalaxyView = /** @class */(function (G) {
           needInitKeys.push(attributeName);
         }
       }
+
+      // const parentReactiveData = new Galaxy.GalaxyView.ReactiveData('SCOPE', value || {});
 
       let bindings;
       // Value assignment stage

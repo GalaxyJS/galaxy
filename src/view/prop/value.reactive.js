@@ -8,7 +8,14 @@
   GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
     type: 'prop',
     name: 'value',
-    util: function valueUtil(viewNode, scopeProperty, prop, expression) {
+    /**
+     *
+     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param {Galaxy.GalaxyView.ReactiveData} scopeReactiveData
+     * @param prop
+     * @param {Function} expression
+     */
+    util: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -20,11 +27,11 @@
       const nativeNode = viewNode.node;
       if(nativeNode.type === 'number') {
         nativeNode.addEventListener('input', function () {
-          scopeProperty.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
+          scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
       } else {
         nativeNode.addEventListener('keyup', function () {
-          scopeProperty.data[id] = nativeNode.value;
+          scopeReactiveData.data[id] = nativeNode.value;
         });
       }
     }
