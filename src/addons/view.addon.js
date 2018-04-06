@@ -12,7 +12,6 @@
         return new Galaxy.GalaxyView(scope);
       },
       finalize: function () {
-
       }
     };
   });

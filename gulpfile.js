@@ -27,20 +27,20 @@ let sources = {
   ]
 };
 
-gulp.task('build-galaxy-web-worker', function () {
-  return pump([
-    gulp.src(sources.galaxyWebWorker),
-    concat('galaxy-web-worker.js'),
-    gulp.dest('dist/'),
-    gulp.dest('site/galaxyjs/')
-  ], function (error) {
-    if (error) {
-      console.error('error in: ', error.plugin);
-      console.error(error.message);
-      console.info(error.stack);
-    }
-  });
-});
+// gulp.task('build-galaxy-web-worker', function () {
+//   return pump([
+//     gulp.src(sources.galaxyWebWorker),
+//     concat('galaxy-web-worker.js'),
+//     gulp.dest('dist/'),
+//     gulp.dest('site/galaxyjs/')
+//   ], function (error) {
+//     if (error) {
+//       console.error('error in: ', error.plugin);
+//       console.error(error.message);
+//       console.info(error.stack);
+//     }
+//   });
+// });
 
 gulp.task('build-galaxy', function () {
   return pump([

@@ -15,6 +15,7 @@ Galaxy.GalaxyURI = /**@class*/ (function () {
 
     this.paresdURL = urlParser.href;
     this.path = match ? match[0] : '/';
+    this.base = window.location.pathname;
   }
 
   return GalaxyURI;
