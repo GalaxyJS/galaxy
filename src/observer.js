@@ -36,32 +36,46 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     this.context.__observers__.push(this);
   }
 
-  GalaxyObserver.prototype.remove = function () {
-    let index = this.context.__observers__.indexOf(this);
-    if (index !== -1) {
-      this.context.__observers__.splice(index, 1);
-    }
-  };
+  GalaxyObserver.prototype = {
+    remove: function () {
+      let index = this.context.__observers__.indexOf(this);
+      if (index !== -1) {
+        this.context.__observers__.splice(index, 1);
+      }
+    },
+    /**
+     *
+     * @param {string} key
+     * @param value
+     * @param oldValue
+     */
+    notify: function (key, value, oldValue) {
+      const _this = this;
 
-  GalaxyObserver.prototype.notify = function (key, value, oldValue) {
-    const _this = this;
+      if (_this.subjectsActions.hasOwnProperty(key)) {
+        _this.subjectsActions[key].call(_this.context, value, oldValue);
+      }
 
-    if (_this.subjectsActions.hasOwnProperty(key)) {
-      _this.subjectsActions[key].call(_this.context, value, oldValue);
-    }
-
-    _this.allSubjectAction.forEach(function (action) {
-      action.call(_this.context, key, value, oldValue);
-    });
-  };
-
-  GalaxyObserver.prototype.on = function (subject, action) {
-    this.subjectsActions[subject] = action;
-  };
-
-  GalaxyObserver.prototype.onAll = function (action) {
-    if (this.allSubjectAction.indexOf(action) === -1) {
-      this.allSubjectAction.push(action);
+      _this.allSubjectAction.forEach(function (action) {
+        action.call(_this.context, key, value, oldValue);
+      });
+    },
+    /**
+     *
+     * @param subject
+     * @param action
+     */
+    on: function (subject, action) {
+      this.subjectsActions[subject] = action;
+    },
+    /**
+     *
+     * @param {Function} action
+     */
+    onAll: function (action) {
+      if (this.allSubjectAction.indexOf(action) === -1) {
+        this.allSubjectAction.push(action);
+      }
     }
   };
 

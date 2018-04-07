@@ -1,12 +1,12 @@
 // /* global Galaxy, fetchMock, Promise */
 //
 // describe('GalaxyJS Core', function () {
-//   it('Galaxy.GalaxyCore exist', function () {
-//     expect(Galaxy.GalaxyCore).toBeDefined();
+//   it('Galaxy.Core exist', function () {
+//     expect(Galaxy.Core).toBeDefined();
 //   });
 //
-//   it('Galaxy.GalaxyCore instance', function () {
-//     var sample = new Galaxy.GalaxyCore();
+//   it('Galaxy.Core instance', function () {
+//     var sample = new Galaxy.Core();
 //
 //     expect(sample).toBeDefined();
 //   });
@@ -16,7 +16,7 @@
 // //   var MockGalaxy = null;
 // //
 // //   beforeEach(function () {
-// //     MockGalaxy = new Galaxy.GalaxyCore();
+// //     MockGalaxy = new Galaxy.Core();
 // //   });
 // //
 // //   afterEach(function () {

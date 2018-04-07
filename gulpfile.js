@@ -1,13 +1,13 @@
 /* global require */
-
-let gulp = require('gulp');
-// var minify = require('gulp-minify');
-let uglify = require('gulp-uglify');
-let babel = require('gulp-babel');
-// let gulpDocumentation = require('gulp-documentation');
-let pump = require('pump');
-let concat = require('gulp-concat');
-let Server = require('karma').Server;
+// COre
+const gulp = require('gulp');
+const pump = require('pump');
+// plugins
+const uglify = require('gulp-uglify');
+const babel = require('gulp-babel');
+const concat = require('gulp-concat');
+// TTD
+const Server = require('karma').Server;
 
 let sources = {
   galaxy: [
@@ -16,31 +16,13 @@ let sources = {
     // Core
     'src/core.js',
     'src/*.js',
-    // GalaxyView
+    // View
     'src/view/view.js',
     'src/view/**/*.js',
     // Module addons
     'src/addons/*.js'
-  ],
-  galaxyWebWorker: [
-    'src/web-worker.js',
   ]
 };
-
-// gulp.task('build-galaxy-web-worker', function () {
-//   return pump([
-//     gulp.src(sources.galaxyWebWorker),
-//     concat('galaxy-web-worker.js'),
-//     gulp.dest('dist/'),
-//     gulp.dest('site/galaxyjs/')
-//   ], function (error) {
-//     if (error) {
-//       console.error('error in: ', error.plugin);
-//       console.error(error.message);
-//       console.info(error.stack);
-//     }
-//   });
-// });
 
 gulp.task('build-galaxy', function () {
   return pump([
@@ -84,14 +66,6 @@ gulp.task('start-development', ['build-galaxy'], function () {
     'site/**/*.html'
   ], ['build-galaxy']);
 });
-
-// gulp.task('generate-docs', function () {
-//   return gulp.src(sources.galaxy)
-//     .pipe(gulpDocumentation('html', {
-//       filename: 'galaxy-doc.html'
-//     }))
-//     .pipe(gulp.dest('docs'));
-// });
 
 gulp.task('tdd', function (done) {
   new Server({

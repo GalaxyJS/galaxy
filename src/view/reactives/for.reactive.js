@@ -45,7 +45,7 @@
     },
     /**
      *
-     * @this {Galaxy.GalaxyView.ViewNode}
+     * @this {Galaxy.View.ViewNode}
      * @param data The return of prepareData
      * @param changes
      * @param oldChanges
@@ -74,7 +74,7 @@
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ViewNode} node
+   * @param {Galaxy.View.ViewNode} node
    * @param data
    * @param changes
    * @param nodeScopeData
@@ -174,5 +174,5 @@
     // });
     // });
   };
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

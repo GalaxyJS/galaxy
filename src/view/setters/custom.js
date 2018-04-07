@@ -1,7 +1,7 @@
 /* global Galaxy */
 
-Galaxy.GalaxyView.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
-  const setter = Galaxy.GalaxyView.createCustomSetter(viewNode, attrName, property);
+Galaxy.View.PROPERTY_SETTERS.custom = function (viewNode, attrName, property, expression) {
+  const setter = Galaxy.View.createCustomSetter(viewNode, attrName, property);
 
   // return function (value, oldValue, scopeData) {
   //   if (value instanceof Promise) {

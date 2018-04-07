@@ -37,5 +37,5 @@
     // });
     // });
   }
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

@@ -1,7 +1,7 @@
 /* global Galaxy */
 (function () {
-  Galaxy.GalaxyView.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.GalaxyView.REACTIVE_BEHAVIORS[property.name];
+  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
+    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
     const cache = viewNode.cache[attrName];
     const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
 

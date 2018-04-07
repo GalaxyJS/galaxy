@@ -1,7 +1,7 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyModule = /** @class */(function () {
+Galaxy.GalaxyModule = /** @class */ (function () {
 
   /**
    *
@@ -23,20 +23,22 @@ Galaxy.GalaxyModule = /** @class */(function () {
     this.scope = scope;
   }
 
-  GalaxyModule.prototype.init = function () {
-    this.scope.trigger('module.init');
-  };
+  GalaxyModule.prototype = {
+    init: function () {
+      this.scope.trigger('module.init');
+    },
 
-  GalaxyModule.prototype.start = function () {
-    this.scope.trigger('module.start');
-  };
+    start: function () {
+      this.scope.trigger('module.start');
+    },
 
-  GalaxyModule.prototype.destroy = function () {
-    this.scope.trigger('module.destroy');
-  };
+    destroy: function () {
+      this.scope.trigger('module.destroy');
+    },
 
-  GalaxyModule.prototype.registerAddOn = function (id, object) {
-    this.addOns[id] = object;
+    registerAddOn: function (id, object) {
+      this.addOns[id] = object;
+    }
   };
 
   return GalaxyModule;

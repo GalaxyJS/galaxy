@@ -28,101 +28,102 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     this.reset();
   }
 
-  GalaxySequence.prototype.reset = function () {
-    const _this = this;
-    _this.actions = [];
-    _this.isFinished = false;
-    _this.processing = false;
+  GalaxySequence.prototype = {
+    reset: function () {
+      const _this = this;
+      _this.actions = [];
+      _this.isFinished = false;
+      _this.processing = false;
 
-    this.activeState = new Promise(function (resolve) {
-      _this.activeStateResolve = function () {
-        _this.isFinished = true;
-        _this.processing = false;
-        resolve();
-      };
-    });
+      this.activeState = new Promise(function (resolve) {
+        _this.activeStateResolve = function () {
+          _this.isFinished = true;
+          _this.processing = false;
+          resolve();
+        };
+      });
 
-    return _this;
-  };
+      return _this;
+    },
 
-  GalaxySequence.prototype.next = function (action) {
-    const _this = this;
+    next: function (action) {
+      const _this = this;
 
-    // if sequence was finished, then reset the sequence
-    if (_this.isFinished) {
-      _this.reset();
-    }
-
-    // we create an act object in order to be able to change the process on the fly
-    // when this sequence is truncated, then the process of any active action should be disabled
-    const act = {
-      // promise: promise,
-      // done: done,
-      process: this.proceed,
-      run: function run() {
-        const local = this;
-        action.call(null, function () {
-          local.process.call(_this);
-          // done();
-        }, function (e) {
-          console.error(e);
-        });
+      // if sequence was finished, then reset the sequence
+      if (_this.isFinished) {
+        _this.reset();
       }
-    };
 
-    _this.actions.push(act);
+      // we create an act object in order to be able to change the process on the fly
+      // when this sequence is truncated, then the process of any active action should be disabled
+      const act = {
+        // promise: promise,
+        // done: done,
+        process: this.proceed,
+        run: function run() {
+          const local = this;
+          action.call(null, function () {
+            local.process.call(_this);
+            // done();
+          }, function (e) {
+            console.error(e);
+          });
+        }
+      };
 
-    if (!_this.processing) {
-      _this.processing = true;
-      _this.resolver.then(act.run.bind(act));
+      _this.actions.push(act);
+
+      if (!_this.processing) {
+        _this.processing = true;
+        _this.resolver.then(act.run.bind(act));
+      }
+
+      return _this;
+    },
+
+    proceed: function (p) {
+      const _this = this;
+      const oldAction = _this.actions.shift();
+      const firstAction = _this.actions[0];
+      if (firstAction) {
+        _this.resolver.then(firstAction.run.bind(firstAction));
+      } else if (oldAction) {
+        _this.resolver.then(_this.activeStateResolve.bind(_this));
+      }
+    },
+
+    onTruncate: function (act) {
+      if (this.truncateHandlers.indexOf(act) === -1) {
+        this.truncateHandlers.push(act);
+      }
+    },
+
+    truncate: function () {
+      const _this = this;
+
+      _this.actions.forEach(function (item) {
+        item.process = disabledProcess;
+      });
+
+      let i = 0;
+      const len = this.truncateHandlers.length;
+      for (; i < len; i++) {
+        this.truncateHandlers[i].call(this);
+      }
+
+      this.truncateHandlers = [];
+      _this.isFinished = true;
+      _this.processing = false;
+
+      return _this;
+    },
+
+    nextAction: function (action) {
+      this.next(function (done) {
+        action.call();
+        done('sequence-action');
+      });
     }
-
-    return _this;
   };
-
-  GalaxySequence.prototype.proceed = function (p) {
-    const _this = this;
-    const oldAction = _this.actions.shift();
-    const firstAction = _this.actions[0];
-    if (firstAction) {
-      _this.resolver.then(firstAction.run.bind(firstAction));
-    } else if (oldAction) {
-      _this.resolver.then(_this.activeStateResolve.bind(_this));
-    }
-  };
-
-  GalaxySequence.prototype.onTruncate = function (act) {
-    if (this.truncateHandlers.indexOf(act) === -1) {
-      this.truncateHandlers.push(act);
-    }
-  };
-
-  GalaxySequence.prototype.truncate = function () {
-    const _this = this;
-
-    _this.actions.forEach(function (item) {
-      item.process = disabledProcess;
-    });
-
-    let i = 0;
-    const len = this.truncateHandlers.length;
-    for (; i < len; i++) {
-      this.truncateHandlers[i].call(this);
-    }
-
-    this.truncateHandlers = [];
-    _this.isFinished = true;
-    _this.processing = false;
-
-    return _this;
-  };
-
-  GalaxySequence.prototype.nextAction = function (action) {
-    this.next(function (done) {
-      action.call();
-      done('sequence-action');
-    });
-  };
-
   return GalaxySequence;
 })();

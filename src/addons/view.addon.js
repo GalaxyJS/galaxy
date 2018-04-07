@@ -6,10 +6,10 @@
     return {
       /**
        *
-       * @return {Galaxy.GalaxyView}
+       * @return {Galaxy.View}
        */
       create: function () {
-        return new Galaxy.GalaxyView(scope);
+        return new Galaxy.View(scope);
       },
       finalize: function () {
       }

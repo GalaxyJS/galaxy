@@ -1,7 +1,7 @@
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
+Galaxy.View.ViewNode = /** @class */ (function (GV) {
   GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
     type: 'attr'
   };
@@ -53,7 +53,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param schemas
-   * @memberOf Galaxy.GalaxyView.ViewNode
+   * @memberOf Galaxy.View.ViewNode
    * @static
    */
   ViewNode.cleanReferenceNode = function (schemas) {
@@ -70,11 +70,11 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ViewNode} node
-   * @param {Array<Galaxy.GalaxyView.ViewNode>} toBeRemoved
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
    * @param {Galaxy.GalaxySequence} sequence
    * @param {Galaxy.GalaxySequence} root
-   * @memberOf Galaxy.GalaxyView.ViewNode
+   * @memberOf Galaxy.View.ViewNode
    * @static
    */
   ViewNode.destroyNodes = function (node, toBeRemoved, sequence, root) {
@@ -92,7 +92,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
    * @param schema
    * @param {Node|Element} node
    * @constructor
-   * @memberOf Galaxy.GalaxyView
+   * @memberOf Galaxy.View
    */
   function ViewNode(schema, node) {
     const _this = this;
@@ -276,7 +276,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ViewNode} viewNode
+   * @param {Galaxy.View.ViewNode} viewNode
    * @param position
    */
   ViewNode.prototype.registerChild = function (viewNode, position) {
@@ -286,7 +286,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
   };
 
   /**
-   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {string} propertyName
    * @param {Function} expression
    */
@@ -304,7 +304,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {Galaxy.View.ReactiveData} reactiveData
    */
   ViewNode.prototype.registerProperty = function (reactiveData) {
     if (this.properties.indexOf(reactiveData) === -1) {
@@ -404,7 +404,7 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxyView.ReactiveData} reactiveData
+   * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
@@ -482,4 +482,4 @@ Galaxy.GalaxyView.ViewNode = /** @class */ (function (GV) {
 
   return ViewNode;
 
-})(Galaxy.GalaxyView);
+})(Galaxy.View);

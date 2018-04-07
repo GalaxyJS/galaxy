@@ -6,12 +6,12 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'custom',
     name: 'animations',
     /**
      *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param {Galaxy.View.ViewNode} viewNode
      * @param attr
      * @param config
      * @param scopeData

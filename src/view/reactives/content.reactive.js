@@ -35,5 +35,5 @@
       // }
     }
   };
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

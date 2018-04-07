@@ -11,7 +11,7 @@
     regex: null,
     /**
      *
-     * @this {Galaxy.GalaxyView.ViewNode}
+     * @this {Galaxy.View.ViewNode}
      * @param matches
      * @param scope
      */
@@ -27,7 +27,7 @@
     },
     /**
      *
-     * @this {Galaxy.GalaxyView.ViewNode}
+     * @this {Galaxy.View.ViewNode}
      * @param data
      * @return {boolean}
      */
@@ -59,4 +59,4 @@
       finalize: function () { }
     };
   });
-})(Galaxy.GalaxyView);
+})(Galaxy.View);

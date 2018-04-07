@@ -22,7 +22,7 @@
      * @param value
      * @param oldValue
      * @param expression
-     * @this {Galaxy.GalaxyView.ViewNode}
+     * @this {Galaxy.View.ViewNode}
      */
     apply: function (data, value, oldValue, expression) {
       if (this.virtual) {
@@ -93,5 +93,5 @@
     //   _this.sequences[':class'].reset();
     // });
   }
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

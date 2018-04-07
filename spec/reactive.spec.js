@@ -1,19 +1,19 @@
 /* global Galaxy */
 
 describe('GalaxyJS Core', function () {
-  it('Galaxy.GalaxyCore exist', function () {
+  it('Galaxy.Core exist', function () {
     expect(Galaxy.GalaxyCore).toBeDefined();
   });
 
-  it('Galaxy.GalaxyView exist', function () {
-    expect(Galaxy.GalaxyView).toBeDefined();
+  it('Galaxy.View exist', function () {
+    expect(Galaxy.View).toBeDefined();
   });
 
-  it('Galaxy.GalaxyView.ReactiveProperty exist', function () {
-    expect(Galaxy.GalaxyView.ReactiveProperty).toBeDefined();
+  it('Galaxy.View.ReactiveProperty exist', function () {
+    expect(Galaxy.View.ReactiveProperty).toBeDefined();
   });
 
-  describe('GalaxyView.BindSubjectsToData instance', function () {
+  describe('View.BindSubjectsToData instance', function () {
     let subjects = {
       property1: '<>p'
     };
@@ -22,7 +22,7 @@ describe('GalaxyJS Core', function () {
       p: 'Init Value'
     };
 
-    let bound = Galaxy.GalaxyView.bindSubjectsToData(subjects, scope, true);
+    let bound = Galaxy.View.bindSubjectsToData(subjects, scope, true);
 
     beforeEach(function () {
       subjects = {
@@ -37,7 +37,7 @@ describe('GalaxyJS Core', function () {
         }
       };
 
-      bound = Galaxy.GalaxyView.bindSubjectsToData(subjects, scope, true);
+      bound = Galaxy.View.bindSubjectsToData(subjects, scope, true);
     });
 
     it('Result is an object', function () {

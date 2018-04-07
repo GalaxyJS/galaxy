@@ -57,7 +57,7 @@
         }).replace(SimpleRouter.WILDCARD_REGEXP, SimpleRouter.REPLACE_WILDCARD) +
         SimpleRouter.FOLLOWED_BY_SLASH_REGEXP, SimpleRouter.MATCH_REGEXP_FLAGS);
     }
-    return { regexp: regexp, paramNames: paramNames };
+    return {regexp: regexp, paramNames: paramNames};
   }
 
   function getUrlDepth(url) {
@@ -83,7 +83,7 @@
         return false;
       }
 
-      return match ? { match: match, route: route, params: params } : false;
+      return match ? {match: match, route: route, params: params} : false;
     }).filter(function (m) {
       return m;
     });
@@ -223,7 +223,9 @@
         if (path[0] !== '/') {
           path = '/' + path;
         }
-        window.location.href = window.location.href.replace(/#$/, '').replace(new RegExp(this._hash + '.*$'), '') + this._hash + path;
+
+        const search = window.location.search || window.location.href.substring(window.location.href.indexOf('?'));
+        window.location.href = window.location.pathname + this._hash + path + search;
       }
       return this;
     },
@@ -238,7 +240,7 @@
       }
 
       if (typeof args[0] === 'function') {
-        this._defaultHandler = { handler: args[0], hooks: args[1] };
+        this._defaultHandler = {handler: args[0], hooks: args[1]};
       } else if (args.length >= 2) {
         this._add(args[0], args[1], args[2]);
       } else if (_typeof(args[0]) === 'object') {
@@ -265,7 +267,7 @@
       return this;
     },
     notFound: function notFound(handler, hooks) {
-      this._notFoundHandler = { handler: handler, hooks: hooks };
+      this._notFoundHandler = {handler: handler, hooks: hooks};
       return this;
     },
     resolve: function resolve(current) {
@@ -315,7 +317,7 @@
         manageHooks(function () {
           manageHooks(function () {
             _this._callLeave();
-            _this._lastRouteResolved = { url: onlyURL, query: GETParameters, hooks: _this._defaultHandler.hooks };
+            _this._lastRouteResolved = {url: onlyURL, query: GETParameters, hooks: _this._defaultHandler.hooks};
             _this._defaultHandler.handler(GETParameters);
           }, _this._defaultHandler.hooks);
         }, this._genericHooks);
@@ -324,7 +326,7 @@
         manageHooks(function () {
           manageHooks(function () {
             _this._callLeave();
-            _this._lastRouteResolved = { url: onlyURL, query: GETParameters, hooks: _this._notFoundHandler.hooks };
+            _this._lastRouteResolved = {url: onlyURL, query: GETParameters, hooks: _this._notFoundHandler.hooks};
             _this._notFoundHandler.handler(GETParameters);
           }, _this._notFoundHandler.hooks);
         }, this._genericHooks);
@@ -342,7 +344,6 @@
         window.removeEventListener('hashchange', this._onLocationChange);
       }
     },
-
     link: function link(path) {
       return this._getRoot() + path;
     },
@@ -391,7 +392,7 @@
         handler: handler.uses,
         name: handler.as,
         hooks: hooks || handler.hooks
-      } : { route: route, handler: handler, hooks: hooks });
+      } : {route: route, handler: handler, hooks: hooks});
 
       return this._add;
     },
@@ -453,7 +454,6 @@
   G.registerAddOnProvider('galaxy/router', function (scope, module) {
     return {
       create: function () {
-        // scope;
         if (module.systemId === 'system') {
           return new SimpleRouter(window.location.pathname, true, '#!');
         } else {

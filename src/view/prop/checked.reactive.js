@@ -6,8 +6,8 @@
     name: 'checked',
     /**
      *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
-     * @param {Galaxy.GalaxyView.ReactiveData} scopeReactiveData
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {Galaxy.View.ReactiveData} scopeReactiveData
      * @param prop
      * @param {Function} expression
      */
@@ -25,5 +25,5 @@
       });
     }
   };
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

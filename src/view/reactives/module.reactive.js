@@ -92,5 +92,5 @@
       });
     };
   };
-})(Galaxy.GalaxyView);
+})(Galaxy.View);
 

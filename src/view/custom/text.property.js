@@ -1,12 +1,12 @@
 /* global Galaxy */
 
 (function (G) {
-  G.GalaxyView.NODE_SCHEMA_PROPERTY_MAP['text'] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
     type: 'custom',
     name: 'text',
     /**
      *
-     * @param {Galaxy.GalaxyView.ViewNode} viewNode
+     * @param {Galaxy.View.ViewNode} viewNode
      * @param {string} attr
      * @param value
      */
