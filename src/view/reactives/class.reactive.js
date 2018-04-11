@@ -40,22 +40,22 @@
         return node.removeAttribute('class');
       }
 
-      // TODO: This should happen in the install
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
-
       node.setAttribute('class', []);
+
+      // when value is an object
+      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.GalaxyObserver(clone);
 
       observer.onAll(function (key, value, oldValue) {
-        toggles.call(_this, key, value, oldValue, clone);
+        applyClasses.call(_this, key, value, oldValue, clone);
       });
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         _this.rendered.then(function () {
-          toggles.call(_this, '*', true, false, clone);
+          applyClasses.call(_this, '*', true, false, clone);
         });
       } else {
-        toggles.call(_this, '*', true, false, clone);
+        applyClasses.call(_this, '*', true, false, clone);
       }
     }
   };
@@ -78,7 +78,7 @@
     }
   }
 
-  function toggles(key, value, oldValue, classes) {
+  function applyClasses(key, value, oldValue, classes) {
     if (oldValue === value) {
       return;
     }

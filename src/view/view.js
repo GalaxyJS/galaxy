@@ -41,14 +41,14 @@ Galaxy.View = /** @class */(function (G) {
     alt: {
       type: 'attr'
     },
-    style: {
-      type: 'prop',
-      name: 'style'
-    },
-    css: {
-      type: 'attr',
-      name: 'style'
-    },
+    // style: {
+    //   type: 'prop',
+    //   name: 'style'
+    // },
+    // css: {
+    //   type: 'attr',
+    //   name: 'style'
+    // },
     html: {
       type: 'prop',
       name: 'innerHTML'
@@ -327,6 +327,7 @@ Galaxy.View = /** @class */(function (G) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
+
         parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
       }
     }
@@ -583,7 +584,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':

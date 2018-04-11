@@ -468,7 +468,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param {string} key
      */
     addKeyToShadow: function (key) {
-      this.shadow[key] = null;
+      // Don't empty the shadow object if it exist
+      if (!this.shadow[key]) {
+        this.shadow[key] = null;
+      }
     },
     /**
      *
