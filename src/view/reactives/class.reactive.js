@@ -44,7 +44,7 @@
 
       // when value is an object
       const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
-      const observer = new Galaxy.GalaxyObserver(clone);
+      const observer = new Galaxy.Observer(clone);
 
       observer.onAll(function (key, value, oldValue) {
         applyClasses.call(_this, key, value, oldValue, clone);

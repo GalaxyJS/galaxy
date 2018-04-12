@@ -1,10 +1,10 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyObserver = /** @class */ (function () {
+Galaxy.Observer = /** @class */ (function () {
   const defProp = Object.defineProperty;
 
-  GalaxyObserver.notify = function (obj, key, value, oldValue) {
+  Observer.notify = function (obj, key, value, oldValue) {
     const observers = obj.__observers__;
 
     if (observers !== undefined) {
@@ -20,7 +20,7 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyObserver(context) {
+  function Observer(context) {
     this.context = context;
     this.subjectsActions = {};
     this.allSubjectAction = [];
@@ -36,7 +36,7 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     this.context.__observers__.push(this);
   }
 
-  GalaxyObserver.prototype = {
+  Observer.prototype = {
     remove: function () {
       let index = this.context.__observers__.indexOf(this);
       if (index !== -1) {
@@ -79,5 +79,5 @@ Galaxy.GalaxyObserver = /** @class */ (function () {
     }
   };
 
-  return GalaxyObserver;
+  return Observer;
 })();

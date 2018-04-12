@@ -212,7 +212,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
 
             unique.push(item);
-            return {url: item};
+            return { url: item };
           }).filter(Boolean);
         } else {
           // extract imports from the source code
@@ -307,7 +307,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const source = module.source;
           const moduleSource = typeof module.source === 'function' ?
             module.source :
-            new Function('Scope', ['// ' + module.id, source].join('\n'));
+            new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
           moduleSource.call(null, module.scope);
 
           Reflect.deleteProperty(module, 'source');

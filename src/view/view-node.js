@@ -115,7 +115,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       ':destroy': new Galaxy.GalaxySequence(),
       ':class': new Galaxy.GalaxySequence()
     };
-    _this.observer = new Galaxy.GalaxyObserver(_this);
+    _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
 
     _this.hasBeenRendered = null;
@@ -151,7 +151,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     defProp(this.placeholder, '__viewNode__', referenceToThis);
 
     _this.callLifecycleEvent('postCreate');
+
   }
+
+  ViewNode.prototype.querySelector = function (selectors) {
+    return this.node.querySelector(selectors);
+  };
 
   /**
    *

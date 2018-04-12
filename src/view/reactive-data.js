@@ -88,7 +88,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         this.data = {};
 
         for (let key in this.shadow) {
-          this.notify(key);
+          // Cascade changes down to all children reactive data
+          if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+            this.shadow[key].setData(data);
+          } else {
+            // changes should only propagate downward
+            this.notifyDown(key);
+          }
         }
 
         return;
@@ -156,14 +162,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
           _this.oldValue = value;
           value = val;
-
           // This means that the property suppose to be an object and there probably active binds to it
           if (_this.shadow[key]) {
             _this.makeKeyEnum(key);
             // setData provide downward data flow
             _this.shadow[key].setData(val);
           }
-
           _this.notify(key);
         },
         enumerable: !shadow,
@@ -271,6 +275,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     notify: function (key, refs) {
       const _this = this;
+
       if (this.refs === refs) {
         _this.sync(key);
         return;
@@ -286,6 +291,20 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       _this.sync(key);
       _this.parent.notify(_this.keyInParent);
+    },
+
+    notifyDown: function (key) {
+      const _this = this;
+
+      _this.refs.forEach(function (ref) {
+        if (_this === ref) {
+          return;
+        }
+
+        ref.notify(key, _this.refs);
+      });
+
+      _this.sync(key);
     },
     /**
      *
@@ -328,7 +347,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         node[key] = value;
       }
 
-      Galaxy.GalaxyObserver.notify(node, key, value, this.oldValue);
+      Galaxy.Observer.notify(node, key, value, this.oldValue);
     },
     /**
      *
@@ -428,8 +447,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           initValue = {};
         }
 
-        // if initValue is a change object,then we have to use its init for nodes that are newly being added
-        if (this.data instanceof Array && initValue) {
+        // if initValue is a change object, then we have to use its init for nodes that are newly being added
+        // if the dataKey is length then ignore this line and use initValue which represent the length of array
+        if (this.data instanceof Array && dataKey !== 'length' && initValue) {
           initValue = initValue.init;
         }
 
@@ -471,6 +491,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // Don't empty the shadow object if it exist
       if (!this.shadow[key]) {
         this.shadow[key] = null;
+      }
+
+      if (!this.data.hasOwnProperty(key)) {
+        this.makeReactiveObject(this.data, key, false);
       }
     },
     /**

@@ -61,8 +61,17 @@ Galaxy.View = /** @class */(function (G) {
       type: 'prop',
       name: 'value'
     },
+    scrollTop: {
+      type: 'prop',
+      name: 'scrollTop'
+    },
+    scrollLeft: {
+      type: 'prop',
+      name: 'scrollLeft'
+    },
     disabled: {
-      type: 'attr'
+      type: 'attr',
+      name: 'disabled'
     }
   };
 

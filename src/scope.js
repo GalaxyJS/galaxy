@@ -116,10 +116,10 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     /**
      *
      * @param object
-     * @returns {Galaxy.GalaxyObserver}
+     * @returns {Galaxy.Observer}
      */
     observe: function (object) {
-      const observer = new Galaxy.GalaxyObserver(object);
+      const observer = new Galaxy.Observer(object);
       this.observers.push(observer);
 
       return observer;
