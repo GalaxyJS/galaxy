@@ -34,10 +34,12 @@
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
         if (bindings.propertyKeysPaths) {
+          // bindings.propertyKeysPaths.forEach(function (path) {
+          //
+          // });
           bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
-          // debugger;
+
           GV.makeBinding(this, '$for', undefined, data.scope, bindings);
-          // debugger;
         }
       }
 
@@ -52,10 +54,14 @@
      * @param {Function} expression
      */
     apply: function (data, changes, oldChanges, expression) {
-      // debugger;
-      if (changes instanceof Array) {
+      if (expression) {
+        changes = expression();
+      }
+
+      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
         return;
       }
+
       if (!changes || typeof changes === 'string') {
         changes = {
           type: 'reset',
@@ -63,9 +69,9 @@
         };
       }
 
-      if (expression) {
-        changes.params = expression();
-      }
+      // if (expression) {
+      //   changes.params = expression();
+      // }
 
       const _this = this;
       runForProcess(_this, data, changes, data.scope);

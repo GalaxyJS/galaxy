@@ -117,6 +117,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
+    _this.transitory = false;
 
     _this.hasBeenRendered = null;
     _this.rendered = new Promise(function (done) {
@@ -324,7 +325,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
-
+    _this.transitory = true;
     // The node is the original node that is being removed
     if (!leaveSequence) {
       _this.origin = true;
@@ -377,7 +378,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         });
 
         leaveSequence.next(function (next) {
-
           waitForNodeAnimation.then(function () {
             _this.hasBeenDestroyed();
             next();
@@ -423,7 +423,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @return {Galaxy.GalaxySequence}
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
-    let toBeRemoved = [], node, _this = this;
+    const _this = this;
+    const toBeRemoved = [];
+    let node;
 
     const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
     for (let i = cn.length - 1; i >= 0; i--) {

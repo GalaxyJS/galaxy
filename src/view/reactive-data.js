@@ -1,5 +1,16 @@
 /* global Galaxy */
 
+Galaxy.View.ArrayChange = /** @class */ (function () {
+  function ArrayChange() {
+    this.init = null;
+    this.original = null;
+    this.params = [];
+    this.type = 'reset';
+  }
+
+  return ArrayChange;
+})();
+
 Galaxy.View.ReactiveData = /** @class */ (function () {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
@@ -94,6 +105,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           } else {
             // changes should only propagate downward
             this.notifyDown(key);
+            Reflect.deleteProperty(this.shadow, key);
           }
         }
 
@@ -202,11 +214,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
       _this.makeReactiveObject(value, 'live', true);
 
-      const initialChanges = {
-        original: value,
-        type: 'reset',
-        params: value
-      };
+      const initialChanges = new Galaxy.View.ArrayChange();
+      initialChanges.original = value;
+      initialChanges.type = 'reset';
+      initialChanges.params = value;
 
       initialChanges.params.forEach(function (item) {
         new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
@@ -233,11 +244,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             }
 
             const result = originalMethod.apply(this, args);
-            const changes = {
-              original: value,
-              type: 'reset',
-              params: value
-            };
+            const changes = new Galaxy.View.ArrayChange();
+            changes.original = value;
+            // changes.type = 'reset';
+            // changes.params = value;
 
             changes.type = method;
             changes.params = args;
@@ -502,9 +512,11 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     setupShadowProperties: function () {
       for (let key in this.shadow) {
-        if (!this.data.hasOwnProperty(key)) {
-          this.makeReactiveObject(this.data, key, true);
-        } else if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+        // Only reactive properties should be added to data
+        if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+          if (!this.data.hasOwnProperty(key)) {
+            this.makeReactiveObject(this.data, key, true);
+          }
           this.shadow[key].setData(this.data[key]);
         }
       }

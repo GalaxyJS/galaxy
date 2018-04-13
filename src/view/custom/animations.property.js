@@ -6,6 +6,10 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
+  G.View.NODE_SCHEMA_PROPERTY_MAP['animations.config'] = {
+    type: 'none'
+  };
+
   G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'custom',
     name: 'animations',
@@ -13,44 +17,60 @@
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param attr
-     * @param config
+     * @param animations
      * @param scopeData
      */
-    handler: function (viewNode, attr, config, oldConfig, scopeData) {
-      if (viewNode.virtual || !config) {
+    handler: function (viewNode, attr, animations, oldConfig, scopeData) {
+      if (viewNode.virtual || !animations) {
         return;
       }
-      let enterAnimationConfig = config.enter;
-      if (enterAnimationConfig) {
-        if (enterAnimationConfig.sequence) {
-          AnimationMeta.get(enterAnimationConfig.sequence).configs.enter = enterAnimationConfig;
+
+      const enter = animations.enter;
+      if (enter) {
+        if (enter.sequence) {
+          AnimationMeta.get(enter.sequence).configs.enter = enter;
         }
 
         viewNode.populateEnterSequence = function (sequence) {
+          animations.config = animations.config || {};
+
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
           });
 
+          if (animations.config.enterWithParent) {
+            const parent = viewNode.parent;
+            // debugger;
+            if (parent.renderingFlow.processing && !parent.rendered.resolved) {
+              return;
+            }
+          }
+
           sequence.next(function (done) {
-            // if (enterAnimationConfig.cssName) {
-            //   AnimationMeta.installCSSAnimation(viewNode, enterAnimationConfig, done);
-            // } else {
-            AnimationMeta.installGSAPAnimation(viewNode, enterAnimationConfig, done);
-            // }
+            AnimationMeta.installGSAPAnimation(viewNode, enter, done);
           });
         };
       }
 
-      let leaveAnimationConfig = config.leave;
+      const leaveAnimationConfig = animations.leave;
       if (leaveAnimationConfig) {
         if (leaveAnimationConfig.sequence) {
           AnimationMeta.get(leaveAnimationConfig.sequence).configs.leave = leaveAnimationConfig;
         }
 
         viewNode.populateLeaveSequence = function (sequence) {
+          animations.config = animations.config || {};
+
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
           });
+
+          if (animations.config.leaveWithParent) {
+            const parent = viewNode.parent;
+            if (parent.transitory) {
+              return;
+            }
+          }
 
           // in the case which the viewNode is not visible, then ignore its animation
           if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
@@ -71,11 +91,6 @@
           })(waitForAnimation));
 
           if (leaveAnimationConfig.sequence) {
-            // in the case which the viewNode is not visible, then ignore its animation
-            // if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-            //   return animationDone();
-            // }
-
             const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
             animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
 
@@ -94,11 +109,11 @@
         viewNode.observer.on('class', function (value, oldValue) {
           value.forEach(function (item) {
             if (item && oldValue.indexOf(item) === -1) {
-              let _config = config['.' + item];
+              let _config = animations['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -120,11 +135,11 @@
 
           oldValue.forEach(function (item) {
             if (item && value.indexOf(item) === -1) {
-              let _config = config['.' + item];
+              let _config = animations['.' + item];
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
+                  classAnimationConfig.to = { className: '-=' + item || '' };
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -148,17 +163,6 @@
 
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
-
-  AnimationMeta.getTimeline = function (name, onComplete) {
-    if (!AnimationMeta.TIMELINES[name]) {
-      AnimationMeta.TIMELINES[name] = new TimelineLite({
-        autoRemoveChildren: true,
-        onComplete: onComplete
-      });
-    }
-
-    return AnimationMeta.TIMELINES[name];
-  };
 
   AnimationMeta.get = function (name) {
     if (!AnimationMeta.ANIMATIONS[name]) {
@@ -221,26 +225,10 @@
     return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
-  // AnimationMeta.installCSSAnimation = function (viewNode, config, onComplete) {
-  //   const duration = typeof config.duration === 'string' ? (config.duration || '0s') : (config.duration || 0) + 's';
-  //   viewNode.node.style.animationName = config.cssName;
-  //   viewNode.node.style.animationDuration = duration;
-  //   const onAnimationEnd = function (event) {
-  //     if (event.animationName === config.cssName) {
-  //       viewNode.node.style.animationName = null;
-  //       viewNode.node.style.animationDuration = null;
-  //       onComplete();
-  //       viewNode.node.removeEventListener('animationend', onAnimationEnd);
-  //     }
-  //   };
-  //
-  //   viewNode.node.addEventListener('animationend', onAnimationEnd);
-  // };
-
   AnimationMeta.installGSAPAnimation = function (viewNode, config, onComplete) {
     if (config.sequence) {
-      let animationMeta = AnimationMeta.get(config.sequence);
-      let lastStep = config.to || config.from;
+      const animationMeta = AnimationMeta.get(config.sequence);
+      const lastStep = config.to || config.from;
       lastStep.clearProps = 'all';
       animationMeta.add(viewNode.node, config, onComplete);
 
@@ -271,8 +259,6 @@
     });
 
     this.timeline.addLabel('beginning', 0);
-    // this.duration = 0;
-    // this.position = '+=0';
     this.configs = {};
     this.lastChildPosition = 0;
     this.parent = null;

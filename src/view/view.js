@@ -41,14 +41,6 @@ Galaxy.View = /** @class */(function (G) {
     alt: {
       type: 'attr'
     },
-    // style: {
-    //   type: 'prop',
-    //   name: 'style'
-    // },
-    // css: {
-    //   type: 'attr',
-    //   name: 'style'
-    // },
     html: {
       type: 'prop',
       name: 'innerHTML'
@@ -710,10 +702,25 @@ Galaxy.View = /** @class */(function (G) {
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its child elements are rendered
       // setTimeout(function () {
-      viewNode.sequences.enter.nextAction(function () {
-        viewNode.callLifecycleEvent('rendered');
-        viewNode.hasBeenRendered();
+      let animationDone;
+      const waitForNodeAnimation = new Promise(function (resolve) {
+        animationDone = resolve;
       });
+      //   console.log(viewNode);
+
+      viewNode.sequences.enter.nextAction(function () {
+        waitForNodeAnimation.then(function () {
+          // console.log('--', viewNode.node);
+          viewNode.callLifecycleEvent('rendered');
+          viewNode.hasBeenRendered();
+        });
+      });
+
+      viewNode.renderingFlow.nextAction(function () {
+        // console.log('??', viewNode.node);
+        animationDone();
+      });
+      // })
 
       return viewNode;
     }
