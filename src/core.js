@@ -217,8 +217,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         } else {
           // extract imports from the source code
           // removing comments cause an bug
-
-          moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
+          // moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
           moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
             let query = path.match(/([\S]+)/gm);
             let url = query[query.length - 1];

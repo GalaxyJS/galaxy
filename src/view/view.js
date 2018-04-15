@@ -94,8 +94,8 @@ Galaxy.View = /** @class */(function (G) {
     for (let i = 0, len = childNodes.length; i < len; i++) {
       item = node.childNodes[i];
 
-      if (item['__viewNode__'] !== undefined) {
-        viewNodes.push(item.__viewNode__);
+      if (item['galaxyViewNode'] !== undefined) {
+        viewNodes.push(item.galaxyViewNode);
       }
 
       viewNodes = viewNodes.concat(View.getAllViewNodes(item));
@@ -116,6 +116,7 @@ Galaxy.View = /** @class */(function (G) {
     let isExpression = false;
     const type = typeof(value);
     let modifiers = null;
+    let handler = null;
 
     if (type === 'string') {
       const props = value.match(View.BINDING_SYNTAX_REGEX);
@@ -129,6 +130,11 @@ Galaxy.View = /** @class */(function (G) {
     }
     else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
       propertyKeysPaths = value.slice(0);
+      handler = propertyKeysPaths.pop();
+      isExpression = true;
+    } else if (value instanceof Function && value.watch) {
+      propertyKeysPaths = value.watch.slice(0);
+      handler = value;
       isExpression = true;
     } else {
       propertyKeysPaths = null;
@@ -137,6 +143,7 @@ Galaxy.View = /** @class */(function (G) {
     return {
       modifiers: modifiers,
       propertyKeysPaths: propertyKeysPaths,
+      handler: handler,
       isExpression: isExpression,
       expressionFn: null
     };
@@ -274,6 +281,7 @@ Galaxy.View = /** @class */(function (G) {
     return function () {
       let args = [];
       try {
+
         args = getExpressionArguments.call(host, Galaxy.View.safePropertyLookup, scope);
       } catch (ex) {
         console.error('Can\'t find the property: \n' + variables.join('\n'), '\n\nIt is recommended to inject the parent object instead' +
@@ -297,15 +305,13 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const dependencies = bindings.propertyKeysPaths;
-    // Extracting the function from the list of dependencies
-    const handler = dependencies.pop();
     bindings.propertyKeysPaths = dependencies.map(function (name) {
       return name.replace(/<>/g, '');
     });
 
     // Generate expression arguments
     try {
-      bindings.expressionFn = Galaxy.View.createExpressionFunction(target, handler, dependencies, scope, targetKeyName);
+      bindings.expressionFn = Galaxy.View.createExpressionFunction(target, bindings.handler, dependencies, scope);
       return bindings.expressionFn;
     }
     catch (exception) {
@@ -321,7 +327,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
    */
-  View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings) {
+  View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     let value = scopeData;
 
     if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
@@ -334,7 +340,7 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const propertyKeysPaths = bindings.propertyKeysPaths;
-    const expressionFn = bindings.expressionFn || View.prepareExpression(target, targetKeyName, value, bindings);
+    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
 
     let propertyKeyPath = null;
     let childPropertyKeyPath = null;
@@ -416,7 +422,7 @@ Galaxy.View = /** @class */(function (G) {
           propertyKeysPaths: [childPropertyKeyPath],
           isExpression: false,
           expressionFn: expressionFn
-        });
+        }, root);
       }
     }
   };
@@ -447,14 +453,13 @@ Galaxy.View = /** @class */(function (G) {
       const bindings = View.getBindings(attributeValue);
 
       if (bindings.propertyKeysPaths) {
-        View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings);
+        View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings, viewNode);
         bindings.propertyKeysPaths.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
             viewNode.addDependedObject(rd, subjectsClone);
           } catch (error) {
-            console.info(path);
-            console.error(error);
+            console.error('Could not find: ' + path + '\n', error);
           }
         });
       }
@@ -585,7 +590,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -628,7 +633,6 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} scopeData
    * @param {Object} nodeSchema
    * @param position
-   * @param {null|Object} localScope
    */
   View.createNode = function (parent, scopeData, nodeSchema, position) {
     let i = 0, len = 0;
@@ -652,7 +656,6 @@ Galaxy.View = /** @class */(function (G) {
       let attributeValue, attributeName;
       const keys = Object.keys(nodeSchema);
       const needInitKeys = [];
-      // keys.splice(keys.indexOf('tag'), 1);
 
       const viewNode = new View.ViewNode(nodeSchema);
       parent.registerChild(viewNode, position);
@@ -670,17 +673,14 @@ Galaxy.View = /** @class */(function (G) {
         }
       }
 
-      // const parentReactiveData = new Galaxy.View.ReactiveData('SCOPE', value || {});
-
-      let bindings;
       // Value assignment stage
       for (i = 0, len = needInitKeys.length; i < len; i++) {
         attributeName = needInitKeys[i];
         attributeValue = nodeSchema[attributeName];
 
-        bindings = View.getBindings(attributeValue);
+        let bindings = View.getBindings(attributeValue);
         if (bindings.propertyKeysPaths) {
-          View.makeBinding(viewNode, attributeName, null, scopeData, bindings);
+          View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {
           View.setPropertyForNode(viewNode, attributeName, attributeValue);
         }
@@ -688,6 +688,7 @@ Galaxy.View = /** @class */(function (G) {
 
       if (!viewNode.virtual) {
         viewNode.callLifecycleEvent('postInit');
+
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
@@ -701,26 +702,10 @@ Galaxy.View = /** @class */(function (G) {
       }
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its child elements are rendered
-      // setTimeout(function () {
-      let animationDone;
-      const waitForNodeAnimation = new Promise(function (resolve) {
-        animationDone = resolve;
-      });
-      //   console.log(viewNode);
-
       viewNode.sequences.enter.nextAction(function () {
-        waitForNodeAnimation.then(function () {
-          // console.log('--', viewNode.node);
-          viewNode.callLifecycleEvent('rendered');
-          viewNode.hasBeenRendered();
-        });
+        viewNode.callLifecycleEvent('rendered');
+        viewNode.hasBeenRendered();
       });
-
-      viewNode.renderingFlow.nextAction(function () {
-        // console.log('??', viewNode.node);
-        animationDone();
-      });
-      // })
 
       return viewNode;
     }

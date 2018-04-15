@@ -6,10 +6,6 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  G.View.NODE_SCHEMA_PROPERTY_MAP['animations.config'] = {
-    type: 'none'
-  };
-
   G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'custom',
     name: 'animations',
@@ -40,8 +36,7 @@
 
           if (animations.config.enterWithParent) {
             const parent = viewNode.parent;
-            // debugger;
-            if (parent.renderingFlow.processing && !parent.rendered.resolved) {
+            if (!parent.rendered.resolved) {
               return;
             }
           }
@@ -113,7 +108,7 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -139,7 +134,7 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  classAnimationConfig.to = {className: '-=' + item || ''};
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -291,7 +286,7 @@
     const _this = this;
     let to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
-    to.onStartParams = [node['__viewNode__']];
+    to.onStartParams = [node['galaxyViewNode']];
 
     let onStart = config.onStart;
     to.onStart = onStart;
@@ -305,7 +300,7 @@
     } else if (config.from) {
       let from = Object.assign({}, config.from || {});
       from.onComplete = onComplete;
-      from.onStartParams = [node['__viewNode__']];
+      from.onStartParams = [node['galaxyViewNode']];
       from.onStart = onStart;
       tween = TweenLite.from(node,
         config.duration || 0,

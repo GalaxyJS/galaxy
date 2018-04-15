@@ -11,6 +11,7 @@
     install: function (data) { },
     apply: function (data, value, oldValue, expression) {
       const _this = this;
+
       if (expression) {
         value = expression();
       }

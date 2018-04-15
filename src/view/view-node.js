@@ -96,6 +96,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   function ViewNode(schema, node) {
     const _this = this;
+    /** @type {Node|Element|*} */
     _this.node = node || createElem(schema.tag || 'div');
     _this.schema = schema;
     _this.data = {};
@@ -148,8 +149,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     defProp(this.schema, '__node__', __node__);
 
     referenceToThis.value = this;
-    defProp(this.node, '__viewNode__', referenceToThis);
-    defProp(this.placeholder, '__viewNode__', referenceToThis);
+    defProp(this.node, 'galaxyViewNode', referenceToThis);
+    defProp(this.placeholder, 'galaxyViewNode', referenceToThis);
 
     _this.callLifecycleEvent('postCreate');
 
@@ -282,13 +283,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.View.ViewNode} childNode
    * @param position
    */
-  ViewNode.prototype.registerChild = function (viewNode, position) {
+  ViewNode.prototype.registerChild = function (childNode, position) {
     const _this = this;
-    viewNode.parent = _this;
-    _this.node.insertBefore(viewNode.placeholder, position);
+    childNode.parent = _this;
+
+    if (_this.contentRef) {
+      _this.contentRef.insertBefore(childNode.placeholder, position);
+    } else {
+      _this.node.insertBefore(childNode.placeholder, position);
+    }
   };
 
   /**
@@ -413,7 +419,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   /**
@@ -429,7 +435,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
     for (let i = cn.length - 1; i >= 0; i--) {
-      node = cn[i]['__viewNode__'];
+      node = cn[i]['galaxyViewNode'];
 
       if (node !== undefined) {
         toBeRemoved.push(node);

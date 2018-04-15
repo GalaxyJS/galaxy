@@ -24,9 +24,9 @@
       //   let parentViewNode = this.parent;
       //   allContent.forEach(function (content) {
       //     if (selector === '*' || selector.toLowerCase() === content.node.tagName.toLowerCase()) {
-      //       content.__node__.__viewNode__.refreshBinds(scope);
-      //       parentViewNode.registerChild(content.__node__.__viewNode__, this.placeholder);
-      //       content.__node__.__viewNode__.setInDOM(true);
+      //       content.__node__.galaxyViewNode.refreshBinds(scope);
+      //       parentViewNode.registerChild(content.__node__.galaxyViewNode, this.placeholder);
+      //       content.__node__.galaxyViewNode.setInDOM(true);
       //     }
       //   });
       //

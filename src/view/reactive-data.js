@@ -105,7 +105,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           } else {
             // changes should only propagate downward
             this.notifyDown(key);
-            Reflect.deleteProperty(this.shadow, key);
+            // Reflect.deleteProperty(this.shadow, key);
           }
         }
 
@@ -168,6 +168,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // If value is array, then sync should be called so nodes that are listening to array itself get updated
             if (val instanceof Array) {
               _this.sync(key);
+            } else if (val instanceof Object) {
+              _this.notifyDown(key);
             }
             return;
           }
@@ -180,6 +182,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // setData provide downward data flow
             _this.shadow[key].setData(val);
           }
+
           _this.notify(key);
         },
         enumerable: !shadow,

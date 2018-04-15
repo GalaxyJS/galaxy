@@ -29,7 +29,7 @@
           isExpression: false,
           modifiers: null,
           propertyKeysPaths: [data.matches[2] + '.changes']
-        });
+        }, this);
         // debugger;
       } else if (data.matches) {
         const bindings = GV.getBindings(data.matches.data);
@@ -39,7 +39,7 @@
           // });
           bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
 
-          GV.makeBinding(this, '$for', undefined, data.scope, bindings);
+          GV.makeBinding(this, '$for', undefined, data.scope, bindings, this);
         }
       }
 
@@ -87,18 +87,23 @@
    */
   const runForProcess = function (node, data, changes, nodeScopeData) {
     node.renderingFlow.truncate();
+
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
-        if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
-          GV.ViewNode.destroyNodes(node, data.nodes, null, node.parent.sequences.leave);
-        } else {
-          GV.ViewNode.destroyNodes(node, data.nodes.reverse());
-        }
+        if (data.nodes.length) {
+          if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
+            GV.ViewNode.destroyNodes(node, data.nodes, null, node.parent.sequences.leave);
+          } else {
+            GV.ViewNode.destroyNodes(node, data.nodes.reverse());
+          }
 
-        data.nodes = [];
-        node.parent.sequences.leave.nextAction(function () {
+          data.nodes = [];
+          node.parent.sequences.leave.nextAction(function () {
+            next();
+          });
+        } else {
           next();
-        });
+        }
       });
 
       changes = Object.assign({}, changes);
@@ -155,6 +160,11 @@
       let p = data.propName, n = data.nodes, cns;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
+
+      const listPlaceholder = node.placeholder;
+      if (listPlaceholder.parentNode !== parentNode.node) {
+        parentNode.contentRef = listPlaceholder.parentNode;
+      }
 
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
