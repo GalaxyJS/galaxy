@@ -221,13 +221,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.original = value;
       initialChanges.type = 'reset';
       initialChanges.params = value;
-
       initialChanges.params.forEach(function (item) {
         new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
       });
-
-      let i = 0;
-      let args;
 
       _this.sync('length');
       _this.oldValue = Object.assign({}, initialChanges);
@@ -240,8 +236,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         const originalMethod = ARRAY_PROTO[method];
         defProp(value, method, {
           value: function () {
-            i = arguments.length;
-            args = new Array(i);
+            let i = arguments.length;
+            const args = new Array(i);
             while (i--) {
               args[i] = arguments[i];
             }
@@ -342,7 +338,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     syncAll: function () {
       const _this = this;
-      const keys = objKeys(this.data);
+      const keys = objKeys(_this.data);
+
       keys.forEach(function (key) {
         _this.sync(key);
       });

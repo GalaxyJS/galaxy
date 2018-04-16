@@ -1,45 +1,56 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+(function () {
+  const View = Galaxy.View;
+  View.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
     type: 'reactive',
     name: '$for'
   };
 
-  GV.REACTIVE_BEHAVIORS['$for'] = {
+  View.REACTIVE_BEHAVIORS['$for'] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
     prepareData: function (matches, scope) {
       this.virtualize();
 
       return {
         propName: matches.as || matches[1],
+        trackMap: [],
+        positions: [],
         nodes: [],
         scope: scope,
-        matches: matches
+        matches: matches,
+        trackBy: matches.trackBy
       };
     },
     /**
      *
-     * @param data Return of prepareData method
+     * @param config Return of prepareData method
      */
-    install: function (data) {
-      if (data.matches instanceof Array) {
-        // debugger
-        GV.makeBinding(this, '$for', undefined, data.scope, {
+    install: function (config) {
+      if (config.matches instanceof Array) {
+        View.makeBinding(this, '$for', undefined, config.scope, {
           isExpression: false,
           modifiers: null,
-          propertyKeysPaths: [data.matches[2] + '.changes']
+          propertyKeysPaths: [config.matches[2] + '.changes']
         }, this);
-        // debugger;
-      } else if (data.matches) {
-        const bindings = GV.getBindings(data.matches.data);
+      } else if (config.matches) {
+        const _this = this;
+        const bindings = View.getBindings(config.matches.data);
+        config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
-          // bindings.propertyKeysPaths.forEach(function (path) {
-          //
-          // });
-          bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
+          if (bindings.propertyKeysPaths.length === 1 && bindings.propertyKeysPaths[0].indexOf('.changes') === -1) {
+            bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
+          }
 
-          GV.makeBinding(this, '$for', undefined, data.scope, bindings, this);
+          View.makeBinding(_this, '$for', undefined, config.scope, bindings, _this);
+          bindings.propertyKeysPaths.forEach(function (path) {
+            try {
+              const rd = View.propertyScopeLookup(config.scope, path);
+              _this.addDependedObject(rd, _this);
+            } catch (error) {
+              console.error('Could not find: ' + path + '\n', error);
+            }
+          });
         }
       }
 
@@ -48,14 +59,23 @@
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param data The return of prepareData
+     * @param config The return of prepareData
      * @param changes
      * @param oldChanges
      * @param {Function} expression
      */
-    apply: function (data, changes, oldChanges, expression) {
+    apply: function (config, changes, oldChanges, expression) {
       if (expression) {
         changes = expression();
+
+        if (changes === null || changes === undefined) {
+          return;
+        }
+
+        if (!(changes instanceof Galaxy.View.ArrayChange)) {
+          console.warn(changes);
+          throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        }
       }
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
@@ -69,35 +89,99 @@
         };
       }
 
-      // if (expression) {
-      //   changes.params = expression();
-      // }
-
       const _this = this;
-      runForProcess(_this, data, changes, data.scope);
+      let newTrackMap = [];
+      if (config.trackBy instanceof Function) {
+        newTrackMap = changes.params.map(function (item, i) {
+          return config.trackBy.call(_this, item, i);
+        });
+
+        // list of nodes that should be removed
+        const hasBeenRemoved = [];
+        config.trackMap.forEach(function (id, i) {
+          if (newTrackMap.indexOf(id) === -1) {
+            hasBeenRemoved.push(config.nodes[i]);
+          }
+        });
+
+        if (hasBeenRemoved.length) {
+          // debugger;
+          config.nodes = config.nodes.filter(function (node) {
+            return hasBeenRemoved.indexOf(node) === -1;
+          });
+
+          _this.renderingFlow.truncate();
+          _this.renderingFlow.next(function forResetProcess(next) {
+            if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+              View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, _this.parent.sequences.leave);
+            } else {
+              View.ViewNode.destroyNodes(_this, hasBeenRemoved.reverse());
+            }
+
+            _this.parent.sequences.leave.nextAction(function () {
+              next();
+            });
+          });
+        }
+
+        const newParams = [];
+        const positions = [];
+        newTrackMap.forEach(function (id, i) {
+          if (config.trackMap.indexOf(id) === -1) {
+            newParams.push(changes.params[i]);
+            positions.push(i);
+          }
+        });
+        config.positions = positions;
+
+        const newChanges = new Galaxy.View.ArrayChange();
+        newChanges.init = changes.init;
+        newChanges.type = changes.type;
+        newChanges.original = changes.original;
+        newChanges.params = newParams;
+        newChanges.__rd__ = changes.__rd__;
+        changes = newChanges;
+
+        // debugger;
+
+        config.trackMap = newTrackMap;
+
+        // Don't process if the is no new parameter. The list has been shrank
+        if (!newChanges.params.length) {
+          return;
+        }
+        // When some old items have been removed and also some new items have been added
+        else if (newChanges.type === 'reset') {
+          newChanges.type = 'push';
+        }
+
+        runForProcess(_this, config, changes, config.scope);
+      } else {
+        _this.renderingFlow.truncate();
+        runForProcess(_this, config, changes, config.scope);
+      }
+
     }
   };
 
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param data
+   * @param config
    * @param changes
    * @param nodeScopeData
    */
-  const runForProcess = function (node, data, changes, nodeScopeData) {
-    node.renderingFlow.truncate();
-
+  const runForProcess = function (node, config, changes, nodeScopeData) {
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
-        if (data.nodes.length) {
+        if (config.nodes.length) {
           if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
-            GV.ViewNode.destroyNodes(node, data.nodes, null, node.parent.sequences.leave);
+            View.ViewNode.destroyNodes(node, config.nodes, null, node.parent.sequences.leave);
           } else {
-            GV.ViewNode.destroyNodes(node, data.nodes.reverse());
+            View.ViewNode.destroyNodes(node, config.nodes.reverse());
           }
 
-          data.nodes = [];
+          config.nodes = [];
           node.parent.sequences.leave.nextAction(function () {
             next();
           });
@@ -110,54 +194,72 @@
       changes.type = 'push';
 
       if (changes.params.length) {
-        createPushProcess(node, data, changes, nodeScopeData);
+        createPushProcess(node, config, changes, nodeScopeData);
       }
     } else {
-      createPushProcess(node, data, changes, nodeScopeData);
+      createPushProcess(node, config, changes, nodeScopeData);
     }
   };
 
-  const createPushProcess = function (node, data, changes, nodeScopeData) {
+  const createPushProcess = function (node, config, changes, nodeScopeData) {
     const parentNode = node.parent;
-    let position = null;
+    const positions = config.positions;
+    const placeholdersPositions = [];
+    let defaultPosition = null;
     let newItems = [];
-    let action = Array.prototype.push;
+    let onEachAction = function (vn) {
+      this.push(vn);
+    };
 
     node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
-        let length = data.nodes.length;
+        let length = config.nodes.length;
+
         if (length) {
-          position = data.nodes[length - 1].getPlaceholder().nextSibling;
+          defaultPosition = config.nodes[length - 1].getPlaceholder().nextSibling;
+          if (positions.length) {
+            positions.forEach(function (pos) {
+              const target = config.nodes[pos];
+              placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
+            });
+
+            onEachAction = function (vn, i) {
+              this.splice(i, 0, vn);
+            };
+          }
         } else {
-          position = node.placeholder.nextSibling;
+          defaultPosition = node.placeholder.nextSibling;
         }
 
         newItems = changes.params;
       } else if (changes.type === 'unshift') {
-        position = data.nodes[0] ? data.nodes[0].getPlaceholder() : null;
+        defaultPosition = config.nodes[0] ? config.nodes[0].getPlaceholder() : null;
         newItems = changes.params;
-        action = Array.prototype.unshift;
+        onEachAction = function (vn) {
+          this.unshift(vn);
+        };
       } else if (changes.type === 'splice') {
-        let removedItems = Array.prototype.splice.apply(data.nodes, changes.params.slice(0, 2));
+        let removedItems = Array.prototype.splice.apply(config.nodes, changes.params.slice(0, 2));
         newItems = changes.params.slice(2);
         removedItems.forEach(function (node) {
           node.destroy();
         });
       } else if (changes.type === 'pop') {
-        data.nodes.pop().destroy();
+        config.nodes.pop().destroy();
       } else if (changes.type === 'shift') {
-        data.nodes.shift().destroy();
+        config.nodes.shift().destroy();
       } else if (changes.type === 'sort' || changes.type === 'reverse') {
-        data.nodes.forEach(function (viewNode) {
+        config.nodes.forEach(function (viewNode) {
           viewNode.destroy();
         });
 
-        data.nodes = [];
+        config.nodes = [];
         newItems = changes.original;
       }
 
       let itemDataScope = nodeScopeData;
-      let p = data.propName, n = data.nodes, cns;
+      const pn = config.propName;
+      const nodes = config.nodes;
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
@@ -166,16 +268,18 @@
         parentNode.contentRef = listPlaceholder.parentNode;
       }
 
+      const gClone = Galaxy.clone;
+      const vCreateNode = View.createNode;
       if (newItems instanceof Array) {
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
-          itemDataScope = GV.createMirror(nodeScopeData);
-          itemDataScope[p] = c[i];
+          itemDataScope = View.createMirror(nodeScopeData);
+          itemDataScope[pn] = c[i];
           itemDataScope['$forIndex'] = i;
-          cns = Galaxy.clone(templateSchema);
+          let cns = gClone(templateSchema);
 
-          const vn = GV.createNode(parentNode, itemDataScope, cns, position);
-          action.call(n, vn);
+          const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition);
+          onEachAction.call(nodes, vn, positions[i]);
         }
       }
 

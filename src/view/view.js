@@ -236,7 +236,11 @@ Galaxy.View = /** @class */(function (G) {
 
       if (i !== li) {
         if (!target[p]) {
-          target = target.__rd__.shadow[p].data;
+          const rd = target.__rd__.refs.filter(function (ref) {
+            return ref.shadow[p];
+          })[0];
+          target = rd.shadow[p].data;
+          // target = target.__rd__.shadow[p].data;
         } else {
           target = target[p];
         }
@@ -278,17 +282,22 @@ Galaxy.View = /** @class */(function (G) {
   View.createExpressionFunction = function (host, handler, variables, scope) {
     let getExpressionArguments = Galaxy.View.createExpressionArgumentsProvider(variables);
 
-    return function () {
+    const fn = function () {
       let args = [];
       try {
-
         args = getExpressionArguments.call(host, Galaxy.View.safePropertyLookup, scope);
       } catch (ex) {
         console.error('Can\'t find the property: \n' + variables.join('\n'), '\n\nIt is recommended to inject the parent object instead' +
           ' of its property.\n\n', scope, '\n', ex);
       }
+
       return handler.apply(host, args);
     };
+
+    fn.getArgs = function () {
+      return getExpressionArguments.call(host, Galaxy.View.safePropertyLookup, scope);
+    };
+    return fn;
   };
 
   /**
@@ -334,7 +343,6 @@ Galaxy.View = /** @class */(function (G) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
-
         parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
       }
     }
@@ -356,13 +364,17 @@ Galaxy.View = /** @class */(function (G) {
         propertyKeyPath = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
+      // if (propertyKeyPath === 'this') debugger;
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKeyPath === 'this' && target instanceof Galaxy.View.ViewNode) {
+      if (i === 0 && propertyKeyPath === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
         propertyKeyPath = propertyKeyPathItems.shift();
+        bindings.propertyKeysPaths = propertyKeyPathItems;
         childPropertyKeyPath = null;
-        // aliasPropertyName = 'this.' + propertyKeyPath;
-        // shadow = View.propertyLookup(target.data, propertyKeyPath);
+        parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
+        // debugger;
+        value = View.propertyLookup(root.data, propertyKeyPath);
+        // debugger;
       } else {
         if (value) {
           value = View.propertyLookup(value, propertyKeyPath);
@@ -396,11 +408,13 @@ Galaxy.View = /** @class */(function (G) {
                 return expressionFn();
               }
 
-              if (value === null || value === undefined) {
-                return value;
-              }
-
-              return value[propertyKeyPath];
+              return parentReactiveData.data[propertyKeyPath];
+              // this has a bug
+              // if (value === null || value === undefined) {
+              //   return value;
+              // }
+              //
+              // return value[propertyKeyPath];
             },
             enumerable: true,
             configurable: true
