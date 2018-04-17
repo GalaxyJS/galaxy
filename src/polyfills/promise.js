@@ -1,4 +1,3 @@
-/* eslint-disable */
 /*!
  * @overview es6-promise - a tiny implementation of Promises/A+.
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
@@ -1176,3 +1175,7 @@
   return Promise$2;
 
 })));
+
+
+
+//# sourceMappingURL=es6-promise.auto.map

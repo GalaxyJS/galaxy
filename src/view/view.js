@@ -142,7 +142,9 @@ Galaxy.View = /** @class */(function (G) {
 
     return {
       modifiers: modifiers,
-      propertyKeysPaths: propertyKeysPaths,
+      propertyKeysPaths: propertyKeysPaths ? propertyKeysPaths.map(function (name) {
+        return name.replace(/<>/g, '');
+      }) : null,
       handler: handler,
       isExpression: isExpression,
       expressionFn: null
@@ -314,9 +316,9 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const dependencies = bindings.propertyKeysPaths;
-    bindings.propertyKeysPaths = dependencies.map(function (name) {
-      return name.replace(/<>/g, '');
-    });
+    // bindings.propertyKeysPaths = dependencies.map(function (name) {
+    //   return name.replace(/<>/g, '');
+    // });
 
     // Generate expression arguments
     try {
@@ -604,7 +606,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':

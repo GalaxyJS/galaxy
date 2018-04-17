@@ -307,7 +307,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof module.source === 'function' ?
             module.source :
             new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(null, module.scope);
+          // TODO: Find out what should the 'this' refer to
+          moduleSource.call({}, module.scope);
 
           Reflect.deleteProperty(module, 'source');
 

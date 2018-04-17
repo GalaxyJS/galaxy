@@ -42,15 +42,15 @@
           }
 
           sequence.next(function (done) {
-            AnimationMeta.installGSAPAnimation(viewNode, enter, done);
+            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, done);
           });
         };
       }
 
-      const leaveAnimationConfig = animations.leave;
-      if (leaveAnimationConfig) {
-        if (leaveAnimationConfig.sequence) {
-          AnimationMeta.get(leaveAnimationConfig.sequence).configs.leave = leaveAnimationConfig;
+      const leave = animations.leave;
+      if (leave) {
+        if (leave.sequence) {
+          AnimationMeta.get(leave.sequence).configs.leave = leave;
         }
 
         viewNode.populateLeaveSequence = function (sequence) {
@@ -85,18 +85,20 @@
             };
           })(waitForAnimation));
 
-          if (leaveAnimationConfig.sequence) {
-            const animationMeta = AnimationMeta.get(leaveAnimationConfig.sequence);
-            animationMeta.add(viewNode.node, leaveAnimationConfig, animationDone);
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animationDone);
 
-            // Add to parent should happen after the animation is added to the child
-            if (leaveAnimationConfig.parent) {
-              const parent = AnimationMeta.get(leaveAnimationConfig.parent);
-              parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
-            }
-          } else {
-            AnimationMeta.createTween(viewNode.node, leaveAnimationConfig, animationDone);
-          }
+          // if (leave.sequence) {
+          //   const animationMeta = AnimationMeta.get(leave.sequence);
+          //   animationMeta.add(viewNode.node, leave, animationDone);
+          //
+          //   // Add to parent should happen after the animation is added to the child
+          //   if (leave.parent) {
+          //     const parent = AnimationMeta.get(leave.parent);
+          //     parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
+          //   }
+          // } else {
+          //   AnimationMeta.createTween(viewNode.node, leave, animationDone);
+          // }
         };
       }
 
@@ -108,7 +110,7 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -134,7 +136,7 @@
               if (_config) {
                 viewNode.sequences[':class'].next(function (done) {
                   let classAnimationConfig = _config;
-                  classAnimationConfig.to = {className: '-=' + item || ''};
+                  classAnimationConfig.to = { className: '-=' + item || '' };
 
                   if (classAnimationConfig.sequence) {
                     let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
@@ -220,23 +222,65 @@
     return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
-  AnimationMeta.installGSAPAnimation = function (viewNode, config, onComplete) {
-    if (config.sequence) {
-      const animationMeta = AnimationMeta.get(config.sequence);
-      const lastStep = config.to || config.from;
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Object|Function} step
+   * @return {*}
+   */
+  AnimationMeta.parseStep = function (node, step) {
+    if (step instanceof Function) {
+      return step(node);
+    }
+
+    return step;
+  };
+
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
+    const from = AnimationMeta.parseStep(viewNode, config.from);
+    const to = AnimationMeta.parseStep(viewNode, config.to);
+    const lastStep = to || from;
+    if (type !== 'leave') {
       lastStep.clearProps = 'all';
-      animationMeta.add(viewNode.node, config, onComplete);
+    }
+
+    const newConfig = Object.assign({}, config);
+    newConfig.from = from;
+    newConfig.to = to;
+
+    if (newConfig.sequence) {
+      const animationMeta = AnimationMeta.get(newConfig.sequence);
+      animationMeta.add(viewNode.node, newConfig, onComplete);
 
       // Add to parent should happen after the animation is added to the child
-      if (config.parent) {
-        const parent = AnimationMeta.get(config.parent);
-        parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
+      if (newConfig.parent) {
+        const parent = AnimationMeta.get(newConfig.parent);
+        const animationMetaTypeConfig = animationMeta.configs[type] || {};
+        const parentTypeConfig = animationMeta.configs[type] || {};
+        parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
       }
     } else {
-      let lastStep = config.to || config.from;
-      lastStep.clearProps = 'all';
-      AnimationMeta.createTween(viewNode.node, config, onComplete);
+      // let lastStep = config.to || config.from;
+      // lastStep.clearProps = 'all';
+      AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
     }
+
+    // if (config.sequence) {
+    //   const animationMeta = AnimationMeta.get(config.sequence);
+    //   const lastStep = config.to || config.from;
+    //   lastStep.clearProps = 'all';
+    //   animationMeta.add(viewNode.node, config, onComplete);
+    //
+    //   // Add to parent should happen after the animation is added to the child
+    //   if (config.parent) {
+    //     const parent = AnimationMeta.get(config.parent);
+    //     parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
+    //   }
+    // } else {
+    //   const lastStep = config.to || config.from;
+    //   lastStep.clearProps = 'all';
+    //   AnimationMeta.createTween(viewNode.node, config, onComplete);
+    // }
   };
 
   function AnimationMeta(name) {

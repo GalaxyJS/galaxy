@@ -38,9 +38,9 @@
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
-          if (bindings.propertyKeysPaths.length === 1 && bindings.propertyKeysPaths[0].indexOf('.changes') === -1) {
-            bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
-          }
+          // if (bindings.propertyKeysPaths.length === 1 && bindings.propertyKeysPaths[0].indexOf('.changes') === -1) {
+          //   bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
+          // }
 
           View.makeBinding(_this, '$for', undefined, config.scope, bindings, _this);
           bindings.propertyKeysPaths.forEach(function (path) {
@@ -79,7 +79,7 @@
       }
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
-        return;
+        return console.warn('$for data is not a type of ArrayChange\nPassed type is ' + typeof changes, config.matches);
       }
 
       if (!changes || typeof changes === 'string') {
@@ -90,9 +90,11 @@
       }
 
       const _this = this;
-      let newTrackMap = [];
+      const parentNode = _this.parent;
+      parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
+
       if (config.trackBy instanceof Function) {
-        newTrackMap = changes.params.map(function (item, i) {
+        const newTrackMap = changes.params.map(function (item, i) {
           return config.trackBy.call(_this, item, i);
         });
 
@@ -105,21 +107,32 @@
         });
 
         if (hasBeenRemoved.length) {
-          // debugger;
           config.nodes = config.nodes.filter(function (node) {
             return hasBeenRemoved.indexOf(node) === -1;
           });
 
+          let destroyDone;
+          const destroyProcess = new Promise(function (resolve) {
+            destroyDone = function () {
+              destroyProcess.resolved = true;
+              resolve();
+            };
+          });
+
+          parentNode.cache._mainForLeaveQueue.push(destroyProcess);
           _this.renderingFlow.truncate();
           _this.renderingFlow.next(function forResetProcess(next) {
             if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
-              View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, _this.parent.sequences.leave);
+              View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, parentNode.sequences.leave);
             } else {
               View.ViewNode.destroyNodes(_this, hasBeenRemoved.reverse());
             }
 
-            _this.parent.sequences.leave.nextAction(function () {
+            parentNode.sequences.leave.nextAction(function () {
+              parentNode.callLifecycleEvent('postLeaveAnimations');
+              parentNode.callLifecycleEvent('postAnimations');
               next();
+              destroyDone();
             });
           });
         }
@@ -141,9 +154,6 @@
         newChanges.params = newParams;
         newChanges.__rd__ = changes.__rd__;
         changes = newChanges;
-
-        // debugger;
-
         config.trackMap = newTrackMap;
 
         // Don't process if the is no new parameter. The list has been shrank
@@ -155,7 +165,29 @@
           newChanges.type = 'push';
         }
 
-        runForProcess(_this, config, changes, config.scope);
+        const mainForQ = parentNode.cache._mainForLeaveQueue;
+        if (mainForQ.length) {
+          const whenAllDone = function () {
+            // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
+            // promises have resolved and if not we hav eto use Promise.all on the list again
+            const allNotResolved = mainForQ.some(function (promise) {
+              return promise.resolved !== true;
+            });
+
+            if (allNotResolved) {
+              // if not all resolved, then listen to the list again
+              Promise.all(mainForQ).then(whenAllDone);
+              return;
+            }
+
+            mainForQ.splice(0);
+            runForProcess(_this, config, changes, config.scope);
+          };
+
+          Promise.all(mainForQ).then(whenAllDone);
+        } else {
+          runForProcess(_this, config, changes, config.scope);
+        }
       } else {
         _this.renderingFlow.truncate();
         runForProcess(_this, config, changes, config.scope);
@@ -183,6 +215,8 @@
 
           config.nodes = [];
           node.parent.sequences.leave.nextAction(function () {
+            node.parent.callLifecycleEvent('postLeaveAnimations');
+            node.parent.callLifecycleEvent('postAnimations');
             next();
           });
         } else {
@@ -283,7 +317,11 @@
         }
       }
 
-      parentNode.sequences.enter.nextAction(next);
+      parentNode.sequences.enter.nextAction(function () {
+        parentNode.callLifecycleEvent('postEnterAnimations');
+        parentNode.callLifecycleEvent('postAnimations');
+        next();
+      });
     });
     // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
     // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that

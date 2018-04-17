@@ -20,23 +20,14 @@
   };
 
   function runIfProcess(node, value) {
-    // debugger
-    // node.rendered.then(function () {
-    // node.renderingFlow.truncate();
-    // node.renderingFlow.next(function ifProcess(next) {
     if (value && !node.inDOM) {
       node.setInDOM(true);
-      // node.sequences.enter.next(function () {
-      //   next();
-      // });
     } else if (!value && node.inDOM) {
-      node.setInDOM(false);
-      // node.sequences.leave.next(next);
+      requestAnimationFrame(function () {
+        node.setInDOM(false);
+      });
     } else {
-      // next();
     }
-    // });
-    // });
   }
 })(Galaxy.View);
 

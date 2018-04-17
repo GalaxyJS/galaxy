@@ -247,7 +247,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
-      _this.sequences.enter.nextAction(animationDone);
+      _this.sequences.enter.nextAction(function () {
+        _this.callLifecycleEvent('postEnterAnimations');
+        _this.callLifecycleEvent('postAnimations');
+        animationDone();
+      });
     } else if (!flag && _this.node.parentNode) {
       _this.sequences.enter.truncate();
       _this.callLifecycleEvent('preRemove');
@@ -276,6 +280,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = false;
         _this.callLifecycleEvent('postRemove');
+        _this.callLifecycleEvent('postLeaveAnimations');
+        _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
     }
@@ -408,6 +414,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     });
 
     _this.properties = [];
+    _this.dependedObjects = [];
     _this.inDOM = false;
     _this.schema.__node__ = undefined;
     _this.inputs = {};
@@ -419,7 +426,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   /**
@@ -464,6 +471,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       ViewNode.destroyNodes(_this, toBeRemoved, null, root || _this.sequences.leave);
 
       _this.sequences.leave.nextAction(function () {
+        _this.callLifecycleEvent('postClean');
         next();
       });
     });

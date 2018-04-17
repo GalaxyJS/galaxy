@@ -46,7 +46,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action) {
+    next: function (action, position) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
