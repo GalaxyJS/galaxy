@@ -20,10 +20,11 @@
   };
 
   function runIfProcess(node, value) {
-    if (value && !node.inDOM) {
+    if (value && !node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
-    } else if (!value && node.inDOM) {
-      requestAnimationFrame(function () {
+    } else if (!value && node.inDOM && node.node.parentNode) {
+      cancelAnimationFrame(node.cache._ifLeaveId);
+      node.cache._ifLeaveId = requestAnimationFrame(function () {
         node.setInDOM(false);
       });
     } else {

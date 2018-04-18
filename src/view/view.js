@@ -776,6 +776,9 @@ Galaxy.View = /** @class */(function (G) {
     },
     broadcast: function (event) {
       this.container.broadcast(event);
+    },
+    createNode: function (schema, parent, position) {
+      return View.createNode(parent || this.container, this.scope, schema, position);
     }
   };
 

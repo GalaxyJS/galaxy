@@ -50,7 +50,8 @@ gulp.task('build-galaxy-production', function () {
     concat('galaxy.min.js'),
     uglify({compress: true}),
     gulp.dest('dist/'),
-    gulp.dest('site/galaxyjs/')
+    gulp.dest('site/galaxyjs/'),
+    gulp.dest('../imerce-viewer/assets/')
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);

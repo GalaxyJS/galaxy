@@ -94,34 +94,36 @@
       parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
 
       if (config.trackBy instanceof Function) {
-        const newTrackMap = changes.params.map(function (item, i) {
-          return config.trackBy.call(_this, item, i);
-        });
-
-        // list of nodes that should be removed
-        const hasBeenRemoved = [];
-        config.trackMap.forEach(function (id, i) {
-          if (newTrackMap.indexOf(id) === -1) {
-            hasBeenRemoved.push(config.nodes[i]);
-          }
-        });
-
-        if (hasBeenRemoved.length) {
-          config.nodes = config.nodes.filter(function (node) {
-            return hasBeenRemoved.indexOf(node) === -1;
+        // _this.renderingFlow.truncate();
+        _this.renderingFlow.next(function (nextStep) {
+          const newTrackMap = changes.params.map(function (item, i) {
+            return config.trackBy.call(_this, item, i);
           });
 
-          let destroyDone;
-          const destroyProcess = new Promise(function (resolve) {
-            destroyDone = function () {
-              destroyProcess.resolved = true;
-              resolve();
-            };
+          // list of nodes that should be removed
+          const hasBeenRemoved = [];
+          config.trackMap.forEach(function (id, i) {
+            if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+              hasBeenRemoved.push(config.nodes[i]);
+            }
           });
 
-          parentNode.cache._mainForLeaveQueue.push(destroyProcess);
-          _this.renderingFlow.truncate();
-          _this.renderingFlow.next(function forResetProcess(next) {
+          if (hasBeenRemoved.length) {
+            config.nodes = config.nodes.filter(function (node) {
+              return hasBeenRemoved.indexOf(node) === -1;
+            });
+
+            let destroyDone;
+            const destroyProcess = new Promise(function (resolve) {
+              destroyDone = function () {
+                destroyProcess.resolved = true;
+                resolve();
+              };
+            });
+
+            parentNode.cache._mainForLeaveQueue.push(destroyProcess);
+            // _this.renderingFlow.truncate();
+            // _this.renderingFlow.next(function forResetProcess(next) {
             if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
               View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, parentNode.sequences.leave);
             } else {
@@ -129,70 +131,85 @@
             }
 
             parentNode.sequences.leave.nextAction(function () {
-              parentNode.callLifecycleEvent('postLeaveAnimations');
+              parentNode.callLifecycleEvent('postLeave');
               parentNode.callLifecycleEvent('postAnimations');
-              next();
+              // next();
               destroyDone();
             });
-          });
-        }
-
-        const newParams = [];
-        const positions = [];
-        newTrackMap.forEach(function (id, i) {
-          if (config.trackMap.indexOf(id) === -1) {
-            newParams.push(changes.params[i]);
-            positions.push(i);
+            // });
           }
-        });
-        config.positions = positions;
 
-        const newChanges = new Galaxy.View.ArrayChange();
-        newChanges.init = changes.init;
-        newChanges.type = changes.type;
-        newChanges.original = changes.original;
-        newChanges.params = newParams;
-        newChanges.__rd__ = changes.__rd__;
-        changes = newChanges;
-        config.trackMap = newTrackMap;
-
-        // Don't process if the is no new parameter. The list has been shrank
-        if (!newChanges.params.length) {
-          return;
-        }
-        // When some old items have been removed and also some new items have been added
-        else if (newChanges.type === 'reset') {
-          newChanges.type = 'push';
-        }
-
-        const mainForQ = parentNode.cache._mainForLeaveQueue;
-        if (mainForQ.length) {
-          const whenAllDone = function () {
-            // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
-            // promises have resolved and if not we hav eto use Promise.all on the list again
-            const allNotResolved = mainForQ.some(function (promise) {
-              return promise.resolved !== true;
-            });
-
-            if (allNotResolved) {
-              // if not all resolved, then listen to the list again
-              Promise.all(mainForQ).then(whenAllDone);
-              return;
+          const newParams = [];
+          const positions = [];
+          newTrackMap.forEach(function (id, i) {
+            if (config.trackMap.indexOf(id) === -1) {
+              newParams.push(changes.params[i]);
+              positions.push(i);
             }
+          });
+          config.positions = positions;
 
-            mainForQ.splice(0);
-            runForProcess(_this, config, changes, config.scope);
-          };
+          const newChanges = new Galaxy.View.ArrayChange();
+          newChanges.init = changes.init;
+          newChanges.type = changes.type;
+          newChanges.original = changes.original;
+          newChanges.params = newParams;
+          newChanges.__rd__ = changes.__rd__;
+          changes = newChanges;
+          config.trackMap = newTrackMap;
+          debugger
 
-          Promise.all(mainForQ).then(whenAllDone);
-        } else {
-          runForProcess(_this, config, changes, config.scope);
-        }
+          // Don't process if the is no new parameter. The list has been shrank
+          if (!newChanges.params.length) {
+            return nextStep();
+          }
+          // When some old items have been removed and also some new items have been added
+          else if (newChanges.type === 'reset') {
+            newChanges.type = 'push';
+          }
+
+          const mainForQ = parentNode.cache._mainForLeaveQueue;
+          if (mainForQ.length) {
+            const whenAllDone = function () {
+              // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
+              // promises have resolved and if not we hav eto use Promise.all on the list again
+              const allNotResolved = mainForQ.some(function (promise) {
+                return promise.resolved !== true;
+              });
+
+              if (allNotResolved) {
+                // if not all resolved, then listen to the list again
+                Promise.all(mainForQ).then(whenAllDone);
+                return;
+              }
+
+              mainForQ.splice(0);
+              // _this.renderingFlow.truncate();
+
+              debugger;
+              nextStep();
+              // createPushProcess(_this, config, changes, config.scope);
+            };
+
+            Promise.all(mainForQ).then(whenAllDone);
+          } else {
+
+            debugger
+            nextStep();
+            // _this.renderingFlow.truncate();
+
+          }
+          debugger;
+        });
+
+        _this.renderingFlow.nextAction(function () {
+          debugger;
+          createPushProcess(_this, config, changes, config.scope);
+        });
       } else {
-        _this.renderingFlow.truncate();
+        // _this.renderingFlow.truncate();
         runForProcess(_this, config, changes, config.scope);
       }
-
     }
   };
 
@@ -215,7 +232,7 @@
 
           config.nodes = [];
           node.parent.sequences.leave.nextAction(function () {
-            node.parent.callLifecycleEvent('postLeaveAnimations');
+            node.parent.callLifecycleEvent('postLeave');
             node.parent.callLifecycleEvent('postAnimations');
             next();
           });
@@ -297,10 +314,10 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
-      const listPlaceholder = node.placeholder;
-      if (listPlaceholder.parentNode !== parentNode.node) {
-        parentNode.contentRef = listPlaceholder.parentNode;
-      }
+      // const listPlaceholder = node.placeholder;
+      // if (listPlaceholder.parentNode !== parentNode.node) {
+      // parentNode.contentRef = listPlaceholder.parentNode;
+      // }
 
       const gClone = Galaxy.clone;
       const vCreateNode = View.createNode;
@@ -318,7 +335,8 @@
       }
 
       parentNode.sequences.enter.nextAction(function () {
-        parentNode.callLifecycleEvent('postEnterAnimations');
+        parentNode.callLifecycleEvent('postEnter');
+        console.info('p', parentNode);
         parentNode.callLifecycleEvent('postAnimations');
         next();
       });

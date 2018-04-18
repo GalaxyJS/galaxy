@@ -31,6 +31,12 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            const tweens = TweenLite.getTweensOf(viewNode.node);
+            tweens.forEach(function (tween) {
+              if(tween.vars.onComplete) {
+                tween.vars.onComplete();
+              }
+            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -57,6 +63,12 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            const tweens = TweenLite.getTweensOf(viewNode.node);
+            tweens.forEach(function (tween) {
+              if(tween.vars.onComplete) {
+                tween.vars.onComplete();
+              }
+            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -239,9 +251,9 @@
   AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, config.from);
     const to = AnimationMeta.parseStep(viewNode, config.to);
-    const lastStep = to || from;
-    if (type !== 'leave') {
-      lastStep.clearProps = 'all';
+    // const lastStep = to || from;
+    if (type !== 'leave' && to) {
+      to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
     const newConfig = Object.assign({}, config);

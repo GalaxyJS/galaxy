@@ -248,7 +248,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.populateEnterSequence(_this.sequences.enter);
       // Go to next dom manipulation step when the whole :enter sequence is done
       _this.sequences.enter.nextAction(function () {
-        _this.callLifecycleEvent('postEnterAnimations');
+        _this.callLifecycleEvent('postEnter');
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
@@ -280,7 +280,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = false;
         _this.callLifecycleEvent('postRemove');
-        _this.callLifecycleEvent('postLeaveAnimations');
+        _this.callLifecycleEvent('postLeave');
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });

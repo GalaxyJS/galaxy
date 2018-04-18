@@ -46,7 +46,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action, position) {
+    next: function (action) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
@@ -57,12 +57,10 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        // promise: promise,
-        // done: done,
         process: this.proceed,
         run: function run() {
           const local = this;
-          action.call(null, function () {
+          action.call(local.data, function () {
             local.process.call(_this);
             // done();
           }, function (e) {

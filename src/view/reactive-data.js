@@ -222,7 +222,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.type = 'reset';
       initialChanges.params = value;
       initialChanges.params.forEach(function (item) {
-        new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+        if (item !== null && typeof item === 'object') {
+          new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+        }
       });
 
       _this.sync('length');
@@ -245,8 +247,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             const result = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
             changes.original = value;
-            // changes.type = 'reset';
-            // changes.params = value;
 
             changes.type = method;
             changes.params = args;
@@ -257,7 +257,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
-                new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                if (item !== null && typeof item === 'object') {
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                }
               });
             } else if (method === 'pop' || method === 'splice' || method === 'shift') {
               //

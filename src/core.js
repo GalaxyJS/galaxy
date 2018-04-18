@@ -127,12 +127,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     load: function (module) {
-      const _this = this;
-
       if (!module) {
         throw new Error('Module meta data or constructor is missing');
       }
 
+      const _this = this;
       const promise = new Promise(function (resolve, reject) {
         if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
           module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
@@ -340,11 +339,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }
 
           currentModule.init();
-
           resolve(currentModule);
         }
         catch (error) {
-          reject(error);
+          console.error(error.message + ': ' + module.url + ', Search for es6 features in your code and remove them, e.g. arrow function');
+          console.error(error);
           throw new Error(error);
         }
       });
