@@ -92,38 +92,62 @@
       const _this = this;
       const parentNode = _this.parent;
       parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
-
+      const mainForQ = parentNode.cache._mainForLeaveQueue;
       if (config.trackBy instanceof Function) {
         // _this.renderingFlow.truncate();
-        _this.renderingFlow.next(function (nextStep) {
-          const newTrackMap = changes.params.map(function (item, i) {
-            return config.trackBy.call(_this, item, i);
-          });
 
-          // list of nodes that should be removed
-          const hasBeenRemoved = [];
-          config.trackMap.forEach(function (id, i) {
-            if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
-              hasBeenRemoved.push(config.nodes[i]);
-            }
-          });
+        const newTrackMap = changes.params.map(function (item, i) {
+          return config.trackBy.call(_this, item, i);
+        });
 
-          if (hasBeenRemoved.length) {
+        // preparing data
+        // list of nodes that should be removed
+        const hasBeenRemoved = [];
+        config.trackMap.forEach(function (id, i) {
+          if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+            hasBeenRemoved.push(config.nodes[i]);
+          }
+        });
+
+        const newParams = [];
+        const positions = [];
+        newTrackMap.forEach(function (id, i) {
+          if (config.trackMap.indexOf(id) === -1) {
+            newParams.push(changes.params[i]);
+            positions.push(i);
+          }
+        });
+        config.positions = positions;
+
+        const newChanges = new Galaxy.View.ArrayChange();
+        newChanges.init = changes.init;
+        newChanges.type = changes.type;
+        newChanges.original = changes.original;
+        newChanges.params = newParams;
+        newChanges.__rd__ = changes.__rd__;
+        changes = newChanges;
+
+
+        // We need a remove process in the case where there are nodes that should be removed
+        let removeProcessDone;
+        const removeProcess = new Promise(function (resolve) {
+          removeProcessDone = function () {
+            removeProcess.resolved = true;
+            resolve();
+          };
+        });
+        mainForQ.push(removeProcess);
+
+        // _this.renderingFlow.truncate();
+        // Create rendering step in order to remove nodes which are corresponded to the removed data
+        if (hasBeenRemoved.length) {
+          // debugger;
+          _this.renderingFlow.next(function (nextStep) {
+            newChanges
+debugger
             config.nodes = config.nodes.filter(function (node) {
               return hasBeenRemoved.indexOf(node) === -1;
             });
-
-            let destroyDone;
-            const destroyProcess = new Promise(function (resolve) {
-              destroyDone = function () {
-                destroyProcess.resolved = true;
-                resolve();
-              };
-            });
-
-            parentNode.cache._mainForLeaveQueue.push(destroyProcess);
-            // _this.renderingFlow.truncate();
-            // _this.renderingFlow.next(function forResetProcess(next) {
             if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
               View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, parentNode.sequences.leave);
             } else {
@@ -133,81 +157,52 @@
             parentNode.sequences.leave.nextAction(function () {
               parentNode.callLifecycleEvent('postLeave');
               parentNode.callLifecycleEvent('postAnimations');
-              // next();
-              destroyDone();
-            });
-            // });
-          }
-
-          const newParams = [];
-          const positions = [];
-          newTrackMap.forEach(function (id, i) {
-            if (config.trackMap.indexOf(id) === -1) {
-              newParams.push(changes.params[i]);
-              positions.push(i);
-            }
-          });
-          config.positions = positions;
-
-          const newChanges = new Galaxy.View.ArrayChange();
-          newChanges.init = changes.init;
-          newChanges.type = changes.type;
-          newChanges.original = changes.original;
-          newChanges.params = newParams;
-          newChanges.__rd__ = changes.__rd__;
-          changes = newChanges;
-          config.trackMap = newTrackMap;
-          debugger
-
-          // Don't process if the is no new parameter. The list has been shrank
-          if (!newChanges.params.length) {
-            return nextStep();
-          }
-          // When some old items have been removed and also some new items have been added
-          else if (newChanges.type === 'reset') {
-            newChanges.type = 'push';
-          }
-
-          const mainForQ = parentNode.cache._mainForLeaveQueue;
-          if (mainForQ.length) {
-            const whenAllDone = function () {
-              // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
-              // promises have resolved and if not we hav eto use Promise.all on the list again
-              const allNotResolved = mainForQ.some(function (promise) {
-                return promise.resolved !== true;
-              });
-
-              if (allNotResolved) {
-                // if not all resolved, then listen to the list again
-                Promise.all(mainForQ).then(whenAllDone);
-                return;
-              }
-
-              mainForQ.splice(0);
-              // _this.renderingFlow.truncate();
-
-              debugger;
               nextStep();
-              // createPushProcess(_this, config, changes, config.scope);
-            };
+              removeProcessDone();
+            });
+          });
+        } else {
+          newChanges;
+          debugger
+          removeProcessDone();
+        }
 
+        config.trackMap = newTrackMap;
+
+        // Don't process if the is no new parameter. The list has been shrank
+        if (!newChanges.params.length) {
+          return;
+        }
+        // When some old items have been removed and also some new items have been added
+        else if (newChanges.type === 'reset') {
+          newChanges.type = 'push';
+        }
+      }
+
+      if (mainForQ.length) {
+        const whenAllDone = function () {
+          // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
+          // promises have resolved and if not we hav eto use Promise.all on the list again
+          const allNotResolved = mainForQ.some(function (promise) {
+            return promise.resolved !== true;
+          });
+
+          if (allNotResolved) {
+            // if not all resolved, then listen to the list again
             Promise.all(mainForQ).then(whenAllDone);
-          } else {
-
-            debugger
-            nextStep();
-            // _this.renderingFlow.truncate();
-
+            return;
           }
-          debugger;
-        });
 
-        _this.renderingFlow.nextAction(function () {
-          debugger;
+          mainForQ.splice(0);
+          _this.renderingFlow.truncate();
           createPushProcess(_this, config, changes, config.scope);
-        });
+        };
+
+        debugger;
+        return Promise.all(mainForQ).then(whenAllDone);
       } else {
-        // _this.renderingFlow.truncate();
+        // debugger
+        _this.renderingFlow.truncate();
         runForProcess(_this, config, changes, config.scope);
       }
     }
