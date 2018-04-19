@@ -38,10 +38,6 @@
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
-          // if (bindings.propertyKeysPaths.length === 1 && bindings.propertyKeysPaths[0].indexOf('.changes') === -1) {
-          //   bindings.propertyKeysPaths[0] = bindings.propertyKeysPaths[0] + '.changes';
-          // }
-
           View.makeBinding(_this, '$for', undefined, config.scope, bindings, _this);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
@@ -67,7 +63,6 @@
     apply: function (config, changes, oldChanges, expression) {
       if (expression) {
         changes = expression();
-
         if (changes === null || changes === undefined) {
           return;
         }
@@ -92,121 +87,162 @@
       const _this = this;
       const parentNode = _this.parent;
       parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
-      const mainForQ = parentNode.cache._mainForLeaveQueue;
+      // parentNode.cache._mainForLeaveQueue;
+
+      // let removeProcessDone;
+      // const removeProcess = new Promise(function (resolve) {
+      //   removeProcessDone = function () {
+      //     removeProcess.resolved = true;
+      //     resolve();
+      //   };
+      // });
+      // parentNode.cache._mainForLeaveQueue.push(removeProcess);
       if (config.trackBy instanceof Function) {
         // _this.renderingFlow.truncate();
-
-        const newTrackMap = changes.params.map(function (item, i) {
-          return config.trackBy.call(_this, item, i);
-        });
-
-        // preparing data
-        // list of nodes that should be removed
-        const hasBeenRemoved = [];
-        config.trackMap.forEach(function (id, i) {
-          if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
-            hasBeenRemoved.push(config.nodes[i]);
-          }
-        });
-
-        const newParams = [];
-        const positions = [];
-        newTrackMap.forEach(function (id, i) {
-          if (config.trackMap.indexOf(id) === -1) {
-            newParams.push(changes.params[i]);
-            positions.push(i);
-          }
-        });
-        config.positions = positions;
-
-        const newChanges = new Galaxy.View.ArrayChange();
-        newChanges.init = changes.init;
-        newChanges.type = changes.type;
-        newChanges.original = changes.original;
-        newChanges.params = newParams;
-        newChanges.__rd__ = changes.__rd__;
-        changes = newChanges;
-
-
-        // We need a remove process in the case where there are nodes that should be removed
-        let removeProcessDone;
-        const removeProcess = new Promise(function (resolve) {
-          removeProcessDone = function () {
-            removeProcess.resolved = true;
-            resolve();
-          };
-        });
-        mainForQ.push(removeProcess);
-
-        // _this.renderingFlow.truncate();
-        // Create rendering step in order to remove nodes which are corresponded to the removed data
-        if (hasBeenRemoved.length) {
-          // debugger;
-          _this.renderingFlow.next(function (nextStep) {
-            newChanges
-debugger
-            config.nodes = config.nodes.filter(function (node) {
-              return hasBeenRemoved.indexOf(node) === -1;
-            });
-            if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
-              View.ViewNode.destroyNodes(_this, hasBeenRemoved, null, parentNode.sequences.leave);
-            } else {
-              View.ViewNode.destroyNodes(_this, hasBeenRemoved.reverse());
-            }
-
-            parentNode.sequences.leave.nextAction(function () {
-              parentNode.callLifecycleEvent('postLeave');
-              parentNode.callLifecycleEvent('postAnimations');
-              nextStep();
-              removeProcessDone();
-            });
+        _this.renderingFlow.next(function (nextStep) {
+          trackLeaveProcess(_this, config, changes).then(function (data) {
+            // debugger;
+            changes = data.changes;
+            config.trackMap = data.trackMap;
+            // removeProcessDone();
+            nextStep();
           });
-        } else {
-          newChanges;
-          debugger
-          removeProcessDone();
-        }
-
-        config.trackMap = newTrackMap;
-
-        // Don't process if the is no new parameter. The list has been shrank
-        if (!newChanges.params.length) {
-          return;
-        }
-        // When some old items have been removed and also some new items have been added
-        else if (newChanges.type === 'reset') {
-          newChanges.type = 'push';
-        }
+        });
+      } else {
+        // debugger;
+        // removeProcessDone();
+        // return runForProcess(_this, config, changes, config.scope);
       }
 
-      if (mainForQ.length) {
+      if (parentNode.cache._mainForLeaveQueue.length) {
         const whenAllDone = function () {
           // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
           // promises have resolved and if not we hav eto use Promise.all on the list again
-          const allNotResolved = mainForQ.some(function (promise) {
+          const allNotResolved = parentNode.cache._mainForLeaveQueue.some(function (promise) {
             return promise.resolved !== true;
           });
 
           if (allNotResolved) {
             // if not all resolved, then listen to the list again
-            Promise.all(mainForQ).then(whenAllDone);
+            parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue.filter(function (p) {
+              return !p.resolved;
+            });
+
+            Promise.all(parentNode.cache._mainForLeaveQueue).then(whenAllDone);
+            // debugger;
             return;
           }
-
-          mainForQ.splice(0);
-          _this.renderingFlow.truncate();
-          createPushProcess(_this, config, changes, config.scope);
+          // debugger;
+          // parentNode.cache._mainForLeaveQueue.splice(0);
+          // debugger;
+          // parentNode.sequences.enter.truncate();
+          // _this.renderingFlow.truncate();
+          if (changes.params.length && changes.type !== 'reset') {
+            _this.renderingFlow.truncate();
+            createPushProcess(_this, config, changes, config.scope);
+          } else {
+            // parentNode.sequences.enter.truncate();
+            // _this.renderingFlow.truncate();
+            // _this.renderingFlow.truncate();
+          }
         };
-
-        debugger;
-        return Promise.all(mainForQ).then(whenAllDone);
+        // debugger;
+        Promise.all(parentNode.cache._mainForLeaveQueue).then(whenAllDone);
       } else {
-        // debugger
-        _this.renderingFlow.truncate();
         runForProcess(_this, config, changes, config.scope);
       }
     }
   };
+
+  function trackLeaveProcess(node, config, changes) {
+    let newTrackMap = [];
+    let newChanges;
+    const mainForQ = node.parent.cache._mainForLeaveQueue;
+    let done;
+    const promise = new Promise(function (resolve) {
+      done = resolve;
+    });
+
+    newTrackMap = changes.params.map(function (item, i) {
+      return config.trackBy.call(node, item, i);
+    });
+
+    // list of nodes that should be removed
+    const hasBeenRemoved = [];
+    config.trackMap.forEach(function (id, i) {
+      if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+        hasBeenRemoved.push(config.nodes[i]);
+      }
+    });
+
+    const newParams = [];
+    const positions = [];
+    newTrackMap.forEach(function (id, i) {
+      if (config.trackMap.indexOf(id) === -1) {
+        newParams.push(changes.params[i]);
+        positions.push(i);
+      }
+    });
+    config.positions = positions;
+
+    newChanges = new Galaxy.View.ArrayChange();
+    newChanges.init = changes.init;
+    newChanges.type = changes.type;
+    newChanges.original = changes.original;
+    newChanges.params = newParams;
+    newChanges.__rd__ = changes.__rd__;
+    if (newChanges.type === 'reset' && newChanges.params.length) {
+      newChanges.type = 'push';
+    }
+
+    // config.trackMap = newTrackMap;
+
+    // We need a remove process in the case where there are nodes that should be removed
+    let removeProcessDone;
+    const removeProcess = new Promise(function (resolve) {
+      removeProcessDone = function () {
+        removeProcess.resolved = true;
+        done({
+          changes: newChanges,
+          trackMap: newTrackMap
+        });
+        resolve();
+      };
+    });
+    mainForQ.push(removeProcess);
+
+    // node.renderingFlow.truncate();
+    // Create rendering step in order to remove nodes which are corresponded to the removed data
+    if (hasBeenRemoved.length) {
+      config.nodes = config.nodes.filter(function (node) {
+        return hasBeenRemoved.indexOf(node) === -1;
+      });
+      if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
+        View.ViewNode.destroyNodes(node, hasBeenRemoved, null, node.parent.sequences.leave);
+      } else {
+        View.ViewNode.destroyNodes(node, hasBeenRemoved.reverse());
+      }
+
+      node.parent.sequences.leave.nextAction(function () {
+        node.parent.callLifecycleEvent('postLeave');
+        node.parent.callLifecycleEvent('postAnimations');
+        // debugger;
+        // done({
+        //   changes: newChanges,
+        //   trackMap: newTrackMap
+        // });
+        removeProcessDone();
+      });
+    } else {
+      // done({
+      //   changes: newChanges,
+      //   trackMap: newTrackMap
+      // });
+      removeProcessDone();
+    }
+
+    return promise;
+  }
 
   /**
    *
@@ -216,6 +252,7 @@ debugger
    * @param nodeScopeData
    */
   const runForProcess = function (node, config, changes, nodeScopeData) {
+    node.renderingFlow.truncate();
     if (changes.type === 'reset') {
       node.renderingFlow.next(function forResetProcess(next) {
         if (config.nodes.length) {
@@ -331,19 +368,11 @@ debugger
 
       parentNode.sequences.enter.nextAction(function () {
         parentNode.callLifecycleEvent('postEnter');
-        console.info('p', parentNode);
         parentNode.callLifecycleEvent('postAnimations');
         next();
       });
     });
-    // We check for domManipulationsBus in the next ui action so we can be sure all the dom manipulations have been set
-    // on parentNode.domManipulationsBus. For example in the case of nested $for, there is no way of telling that
-    // all the dom manipulations are set in a ui action, so we need to do that in the next ui action.
-    // parentNode.renderingFlow.next(function (next) {
-    // setTimeout(function () {
-    // Promise.all(parentNode.domBus).then(next);
-    // });
-    // });
+
   };
 })(Galaxy.View);
 

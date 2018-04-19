@@ -8,6 +8,17 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     this.type = 'reset';
   }
 
+  ArrayChange.prototype.getInstance = function () {
+    const instance = new Galaxy.View.ArrayChange();
+    instance.init = this.init;
+    instance.original = this.original;
+    instance.params = this.params.slice(0);
+    instance.type = this.type;
+    instance.ts = new Date().getTime();
+
+    return instance;
+  };
+
   return ArrayChange;
 })();
 
@@ -353,6 +364,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param value
      */
     syncNode: function (node, key, value) {
+      if (value instanceof Galaxy.View.ArrayChange) {
+        value = value.getInstance();
+      }
+
       if (node instanceof Galaxy.View.ViewNode) {
         node.setters[key](value, this.oldValue);
       } else {

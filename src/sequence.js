@@ -24,6 +24,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     _this.activeState = Promise.resolve('sequence-constructor');
     _this.actions = [];
     _this.resolver = Promise.resolve();
+    _this.trun = 0;
 
     this.reset();
   }
@@ -57,17 +58,23 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
+        data: { },
         process: this.proceed,
         run: function run() {
           const local = this;
           action.call(local.data, function () {
             local.process.call(_this);
-            // done();
           }, function (e) {
             console.error(e);
           });
         }
       };
+
+      // This will fix and strange bug
+      // if (_this.isFinished === false && _this.processing && _this.actions.length === 0) {
+      //   debugger;
+      //   _this.processing = false;
+      // }
 
       _this.actions.push(act);
 
@@ -98,27 +105,29 @@ Galaxy.GalaxySequence = /** @class */ (function () {
 
     truncate: function () {
       const _this = this;
+      _this.trun++;
 
       _this.actions.forEach(function (item) {
         item.process = disabledProcess;
       });
 
       let i = 0;
-      const len = this.truncateHandlers.length;
+      const len = _this.truncateHandlers.length;
       for (; i < len; i++) {
-        this.truncateHandlers[i].call(this);
+        _this.truncateHandlers[i].call(this);
       }
 
-      this.truncateHandlers = [];
+      _this.truncateHandlers = [];
       _this.isFinished = true;
       _this.processing = false;
+      _this.actions = [];
 
       return _this;
     },
 
     nextAction: function (action) {
       this.next(function (done) {
-        action.call();
+        action.call(this);
         done('sequence-action');
       });
     }

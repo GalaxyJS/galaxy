@@ -190,6 +190,10 @@ Galaxy.View = /** @class */(function (G) {
       }
     });
 
+    if (target instanceof Galaxy.View.ArrayChange) {
+      return target.getInstance();
+    }
+
     return target;
   };
 

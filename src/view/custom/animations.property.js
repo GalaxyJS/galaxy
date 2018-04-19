@@ -48,6 +48,7 @@
           }
 
           sequence.next(function (done) {
+            this.l = 'ap';
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, done);
           });
         };
