@@ -86,7 +86,7 @@
       const params = regExpResultToParams(match, paramNames);
 
       if (route.route === '/' && match.input !== '/') {
-        return false;
+        return { match: match, route: route, params: params };
       }
 
       return match ? { match: match, route: route, params: params } : false;
