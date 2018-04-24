@@ -19,7 +19,11 @@
         nodes: [],
         scope: scope,
         matches: matches,
-        trackBy: matches.trackBy
+        trackBy: matches.trackBy,
+        queue: [],
+        onDone: function () {
+
+        }
       };
     },
     /**
@@ -27,6 +31,8 @@
      * @param config Return of prepareData method
      */
     install: function (config) {
+      const _this = this;
+
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
           isExpression: false,
@@ -34,7 +40,6 @@
           propertyKeysPaths: [config.matches[2] + '.changes']
         }, this);
       } else if (config.matches) {
-        const _this = this;
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
@@ -86,78 +91,112 @@
 
       const _this = this;
       const parentNode = _this.parent;
-      parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue || [];
-      // parentNode.cache._mainForLeaveQueue;
+      parentNode.cache.mainChildrenForQueue = parentNode.cache.mainChildrenForQueue || [];
 
-      // let removeProcessDone;
-      // const removeProcess = new Promise(function (resolve) {
-      //   removeProcessDone = function () {
-      //     removeProcess.resolved = true;
-      //     resolve();
-      //   };
-      // });
-      // parentNode.cache._mainForLeaveQueue.push(removeProcess);
+      _this.renderingFlow.truncate();
+
+      _this.renderingFlow.onTruncate(function () {
+        config.onDone.ignore = true;
+        // const queue = parentNode.cache.mainChildrenForQueue;
+        // config.queue.forEach(function (promise) {
+        //   const index = queue.indexOf(promise);
+        //   if (index !== -1) {
+        //     queue.splice(index, 1);
+        //   }
+        // });
+        config.queue = [];
+      });
+
+      let destroyDone;
+      const waitForDestroy = new Promise(function (resolve) {
+        destroyDone = function () {
+          waitForDestroy.pn = config.propName;
+          waitForDestroy.resolved = true;
+          resolve();
+        };
+      });
+
+      parentNode.cache.mainChildrenForQueue.push(waitForDestroy);
+      config.queue.push(waitForDestroy);
+      console.info(config.propName, parentNode.cache.mainChildrenForQueue.length);
+
       if (config.trackBy instanceof Function) {
         // _this.renderingFlow.truncate();
-        _this.renderingFlow.next(function (nextStep) {
-          trackLeaveProcess(_this, config, changes).then(function (data) {
-            // debugger;
-            changes = data.changes;
-            config.trackMap = data.trackMap;
-            // removeProcessDone();
-            nextStep();
-          });
-        });
-      } else {
-        // debugger;
-        // removeProcessDone();
-        // return runForProcess(_this, config, changes, config.scope);
+        // _this.renderingFlow.next(function (nextStep) {
+        //   trackLeaveProcess(_this, config, changes).then(function (data) {
+        //     // debugger;
+        //     changes = data.changes;
+        //     config.trackMap = data.trackMap;
+        //     // removeProcessDone();
+        //     nextStep();
+        //   });
+        // });
       }
 
-      if (parentNode.cache._mainForLeaveQueue.length) {
-        const whenAllDone = function () {
-          // Because the items inside _mainForLeaveQueue will change on the fly we have manually check whether all the
-          // promises have resolved and if not we hav eto use Promise.all on the list again
-          const allNotResolved = parentNode.cache._mainForLeaveQueue.some(function (promise) {
-            return promise.resolved !== true;
-          });
+      if (changes.type === 'reset') {
+        _this.renderingFlow.next(function forResetProcess(next) {
+          if (config.nodes.length) {
+            if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
+              View.ViewNode.destroyNodes(_this, config.nodes, null, _this.parent.sequences.leave);
+            } else {
+              View.ViewNode.destroyNodes(_this, config.nodes.reverse());
+            }
 
-          if (allNotResolved) {
-            // if not all resolved, then listen to the list again
-            parentNode.cache._mainForLeaveQueue = parentNode.cache._mainForLeaveQueue.filter(function (p) {
-              return !p.resolved;
+            config.nodes = [];
+            _this.parent.sequences.leave.nextAction(function () {
+              changes = Object.assign({}, changes);
+              changes.type = 'push';
+              destroyDone();
+
+              _this.parent.callLifecycleEvent('postLeave');
+              _this.parent.callLifecycleEvent('postAnimations');
+              next();
             });
-
-            Promise.all(parentNode.cache._mainForLeaveQueue).then(whenAllDone);
-            // debugger;
-            return;
-          }
-          // debugger;
-          // parentNode.cache._mainForLeaveQueue.splice(0);
-          // debugger;
-          // parentNode.sequences.enter.truncate();
-          // _this.renderingFlow.truncate();
-          if (changes.params.length && changes.type !== 'reset') {
-            _this.renderingFlow.truncate();
-            createPushProcess(_this, config, changes, config.scope);
           } else {
-            // parentNode.sequences.enter.truncate();
-            // _this.renderingFlow.truncate();
-            // _this.renderingFlow.truncate();
+            changes = Object.assign({}, changes);
+            changes.type = 'push';
+            destroyDone();
+            next();
           }
-        };
-        // debugger;
-        Promise.all(parentNode.cache._mainForLeaveQueue).then(whenAllDone);
-      } else {
-        runForProcess(_this, config, changes, config.scope);
+        });
       }
+
+      // if (parentNode.cache.mainChildrenForQueue.length === 0) {
+      const whenAllLeavesAreDone = function () {
+        if (whenAllLeavesAreDone.ignore) {
+          return;
+        }
+        // Because the items inside mainChildrenForQueue will change on the fly we have manually check whether all the
+        // promises have resolved and if not we hav eto use Promise.all on the list again
+        const allNotResolved = parentNode.cache.mainChildrenForQueue.some(function (promise) {
+          return promise.resolved !== true;
+        });
+
+        if (allNotResolved) {
+          // if not all resolved, then listen to the list again
+          parentNode.cache.mainChildrenForQueue = parentNode.cache.mainChildrenForQueue.filter(function (p) {
+            return !p.resolved;
+          });
+
+          parentNode.cache.mainChildrenForPromise = Promise.all(parentNode.cache.mainChildrenForQueue);
+          parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
+          return;
+        }
+
+        parentNode.cache.mainChildrenForPromise = null;
+        runForProcess(_this, config, changes, config.scope);
+      };
+      config.onDone = whenAllLeavesAreDone;
+
+      parentNode.cache.mainChildrenForPromise = parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildrenForQueue);
+      parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
     }
   };
 
   function trackLeaveProcess(node, config, changes) {
     let newTrackMap = [];
     let newChanges;
-    const mainForQ = node.parent.cache._mainForLeaveQueue;
+    const mainForQ = node.parent.cache.mainChildrenForQueue;
     let done;
     const promise = new Promise(function (resolve) {
       done = resolve;

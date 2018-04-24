@@ -27,7 +27,6 @@
       node.cache._ifLeaveId = requestAnimationFrame(function () {
         node.setInDOM(false);
       });
-    } else {
     }
   }
 })(Galaxy.View);

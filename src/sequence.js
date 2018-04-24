@@ -24,7 +24,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     _this.activeState = Promise.resolve('sequence-constructor');
     _this.actions = [];
     _this.resolver = Promise.resolve();
-    _this.trun = 0;
 
     this.reset();
   }
@@ -105,7 +104,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
 
     truncate: function () {
       const _this = this;
-      _this.trun++;
 
       _this.actions.forEach(function (item) {
         item.process = disabledProcess;

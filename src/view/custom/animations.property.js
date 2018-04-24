@@ -31,11 +31,11 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            // debugger;
             const tweens = TweenLite.getTweensOf(viewNode.node);
             tweens.forEach(function (tween) {
-              if(tween.vars.onComplete) {
-                tween.vars.onComplete();
-              }
+              // tween.timeline.invalidate();
+              debugger;
             });
             TweenLite.killTweensOf(viewNode.node);
           });
@@ -48,7 +48,6 @@
           }
 
           sequence.next(function (done) {
-            this.l = 'ap';
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, done);
           });
         };
@@ -64,12 +63,6 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
-            const tweens = TweenLite.getTweensOf(viewNode.node);
-            tweens.forEach(function (tween) {
-              if(tween.vars.onComplete) {
-                tween.vars.onComplete();
-              }
-            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -81,10 +74,13 @@
           }
 
           // in the case which the viewNode is not visible, then ignore its animation
-          if (viewNode.node.offsetWidth === 0 || viewNode.node.offsetHeight === 0) {
-            return sequence.next(function (done) {
-              done();
-            });
+          if (viewNode.node.offsetWidth === 0 ||
+            viewNode.node.offsetHeight === 0 ||
+            viewNode.node.style.opacity === '0' ||
+            viewNode.node.style.visibility === 'hidden') {
+            return /*sequence.next(done)*/;
+          } else {
+            // console.log(viewNode.node, viewNode.node.style.opacity);
           }
 
           let animationDone;
@@ -263,8 +259,15 @@
 
     if (newConfig.sequence) {
       const animationMeta = AnimationMeta.get(newConfig.sequence);
-      animationMeta.add(viewNode.node, newConfig, onComplete);
+      if(type === 'leave'){
+        // animationMeta.timeline.time();
+        // animationMeta.timeline.getChildren();
+        // animationMeta.timeline.paused(true);
+        // animationMeta.timeline.invalidate();
+        // debugger;
 
+      }
+      animationMeta.add(viewNode.node, newConfig, onComplete);
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
         const parent = AnimationMeta.get(newConfig.parent);
