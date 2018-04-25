@@ -31,12 +31,6 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
-            // debugger;
-            const tweens = TweenLite.getTweensOf(viewNode.node);
-            tweens.forEach(function (tween) {
-              // tween.timeline.invalidate();
-              debugger;
-            });
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -78,9 +72,7 @@
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            return /*sequence.next(done)*/;
-          } else {
-            // console.log(viewNode.node, viewNode.node.style.opacity);
+            return;
           }
 
           let animationDone;
@@ -93,21 +85,11 @@
               promise.then(done);
             };
           })(waitForAnimation));
+          // sequence.next(function (done) {
+          //   waitForAnimation.then(done);
+          // });
 
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animationDone);
-
-          // if (leave.sequence) {
-          //   const animationMeta = AnimationMeta.get(leave.sequence);
-          //   animationMeta.add(viewNode.node, leave, animationDone);
-          //
-          //   // Add to parent should happen after the animation is added to the child
-          //   if (leave.parent) {
-          //     const parent = AnimationMeta.get(leave.parent);
-          //     parent.addChild(animationMeta, animationMeta.configs.leave || {}, parent.configs.leave || {});
-          //   }
-          // } else {
-          //   AnimationMeta.createTween(viewNode.node, leave, animationDone);
-          // }
         };
       }
 
@@ -170,6 +152,11 @@
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
 
+  /**
+   *
+   * @param {string} name
+   * @return {AnimationMeta}
+   */
   AnimationMeta.get = function (name) {
     if (!AnimationMeta.ANIMATIONS[name]) {
       AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
@@ -245,10 +232,17 @@
     return step;
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {'enter'|'leave'} type
+   * @param config
+   * @param {callback} onComplete
+   */
   AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, config.from);
     const to = AnimationMeta.parseStep(viewNode, config.to);
-    // const lastStep = to || from;
+
     if (type !== 'leave' && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
@@ -259,14 +253,7 @@
 
     if (newConfig.sequence) {
       const animationMeta = AnimationMeta.get(newConfig.sequence);
-      if(type === 'leave'){
-        // animationMeta.timeline.time();
-        // animationMeta.timeline.getChildren();
-        // animationMeta.timeline.paused(true);
-        // animationMeta.timeline.invalidate();
-        // debugger;
 
-      }
       animationMeta.add(viewNode.node, newConfig, onComplete);
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
@@ -276,29 +263,15 @@
         parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
       }
     } else {
-      // let lastStep = config.to || config.from;
-      // lastStep.clearProps = 'all';
       AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
     }
-
-    // if (config.sequence) {
-    //   const animationMeta = AnimationMeta.get(config.sequence);
-    //   const lastStep = config.to || config.from;
-    //   lastStep.clearProps = 'all';
-    //   animationMeta.add(viewNode.node, config, onComplete);
-    //
-    //   // Add to parent should happen after the animation is added to the child
-    //   if (config.parent) {
-    //     const parent = AnimationMeta.get(config.parent);
-    //     parent.addChild(animationMeta, animationMeta.configs.enter || {}, parent.configs.enter || {});
-    //   }
-    // } else {
-    //   const lastStep = config.to || config.from;
-    //   lastStep.clearProps = 'all';
-    //   AnimationMeta.createTween(viewNode.node, config, onComplete);
-    // }
   };
 
+  /**
+   *
+   * @param {string} name
+   * @class
+   */
   function AnimationMeta(name) {
     const _this = this;
     _this.name = name;
@@ -306,7 +279,6 @@
       autoRemoveChildren: true,
       smoothChildTiming: true,
       onComplete: function () {
-        _this.lastChildPosition = 0;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -315,17 +287,8 @@
 
     this.timeline.addLabel('beginning', 0);
     this.configs = {};
-    this.lastChildPosition = 0;
     this.parent = null;
   }
-
-  AnimationMeta.prototype.calculateLastChildPosition = function (duration, position) {
-    const calc = AnimationMeta.calculateDuration(duration, position || '+=0');
-    const lcp = (this.lastChildPosition * 10);
-    const c = (calc * 10);
-    this.lastChildPosition = (lcp + c) / 10;
-
-  };
 
   AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
     const _this = this;
@@ -344,7 +307,7 @@
 
   AnimationMeta.prototype.add = function (node, config, onComplete) {
     const _this = this;
-    let to = Object.assign({}, config.to || {});
+    const to = Object.assign({}, config.to || {});
     to.onComplete = onComplete;
     to.onStartParams = [node['galaxyViewNode']];
 
@@ -375,7 +338,7 @@
       am: _this,
       config: config
     };
-    // debugger;
+
     // First animation in the timeline should always start at zero
     if (this.timeline.getChildren(false, true, false).length === 0) {
       let progress = _this.timeline.progress();

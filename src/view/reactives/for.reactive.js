@@ -9,6 +9,14 @@
 
   View.REACTIVE_BEHAVIORS['$for'] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
+    getUpdateDirection: function (data) {
+      // debugger;
+      // if (data && data.type === 'reset' && data.params.length === 0) {
+      //   return Galaxy.View.ReactiveData.UPDATE_DIRECTION_BOTTOM_UP;
+      // }
+      //
+      // return Galaxy.View.ReactiveData.UPDATE_DIRECTION_TOP_DOWN;
+    },
     prepareData: function (matches, scope) {
       this.virtualize();
 
@@ -32,6 +40,9 @@
      */
     install: function (config) {
       const _this = this;
+      const parentNode = _this.parent;
+      parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
+      parentNode.cache.mainChildForLeaveProcesses = parentNode.cache.mainChildForLeaveProcesses || [];
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -90,240 +101,179 @@
       }
 
       const _this = this;
+      const schema = _this.schema;
       const parentNode = _this.parent;
-      parentNode.cache.mainChildrenForQueue = parentNode.cache.mainChildrenForQueue || [];
+      // parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
 
       _this.renderingFlow.truncate();
-
       _this.renderingFlow.onTruncate(function () {
         config.onDone.ignore = true;
-        // const queue = parentNode.cache.mainChildrenForQueue;
-        // config.queue.forEach(function (promise) {
-        //   const index = queue.indexOf(promise);
-        //   if (index !== -1) {
-        //     queue.splice(index, 1);
-        //   }
-        // });
         config.queue = [];
       });
 
       let destroyDone;
       const waitForDestroy = new Promise(function (resolve) {
         destroyDone = function () {
-          waitForDestroy.pn = config.propName;
           waitForDestroy.resolved = true;
           resolve();
         };
       });
 
-      parentNode.cache.mainChildrenForQueue.push(waitForDestroy);
+      parentNode.cache.mainChildForQueue.push(waitForDestroy);
       config.queue.push(waitForDestroy);
-      console.info(config.propName, parentNode.cache.mainChildrenForQueue.length);
+      let leaveProcess = null;
 
+      let newTrackMap = [];
       if (config.trackBy instanceof Function) {
-        // _this.renderingFlow.truncate();
-        // _this.renderingFlow.next(function (nextStep) {
-        //   trackLeaveProcess(_this, config, changes).then(function (data) {
-        //     // debugger;
-        //     changes = data.changes;
-        //     config.trackMap = data.trackMap;
-        //     // removeProcessDone();
-        //     nextStep();
-        //   });
-        // });
+        let newChanges;
+
+        newTrackMap = changes.params.map(function (item, i) {
+          return config.trackBy.call(_this, item, i);
+        });
+
+        // list of nodes that should be removed
+        const hasBeenRemoved = [];
+        config.trackMap.forEach(function (id, i) {
+          if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+            hasBeenRemoved.push(config.nodes[i]);
+          }
+        });
+
+        const newParams = [];
+        const positions = [];
+        newTrackMap.forEach(function (id, i) {
+          if (config.trackMap.indexOf(id) === -1) {
+            newParams.push(changes.params[i]);
+            positions.push(i);
+          }
+        });
+        config.positions = positions;
+
+        newChanges = new Galaxy.View.ArrayChange();
+        newChanges.init = changes.init;
+        newChanges.type = changes.type;
+        newChanges.original = changes.original;
+        newChanges.params = newParams;
+        newChanges.__rd__ = changes.__rd__;
+        if (newChanges.type === 'reset' && newChanges.params.length) {
+          newChanges.type = 'push';
+        }
+
+        config.nodes = config.nodes.filter(function (node) {
+          return hasBeenRemoved.indexOf(node) === -1;
+        });
+
+        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function (next) {
+          changes = newChanges;
+
+          destroyDone();
+          // next();
+        });
+        leaveProcess.title = config.propName;
+        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      } else if (changes.type === 'reset') {
+        leaveProcess = createLeaveProcess(_this, config.nodes, config, function (next) {
+          changes = Object.assign({}, changes);
+          changes.type = 'push';
+          // _this.renderingFlow;
+// debugger
+
+          destroyDone();
+          // next();
+          // debugger;
+        });
+        leaveProcess.title = config.propName;
+        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
       }
 
-      if (changes.type === 'reset') {
-        _this.renderingFlow.next(function forResetProcess(next) {
-          if (config.nodes.length) {
-            if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
-              View.ViewNode.destroyNodes(_this, config.nodes, null, _this.parent.sequences.leave);
-            } else {
-              View.ViewNode.destroyNodes(_this, config.nodes.reverse());
-            }
+      // debugger
+      // if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
+      parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      // } else {
+      //   parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+      // }
+      // debugger;
 
-            config.nodes = [];
-            _this.parent.sequences.leave.nextAction(function () {
-              changes = Object.assign({}, changes);
-              changes.type = 'push';
-              destroyDone();
-
-              _this.parent.callLifecycleEvent('postLeave');
-              _this.parent.callLifecycleEvent('postAnimations');
-              next();
-            });
-          } else {
-            changes = Object.assign({}, changes);
-            changes.type = 'push';
-            destroyDone();
-            next();
-          }
+      if (parentNode.cache.mainChildForLeaveProcesses.length && !parentNode.cache.mainChildForLeaveProcesses.active) {
+        parentNode.cache.mainChildForLeaveProcesses.active = true;
+        // We start the leaving process in the next frame so the app has enough time to register all the leave processes
+        // that belong to parentNode
+        requestAnimationFrame(function () {
+          parentNode.cache.mainChildForLeaveProcesses.forEach(function (action) {
+            // debugger;
+            action();
+          });
+          parentNode.cache.mainChildForLeaveProcesses = [];
+          parentNode.cache.mainChildForLeaveProcesses.active = false;
         });
       }
 
-      // if (parentNode.cache.mainChildrenForQueue.length === 0) {
       const whenAllLeavesAreDone = function () {
         if (whenAllLeavesAreDone.ignore) {
           return;
         }
-        // Because the items inside mainChildrenForQueue will change on the fly we have manually check whether all the
+        // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
         // promises have resolved and if not we hav eto use Promise.all on the list again
-        const allNotResolved = parentNode.cache.mainChildrenForQueue.some(function (promise) {
+        const allNotResolved = parentNode.cache.mainChildForQueue.some(function (promise) {
           return promise.resolved !== true;
         });
 
         if (allNotResolved) {
           // if not all resolved, then listen to the list again
-          parentNode.cache.mainChildrenForQueue = parentNode.cache.mainChildrenForQueue.filter(function (p) {
+          parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue.filter(function (p) {
             return !p.resolved;
           });
 
-          parentNode.cache.mainChildrenForPromise = Promise.all(parentNode.cache.mainChildrenForQueue);
+          parentNode.cache.mainChildrenForPromise = Promise.all(parentNode.cache.mainChildForQueue);
           parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
           return;
         }
 
         parentNode.cache.mainChildrenForPromise = null;
-        runForProcess(_this, config, changes, config.scope);
+        config.trackMap = newTrackMap;
+
+        if (changes.type === 'reset' && changes.params.length === 0) {
+          return;
+        }
+
+        createPushProcess(_this, config, changes, config.scope);
+        // runForProcess(_this, config, changes, config.scope);
       };
       config.onDone = whenAllLeavesAreDone;
 
-      parentNode.cache.mainChildrenForPromise = parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildrenForQueue);
+      parentNode.cache.mainChildrenForPromise =
+        parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildForQueue);
       parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
     }
   };
 
-  function trackLeaveProcess(node, config, changes) {
-    let newTrackMap = [];
-    let newChanges;
-    const mainForQ = node.parent.cache.mainChildrenForQueue;
-    let done;
-    const promise = new Promise(function (resolve) {
-      done = resolve;
-    });
-
-    newTrackMap = changes.params.map(function (item, i) {
-      return config.trackBy.call(node, item, i);
-    });
-
-    // list of nodes that should be removed
-    const hasBeenRemoved = [];
-    config.trackMap.forEach(function (id, i) {
-      if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
-        hasBeenRemoved.push(config.nodes[i]);
-      }
-    });
-
-    const newParams = [];
-    const positions = [];
-    newTrackMap.forEach(function (id, i) {
-      if (config.trackMap.indexOf(id) === -1) {
-        newParams.push(changes.params[i]);
-        positions.push(i);
-      }
-    });
-    config.positions = positions;
-
-    newChanges = new Galaxy.View.ArrayChange();
-    newChanges.init = changes.init;
-    newChanges.type = changes.type;
-    newChanges.original = changes.original;
-    newChanges.params = newParams;
-    newChanges.__rd__ = changes.__rd__;
-    if (newChanges.type === 'reset' && newChanges.params.length) {
-      newChanges.type = 'push';
-    }
-
-    // config.trackMap = newTrackMap;
-
-    // We need a remove process in the case where there are nodes that should be removed
-    let removeProcessDone;
-    const removeProcess = new Promise(function (resolve) {
-      removeProcessDone = function () {
-        removeProcess.resolved = true;
-        done({
-          changes: newChanges,
-          trackMap: newTrackMap
-        });
-        resolve();
-      };
-    });
-    mainForQ.push(removeProcess);
-
-    // node.renderingFlow.truncate();
-    // Create rendering step in order to remove nodes which are corresponded to the removed data
-    if (hasBeenRemoved.length) {
-      config.nodes = config.nodes.filter(function (node) {
-        return hasBeenRemoved.indexOf(node) === -1;
-      });
-      if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
-        View.ViewNode.destroyNodes(node, hasBeenRemoved, null, node.parent.sequences.leave);
-      } else {
-        View.ViewNode.destroyNodes(node, hasBeenRemoved.reverse());
-      }
-
-      node.parent.sequences.leave.nextAction(function () {
-        node.parent.callLifecycleEvent('postLeave');
-        node.parent.callLifecycleEvent('postAnimations');
-        // debugger;
-        // done({
-        //   changes: newChanges,
-        //   trackMap: newTrackMap
-        // });
-        removeProcessDone();
-      });
-    } else {
-      // done({
-      //   changes: newChanges,
-      //   trackMap: newTrackMap
-      // });
-      removeProcessDone();
-    }
-
-    return promise;
-  }
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param config
-   * @param changes
-   * @param nodeScopeData
-   */
-  const runForProcess = function (node, config, changes, nodeScopeData) {
-    node.renderingFlow.truncate();
-    if (changes.type === 'reset') {
-      node.renderingFlow.next(function forResetProcess(next) {
-        if (config.nodes.length) {
-          if (node.schema.renderConfig && node.schema.renderConfig.domManipulationOrder === 'cascade') {
-            View.ViewNode.destroyNodes(node, config.nodes, null, node.parent.sequences.leave);
+  function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
+    return function () {
+      const parentNode = node.parent;
+      const schema = node.schema;
+      node.renderingFlow.next(function leaveProcess(next) {
+        if (itemsToBeRemoved.length) {
+          if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
+            View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parentNode.sequences.leave);
           } else {
-            View.ViewNode.destroyNodes(node, config.nodes.reverse());
+            View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse());
           }
 
-          config.nodes = [];
-          node.parent.sequences.leave.nextAction(function () {
-            node.parent.callLifecycleEvent('postLeave');
-            node.parent.callLifecycleEvent('postAnimations');
+          parentNode.sequences.leave.nextAction(function () {
+            parentNode.callLifecycleEvent('postLeave');
+            parentNode.callLifecycleEvent('postAnimations');
+            onDone();
             next();
           });
         } else {
+          onDone();
           next();
         }
       });
+    };
+  }
 
-      changes = Object.assign({}, changes);
-      changes.type = 'push';
-
-      if (changes.params.length) {
-        createPushProcess(node, config, changes, nodeScopeData);
-      }
-    } else {
-      createPushProcess(node, config, changes, nodeScopeData);
-    }
-  };
-
-  const createPushProcess = function (node, config, changes, nodeScopeData) {
+  function createPushProcess(node, config, changes, nodeScopeData) {
     const parentNode = node.parent;
     const positions = config.positions;
     const placeholdersPositions = [];
@@ -332,7 +282,7 @@
     let onEachAction = function (vn) {
       this.push(vn);
     };
-
+// debugger;
     node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
         let length = config.nodes.length;

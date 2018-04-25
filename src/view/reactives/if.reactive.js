@@ -23,10 +23,10 @@
     if (value && !node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
     } else if (!value && node.inDOM && node.node.parentNode) {
-      cancelAnimationFrame(node.cache._ifLeaveId);
-      node.cache._ifLeaveId = requestAnimationFrame(function () {
-        node.setInDOM(false);
-      });
+      // cancelAnimationFrame(node.cache._ifLeaveId);
+      // node.cache._ifLeaveId = requestAnimationFrame(function () {
+      node.setInDOM(false);
+      // });
     }
   }
 })(Galaxy.View);

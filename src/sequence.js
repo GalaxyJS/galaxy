@@ -3,7 +3,6 @@
 
 Galaxy.GalaxySequence = /** @class */ (function () {
   const disabledProcess = function () {
-
   };
 
   /**
@@ -57,7 +56,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        data: { },
+        data: {},
         process: this.proceed,
         run: function run() {
           const local = this;
@@ -85,14 +84,20 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    proceed: function (p) {
+    proceed: function sequenceProceed(p) {
       const _this = this;
       const oldAction = _this.actions.shift();
       const firstAction = _this.actions[0];
+      // console.log('should end',_this.actions.length, firstAction);
       if (firstAction) {
+        // if (_this.actions.length === 0) {
+
+        // }
         _this.resolver.then(firstAction.run.bind(firstAction));
       } else if (oldAction) {
-        _this.resolver.then(_this.activeStateResolve.bind(_this));
+        // _this.resolver.then(function () {
+          _this.activeStateResolve();
+        // });
       }
     },
 

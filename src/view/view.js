@@ -722,9 +722,11 @@ Galaxy.View = /** @class */(function (G) {
       }
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       // this make sure that the viewNode and its child elements are rendered
-      viewNode.sequences.enter.nextAction(function () {
-        viewNode.callLifecycleEvent('rendered');
-        viewNode.hasBeenRendered();
+      requestAnimationFrame(function () {
+        viewNode.sequences.enter.nextAction(function () {
+          viewNode.callLifecycleEvent('rendered');
+          viewNode.hasBeenRendered();
+        });
       });
 
       return viewNode;

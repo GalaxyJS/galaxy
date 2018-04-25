@@ -47,6 +47,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     };
   };
 
+  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
+  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
+
   /**
    * @param {string} id
    * @param {Object} data
@@ -344,6 +347,40 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           key = map.keys[i];
           _this.syncNode(node, key, value);
         });
+        // const keyGroups = map.keys.unique();
+        // keyGroups.forEach(function (mainKey) {
+        //   let key;
+        //   let updateDir = ReactiveData.UPDATE_DIRECTION_TOP_DOWN;
+        //   if (Galaxy.View.REACTIVE_BEHAVIORS.hasOwnProperty(mainKey)) {
+        //     const action = Galaxy.View.REACTIVE_BEHAVIORS[mainKey].getUpdateDirection;
+        //     if (action) {
+        //       updateDir = action.call(null, value);
+        //     }
+        //   }
+        //
+        //   // debugger;
+        //
+        //   if (updateDir === ReactiveData.UPDATE_DIRECTION_TOP_DOWN) {
+        //     map.nodes.forEach(function (node, i) {
+        //       key = map.keys[i];
+        //       if (key !== mainKey) {
+        //         return;
+        //       }
+        //       _this.syncNode(node, key, value);
+        //     });
+        //   } else if (updateDir === ReactiveData.UPDATE_DIRECTION_BOTTOM_UP) {
+        //     for (let i = 0, len = map.nodes.length; i < len; i++) {
+        //       key = map.keys[i];
+        //       if (key !== mainKey) {
+        //         continue;
+        //       }
+        //       _this.syncNode(map.nodes[i], key, value);
+        //     }
+        //   } else {
+        //     console.error('Update direction is invalid', updateDir);
+        //     throw new Error('Please specify a valid update direction');
+        //   }
+        // });
       }
     },
     /**
