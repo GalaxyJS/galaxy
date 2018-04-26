@@ -654,7 +654,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} nodeSchema
    * @param position
    */
-  View.createNode = function (parent, scopeData, nodeSchema, position) {
+  View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
     let i = 0, len = 0;
 
     if (typeof nodeSchema === 'string') {
@@ -670,14 +670,14 @@ Galaxy.View = /** @class */(function (G) {
 
     if (nodeSchema instanceof Array) {
       for (i = 0, len = nodeSchema.length; i < len; i++) {
-        View.createNode(parent, scopeData, nodeSchema[i], null);
+        View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
       }
     } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
       let attributeValue, attributeName;
       const keys = Object.keys(nodeSchema);
       const needInitKeys = [];
 
-      const viewNode = new View.ViewNode(nodeSchema);
+      const viewNode = new View.ViewNode(nodeSchema, null, refNode);
       parent.registerChild(viewNode, position);
 
       // Behaviors definition stage

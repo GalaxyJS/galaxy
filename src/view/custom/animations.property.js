@@ -31,6 +31,7 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
+            // viewNode.parent.sequences.enter.removeByRef(viewNode);
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -42,7 +43,7 @@
           }
 
           sequence.next(function (done) {
-            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, done);
+            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };
       }
@@ -80,16 +81,16 @@
             animationDone = resolve;
           });
 
-          sequence.next((function (promise) {
-            return function (done) {
-              promise.then(done);
-            };
-          })(waitForAnimation));
-          // sequence.next(function (done) {
-          //   waitForAnimation.then(done);
-          // });
+          // sequence.next((function (promise) {
+          //   return function (done) {
+          //     promise.then(done);
+          //   };
+          // })(waitForAnimation));
+          sequence.next(function (done) {
+            waitForAnimation.then(done);
+          });
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animationDone);
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animations.config, animationDone);
         };
       }
 
@@ -236,25 +237,31 @@
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'} type
-   * @param config
+   * @param descriptions
    * @param {callback} onComplete
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, config, onComplete) {
-    const from = AnimationMeta.parseStep(viewNode, config.from);
-    const to = AnimationMeta.parseStep(viewNode, config.to);
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
+    const from = AnimationMeta.parseStep(viewNode, descriptions.from);
+    const to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
     if (type !== 'leave' && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
-    const newConfig = Object.assign({}, config);
+    const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
 
     if (newConfig.sequence) {
       const animationMeta = AnimationMeta.get(newConfig.sequence);
 
-      animationMeta.add(viewNode.node, newConfig, onComplete);
+      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
+        animationMeta.addOnComplete(onComplete);
+        animationMeta.add(viewNode.node, newConfig);
+      } else {
+        animationMeta.add(viewNode.node, newConfig, onComplete);
+      }
+
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
         const parent = AnimationMeta.get(newConfig.parent);
@@ -282,13 +289,26 @@
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
+        _this.onCompletesActions.forEach(function (action) {
+          action();
+        });
+        _this.onCompletesActions = [];
       }
     });
+    _this.onCompletesActions = [];
 
-    this.timeline.addLabel('beginning', 0);
-    this.configs = {};
-    this.parent = null;
+    _this.timeline.addLabel('beginning', 0);
+    _this.configs = {};
+    _this.parent = null;
   }
+
+  /**
+   *
+   * @param {callback} action
+   */
+  AnimationMeta.prototype.addOnComplete = function (action) {
+    this.onCompletesActions.push(action);
+  };
 
   AnimationMeta.prototype.addChild = function (child, childConf, parentConf) {
     const _this = this;

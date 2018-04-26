@@ -45,7 +45,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action) {
+    next: function (action, ref) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
@@ -56,8 +56,10 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        data: {},
-        process: this.proceed,
+        data: {
+          ref: ref
+        },
+        process: _this.proceed,
         run: function run() {
           const local = this;
           action.call(local.data, function () {
@@ -67,12 +69,6 @@ Galaxy.GalaxySequence = /** @class */ (function () {
           });
         }
       };
-
-      // This will fix and strange bug
-      // if (_this.isFinished === false && _this.processing && _this.actions.length === 0) {
-      //   debugger;
-      //   _this.processing = false;
-      // }
 
       _this.actions.push(act);
 
@@ -84,19 +80,16 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    proceed: function sequenceProceed(p) {
+    proceed: function sequenceProceed() {
       const _this = this;
       const oldAction = _this.actions.shift();
       const firstAction = _this.actions[0];
       // console.log('should end',_this.actions.length, firstAction);
       if (firstAction) {
-        // if (_this.actions.length === 0) {
-
-        // }
         _this.resolver.then(firstAction.run.bind(firstAction));
       } else if (oldAction) {
         // _this.resolver.then(function () {
-          _this.activeStateResolve();
+        _this.activeStateResolve();
         // });
       }
     },
@@ -128,11 +121,32 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       return _this;
     },
 
-    nextAction: function (action) {
+    removeByRef: function (ref) {
+      let first = false;
+      this.actions = this.actions.filter(function (item, i) {
+        const flag = item.data.ref !== ref;
+        if (flag && i === 0) {
+          first = true;
+        }
+        return flag;
+      });
+
+      if (first && this.actions[0]) {
+        // debugger;
+        this.actions[0].run();
+        // debugger;
+      } else if (first) {
+        // debugger;
+      } else if (!this.actions[0] && !first && this.processing && !this.isFinished) {
+        this.activeStateResolve();
+      }
+    },
+
+    nextAction: function (action, ref) {
       this.next(function (done) {
         action.call(this);
         done('sequence-action');
-      });
+      }, ref);
     }
   };
   return GalaxySequence;

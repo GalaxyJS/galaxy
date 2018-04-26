@@ -101,9 +101,8 @@
       }
 
       const _this = this;
-      const schema = _this.schema;
       const parentNode = _this.parent;
-      // parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
+      const parentSchema = parentNode.schema;
 
       _this.renderingFlow.truncate();
       _this.renderingFlow.onTruncate(function () {
@@ -113,7 +112,7 @@
 
       let destroyDone;
       const waitForDestroy = new Promise(function (resolve) {
-        destroyDone = function () {
+        destroyDone = function $forWaitForDestroy() {
           waitForDestroy.resolved = true;
           resolve();
         };
@@ -163,36 +162,31 @@
           return hasBeenRemoved.indexOf(node) === -1;
         });
 
-        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function (next) {
+        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function () {
           changes = newChanges;
 
           destroyDone();
-          // next();
         });
         leaveProcess.title = config.propName;
-        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+
+        if (newChanges.type === 'reset' && newChanges.params.length === 0) {
+          config.trackMap = newTrackMap;
+        }
       } else if (changes.type === 'reset') {
-        leaveProcess = createLeaveProcess(_this, config.nodes, config, function (next) {
+        leaveProcess = createLeaveProcess(_this, config.nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
-          // _this.renderingFlow;
-// debugger
 
           destroyDone();
-          // next();
-          // debugger;
         });
         leaveProcess.title = config.propName;
-        // parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
       }
 
-      // debugger
-      // if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
-      parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
-      // } else {
-      //   parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
-      // }
-      // debugger;
+      if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+        parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+      } else {
+        parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      }
 
       if (parentNode.cache.mainChildForLeaveProcesses.length && !parentNode.cache.mainChildForLeaveProcesses.active) {
         parentNode.cache.mainChildForLeaveProcesses.active = true;
@@ -231,10 +225,17 @@
 
         parentNode.cache.mainChildrenForPromise = null;
         config.trackMap = newTrackMap;
-
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
         }
+
+        // parentNode.sequences.enter.onTruncate(function () {
+        //   parentNode;
+        //
+        //   console.log(parentNode.schema.tag);
+        //
+        //   debugger;
+        // });
 
         createPushProcess(_this, config, changes, config.scope);
         // runForProcess(_this, config, changes, config.scope);
@@ -253,14 +254,19 @@
       const schema = node.schema;
       node.renderingFlow.next(function leaveProcess(next) {
         if (itemsToBeRemoved.length) {
-          if (schema.renderConfig && schema.renderConfig.domManipulationOrder === 'cascade') {
+          let domManipulationOrder = parentNode.schema.renderConfig.domManipulationOrder;
+          if (schema.renderConfig.domManipulationOrder) {
+            domManipulationOrder = schema.renderConfig.domManipulationOrder;
+          }
+
+          if (domManipulationOrder === 'cascade') {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parentNode.sequences.leave);
           } else {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse());
           }
 
           parentNode.sequences.leave.nextAction(function () {
-            parentNode.callLifecycleEvent('postLeave');
+            parentNode.callLifecycleEvent('postChildrenLeave');
             parentNode.callLifecycleEvent('postAnimations');
             onDone();
             next();
@@ -282,7 +288,10 @@
     let onEachAction = function (vn) {
       this.push(vn);
     };
-// debugger;
+    parentNode.sequences.enter.onTruncate(function () {
+      parentNode.sequences.enter.removeByRef(node);
+    });
+
     node.renderingFlow.next(function forPushProcess(next) {
       if (changes.type === 'push') {
         let length = config.nodes.length;
@@ -335,11 +344,6 @@
       const templateSchema = node.cloneSchema();
       Reflect.deleteProperty(templateSchema, '$for');
 
-      // const listPlaceholder = node.placeholder;
-      // if (listPlaceholder.parentNode !== parentNode.node) {
-      // parentNode.contentRef = listPlaceholder.parentNode;
-      // }
-
       const gClone = Galaxy.clone;
       const vCreateNode = View.createNode;
       if (newItems instanceof Array) {
@@ -350,18 +354,22 @@
           itemDataScope['$forIndex'] = i;
           let cns = gClone(templateSchema);
 
-          const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition);
+          const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition, node);
           onEachAction.call(nodes, vn, positions[i]);
         }
       }
 
+      // remove the animation from the parent which are referring to node
+      // TODO: All actions related to the for nodes will be removed.
+      // But this action wont get removed because it does not have a proper reference
+
       parentNode.sequences.enter.nextAction(function () {
-        parentNode.callLifecycleEvent('postEnter');
+        console.log('postChildrenEnter', parentNode.schema.tag);
+        parentNode.callLifecycleEvent('postChildrenEnter');
         parentNode.callLifecycleEvent('postAnimations');
         next();
-      });
+      }, node);
     });
-
-  };
+  }
 })(Galaxy.View);
 
