@@ -20,7 +20,7 @@
      * @param value
      */
     regex: null,
-    prepareData: function (m, s) {
+    prepare: function (m, s) {
       return {
         scope: s
       };

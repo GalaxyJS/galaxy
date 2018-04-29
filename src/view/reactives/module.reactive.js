@@ -8,7 +8,7 @@
 
   GV.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
-    prepareData: function (matches, scope) {
+    prepare: function (matches, scope) {
       return {
         module: null,
         moduleMeta: null,

@@ -9,15 +9,7 @@
 
   View.REACTIVE_BEHAVIORS['$for'] = {
     regex: /^([\w]*)\s+in\s+([^\s\n]+)$/,
-    getUpdateDirection: function (data) {
-      // debugger;
-      // if (data && data.type === 'reset' && data.params.length === 0) {
-      //   return Galaxy.View.ReactiveData.UPDATE_DIRECTION_BOTTOM_UP;
-      // }
-      //
-      // return Galaxy.View.ReactiveData.UPDATE_DIRECTION_TOP_DOWN;
-    },
-    prepareData: function (matches, scope) {
+    prepare: function (matches, scope) {
       this.virtualize();
 
       return {
@@ -28,19 +20,16 @@
         scope: scope,
         matches: matches,
         trackBy: matches.trackBy,
-        queue: [],
-        onDone: function () {
-
-        }
+        onDone: function () { }
       };
     },
     /**
      *
-     * @param config Return of prepareData method
+     * @param config Return of prepare method
      */
     install: function (config) {
-      const _this = this;
-      const parentNode = _this.parent;
+      const node = this;
+      const parentNode = node.parent;
       parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
       parentNode.cache.mainChildForLeaveProcesses = parentNode.cache.mainChildForLeaveProcesses || [];
 
@@ -54,11 +43,11 @@
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
-          View.makeBinding(_this, '$for', undefined, config.scope, bindings, _this);
+          View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
-              _this.addDependedObject(rd, _this);
+              node.addDependedObject(rd, node);
             } catch (error) {
               console.error('Could not find: ' + path + '\n', error);
             }
@@ -71,7 +60,7 @@
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param config The return of prepareData
+     * @param config The return of prepare
      * @param changes
      * @param oldChanges
      * @param {Function} expression
@@ -100,34 +89,22 @@
         };
       }
 
-      const _this = this;
-      const parentNode = _this.parent;
+      /** @type {Galaxy.View.ViewNode} */
+      const node = this;
+      const parentNode = node.parent;
       const parentSchema = parentNode.schema;
-
-      _this.renderingFlow.truncate();
-      _this.renderingFlow.onTruncate(function () {
-        config.onDone.ignore = true;
-        config.queue = [];
-      });
-
-      let destroyDone;
-      const waitForDestroy = new Promise(function (resolve) {
-        destroyDone = function $forWaitForDestroy() {
-          waitForDestroy.resolved = true;
-          resolve();
-        };
-      });
-
-      parentNode.cache.mainChildForQueue.push(waitForDestroy);
-      config.queue.push(waitForDestroy);
-      let leaveProcess = null;
-
       let newTrackMap = [];
-      if (config.trackBy instanceof Function) {
-        let newChanges;
 
+      node.renderingFlow.truncate();
+      node.renderingFlow.onTruncate(function () {
+        config.onDone.ignore = true;
+      });
+
+      const waitStepDone = registerWaitStep(parentNode.cache);
+      let leaveProcess = null;
+      if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
-          return config.trackBy.call(_this, item, i);
+          return config.trackBy.call(node, item, i);
         });
 
         // list of nodes that should be removed
@@ -148,7 +125,7 @@
         });
         config.positions = positions;
 
-        newChanges = new Galaxy.View.ArrayChange();
+        const newChanges = new Galaxy.View.ArrayChange();
         newChanges.init = changes.init;
         newChanges.type = changes.type;
         newChanges.original = changes.original;
@@ -162,10 +139,9 @@
           return hasBeenRemoved.indexOf(node) === -1;
         });
 
-        leaveProcess = createLeaveProcess(_this, hasBeenRemoved, config, function () {
+        leaveProcess = createLeaveProcess(node, hasBeenRemoved, config, function () {
           changes = newChanges;
-
-          destroyDone();
+          waitStepDone();
         });
         leaveProcess.title = config.propName;
 
@@ -173,11 +149,10 @@
           config.trackMap = newTrackMap;
         }
       } else if (changes.type === 'reset') {
-        leaveProcess = createLeaveProcess(_this, config.nodes, config, function () {
+        leaveProcess = createLeaveProcess(node, config.nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
-
-          destroyDone();
+          waitStepDone();
         });
         leaveProcess.title = config.propName;
       }
@@ -188,65 +163,94 @@
         parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
       }
 
-      if (parentNode.cache.mainChildForLeaveProcesses.length && !parentNode.cache.mainChildForLeaveProcesses.active) {
-        parentNode.cache.mainChildForLeaveProcesses.active = true;
-        // We start the leaving process in the next frame so the app has enough time to register all the leave processes
-        // that belong to parentNode
-        requestAnimationFrame(function () {
-          parentNode.cache.mainChildForLeaveProcesses.forEach(function (action) {
-            // debugger;
-            action();
-          });
-          parentNode.cache.mainChildForLeaveProcesses = [];
-          parentNode.cache.mainChildForLeaveProcesses.active = false;
-        });
-      }
+      activateLeaveProcess(parentNode.cache);
 
-      const whenAllLeavesAreDone = function () {
-        if (whenAllLeavesAreDone.ignore) {
-          return;
-        }
-        // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
-        // promises have resolved and if not we hav eto use Promise.all on the list again
-        const allNotResolved = parentNode.cache.mainChildForQueue.some(function (promise) {
-          return promise.resolved !== true;
-        });
-
-        if (allNotResolved) {
-          // if not all resolved, then listen to the list again
-          parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue.filter(function (p) {
-            return !p.resolved;
-          });
-
-          parentNode.cache.mainChildrenForPromise = Promise.all(parentNode.cache.mainChildForQueue);
-          parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
-          return;
-        }
-
-        parentNode.cache.mainChildrenForPromise = null;
+      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
         config.trackMap = newTrackMap;
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
         }
 
-        // parentNode.sequences.enter.onTruncate(function () {
-        //   parentNode;
-        //
-        //   console.log(parentNode.schema.tag);
-        //
-        //   debugger;
-        // });
-
-        createPushProcess(_this, config, changes, config.scope);
-        // runForProcess(_this, config, changes, config.scope);
-      };
-      config.onDone = whenAllLeavesAreDone;
+        createPushProcess(node, config, changes, config.scope);
+      });
+      config.onDone = whenAllDestroysAreDone;
 
       parentNode.cache.mainChildrenForPromise =
         parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildForQueue);
-      parentNode.cache.mainChildrenForPromise.then(whenAllLeavesAreDone);
+      // When all the destroy processes of all the $for inside parentNode is done
+      // This make sure that $for's which are children of the same parent act as one $for
+      parentNode.cache.mainChildrenForPromise.then(whenAllDestroysAreDone);
     }
   };
+
+  /**
+   *
+   * @param parentCache
+   * @returns {Function}
+   */
+  function registerWaitStep(parentCache) {
+    let destroyDone;
+    const waitForDestroy = new Promise(function (resolve) {
+      destroyDone = function () {
+        waitForDestroy.resolved = true;
+        resolve();
+      };
+    });
+
+    parentCache.mainChildForQueue.push(waitForDestroy);
+
+    return destroyDone;
+  }
+
+  function activateLeaveProcess(parentCache) {
+    if (parentCache.mainChildForLeaveProcesses.length && !parentCache.mainChildForLeaveProcesses.active) {
+      parentCache.mainChildForLeaveProcesses.active = true;
+      // We start the leaving process in the next frame so the app has enough time to register all the leave processes
+      // that belong to parentNode
+      requestAnimationFrame(function () {
+        parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+          action();
+        });
+        parentCache.mainChildForLeaveProcesses = [];
+        parentCache.mainChildForLeaveProcesses.active = false;
+      });
+    }
+  }
+
+  /**
+   *
+   * @param {Object} parentCache
+   * @param {Function} callback
+   * @returns {Function}
+   */
+  function createWhenAllDoneProcess(parentCache, callback) {
+    const whenAllDestroysAreDone = function () {
+      if (whenAllDestroysAreDone.ignore) {
+        return;
+      }
+      // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
+      // promises have resolved and if not we hav eto use Promise.all on the list again
+      const allNotResolved = parentCache.mainChildForQueue.some(function (promise) {
+        return promise.resolved !== true;
+      });
+
+      if (allNotResolved) {
+        // if not all resolved, then listen to the list again
+        parentCache.mainChildForQueue = parentCache.mainChildForQueue.filter(function (p) {
+          return !p.resolved;
+        });
+
+        parentCache.mainChildrenForPromise = Promise.all(parentCache.mainChildForQueue);
+        parentCache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+        return;
+      }
+
+      parentCache.mainChildrenForPromise = null;
+      callback();
+    };
+
+    return whenAllDestroysAreDone;
+  }
 
   function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
     return function () {
@@ -364,7 +368,7 @@
       // But this action wont get removed because it does not have a proper reference
 
       parentNode.sequences.enter.nextAction(function () {
-        console.log('postChildrenEnter', parentNode.schema.tag);
+        // console.log('postChildrenEnter', parentNode.schema.tag);
         parentNode.callLifecycleEvent('postChildrenEnter');
         parentNode.callLifecycleEvent('postAnimations');
         next();

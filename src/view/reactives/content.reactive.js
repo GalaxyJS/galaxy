@@ -8,7 +8,7 @@
 
   GV.REACTIVE_BEHAVIORS['content'] = {
     regex: null,
-    prepareData: function (matches, scope) {
+    prepare: function (matches, scope) {
       this.virtualize();
       return {
         module: null

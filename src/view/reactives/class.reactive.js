@@ -8,7 +8,7 @@
 
   GV.REACTIVE_BEHAVIORS['class'] = {
     regex: GV.BINDING_SYNTAX_REGEX,
-    prepareData: function (m, s) {
+    prepare: function (m, s) {
       return {
         scope: s
       };

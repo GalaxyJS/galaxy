@@ -568,7 +568,7 @@ Galaxy.View = /** @class */(function (G) {
 
     if (behavior) {
       const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
-      const data = behavior.prepareData.call(node, matches, scopeData);
+      const data = behavior.prepare.call(node, matches, scopeData);
       if (data !== undefined) {
         node.cache[key] = data;
       }

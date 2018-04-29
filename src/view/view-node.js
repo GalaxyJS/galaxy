@@ -243,7 +243,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inDOM = flag;
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
-    if (flag /*&& !_this.node.parentNode*/ && !_this.virtual) {
+    if (flag && !_this.virtual) {
       _this.sequences.leave.truncate();
       _this.callLifecycleEvent('preInsert');
 

@@ -132,12 +132,8 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       });
 
       if (first && this.actions[0]) {
-        // debugger;
         this.actions[0].run();
-        // debugger;
-      } else if (first) {
-        // debugger;
-      } else if (!this.actions[0] && !first && this.processing && !this.isFinished) {
+      } else if (!first && !this.actions[0] && this.processing && !this.isFinished) {
         this.activeStateResolve();
       }
     },

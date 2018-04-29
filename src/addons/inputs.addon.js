@@ -15,7 +15,7 @@
      * @param matches
      * @param scope
      */
-    prepareData: function (matches, scope) {
+    prepare: function (matches, scope) {
       if (matches !== null && typeof  matches !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }

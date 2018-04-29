@@ -31,7 +31,6 @@
           animations.config = animations.config || {};
 
           sequence.onTruncate(function () {
-            // viewNode.parent.sequences.enter.removeByRef(viewNode);
             TweenLite.killTweensOf(viewNode.node);
           });
 
@@ -81,11 +80,6 @@
             animationDone = resolve;
           });
 
-          // sequence.next((function (promise) {
-          //   return function (done) {
-          //     promise.then(done);
-          //   };
-          // })(waitForAnimation));
           sequence.next(function (done) {
             waitForAnimation.then(done);
           });
