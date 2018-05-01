@@ -14,6 +14,7 @@
      * @param {Galaxy.View.ViewNode} viewNode
      * @param attr
      * @param animations
+     * @param oldConfig
      * @param scopeData
      */
     handler: function (viewNode, attr, animations, oldConfig, scopeData) {
@@ -34,6 +35,7 @@
             TweenLite.killTweensOf(viewNode.node);
           });
 
+          // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
           if (animations.config.enterWithParent) {
             const parent = viewNode.parent;
             if (!parent.rendered.resolved) {
@@ -60,6 +62,7 @@
             TweenLite.killTweensOf(viewNode.node);
           });
 
+          // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
           if (animations.config.leaveWithParent) {
             const parent = viewNode.parent;
             if (parent.transitory) {

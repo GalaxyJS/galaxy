@@ -720,8 +720,8 @@ Galaxy.View = /** @class */(function (G) {
       } else {
         viewNode.callLifecycleEvent('postInit');
       }
+
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      // this make sure that the viewNode and its child elements are rendered
       requestAnimationFrame(function () {
         viewNode.sequences.enter.nextAction(function () {
           viewNode.callLifecycleEvent('rendered');

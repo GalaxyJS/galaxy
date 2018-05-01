@@ -188,8 +188,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {string} id event id
    */
   ViewNode.prototype.callLifecycleEvent = function (id) {
-    if (this.schema.lifecycle && typeof this.schema.lifecycle[id] === 'function') {
-      this.schema.lifecycle[id].call(this, this.inputs, this.data, this.sequences);
+    const lifecycle = this.schema.lifecycle;
+    if (lifecycle && typeof lifecycle[id] === 'function') {
+      lifecycle[id].call(this, this.inputs, this.data, this.sequences);
     }
   };
 

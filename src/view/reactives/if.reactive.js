@@ -32,10 +32,16 @@
         config.onDone.ignore = true;
       });
 
-      const waitStepDone = registerWaitStep(parentNode.cache);
       if (value) {
+        // Only apply $if logic on the elements that are rendered
+        if (!node.rendered.resolved) {
+          return;
+        }
+
+        const waitStepDone = registerWaitStep(parentNode.cache);
         waitStepDone();
       } else {
+        const waitStepDone = registerWaitStep(parentNode.cache);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
           parentNode.cache.mainChildIfLeaveProcesses.push(process);
