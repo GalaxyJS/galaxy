@@ -143,8 +143,8 @@
           changes = newChanges;
           waitStepDone();
         });
-        leaveProcess.title = config.propName;
 
+        // Map should be updated asap if the newChanges.type is reset
         if (newChanges.type === 'reset' && newChanges.params.length === 0) {
           config.trackMap = newTrackMap;
         }
@@ -154,13 +154,18 @@
           changes.type = 'push';
           waitStepDone();
         });
-        leaveProcess.title = config.propName;
+      } else {
+        Promise.resolve().then(waitStepDone);
+        // waitStepDone();
       }
 
-      if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-        parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
-      } else {
-        parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+      // leave process will be empty if the type is not reset
+      if (leaveProcess) {
+        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+          parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+        } else {
+          parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+        }
       }
 
       activateLeaveProcess(parentNode.cache);
@@ -209,6 +214,7 @@
       // that belong to parentNode
       requestAnimationFrame(function () {
         parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+          parentCache.mainChildForLeaveProcesses
           action();
         });
         parentCache.mainChildForLeaveProcesses = [];

@@ -706,25 +706,21 @@ Galaxy.View = /** @class */(function (G) {
         }
       }
 
+      viewNode.callLifecycleEvent('postInit');
       if (!viewNode.virtual) {
-        viewNode.callLifecycleEvent('postInit');
-
         if (viewNode.inDOM) {
           viewNode.setInDOM(true);
         }
 
-        View.createNode(viewNode, scopeData, nodeSchema.children, null);
+        View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
         viewNode.inserted.then(function () {
           viewNode.callLifecycleEvent('postChildrenInsert');
         });
-      } else {
-        viewNode.callLifecycleEvent('postInit');
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
       requestAnimationFrame(function () {
         viewNode.sequences.enter.nextAction(function () {
-          viewNode.callLifecycleEvent('rendered');
           viewNode.hasBeenRendered();
         });
       });

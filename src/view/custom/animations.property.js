@@ -181,6 +181,11 @@
     }
     let tween = null;
 
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
         config.duration || 0,
@@ -200,11 +205,11 @@
       }
 
       tween = TweenLite.from(node,
-        config.duration || 0,
+        duration || 0,
         from || {});
     } else {
       tween = TweenLite.to(node,
-        config.duration || 0,
+        duration || 0,
         to || {});
     }
 
@@ -332,9 +337,14 @@
     to.onStart = onStart;
 
     let tween = null;
+    let duration = config.duration;
+    if (duration instanceof Function) {
+      duration = config.duration.call(node);
+    }
+
     if (config.from && config.to) {
       tween = TweenLite.fromTo(node,
-        config.duration || 0,
+        duration || 0,
         config.from || {},
         to);
     } else if (config.from) {
@@ -343,11 +353,11 @@
       from.onStartParams = [node['galaxyViewNode']];
       from.onStart = onStart;
       tween = TweenLite.from(node,
-        config.duration || 0,
+        duration || 0,
         from || {});
     } else {
       tween = TweenLite.to(node,
-        config.duration || 0,
+        duration || 0,
         to || {});
     }
 

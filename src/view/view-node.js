@@ -142,6 +142,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
         done();
+
+        _this.callLifecycleEvent('rendered');
       };
     });
     _this.rendered.resolved = false;
