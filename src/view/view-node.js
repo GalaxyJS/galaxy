@@ -2,21 +2,8 @@
 'use strict';
 
 Galaxy.View.ViewNode = /** @class */ (function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
-    type: 'attr'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['lifecycle'] = {
-    type: 'prop',
-    name: 'lifecycle'
-  };
-
-  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
-    type: 'prop',
-    name: 'renderConfig'
-  };
-
   const commentNode = document.createComment('');
+  const defProp = Object.defineProperty;
 
   function createComment(t) {
     return commentNode.cloneNode(t);
@@ -34,8 +21,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     node.removeChild(child);
   }
 
-  const defProp = Object.defineProperty;
-
   const referenceToThis = {
     value: this,
     configurable: false,
@@ -50,10 +35,25 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   //------------------------------
 
+  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+    type: 'attr'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['lifecycle'] = {
+    type: 'prop',
+    name: 'lifecycle'
+  };
+
+  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
+    type: 'prop',
+    name: 'renderConfig'
+  };
+
   /**
    *
    * @typedef {Object} RenderConfig
    * @property {string} [domManipulationOrder] - Indicates the order which the dom should be render.
+   * @property {boolean} [alternateDOMFlow] - By default true. Entering is top down and leaving is bottom up.
    * @property {boolean} [applyClassListAfterRender] - Indicates whether classlist applies after the render.
    */
 
@@ -63,6 +63,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   ViewNode.GLOBAL_RENDER_CONFIG = {
     // domManipulationOrder: 'alternate',
+    alternateDOMFlow: true,
     applyClassListAfterRender: false
   };
 
@@ -178,7 +179,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     defProp(this.placeholder, 'galaxyViewNode', referenceToThis);
 
     _this.callLifecycleEvent('postCreate');
-
   }
 
   ViewNode.prototype.querySelector = function (selectors) {
@@ -226,7 +226,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Galaxy.GalaxySequence} sequence
    */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
-    // this.node.style.visibility = '';
   };
 
   /**
@@ -310,14 +309,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (!_this.placeholder.parentNode) {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
         }
+        _this.callLifecycleEvent('postLeave');
 
         if (_this.node.parentNode) {
           removeChild(_this.node.parentNode, _this.node);
         }
+        _this.callLifecycleEvent('postRemove');
 
         _this.origin = false;
-        _this.callLifecycleEvent('postRemove');
-        _this.callLifecycleEvent('postLeave');
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
@@ -468,7 +467,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   /**

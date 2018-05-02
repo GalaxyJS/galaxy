@@ -214,7 +214,6 @@
       // that belong to parentNode
       requestAnimationFrame(function () {
         parentCache.mainChildForLeaveProcesses.forEach(function (action) {
-          parentCache.mainChildForLeaveProcesses
           action();
         });
         parentCache.mainChildForLeaveProcesses = [];
@@ -276,8 +275,7 @@
           }
 
           parentNode.sequences.leave.nextAction(function () {
-            parentNode.callLifecycleEvent('postChildrenLeave');
-            parentNode.callLifecycleEvent('postAnimations');
+            parentNode.callLifecycleEvent('postForLeave');
             onDone();
             next();
           });
@@ -374,9 +372,7 @@
       // But this action wont get removed because it does not have a proper reference
 
       parentNode.sequences.enter.nextAction(function () {
-        // console.log('postChildrenEnter', parentNode.schema.tag);
-        parentNode.callLifecycleEvent('postChildrenEnter');
-        parentNode.callLifecycleEvent('postAnimations');
+        parentNode.callLifecycleEvent('postForEnter');
         next();
       }, node);
     });
