@@ -281,7 +281,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             // For arrays we have to sync length manually
             // if we use notify here we will get
-            _this.sync('length');
+            _this.notifyDown('length');
             value.changes = changes;
 
             return result;
