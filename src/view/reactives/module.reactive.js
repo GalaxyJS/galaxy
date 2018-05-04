@@ -59,10 +59,10 @@
       let currentScope = cache.scope;
 
       while (moduleScope) {
-        // In the case where module is a part of $for, cache.scope will be NOT an instance of GalaxyScope
+        // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
         // but its __parent__ is
-        if (!(currentScope instanceof Galaxy.GalaxyScope)) {
-          currentScope = new Galaxy.GalaxyScope({
+        if (!(currentScope instanceof Galaxy.Scope)) {
+          currentScope = new Galaxy.Scope({
             systemId: '$for-item',
             url: moduleMeta.url,
             parentScope: cache.scope.__parent__

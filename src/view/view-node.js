@@ -89,8 +89,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    *
    * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.GalaxySequence} sequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} sequence
+   * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View.ViewNode
    * @static
    */
@@ -127,12 +127,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.setters = {};
     _this.parent = null;
     _this.dependedObjects = [];
-    _this.renderingFlow = new Galaxy.GalaxySequence();
+    _this.renderingFlow = new Galaxy.Sequence();
     _this.sequences = {
-      enter: new Galaxy.GalaxySequence(),
-      leave: new Galaxy.GalaxySequence(),
-      ':destroy': new Galaxy.GalaxySequence(),
-      ':class': new Galaxy.GalaxySequence()
+      enter: new Galaxy.Sequence(),
+      leave: new Galaxy.Sequence(),
+      ':destroy': new Galaxy.Sequence(),
+      ':class': new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
@@ -223,14 +223,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateEnterSequence = function (sequence) {
   };
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} sequence
+   * @param {Galaxy.Sequence} sequence
    */
   ViewNode.prototype.populateLeaveSequence = function (sequence) {
 
@@ -368,8 +368,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
    */
   ViewNode.prototype.destroy = function (leaveSequence, root) {
     const _this = this;
@@ -472,9 +472,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.GalaxySequence} leaveSequence
-   * @param {Galaxy.GalaxySequence} root
-   * @return {Galaxy.GalaxySequence}
+   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} root
+   * @return {Galaxy.Sequence}
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     const _this = this;

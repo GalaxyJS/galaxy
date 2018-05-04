@@ -1,17 +1,17 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyModule = /** @class */ (function () {
+Galaxy.Module = /** @class */ (function () {
 
   /**
    *
    * @param {Object} module
    * @param {string} source
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyModule(module, source, scope) {
+  function Module(module, source, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
@@ -23,7 +23,7 @@ Galaxy.GalaxyModule = /** @class */ (function () {
     this.scope = scope;
   }
 
-  GalaxyModule.prototype = {
+  Module.prototype = {
     init: function () {
       this.scope.trigger('module.init');
     },
@@ -41,5 +41,5 @@ Galaxy.GalaxyModule = /** @class */ (function () {
     }
   };
 
-  return GalaxyModule;
+  return Module;
 }(Galaxy || {}));

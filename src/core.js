@@ -186,7 +186,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @param {Object} moduleMetaData
      * @param moduleConstructor
      * @param invokers
-     * @returns {Promise<Galaxy.GalaxyModule>}
+     * @returns {Promise<Galaxy.Module>}
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
@@ -234,9 +234,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        const scope = new Galaxy.GalaxyScope(moduleMetaData, moduleMetaData.element || _this.rootElement);
+        const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.GalaxyModule(moduleMetaData, moduleConstructor, scope);
+        const module = new Galaxy.Module(moduleMetaData, moduleConstructor, scope);
         Galaxy.modules[module.systemId] = module;
 
         if (imports.length) {
@@ -283,7 +283,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
     /**
      *
-     * @param {Galaxy.GalaxyModule}  module
+     * @param {Galaxy.Module}  module
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {

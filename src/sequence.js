@@ -1,7 +1,7 @@
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.GalaxySequence = /** @class */ (function () {
+Galaxy.Sequence = /** @class */ (function () {
   const disabledProcess = function () {
   };
 
@@ -10,7 +10,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxySequence() {
+  function Sequence() {
     const _this = this;
     _this.truncateHandlers = [];
     _this.activeStateResolve = null;
@@ -27,7 +27,7 @@ Galaxy.GalaxySequence = /** @class */ (function () {
     this.reset();
   }
 
-  GalaxySequence.prototype = {
+  Sequence.prototype = {
     reset: function () {
       const _this = this;
       _this.actions = [];
@@ -145,5 +145,5 @@ Galaxy.GalaxySequence = /** @class */ (function () {
       }, ref);
     }
   };
-  return GalaxySequence;
+  return Sequence;
 })();

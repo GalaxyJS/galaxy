@@ -1,7 +1,7 @@
 /* global Galaxy */
 'use strict';
 
-Galaxy.GalaxyScope = /** @class */ (function () {
+Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
 
   /**
@@ -11,7 +11,7 @@ Galaxy.GalaxyScope = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy
    */
-  function GalaxyScope(module, element) {
+  function Scope(module, element) {
     this.systemId = module.systemId;
     this.parentScope = module.parentScope || null;
     this.element = element || null;
@@ -31,7 +31,7 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     this.on('module.destroy', this.destroy.bind(this));
   }
 
-  GalaxyScope.prototype = {
+  Scope.prototype = {
     /**
      *
      * @param id ID string which is going to be used for importing
@@ -126,5 +126,5 @@ Galaxy.GalaxyScope = /** @class */ (function () {
     }
   };
 
-  return GalaxyScope;
+  return Scope;
 })();

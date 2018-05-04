@@ -345,7 +345,7 @@ Galaxy.View = /** @class */(function (G) {
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     let value = scopeData;
 
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.GalaxyScope)) {
+    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
       if (scopeData.hasOwnProperty('__rd__')) {
         parentReactiveData = scopeData.__rd__;
       } else {
@@ -427,9 +427,9 @@ Galaxy.View = /** @class */(function (G) {
           });
         }
 
-        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of GalaxyScope
-        if (!parentReactiveData && scopeData instanceof Galaxy.GalaxyScope) {
-          // if (scopeData instanceof Galaxy.GalaxyScope) {
+        // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
+        if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
+          // if (scopeData instanceof Galaxy.Scope) {
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
@@ -462,7 +462,7 @@ Galaxy.View = /** @class */(function (G) {
     const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
 
     let parentReactiveData;
-    if (!(data instanceof Galaxy.GalaxyScope)) {
+    if (!(data instanceof Galaxy.Scope)) {
       parentReactiveData = new Galaxy.View.ReactiveData('@', data);
     }
 
@@ -731,7 +731,7 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
    */
