@@ -86,7 +86,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.domain = this;
       bootModule.id = 'system';
 
       if (!bootModule.element) {

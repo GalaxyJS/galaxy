@@ -34,15 +34,15 @@ Galaxy.Scope = /** @class */ (function () {
   Scope.prototype = {
     /**
      *
-     * @param id ID string which is going to be used for importing
-     * @param instance The assigned object to this id
+     * @param {string} id ID string which is going to be used for importing
+     * @param {Object} instance The assigned object to this id
      */
     inject: function (id, instance) {
       this['__imports__'][id] = instance;
     },
     /**
      *
-     * @param libId Path or id of the addon you want to import
+     * @param {string} libId Path or id of the addon you want to import
      * @return {*}
      */
     import: function (libId) {
@@ -58,19 +58,18 @@ Galaxy.Scope = /** @class */ (function () {
     },
     /**
      *
-     * @param moduleMeta
-     * @param config
+     * @param {*} moduleMeta
+     * @param {*} config
      * @returns {*}
      */
     load: function (moduleMeta, config) {
-      let newModuleMetaData = Object.assign({}, moduleMeta, config || {});
+      const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
 
       if (newModuleMetaData.url.indexOf('./') === 0) {
         newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
       }
 
       newModuleMetaData.parentScope = this;
-      newModuleMetaData.domain = newModuleMetaData.domain || Galaxy;
       return Galaxy.load(newModuleMetaData);
     },
     /**
