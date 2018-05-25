@@ -4,11 +4,23 @@
   ],
   "env": {
     "browser": true,
-    "jasmine": true
+    "jasmine": true,
+    "es6": true,
+    "amd": true
+  },
+  "globals": {
+    "Galaxy": true,
+    "Scope": true,
+    "module": true
   },
   "extends": [
     "eslint:recommended",
     "plugin:jasmine/recommended"
+  ],
+  "overrides": [
+    {
+      "excludedFiles": "node_modules/**"
+    }
   ],
   "rules": {
     "indent": [
@@ -45,6 +57,7 @@
           "error"
         ]
       }
-    ]
+    ],
+    "no-var": "error"
   }
 }

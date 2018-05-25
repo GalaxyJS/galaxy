@@ -1,46 +1,44 @@
 /* global Galaxy */
+'use strict';
 
-(function () {
-  /**
-   *
-   * @returns {Galaxy.GalaxyModule}
-   */
-  Galaxy.GalaxyModule = GalaxyModule;
+Galaxy.Module = /** @class */ (function () {
 
   /**
    *
    * @param {Object} module
-   * @param {Galaxy.GalaxyScope} scope
+   * @param {string} source
+   * @param {Galaxy.Scope} scope
    * @constructor
+   * @memberOf Galaxy
    */
-  function GalaxyModule(module, scope) {
+  function Module(module, source, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
+    this.source = source;
     this.url = module.url || null;
+    this.importId = module.importId || module.url;
     this.addOns = module.addOns || {};
-    this.domain = module.domain;
+    this.addOnProviders = [];
     this.scope = scope;
   }
 
-  GalaxyModule.prototype.init = function () {
-    for (var key in this.addOns) {
-      var addOn = this.addOns[key];
-      if (typeof addOn.onModuleInit === 'function') {
-        addOn.onModuleInit();
-      }
+  Module.prototype = {
+    init: function () {
+      this.scope.trigger('module.init');
+    },
+
+    start: function () {
+      this.scope.trigger('module.start');
+    },
+
+    destroy: function () {
+      this.scope.trigger('module.destroy');
+    },
+
+    registerAddOn: function (id, object) {
+      this.addOns[id] = object;
     }
   };
 
-  GalaxyModule.prototype.start = function () {
-    for (var key in this.addOns) {
-      var addOn = this.addOns[key];
-      if (typeof addOn.onModuleStart === 'function') {
-        addOn.onModuleStart();
-      }
-    }
-  };
-
-  GalaxyModule.prototype.registerAddOn = function (id, object) {
-    this.addOns[id] = object;
-  };
-}());
+  return Module;
+}(Galaxy || {}));
