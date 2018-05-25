@@ -1,1 +1,6 @@
-/nbproject/
+/nbproject
+/node_modules
+/dist
+/site
+/docs
+/.idea

@@ -1,0 +1,50 @@
+{
+  "plugins": [
+    "jasmine"
+  ],
+  "env": {
+    "browser": true,
+    "jasmine": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:jasmine/recommended"
+  ],
+  "rules": {
+    "indent": [
+      "error",
+      2,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none"
+      }
+    ],
+    "no-console": [
+      "error",
+      {
+        "allow": [
+          "info",
+          "warn",
+          "error"
+        ]
+      }
+    ]
+  }
+}
