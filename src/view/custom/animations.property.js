@@ -44,6 +44,7 @@
           }
 
           sequence.next(function (done) {
+            // debugger;
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };

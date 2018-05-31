@@ -95,10 +95,13 @@
       const parentSchema = parentNode.schema;
       let newTrackMap = [];
 
-      node.renderingFlow.truncate();
-      node.renderingFlow.onTruncate(function () {
-        config.onDone.ignore = true;
-      });
+      // Truncate on reset or actions that does not change the array length
+      if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
+        node.renderingFlow.truncate();
+        node.renderingFlow.onTruncate(function () {
+          config.onDone.ignore = true;
+        });
+      }
 
       const waitStepDone = registerWaitStep(parentNode.cache);
       let leaveProcess = null;
@@ -156,7 +159,6 @@
         });
       } else {
         Promise.resolve().then(waitStepDone);
-        // waitStepDone();
       }
 
       // leave process will be empty if the type is not reset
