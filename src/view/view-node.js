@@ -293,6 +293,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       _this.origin = true;
+      // _this.transitory = true;
 
       let animationDone;
       const waitForNodeAnimation = new Promise(function (resolve) {

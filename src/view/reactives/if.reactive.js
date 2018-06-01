@@ -41,6 +41,11 @@
         const waitStepDone = registerWaitStep(parentNode.cache);
         waitStepDone();
       } else {
+        if (!node.rendered.resolved) {
+          node.inDOM = false;
+          return;
+        }
+
         const waitStepDone = registerWaitStep(parentNode.cache);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
@@ -54,7 +59,10 @@
 
       const whenAllLeavesAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
         if (value) {
+
           runTrueProcess(node);
+        } else {
+
         }
       });
       config.onDone = whenAllLeavesAreDone;
