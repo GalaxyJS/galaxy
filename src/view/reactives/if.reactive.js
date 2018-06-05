@@ -15,7 +15,7 @@
     install: function (config) {
       const parentNode = this.parent;
       parentNode.cache.mainChildIfQueue = parentNode.cache.mainChildIfQueue || [];
-      parentNode.cache.mainChildIfLeaveProcesses = parentNode.cache.mainChildIfLeaveProcesses || [];
+      parentNode.cache.leaveByIfProcessList = parentNode.cache.leaveByIfProcessList || [];
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -49,9 +49,9 @@
         const waitStepDone = registerWaitStep(parentNode.cache);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildIfLeaveProcesses.push(process);
+          parentNode.cache.leaveByIfProcessList.push(process);
         } else {
-          parentNode.cache.mainChildIfLeaveProcesses.unshift(process);
+          parentNode.cache.leaveByIfProcessList.unshift(process);
         }
       }
 
@@ -67,8 +67,8 @@
       });
       config.onDone = whenAllLeavesAreDone;
 
-      parentNode.cache.mainChildIfPromise = parentNode.cache.mainChildIfPromise || Promise.all(parentNode.cache.mainChildIfQueue);
-      parentNode.cache.mainChildIfPromise.then(whenAllLeavesAreDone);
+      parentNode.cache.ifOparetionsMainPromise = parentNode.cache.ifOparetionsMainPromise || Promise.all(parentNode.cache.mainChildIfQueue);
+      parentNode.cache.ifOparetionsMainPromise.then(whenAllLeavesAreDone);
     }
   };
 
@@ -92,16 +92,16 @@
   }
 
   function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildIfLeaveProcesses.length && !parentCache.mainChildIfLeaveProcesses.active) {
-      parentCache.mainChildIfLeaveProcesses.active = true;
+    if (parentCache.leaveByIfProcessList.length && !parentCache.leaveByIfProcessList.active) {
+      parentCache.leaveByIfProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
-      requestAnimationFrame(function () {
-        parentCache.mainChildIfLeaveProcesses.forEach(function (action) {
+      Promise.resolve().then(function () {
+        parentCache.leaveByIfProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildIfLeaveProcesses = [];
-        parentCache.mainChildIfLeaveProcesses.active = false;
+        parentCache.leaveByIfProcessList = [];
+        parentCache.leaveByIfProcessList.active = false;
       });
     }
   }
@@ -129,12 +129,12 @@
           return !p.resolved;
         });
 
-        parentCache.mainChildIfPromise = Promise.all(parentCache.mainChildIfQueue);
-        parentCache.mainChildIfPromise.then(whenAllLeavesAreDone);
+        parentCache.ifOparetionsMainPromise = Promise.all(parentCache.mainChildIfQueue);
+        parentCache.ifOparetionsMainPromise.then(whenAllLeavesAreDone);
         return;
       }
 
-      parentCache.mainChildIfPromise = null;
+      parentCache.ifOparetionsMainPromise = null;
       callback();
     };
 

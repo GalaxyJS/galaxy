@@ -214,7 +214,7 @@
       parentCache.mainChildForLeaveProcesses.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
-      requestAnimationFrame(function () {
+      Promise.resolve().then(function () {
         parentCache.mainChildForLeaveProcesses.forEach(function (action) {
           action();
         });

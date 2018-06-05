@@ -96,11 +96,11 @@
         };
       }
 
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
+      const classAnimationsHandler = function () {
+        viewNode.observer.on('class', function (classes, oldClasses) {
           const classSequence = viewNode.sequences[':class'];
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
+          classes.forEach(function (item) {
+            if (item && oldClasses.indexOf(item) === -1) {
               const _config = animations['.' + item];
               if (!_config) {
                 return;
@@ -114,23 +114,26 @@
             }
           });
 
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
+          oldClasses.forEach(function (item) {
+            if (item && classes.indexOf(item) === -1) {
               const _config = animations['.' + item];
               if (!_config) {
                 return;
               }
 
               classSequence.next(function (done) {
+                // requestAnimationFrame(function () {
                 const classAnimationConfig = Object.assign({}, _config);
                 classAnimationConfig.to = { className: '-=' + item || '' };
                 AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                // });
               });
-
             }
           });
         });
-      });
+      };
+
+      viewNode.rendered.then(classAnimationsHandler);
     }
   };
 
@@ -366,11 +369,7 @@
         _this.timeline.play(0);
       }
     } else {
-      // if (config.parent) {
-      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // } else {
       _this.timeline.add(tween, config.position);
-      // }
     }
   };
 
