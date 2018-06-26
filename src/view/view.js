@@ -381,10 +381,8 @@ Galaxy.View = /** @class */(function (G) {
         // debugger;
         value = View.propertyLookup(root.data, propertyKeyPath);
         // debugger;
-      } else {
-        if (value) {
-          value = View.propertyLookup(value, propertyKeyPath);
-        }
+      } else if (value) {
+        value = View.propertyLookup(value, propertyKeyPath);
       }
 
       initValue = value;
@@ -399,6 +397,9 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, null, parentReactiveData);
       } else {
+        if (!parentReactiveData) {
+          debugger;
+        }
         parentReactiveData.addKeyToShadow(propertyKeyPath);
       }
 
@@ -699,6 +700,14 @@ Galaxy.View = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = View.getBindings(attributeValue);
+        const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
+          return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
+        }) : false;
+
+        if (intersect) {
+          continue;
+        }
+
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {

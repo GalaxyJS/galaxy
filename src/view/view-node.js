@@ -118,7 +118,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
-    _this.cache = {};
+    _this.cache = {
+      _skipPropertyNames: []
+    };
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
@@ -468,7 +470,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   /**

@@ -44,6 +44,7 @@
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
+          node.cache._skipPropertyNames.push(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
