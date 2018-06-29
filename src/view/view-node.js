@@ -118,9 +118,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
-    _this.cache = {
-      _skipPropertyNames: []
-    };
+    _this.cache = {};
+    _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
@@ -133,8 +132,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.sequences = {
       enter: new Galaxy.Sequence(),
       leave: new Galaxy.Sequence(),
-      ':destroy': new Galaxy.Sequence(),
-      ':class': new Galaxy.Sequence()
+      destroy: new Galaxy.Sequence(),
+      classList: new Galaxy.Sequence()
     };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;

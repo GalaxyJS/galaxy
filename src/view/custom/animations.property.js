@@ -98,7 +98,7 @@
 
       const classAnimationsHandler = function () {
         viewNode.observer.on('class', function (classes, oldClasses) {
-          const classSequence = viewNode.sequences[':class'];
+          const classSequence = viewNode.sequences.classList;
           classes.forEach(function (item) {
             if (item && oldClasses.indexOf(item) === -1) {
               const _config = animations['.' + item];

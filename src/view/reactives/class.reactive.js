@@ -105,7 +105,7 @@
     const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    _this.sequences[':class'].nextAction(function () {
+    _this.sequences.classList.nextAction(function () {
       _this.node.setAttribute('class', newClasses.join(' '));
     });
   }

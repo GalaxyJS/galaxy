@@ -356,51 +356,48 @@ Galaxy.View = /** @class */(function (G) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
     const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
 
-    let propertyKeyPath = null;
+    let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
 
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
-      propertyKeyPath = propertyKeysPaths[i];
+      propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
-      propertyKeyPathItems = propertyKeyPath.split('.');
+      propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
       // if (propertyKeyPath === 'this') debugger;
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKeyPath === 'this' && root instanceof Galaxy.View.ViewNode) {
+      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
-        propertyKeyPath = propertyKeyPathItems.shift();
+        propertyKey = propertyKeyPathItems.shift();
         bindings.propertyKeysPaths = propertyKeyPathItems;
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
         // debugger;
-        value = View.propertyLookup(root.data, propertyKeyPath);
+        value = View.propertyLookup(root.data, propertyKey);
         // debugger;
       } else if (value) {
-        value = View.propertyLookup(value, propertyKeyPath);
+        value = View.propertyLookup(value, propertyKey);
       }
 
       initValue = value;
       if (value !== null && typeof value === 'object') {
-        initValue = value[propertyKeyPath];
+        initValue = value[propertyKey];
       }
 
       let reactiveData;
 
       if (initValue instanceof Object) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, initValue, parentReactiveData);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
       } else if (childPropertyKeyPath) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKeyPath, null, parentReactiveData);
-      } else {
-        if (!parentReactiveData) {
-          debugger;
-        }
-        parentReactiveData.addKeyToShadow(propertyKeyPath);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, parentReactiveData);
+      } else if (parentReactiveData) {
+        parentReactiveData.addKeyToShadow(propertyKey);
       }
 
       if (childPropertyKeyPath === null) {
@@ -415,13 +412,7 @@ Galaxy.View = /** @class */(function (G) {
                 return expressionFn();
               }
 
-              return parentReactiveData.data[propertyKeyPath];
-              // this has a bug
-              // if (value === null || value === undefined) {
-              //   return value;
-              // }
-              //
-              // return value[propertyKeyPath];
+              return parentReactiveData.data[propertyKey];
             },
             enumerable: true,
             configurable: true
@@ -430,12 +421,16 @@ Galaxy.View = /** @class */(function (G) {
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
         if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
-          // if (scopeData instanceof Galaxy.Scope) {
+          // If the propertyKey is refering to some local value then there is no error
+          if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
+            return;
+          }
+
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKeyPath, expressionFn, scopeData);
+        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
       }
 
       if (childPropertyKeyPath !== null) {
@@ -700,13 +695,14 @@ Galaxy.View = /** @class */(function (G) {
         attributeValue = nodeSchema[attributeName];
 
         let bindings = View.getBindings(attributeValue);
-        const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
-          return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
-        }) : false;
-
-        if (intersect) {
-          continue;
-        }
+        // const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
+        //   return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
+        // }) : false;
+        //
+        // if (intersect) {
+        //   debugger
+        //   continue;
+        // }
 
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);

@@ -30,8 +30,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.mainChildForQueue = parentNode.cache.mainChildForQueue || [];
-      parentNode.cache.mainChildForLeaveProcesses = parentNode.cache.mainChildForLeaveProcesses || [];
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -44,7 +43,7 @@
         config.watch = bindings.propertyKeysPaths;
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
-          node.cache._skipPropertyNames.push(config.matches.as);
+          node.localPropertyNames.add(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -93,6 +92,7 @@
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
       let newTrackMap = [];
 
@@ -104,7 +104,7 @@
         });
       }
 
-      const waitStepDone = registerWaitStep(parentNode.cache);
+      const waitStepDone = registerWaitStep(parentCache.$for);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -165,15 +165,15 @@
       // leave process will be empty if the type is not reset
       if (leaveProcess) {
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildForLeaveProcesses.push(leaveProcess);
+          parentCache.$for.leaveProcessList.push(leaveProcess);
         } else {
-          parentNode.cache.mainChildForLeaveProcesses.unshift(leaveProcess);
+          parentCache.$for.leaveProcessList.unshift(leaveProcess);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$for);
 
-      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
         config.trackMap = newTrackMap;
         if (changes.type === 'reset' && changes.params.length === 0) {
           return;
@@ -183,20 +183,20 @@
       });
       config.onDone = whenAllDestroysAreDone;
 
-      parentNode.cache.mainChildrenForPromise =
-        parentNode.cache.mainChildrenForPromise || Promise.all(parentNode.cache.mainChildForQueue);
+      parentCache.$for.mainPromise =
+        parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
       // When all the destroy processes of all the $for inside parentNode is done
       // This make sure that $for's which are children of the same parent act as one $for
-      parentNode.cache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+      parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
     }
   };
 
   /**
    *
-   * @param parentCache
+   * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($forData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -205,55 +205,55 @@
       };
     });
 
-    parentCache.mainChildForQueue.push(waitForDestroy);
+    $forData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
   function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildForLeaveProcesses.length && !parentCache.mainChildForLeaveProcesses.active) {
-      parentCache.mainChildForLeaveProcesses.active = true;
+    if (parentCache.leaveProcessList.length && !parentCache.leaveProcessList.active) {
+      parentCache.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
       Promise.resolve().then(function () {
-        parentCache.mainChildForLeaveProcesses.forEach(function (action) {
+        parentCache.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildForLeaveProcesses = [];
-        parentCache.mainChildForLeaveProcesses.active = false;
+        parentCache.leaveProcessList = [];
+        parentCache.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $forData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($forData, callback) {
     const whenAllDestroysAreDone = function () {
       if (whenAllDestroysAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildForQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildForQueue.some(function (promise) {
+      const allNotResolved = $forData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildForQueue = parentCache.mainChildForQueue.filter(function (p) {
+        $forData.queue = $forData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.mainChildrenForPromise = Promise.all(parentCache.mainChildForQueue);
-        parentCache.mainChildrenForPromise.then(whenAllDestroysAreDone);
+        $forData.mainPromise = Promise.all($forData.queue);
+        $forData.mainPromise.then(whenAllDestroysAreDone);
         return;
       }
 
-      parentCache.mainChildrenForPromise = null;
+      $forData.mainPromise = null;
       callback();
     };
 
