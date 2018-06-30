@@ -14,13 +14,13 @@
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.mainChildIfQueue = parentNode.cache.mainChildIfQueue || [];
-      parentNode.cache.mainChildIfLeaveProcesses = parentNode.cache.mainChildIfLeaveProcesses || [];
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parentNode = node.parent;
+      const parentCache = parentNode.cache;
       const parentSchema = parentNode.schema;
 
       if (expression) {
@@ -38,38 +38,43 @@
           return;
         }
 
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        const waitStepDone = registerWaitStep(parentCache.$if);
         waitStepDone();
       } else {
-        const waitStepDone = registerWaitStep(parentNode.cache);
+        if (!node.rendered.resolved) {
+          node.inDOM = false;
+          return;
+        }
+
+        const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentNode.cache.mainChildIfLeaveProcesses.push(process);
+          parentCache.$if.leaveProcessList.push(process);
         } else {
-          parentNode.cache.mainChildIfLeaveProcesses.unshift(process);
+          parentCache.$if.leaveProcessList.unshift(process);
         }
       }
 
-      activateLeaveProcess(parentNode.cache);
+      activateLeaveProcess(parentCache.$if);
 
-      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentNode.cache, function () {
+      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
         if (value) {
           runTrueProcess(node);
         }
       });
       config.onDone = whenAllLeavesAreDone;
 
-      parentNode.cache.mainChildIfPromise = parentNode.cache.mainChildIfPromise || Promise.all(parentNode.cache.mainChildIfQueue);
-      parentNode.cache.mainChildIfPromise.then(whenAllLeavesAreDone);
+      parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
+      parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
     }
   };
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @returns {Function}
    */
-  function registerWaitStep(parentCache) {
+  function registerWaitStep($ifData) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -78,55 +83,55 @@
       };
     });
 
-    parentCache.mainChildIfQueue.push(waitForDestroy);
+    $ifData.queue.push(waitForDestroy);
 
     return destroyDone;
   }
 
-  function activateLeaveProcess(parentCache) {
-    if (parentCache.mainChildIfLeaveProcesses.length && !parentCache.mainChildIfLeaveProcesses.active) {
-      parentCache.mainChildIfLeaveProcesses.active = true;
+  function activateLeaveProcess($ifData) {
+    if ($ifData.leaveProcessList.length && !$ifData.leaveProcessList.active) {
+      $ifData.leaveProcessList.active = true;
       // We start the leaving process in the next frame so the app has enough time to register all the leave processes
       // that belong to parentNode
-      requestAnimationFrame(function () {
-        parentCache.mainChildIfLeaveProcesses.forEach(function (action) {
+      Promise.resolve().then(function () {
+        $ifData.leaveProcessList.forEach(function (action) {
           action();
         });
-        parentCache.mainChildIfLeaveProcesses = [];
-        parentCache.mainChildIfLeaveProcesses.active = false;
+        $ifData.leaveProcessList = [];
+        $ifData.leaveProcessList.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} parentCache
+   * @param {Object} $ifData
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess(parentCache, callback) {
+  function createWhenAllDoneProcess($ifData, callback) {
     const whenAllLeavesAreDone = function () {
       if (whenAllLeavesAreDone.ignore) {
         return;
       }
-      // Because the items inside mainChildIfQueue will change on the fly we have manually check whether all the
+      // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = parentCache.mainChildIfQueue.some(function (promise) {
+      const allNotResolved = $ifData.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        parentCache.mainChildIfQueue = parentCache.mainChildIfQueue.filter(function (p) {
+        $ifData.queue = $ifData.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        parentCache.mainChildIfPromise = Promise.all(parentCache.mainChildIfQueue);
-        parentCache.mainChildIfPromise.then(whenAllLeavesAreDone);
+        $ifData.mainPromise = Promise.all($ifData.queue);
+        $ifData.mainPromise.then(whenAllLeavesAreDone);
         return;
       }
 
-      parentCache.mainChildIfPromise = null;
+      $ifData.mainPromise = null;
       callback();
     };
 
@@ -139,9 +144,7 @@
    */
   function runTrueProcess(node) {
     node.renderingFlow.nextAction(function () {
-      // if (!node.inDOM && !node.node.parentNode) {
       node.setInDOM(true);
-      // }
     });
   }
 
@@ -154,10 +157,7 @@
   function createFalseProcess(node, onDone) {
     return function () {
       node.renderingFlow.nextAction(function () {
-        // if (node.inDOM && node.node.parentNode) {
         node.setInDOM(false);
-        // }
-
         onDone();
       });
     };

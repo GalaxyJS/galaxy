@@ -29,8 +29,9 @@
         return;
       }
 
-      const _this = this;
-      const node = _this.node;
+      /** @type Galaxy.View.ViewNode */
+      const viewNode = this;
+      const node = viewNode.node;
 
       if (typeof value === 'string') {
         return node.setAttribute('class', value);
@@ -43,19 +44,34 @@
       node.setAttribute('class', []);
 
       // when value is an object
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      observer.onAll(function (key, value, oldValue) {
-        applyClasses.call(_this, key, value, oldValue, clone);
-      });
+      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+        const items = Object.getOwnPropertyDescriptors(clone);
+        const staticClasses = {};
+        for (let key in items) {
+          const item = items[key];
+          if (item.enumerable && !item.hasOwnProperty('get')) {
+            staticClasses[key] = clone[key];
+          }
+        }
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
-        _this.rendered.then(function () {
-          applyClasses.call(_this, '*', true, false, clone);
+        applyClasses.call(viewNode, '*', true, false, staticClasses);
+
+        viewNode.rendered.then(function () {
+          applyClasses.call(viewNode, '*', true, false, clone);
+
+          observer.onAll(function (key, value, oldValue) {
+            applyClasses.call(viewNode, key, value, oldValue, clone);
+          });
         });
       } else {
-        applyClasses.call(_this, '*', true, false, clone);
+        observer.onAll(function (key, value, oldValue) {
+          applyClasses.call(viewNode, key, value, oldValue, clone);
+        });
+
+        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -82,16 +98,16 @@
     if (oldValue === value) {
       return;
     }
+    const _this = this;
+
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    let newClasses = getClasses(classes);
-    let _this = this;
+    const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    // _this.sequences[':class'].start().finish(function () {
-    _this.node.setAttribute('class', newClasses.join(' '));
-    //   _this.sequences[':class'].reset();
-    // });
+    _this.sequences.classList.nextAction(function () {
+      _this.node.setAttribute('class', newClasses.join(' '));
+    });
   }
 })(Galaxy.View);
 

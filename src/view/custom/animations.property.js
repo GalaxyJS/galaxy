@@ -44,6 +44,11 @@
           }
 
           sequence.next(function (done) {
+            // If the node is not in the DOM at this point, then skip its animations
+            if (viewNode.node.offsetParent === null) {
+              return done();
+            }
+
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
           });
         };
@@ -91,59 +96,44 @@
         };
       }
 
-      viewNode.rendered.then(function () {
-        viewNode.observer.on('class', function (value, oldValue) {
-          value.forEach(function (item) {
-            if (item && oldValue.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta =
-                        animationMeta.getGroup(classAnimationConfig.group, classAnimationConfig.duration, classAnimationConfig.position ||
-                          '+=0');
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+      const classAnimationsHandler = function () {
+        viewNode.observer.on('class', function (classes, oldClasses) {
+          const classSequence = viewNode.sequences.classList;
+          classes.forEach(function (item) {
+            if (item && oldClasses.indexOf(item) === -1) {
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+              });
             }
           });
 
-          oldValue.forEach(function (item) {
-            if (item && value.indexOf(item) === -1) {
-              let _config = animations['.' + item];
-              if (_config) {
-                viewNode.sequences[':class'].next(function (done) {
-                  let classAnimationConfig = _config;
-                  classAnimationConfig.to = { className: '-=' + item || '' };
-
-                  if (classAnimationConfig.sequence) {
-                    let animationMeta = AnimationMeta.get(classAnimationConfig.sequence);
-
-                    if (classAnimationConfig.group) {
-                      animationMeta = animationMeta.getGroup(classAnimationConfig.group);
-                    }
-
-                    animationMeta.add(viewNode.node, classAnimationConfig, done);
-                  } else {
-                    AnimationMeta.createTween(viewNode.node, classAnimationConfig, done);
-                  }
-                });
+          oldClasses.forEach(function (item) {
+            if (item && classes.indexOf(item) === -1) {
+              const _config = animations['.' + item];
+              if (!_config) {
+                return;
               }
+
+              classSequence.next(function (done) {
+                // requestAnimationFrame(function () {
+                const classAnimationConfig = Object.assign({}, _config);
+                classAnimationConfig.to = { className: '-=' + item || '' };
+                AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                // });
+              });
             }
           });
         });
-      });
+      };
+
+      viewNode.rendered.then(classAnimationsHandler);
     }
   };
 
@@ -238,7 +228,7 @@
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'enter'|'leave'} type
+   * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param descriptions
    * @param {callback} onComplete
    */
@@ -379,11 +369,7 @@
         _this.timeline.play(0);
       }
     } else {
-      // if (config.parent) {
-      //   _this.timeline.add(tween, config.chainToParent ? config.position : '+=0');
-      // } else {
       _this.timeline.add(tween, config.position);
-      // }
     }
   };
 
