@@ -33,6 +33,10 @@
       const viewNode = this;
       const node = viewNode.node;
 
+      if (expression) {
+        value = expression();
+      }
+
       if (typeof value === 'string') {
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
