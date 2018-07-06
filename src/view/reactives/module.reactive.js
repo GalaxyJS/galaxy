@@ -35,7 +35,10 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          _this.renderingFlow.truncate();
+          // if node is not in the dom , then renderingFlow should happen
+          if (_this.inDOM) {
+            _this.renderingFlow.truncate();
+          }
           _this.clean();
 
           moduleLoaderGenerator(_this, data, moduleMeta)(function () {});

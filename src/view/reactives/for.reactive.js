@@ -361,6 +361,7 @@
         const c = newItems.slice(0);
         for (let i = 0, len = newItems.length; i < len; i++) {
           itemDataScope = View.createMirror(nodeScopeData);
+          itemDataScope['__rootScopeData__'] = config.scope;
           itemDataScope[pn] = c[i];
           itemDataScope['$forIndex'] = i;
           let cns = gClone(templateSchema);

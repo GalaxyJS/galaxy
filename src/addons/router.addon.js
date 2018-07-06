@@ -240,6 +240,16 @@
       return this;
     },
 
+    navigateFromHere: function navigate(path) {
+      path = path.replace(new RegExp('^' + this._hash), '');
+      if (path[0] !== '/') {
+        path = '/' + path;
+      }
+      const to = (this.root + path).replace('/' + this._hash, '');
+
+      return this.navigate(to);
+    },
+
     on: function on() {
       const _this = this;
       let _len = arguments.length;
@@ -303,6 +313,11 @@
       }
 
       m = match(onlyURL, this._routes);
+
+      if (window.location.hash.indexOf(this.root.replace(/^\/*/, '')) !== 0) {
+        debugger;
+        // return false;
+      }
 
       if (m) {
         this._callLeave();
@@ -467,9 +482,10 @@
     return {
       create: function () {
         if (module.systemId === 'system') {
-          return new SimpleRouter(window.location.pathname, true, '#!');
+          return new SimpleRouter(window.location.hash, true, '#!');
         } else {
-          const router = new SimpleRouter(window.location.pathname + '#!/' + module.id, true, '#!');
+          debugger;
+          const router = new SimpleRouter(window.location.hash + '/' + module.id, true, '#!');
 
           scope.on('module.destroy', function () {
             router.destroy();

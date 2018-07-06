@@ -343,19 +343,10 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} bindings
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
-    let value = scopeData;
-
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
-      if (scopeData.hasOwnProperty('__rd__')) {
-        parentReactiveData = scopeData.__rd__;
-      } else {
-        parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
-      }
-    }
-
     const propertyKeysPaths = bindings.propertyKeysPaths;
-    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
+    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
 
+    let value = scopeData;
     let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
@@ -370,7 +361,20 @@ Galaxy.View = /** @class */(function (G) {
         propertyKey = propertyKeyPathItems.shift();
         childPropertyKeyPath = propertyKeyPathItems.join('.');
       }
-      // if (propertyKeyPath === 'this') debugger;
+      if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
+        if (scopeData.hasOwnProperty('__rd__')) {
+          parentReactiveData = scopeData.__rd__;
+        } else {
+          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData);
+        }
+      }
+      // When the node belongs to a nested $for, the scopeData would refer to the for item data
+      // But developer should still be able to access root scopeData
+      if (i === 0 && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+        propertyKey === 'data') {
+        parentReactiveData = null;
+      }
+
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
       if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
         i = 1;
