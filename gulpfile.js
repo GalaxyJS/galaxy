@@ -30,8 +30,8 @@ gulp.task('build-galaxy', function () {
     concat('galaxy.js'),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/')
-
+    gulp.dest('../imerce-viewer/assets/'),
+    gulp.dest('C:/xampp/htdocs/TeamScreen/public/assets/galaxyjs')
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -51,7 +51,7 @@ gulp.task('build-galaxy-production', function () {
     uglify({compress: true}),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/')
+    gulp.dest('../imerce-viewer/assets/'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
