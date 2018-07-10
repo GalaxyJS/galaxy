@@ -318,6 +318,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
         _this.callLifecycleEvent('postRemove');
 
+        _this.node.style.cssText = '';
         _this.origin = false;
         _this.callLifecycleEvent('postAnimations');
         animationDone();
@@ -411,11 +412,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           } else {
             removeChild(_this.node.parentNode, _this.node);
           }
+
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
-
           animationDone();
+          _this.node.style.cssText = '';
           _this.origin = false;
         }, _this);
       }
@@ -444,6 +446,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           animationDone();
+          _this.node.style.cssText = '';
         });
       }
     }
