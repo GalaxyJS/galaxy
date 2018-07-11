@@ -7,7 +7,7 @@
   }
 
   G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
-    type: 'custom',
+    type: 'prop',
     name: 'animations',
     /**
      *
@@ -17,7 +17,7 @@
      * @param oldConfig
      * @param scopeData
      */
-    handler: function (viewNode, attr, animations, oldConfig, scopeData) {
+    value: function (viewNode, attr, animations, oldConfig, scopeData) {
       if (viewNode.virtual || !animations) {
         return;
       }

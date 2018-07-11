@@ -16,6 +16,8 @@ Galaxy.View = /** @class */(function (G) {
   View.NODE_SCHEMA_PROPERTY_MAP = {
     tag: {
       type: 'none'
+      // createSetter
+      // value
     },
     children: {
       type: 'none'
@@ -269,8 +271,8 @@ Galaxy.View = /** @class */(function (G) {
 
     let middle = '';
     for (let i = 0, len = variables.length; i < len; i++) {
-      // middle += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
-      middle += 'prop(scope, "' + variables[i] + '"),';
+      // middle += 'properties(scope, "' + variables[i] + '").' + variables[i] + ',';
+      middle += 'properties(scope, "' + variables[i] + '"),';
     }
 
     // Take care of variables that contain square brackets like '[variable_name]'
@@ -279,7 +281,7 @@ Galaxy.View = /** @class */(function (G) {
     // middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
     functionContent += middle.substring(0, middle.length - 1) + ']';
 
-    const func = new Function('prop, scope', functionContent);
+    const func = new Function('properties, scope', functionContent);
     View.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
 
     return func;
@@ -563,8 +565,8 @@ Galaxy.View = /** @class */(function (G) {
    * @param scopeData
    */
   View.installReactiveBehavior = function (node, key, scopeData) {
-    let behavior = View.REACTIVE_BEHAVIORS[key];
-    let bindTo = node.schema[key];
+    const behavior = View.REACTIVE_BEHAVIORS[key];
+    const bindTo = node.schema[key];
 
     if (behavior) {
       const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
@@ -589,21 +591,19 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    let property = View.NODE_SCHEMA_PROPERTY_MAP[key];
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
-    if (!property) {
-      property = {
-        type: 'attr'
-      };
-    }
-
-    if (property.util) {
-      property.util(viewNode, scopeProperty, key, expression);
+    if (property.setup && scopeProperty) {
+      property.setup(viewNode, scopeProperty, key, expression);
     }
 
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
       return function () { };
+    }
+
+    if (property.createSetter) {
+      return property.createSetter(viewNode, key, property, expression);
     }
 
     return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
@@ -618,7 +618,7 @@ Galaxy.View = /** @class */(function (G) {
         break;
 
       case 'prop':
-        View.createPropertySetter(viewNode, property)(value, null);
+        View.createSetter(viewNode, property.name, null, null)(value, null);
         break;
 
       case 'reactive': {
@@ -641,9 +641,9 @@ Galaxy.View = /** @class */(function (G) {
         viewNode.node.addEventListener(attributeName, value.bind(viewNode), false);
         break;
 
-      case 'custom':
-        View.createCustomSetter(viewNode, attributeName, property)(value, null);
-        break;
+      // case 'custom':
+      //   View.createCustomSetter(viewNode, attributeName, property)(value, null);
+      //   break;
     }
   };
 

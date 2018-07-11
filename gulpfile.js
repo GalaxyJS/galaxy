@@ -18,6 +18,7 @@ let sources = {
     'src/*.js',
     // View
     'src/view/view.js',
+    'src/view/properties/*.js',
     'src/view/**/*.js',
     // Module addons
     'src/addons/*.js'

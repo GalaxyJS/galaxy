@@ -2,7 +2,7 @@
 
 (function (G) {
   G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
-    type: 'custom',
+    type: 'prop',
     name: 'text',
     /**
      *
@@ -10,7 +10,7 @@
      * @param {string} attr
      * @param value
      */
-    handler: function (viewNode, attr, value) {
+    value: function (viewNode, attr, value) {
       const textNode = viewNode.node['<>text'];
       const textValue = typeof value === 'undefined' || value === null ? '' : value;
 
