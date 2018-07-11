@@ -1,6 +1,10 @@
 /* global Galaxy */
 
 Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
+  if (!property.name) {
+    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter', property);
+  }
+
   const valueFn = property.value || function (vn, an, v, ov) {
     vn.node[an] = v;
   };

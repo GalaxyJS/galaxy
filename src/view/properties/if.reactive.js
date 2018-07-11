@@ -14,7 +14,7 @@
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -39,7 +39,9 @@
         }
 
         const waitStepDone = registerWaitStep(parentCache.$if);
-        waitStepDone();
+        node.renderingFlow.nextAction(function () {
+          waitStepDone();
+        });
       } else {
         if (!node.rendered.resolved) {
           node.inDOM = false;

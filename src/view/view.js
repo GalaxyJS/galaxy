@@ -497,31 +497,6 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param property
-   * @returns {Function}
-   */
-  View.createPropertySetter = function (node, property) {
-    if (!property.name) {
-      throw new Error('createPropertySetter: property.name is mandatory in order to create property setter');
-    }
-
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          node.node[property.name] = asyncValue;
-          node.notifyObserver(property.name, asyncValue, oldValue);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        node.node[property.name] = value;
-        node.notifyObserver(property.name, value, oldValue);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} attributeName
    * @param property
    * @returns {Function}

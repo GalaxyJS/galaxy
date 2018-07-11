@@ -30,7 +30,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -104,7 +104,7 @@
         });
       }
 
-      const waitStepDone = registerWaitStep(parentCache.$for);
+      const waitStepDone = registerWaitStep(parentCache.$for, node);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -153,7 +153,13 @@
           config.trackMap = newTrackMap;
         }
       } else if (changes.type === 'reset') {
-        leaveProcess = createLeaveProcess(node, config.nodes, config, function () {
+        const nodes = config.nodes.slice(0);
+        config.nodes = [];
+        console.log(node);
+        node.parent.node;
+        debugger;
+
+        leaveProcess = createLeaveProcess(node, nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
           waitStepDone();
@@ -196,7 +202,7 @@
    * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep($forData) {
+  function registerWaitStep($forData, n) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -204,9 +210,8 @@
         resolve();
       };
     });
-
+    waitForDestroy.n = n;
     $forData.queue.push(waitForDestroy);
-
     return destroyDone;
   }
 
