@@ -30,7 +30,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -91,9 +91,9 @@
 
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
-      const parentNode = node.parent;
-      const parentCache = parentNode.cache;
-      const parentSchema = parentNode.schema;
+      const parent = node.parent;
+      const parentCache = parent.cache;
+      const parentSchema = parent.schema;
       let newTrackMap = [];
 
       // Truncate on reset or actions that does not change the array length
@@ -104,7 +104,7 @@
         });
       }
 
-      const waitStepDone = registerWaitStep(parentCache.$for, node);
+      const waitStepDone = registerWaitStep(parentCache.$for, parent);
       let leaveProcess = null;
       if (config.trackBy instanceof Function) {
         newTrackMap = changes.params.map(function (item, i) {
@@ -155,10 +155,6 @@
       } else if (changes.type === 'reset') {
         const nodes = config.nodes.slice(0);
         config.nodes = [];
-        console.log(node);
-        node.parent.node;
-        debugger;
-
         leaveProcess = createLeaveProcess(node, nodes, config, function () {
           changes = Object.assign({}, changes);
           changes.type = 'push';
@@ -202,7 +198,7 @@
    * @param $forData
    * @returns {Function}
    */
-  function registerWaitStep($forData, n) {
+  function registerWaitStep($forData, parent) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -210,7 +206,13 @@
         resolve();
       };
     });
-    waitForDestroy.n = n;
+
+    parent.sequences.leave.onTruncate(function () {
+      if (!waitForDestroy.resolved) {
+        destroyDone();
+      }
+    });
+
     $forData.queue.push(waitForDestroy);
     return destroyDone;
   }
@@ -267,23 +269,32 @@
 
   function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
     return function () {
-      const parentNode = node.parent;
+      const parent = node.parent;
       const schema = node.schema;
+
       node.renderingFlow.next(function leaveProcess(next) {
+        // if parent leave sequence interrupted, then make should these items will be removed from DOM
+        parent.sequences.leave.onTruncate(function () {
+          itemsToBeRemoved.forEach(function (vn) {
+            vn.sequences.leave.truncate();
+            vn.detach();
+          });
+        });
+
         if (itemsToBeRemoved.length) {
-          let domManipulationOrder = parentNode.schema.renderConfig.domManipulationOrder;
+          let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
           if (schema.renderConfig.domManipulationOrder) {
             domManipulationOrder = schema.renderConfig.domManipulationOrder;
           }
 
           if (domManipulationOrder === 'cascade') {
-            View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parentNode.sequences.leave);
+            View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parent.sequences.leave);
           } else {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse());
           }
 
-          parentNode.sequences.leave.nextAction(function () {
-            parentNode.callLifecycleEvent('postForLeave');
+          parent.sequences.leave.nextAction(function () {
+            parent.callLifecycleEvent('postForLeave');
             onDone();
             next();
           });

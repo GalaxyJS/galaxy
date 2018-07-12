@@ -237,6 +237,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   };
 
+  ViewNode.prototype.detach = function () {
+    const _this = this;
+
+    if (_this.node.parentNode) {
+      removeChild(_this.node.parentNode, _this.node);
+    }
+  };
+
   /**
    *
    * @param {boolean} flag
@@ -407,10 +415,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.sequences.leave.nextAction(function () {
           if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
             root.nextAction(function () {
-              removeChild(_this.node.parentNode, _this.node);
+              _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
             });
           } else {
-            removeChild(_this.node.parentNode, _this.node);
+            _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
           }
 
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
