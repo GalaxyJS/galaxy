@@ -353,15 +353,14 @@ Galaxy.View = /** @class */(function (G) {
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
-
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
       propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
       propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKey = propertyKeyPathItems.shift();
-        childPropertyKeyPath = propertyKeyPathItems.join('.');
+        propertyKey = propertyKeyPathItems[0];
+        childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
       if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
@@ -372,21 +371,18 @@ Galaxy.View = /** @class */(function (G) {
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
-      if (i === 0 && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
         propertyKey === 'data') {
         parentReactiveData = null;
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
-        i = 1;
-        propertyKey = propertyKeyPathItems.shift();
-        bindings.propertyKeysPaths = propertyKeyPathItems;
+      if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
+        propertyKey = propertyKeyPathItems[1];
+        bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
-        // debugger;
         value = View.propertyLookup(root.data, propertyKey);
-        // debugger;
       } else if (value) {
         value = View.propertyLookup(value, propertyKey);
       }
@@ -433,7 +429,8 @@ Galaxy.View = /** @class */(function (G) {
           }
 
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
-            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\nProperty name: `' +
+            propertyKey + '`\n');
         }
 
         parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
@@ -447,6 +444,7 @@ Galaxy.View = /** @class */(function (G) {
         }, root);
       }
     }
+
   };
 
   /**

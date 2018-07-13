@@ -19,6 +19,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       shadow: {},
       data: {},
       notify: function () { },
+      notifyDown: function () {},
       sync: function () { },
       makeReactiveObject: function () { },
       addKeyToShadow: function () { }
@@ -93,6 +94,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         for (let key in this.shadow) {
           // Cascade changes down to all children reactive data
           if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+
             this.shadow[key].setData(data);
           } else {
             // changes should only propagate downward
@@ -186,10 +188,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       } else {
         this.shadow[key] = null;
       }
-
+      // if (key === 'changes') {
+      //   debugger;
+      // }
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
+      // this.parent.notify(this.keyInParent, this.parent.refs);
     },
     /**
      *

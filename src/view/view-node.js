@@ -302,7 +302,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
 
       _this.origin = true;
-      // _this.transitory = true;
+      _this.transitory = true;
 
       let animationDone;
       const waitForNodeAnimation = new Promise(function (resolve) {
@@ -380,9 +380,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param {Galaxy.Sequence} leaveSequence
-   * @param {Galaxy.Sequence} root
+   * @param {Galaxy.Sequence} rootSequence
    */
-  ViewNode.prototype.destroy = function (leaveSequence, root) {
+  ViewNode.prototype.destroy = function (leaveSequence, rootSequence) {
     const _this = this;
     _this.transitory = true;
     // The node is the original node that is being removed
@@ -410,11 +410,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }, _this);
 
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.sequences.leave, root);
+        _this.clean(_this.sequences.leave, rootSequence);
         _this.populateLeaveSequence(_this.sequences.leave);
         _this.sequences.leave.nextAction(function () {
           if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
-            root.nextAction(function () {
+            rootSequence.nextAction(function () {
               _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
             });
           } else {
@@ -434,7 +434,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
-        _this.clean(_this.sequences.leave, root);
+        _this.clean(_this.sequences.leave, rootSequence);
         _this.populateLeaveSequence(_this.sequences.leave);
 
         let animationDone;
@@ -445,6 +445,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         leaveSequence.next(function (next) {
           waitForNodeAnimation.then(function () {
             _this.hasBeenDestroyed();
+
             next();
           });
         });
@@ -454,7 +455,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           animationDone();
-          _this.node.style.cssText = '';
         });
       }
     }
@@ -483,6 +483,27 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
+  ViewNode.prototype.getChildNodes = function () {
+    const nodes = [];
+    const cn = Array.prototype.slice.call(this.node.childNodes, 0);
+    for (let i = cn.length - 1; i >= 0; i--) {
+      const node = cn[i]['galaxyViewNode'];
+
+      if (node !== undefined) {
+        nodes.push(node);
+      }
+    }
+
+    return nodes;
+  };
+
+  ViewNode.prototype.flush = function (nodes) {
+    const items = nodes || this.getChildNodes();
+    items.forEach(function (vn) {
+      vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
+    });
+  };
+
   /**
    *
    * @param {Galaxy.Sequence} leaveSequence
@@ -491,17 +512,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    */
   ViewNode.prototype.clean = function (leaveSequence, root) {
     const _this = this;
-    const toBeRemoved = [];
-    let node;
-
-    const cn = Array.prototype.slice.call(_this.node.childNodes, 0);
-    for (let i = cn.length - 1; i >= 0; i--) {
-      node = cn[i]['galaxyViewNode'];
-
-      if (node !== undefined) {
-        toBeRemoved.push(node);
-      }
-    }
+    const toBeRemoved = _this.getChildNodes();
 
     if (_this.schema.renderConfig && _this.schema.renderConfig.domManipulationOrder === 'cascade') {
       toBeRemoved.reverse().forEach(function (node) {
@@ -511,15 +522,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
       });
     }
+
     // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
     // children should also get destroyed as child
     if (leaveSequence) {
       ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
+
       return _this.renderingFlow;
     }
 
     _this.renderingFlow.next(function (next) {
       if (!toBeRemoved.length) {
+        _this.transitory = false;
         next();
         return _this.renderingFlow;
       }
