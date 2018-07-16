@@ -273,7 +273,7 @@
       const schema = node.schema;
 
       node.renderingFlow.next(function leaveProcess(next) {
-        // if parent leave sequence interrupted, then make should these items will be removed from DOM
+        // if parent leave sequence interrupted, then make sure these items will be removed from DOM
         parent.sequences.leave.onTruncate(function () {
           itemsToBeRemoved.forEach(function (vn) {
             vn.sequences.leave.truncate();

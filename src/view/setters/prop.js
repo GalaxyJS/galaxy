@@ -2,7 +2,8 @@
 
 Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
   if (!property.name) {
-    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter', property);
+    console.error(property);
+    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
   }
 
   const valueFn = property.value || function (vn, an, v, ov) {
@@ -24,7 +25,7 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
 
   if (expression) {
     return function (none, oldValue) {
-      let expressionValue = expression(none);
+      const expressionValue = expression(none);
       setter(expressionValue, oldValue);
     };
   }

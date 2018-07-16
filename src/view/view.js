@@ -11,7 +11,14 @@ Galaxy.View = /** @class */(function (G) {
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
-  View.REACTIVE_BEHAVIORS = {};
+  View.REACTIVE_BEHAVIORS = {
+    // example: {
+    //   regex: null,
+    //   prepare: function (matches, scope) {},
+    //   install: function (config) {},
+    //   apply: function (config, value, oldValue, expressionFn) {}
+    // }
+  };
 
   View.NODE_SCHEMA_PROPERTY_MAP = {
     tag: {
@@ -459,7 +466,7 @@ Galaxy.View = /** @class */(function (G) {
     const keys = Object.keys(subjects);
     let attributeName;
     let attributeValue;
-    const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
+    const subjectsClone = cloneSubject ? /*Galaxy.clone(subjects)*/Object.assign({}, subjects) : subjects;
 
     let parentReactiveData;
     if (!(data instanceof Galaxy.Scope)) {
@@ -537,22 +544,16 @@ Galaxy.View = /** @class */(function (G) {
    * @param {string} key
    * @param scopeData
    */
-  View.installReactiveBehavior = function (node, key, scopeData) {
-    const behavior = View.REACTIVE_BEHAVIORS[key];
+  View.installReactiveBehavior = function (behavior, node, key, scopeData) {
     const bindTo = node.schema[key];
-
-    if (behavior) {
-      const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
-      const data = behavior.prepare.call(node, matches, scopeData);
-      if (data !== undefined) {
-        node.cache[key] = data;
-      }
-
-      const needValueAssign = behavior.install.call(node, data);
-      return needValueAssign === undefined || needValueAssign === null ? true : needValueAssign;
+    const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+    const data = behavior.prepare.call(node, matches, scopeData);
+    if (data !== undefined) {
+      node.cache[key] = data;
     }
 
-    return true;
+    const needValueAssignment = behavior.install.call(node, data);
+    return needValueAssignment === undefined || needValueAssignment === null ? true : needValueAssignment;
   };
 
   View.PROPERTY_SETTERS = {
@@ -564,7 +565,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -575,6 +576,8 @@ Galaxy.View = /** @class */(function (G) {
       return function () { };
     }
 
+    // This is the lowest level where the developer can modify the property setter behavior
+    // By defining 'createSetter' for the property you can implement your custom functionality for setter
     if (property.createSetter) {
       return property.createSetter(viewNode, key, property, expression);
     }
@@ -583,7 +586,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -653,11 +656,12 @@ Galaxy.View = /** @class */(function (G) {
       const viewNode = new View.ViewNode(nodeSchema, null, refNode);
       parent.registerChild(viewNode, position);
 
-      // Behaviors definition stage
+      // Behaviors installation stage
       for (i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
-        if (View.REACTIVE_BEHAVIORS[attributeName]) {
-          const needValueAssign = View.installReactiveBehavior(viewNode, attributeName, scopeData);
+        const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+        if (behavior) {
+          const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
           if (needValueAssign !== false) {
             needInitKeys.push(attributeName);
           }
@@ -671,16 +675,7 @@ Galaxy.View = /** @class */(function (G) {
         attributeName = needInitKeys[i];
         attributeValue = nodeSchema[attributeName];
 
-        let bindings = View.getBindings(attributeValue);
-        // const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
-        //   return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
-        // }) : false;
-        //
-        // if (intersect) {
-        //   debugger
-        //   continue;
-        // }
-
+        const bindings = View.getBindings(attributeValue);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {

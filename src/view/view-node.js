@@ -298,6 +298,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       // remove the animation from the parent which are referring to this node
       _this.sequences.leave.onTruncate(function () {
+        _this.transitory = false;
         _this.parent.sequences.leave.removeByRef(_this.refNode);
       });
 
@@ -326,8 +327,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
         _this.callLifecycleEvent('postRemove');
 
-        _this.node.style.cssText = '';
         _this.origin = false;
+        _this.transitory = false;
+        _this.node.style.cssText = '';
         _this.callLifecycleEvent('postAnimations');
         animationDone();
       });
@@ -533,7 +535,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     _this.renderingFlow.next(function (next) {
       if (!toBeRemoved.length) {
-        _this.transitory = false;
         next();
         return _this.renderingFlow;
       }
