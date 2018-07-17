@@ -78,7 +78,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       schemas.forEach(function (node) {
         ViewNode.cleanReferenceNode(node);
       });
-    } else if (schemas) {
+    } else if (schemas instanceof Object) {
       __node__.value = null;
       defProp(schemas, '__node__', __node__);
       ViewNode.cleanReferenceNode(schemas.children);
