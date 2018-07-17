@@ -25,7 +25,7 @@
       const bindings = GV.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
-      if(nativeNode.type === 'number') {
+      if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', function () {
           scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
         });
@@ -34,6 +34,9 @@
           scopeReactiveData.data[id] = nativeNode.value;
         });
       }
+    },
+    value: function (viewNode, propertyName, value, oldValue) {
+      viewNode.node[propertyName] = value === undefined ? '' : value;
     }
   };
 })(Galaxy.View);

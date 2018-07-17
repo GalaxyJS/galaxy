@@ -72,6 +72,7 @@
       // Hard match
       if (routesPath.indexOf(path) !== -1) {
         // debugger;
+        _this.oldResolveId = path;
         return _this.routes[path].call(null);
       }
 

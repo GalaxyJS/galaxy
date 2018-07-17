@@ -98,38 +98,44 @@
 
       const classAnimationsHandler = function () {
         viewNode.observer.on('class', function (classes, oldClasses) {
+          oldClasses = oldClasses || [];
           const classSequence = viewNode.sequences.classList;
-          classes.forEach(function (item) {
-            if (item && oldClasses.indexOf(item) === -1) {
-              const _config = animations['.' + item];
-              if (!_config) {
-                return;
+          try {
+            classes.forEach(function (item) {
+              if (item && oldClasses.indexOf(item) === -1) {
+                const _config = animations['.' + item];
+                if (!_config) {
+                  return;
+                }
+
+                classSequence.next(function (done) {
+                  const classAnimationConfig = Object.assign({}, _config);
+                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+                });
               }
+            });
 
-              classSequence.next(function (done) {
-                const classAnimationConfig = Object.assign({}, _config);
-                classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-                AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
-              });
-            }
-          });
+            oldClasses.forEach(function (item) {
+              if (item && classes.indexOf(item) === -1) {
+                const _config = animations['.' + item];
+                if (!_config) {
+                  return;
+                }
 
-          oldClasses.forEach(function (item) {
-            if (item && classes.indexOf(item) === -1) {
-              const _config = animations['.' + item];
-              if (!_config) {
-                return;
+                classSequence.next(function (done) {
+                  // requestAnimationFrame(function () {
+                  const classAnimationConfig = Object.assign({}, _config);
+                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                  // });
+                });
               }
-
-              classSequence.next(function (done) {
-                // requestAnimationFrame(function () {
-                const classAnimationConfig = Object.assign({}, _config);
-                classAnimationConfig.to = { className: '-=' + item || '' };
-                AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
-                // });
-              });
-            }
-          });
+            });
+          }
+          catch (exception) {
+            console.warn(exception);
+          }
         });
       };
 
@@ -259,6 +265,7 @@
         const parent = AnimationMeta.get(newConfig.parent);
         const animationMetaTypeConfig = animationMeta.configs[type] || {};
         const parentTypeConfig = animationMeta.configs[type] || {};
+
         parent.addChild(animationMeta, animationMetaTypeConfig, parentTypeConfig);
       }
     } else {
