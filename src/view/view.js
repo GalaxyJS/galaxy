@@ -400,7 +400,6 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       let reactiveData;
-
       if (initValue instanceof Object) {
         reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
       } else if (childPropertyKeyPath) {
@@ -466,7 +465,7 @@ Galaxy.View = /** @class */(function (G) {
     const keys = Object.keys(subjects);
     let attributeName;
     let attributeValue;
-    const subjectsClone = cloneSubject ? /*Galaxy.clone(subjects)*/Object.assign({}, subjects) : subjects;
+    const subjectsClone = cloneSubject ? Galaxy.clone(subjects)/*Object.assign({}, subjects)*/ : subjects;
 
     let parentReactiveData;
     if (!(data instanceof Galaxy.Scope)) {

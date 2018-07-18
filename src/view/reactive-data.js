@@ -36,7 +36,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ReactiveData(id, data, p) {
+  function ReactiveData(id, data, p, ts) {
     const parent = p || scopeBuilder();
     this.data = data;
     this.id = parent.id + '.' + id;
@@ -51,6 +51,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       this.refs = this.data.__rd__.refs;
       const refExist = this.getRefById(this.id);
       if (refExist) {
+        this.fixHierarchy(id, refExist);
         return refExist;
       }
 
@@ -77,14 +78,21 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       this.walk(this.data);
     }
 
-    if (this.parent.data instanceof Array) {
-      this.keyInParent = this.parent.keyInParent;
-    } else {
-      this.parent.shadow[id] = this;
-    }
+    this.fixHierarchy(id, this);
   }
 
   ReactiveData.prototype = {
+    // If parent data is an array, then this would be an item inside the array
+    // therefore its keyInParent should NOT be its index in the array but the
+    // array's keyInParent. This way we redirect each item in the array to the
+    // array's reactive data
+    fixHierarchy: function (id, refrence) {
+      if (this.parent.data instanceof Array) {
+        this.keyInParent = this.parent.keyInParent;
+      } else {
+        this.parent.shadow[id] = refrence;
+      }
+    },
     setData: function (data) {
       this.removeMyRef(data);
 
@@ -171,6 +179,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
           _this.oldValue[key] = value;
           value = val;
+
           // This means that the property suppose to be an object and there probably active binds to it
           if (_this.shadow[key]) {
             _this.makeKeyEnum(key);
