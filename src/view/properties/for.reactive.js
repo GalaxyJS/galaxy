@@ -106,7 +106,7 @@
 
       const waitStepDone = registerWaitStep(parentCache.$for, parent);
       let leaveProcess = null;
-      if (config.trackBy instanceof Function) {
+      if (config.trackBy instanceof Function && changes.type === 'reset') {
         newTrackMap = changes.params.map(function (item, i) {
           return config.trackBy.call(node, item, i);
         });
@@ -163,7 +163,6 @@
       } else {
         Promise.resolve().then(waitStepDone);
       }
-
       // leave process will be empty if the type is not reset
       if (leaveProcess) {
         if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {

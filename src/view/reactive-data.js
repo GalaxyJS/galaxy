@@ -94,7 +94,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
     },
     setData: function (data) {
-      this.removeMyRef(data);
+      this.removeMyRef();
 
       if (!(data instanceof Object)) {
         this.data = {};
@@ -198,13 +198,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       } else {
         this.shadow[key] = null;
       }
-      // if (key === 'changes') {
-      //   debugger;
-      // }
+
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
-      // this.parent.notify(this.keyInParent, this.parent.refs);
     },
     /**
      *
@@ -269,8 +266,16 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
                   new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
                 }
               });
-            } else if (method === 'pop' || method === 'splice' || method === 'shift') {
-              //
+            } else if (method === 'pop' || method === 'shift') {
+              if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
+                returnValue.__rd__.removeMyRef();
+              }
+            } else if (method === 'splice') {
+              changes.params.slice(2).forEach(function (item) {
+                if (item !== null && typeof item === 'object') {
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                }
+              });
             }
 
             // For arrays we have to sync length manually
