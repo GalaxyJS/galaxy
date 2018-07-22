@@ -50,7 +50,7 @@
             }
 
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
-          });
+          }, 'populate-enter-sequence', 'self-enter');
         };
       }
 
@@ -110,7 +110,7 @@
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
                 });
               }
@@ -126,7 +126,7 @@
                 classSequence.next(function (done) {
                   // requestAnimationFrame(function () {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  classAnimationConfig.to = {className: '-=' + item || ''};
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
                   // });
                 });
@@ -331,18 +331,20 @@
     const _this = this;
     child.parent = _this;
 
-    // const children = this.timeline.getChildren(false);
+    const tweens = this.timeline.getChildren(false);
     const children = this.children;
     const index = children.indexOf(child.timeline);
     // const positionInParent = childConf.positionInParent || (type === 'leave' ? 'auto' : '+=0');
 
     if (index === -1) {
       if (childConf.chainToParent) {
+        debugger;
         children.push(child.timeline);
         _this.timeline.add(child.timeline);
       } else {
         // debugger;
-        child.timeline.pause();
+        // child.timeline.pause();
+        // _this.timeline.pause();
         children.push(child.timeline);
         _this.timeline.add(function () {
           child.timeline.resume();

@@ -8,6 +8,9 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     this.returnValue = null;
     this.params = [];
     this.type = 'reset';
+    this.ts = new Date().getTime();
+
+    Object.preventExtensions(this);
   }
 
   ArrayChange.prototype.getInstance = function () {
@@ -17,7 +20,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     instance.snapshot = this.snapshot.slice(0);
     instance.params = this.params.slice(0);
     instance.type = this.type;
-    // instance.ts = new Date().getTime();
+    instance.ts = new Date().getTime();
 
     return instance;
   };

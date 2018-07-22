@@ -30,7 +30,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -96,99 +96,102 @@
       const parentSchema = parent.schema;
       let newTrackMap = [];
 
-      // Truncate on reset or actions that does not change the array length
-      if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
-        node.renderingFlow.truncate();
-        node.renderingFlow.onTruncate(function () {
-          config.onDone.ignore = true;
-        });
-      }
-
-      const waitStepDone = registerWaitStep(parentCache.$for, parent);
-      let leaveProcess = null;
-      if (config.trackBy instanceof Function && changes.type === 'reset') {
-        newTrackMap = changes.params.map(function (item, i) {
-          return config.trackBy.call(node, item, i);
-        });
-
-        // list of nodes that should be removed
-        const hasBeenRemoved = [];
-        config.trackMap.forEach(function (id, i) {
-          if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
-            hasBeenRemoved.push(config.nodes[i]);
-          }
-        });
-
-        const newParams = [];
-        const positions = [];
-        newTrackMap.forEach(function (id, i) {
-          if (config.trackMap.indexOf(id) === -1) {
-            newParams.push(changes.params[i]);
-            positions.push(i);
-          }
-        });
-        config.positions = positions;
-
-        const newChanges = new Galaxy.View.ArrayChange();
-        newChanges.init = changes.init;
-        newChanges.type = changes.type;
-        newChanges.original = changes.original;
-        newChanges.params = newParams;
-        newChanges.__rd__ = changes.__rd__;
-        if (newChanges.type === 'reset' && newChanges.params.length) {
-          newChanges.type = 'push';
+      parent.inserted.then(function () {
+        if(parent.schema.class === 'ahah')debugger;
+        // Truncate on reset or actions that does not change the array length
+        if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
+          node.renderingFlow.truncate();
+          node.renderingFlow.onTruncate(function () {
+            config.onDone.ignore = true;
+          });
         }
 
-        config.nodes = config.nodes.filter(function (node) {
-          return hasBeenRemoved.indexOf(node) === -1;
-        });
+        const waitStepDone = registerWaitStep(parentCache.$for, parent);
+        let leaveProcess = null;
+        if (config.trackBy instanceof Function && changes.type === 'reset') {
+          newTrackMap = changes.params.map(function (item, i) {
+            return config.trackBy.call(node, item, i);
+          });
 
-        leaveProcess = createLeaveProcess(node, hasBeenRemoved, config, function () {
-          changes = newChanges;
-          waitStepDone();
-        });
+          // list of nodes that should be removed
+          const hasBeenRemoved = [];
+          config.trackMap.forEach(function (id, i) {
+            if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+              hasBeenRemoved.push(config.nodes[i]);
+            }
+          });
 
-        // Map should be updated asap if the newChanges.type is reset
-        if (newChanges.type === 'reset' && newChanges.params.length === 0) {
-          config.trackMap = newTrackMap;
-        }
-      } else if (changes.type === 'reset') {
-        const nodes = config.nodes.slice(0);
-        config.nodes = [];
-        leaveProcess = createLeaveProcess(node, nodes, config, function () {
-          changes = Object.assign({}, changes);
-          changes.type = 'push';
-          waitStepDone();
-        });
-      } else {
-        Promise.resolve().then(waitStepDone);
-      }
-      // leave process will be empty if the type is not reset
-      if (leaveProcess) {
-        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
-          parentCache.$for.leaveProcessList.push(leaveProcess);
+          const newParams = [];
+          const positions = [];
+          newTrackMap.forEach(function (id, i) {
+            if (config.trackMap.indexOf(id) === -1) {
+              newParams.push(changes.params[i]);
+              positions.push(i);
+            }
+          });
+          config.positions = positions;
+
+          const newChanges = new Galaxy.View.ArrayChange();
+          newChanges.init = changes.init;
+          newChanges.type = changes.type;
+          newChanges.original = changes.original;
+          newChanges.params = newParams;
+          newChanges.__rd__ = changes.__rd__;
+          if (newChanges.type === 'reset' && newChanges.params.length) {
+            newChanges.type = 'push';
+          }
+
+          config.nodes = config.nodes.filter(function (node) {
+            return hasBeenRemoved.indexOf(node) === -1;
+          });
+
+          leaveProcess = createLeaveProcess(node, hasBeenRemoved, config, function () {
+            changes = newChanges;
+            waitStepDone();
+          });
+
+          // Map should be updated asap if the newChanges.type is reset
+          if (newChanges.type === 'reset' && newChanges.params.length === 0) {
+            config.trackMap = newTrackMap;
+          }
+        } else if (changes.type === 'reset') {
+          const nodes = config.nodes.slice(0);
+          config.nodes = [];
+          leaveProcess = createLeaveProcess(node, nodes, config, function () {
+            changes = Object.assign({}, changes);
+            changes.type = 'push';
+            waitStepDone();
+          });
         } else {
-          parentCache.$for.leaveProcessList.unshift(leaveProcess);
+          Promise.resolve().then(waitStepDone);
         }
-      }
-
-      activateLeaveProcess(parentCache.$for);
-
-      const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
-        config.trackMap = newTrackMap;
-        if (changes.type === 'reset' && changes.params.length === 0) {
-          return;
+        // leave process will be empty if the type is not reset
+        if (leaveProcess) {
+          if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+            parentCache.$for.leaveProcessList.push(leaveProcess);
+          } else {
+            parentCache.$for.leaveProcessList.unshift(leaveProcess);
+          }
         }
 
-        createPushProcess(node, config, changes, config.scope);
+        activateLeaveProcess(parentCache.$for);
+
+        const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
+          config.trackMap = newTrackMap;
+          if (changes.type === 'reset' && changes.params.length === 0) {
+            return;
+          }
+
+          createPushProcess(node, config, changes, config.scope);
+        });
+        config.onDone = whenAllDestroysAreDone;
+
+        parentCache.$for.mainPromise =
+          parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
+        // When all the destroy processes of all the $for inside parentNode is done
+        // This make sure that $for's which are children of the same parent act as one $for
+        parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
       });
-      config.onDone = whenAllDestroysAreDone;
-
-      parentCache.$for.mainPromise =
-        parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
-      // When all the destroy processes of all the $for inside parentNode is done
-      // This make sure that $for's which are children of the same parent act as one $for
-      parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
     }
   };
 

@@ -8,6 +8,7 @@ Galaxy.View = /** @class */(function (G) {
 
   //------------------------------
 
+  View.EMPTY_CALL = function () {};
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
@@ -564,7 +565,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -585,7 +586,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -689,16 +690,17 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
+
         viewNode.inserted.then(function () {
           viewNode.callLifecycleEvent('postChildrenInsert');
         });
       }
 
       // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      requestAnimationFrame(function () {
+      Promise.resolve().then(function () {
         viewNode.sequences.enter.nextAction(function () {
           viewNode.hasBeenRendered();
-        });
+        }, null, 'post-render');
       });
 
       return viewNode;
@@ -749,7 +751,7 @@ Galaxy.View = /** @class */(function (G) {
         View.createNode(_this.container, _this.scope, schema, null);
         _this.container.sequences.enter.nextAction(function () {
           next();
-        });
+        }, null, 'container-enter');
       });
     },
     broadcast: function (event) {

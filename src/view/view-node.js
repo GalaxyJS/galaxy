@@ -274,23 +274,29 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.callLifecycleEvent('postInsert');
         _this.hasBeenInserted();
-      });
+      }, null, 'inserted');
 
-      let animationDone;
-      const waitForNodeAnimation = new Promise(function (resolve) {
-        animationDone = resolve;
+      let animationsAreDone;
+      const waitForNodeAndChildrenAnimations = new Promise(function (resolve) {
+        animationsAreDone = resolve;
       });
 
       _this.parent.sequences.enter.next(function (next) {
-        waitForNodeAnimation.then(next);
-      }, _this.refNode);
+        waitForNodeAndChildrenAnimations.then(next);
+      }, _this.refNode,'parent');
 
+      // Register self enter animation
       _this.populateEnterSequence(_this.sequences.enter);
-      // Go to next dom manipulation step when the whole :enter sequence is done
-      _this.sequences.enter.nextAction(function () {
-        _this.callLifecycleEvent('postEnter');
-        _this.callLifecycleEvent('postAnimations');
-        animationDone();
+
+      _this.inserted.then(function () {
+        if (_this.schema.class === 'ahah') debugger;
+        // At this point all the animations for this node are registered
+        // Run all the registered animations then call the animationsAreDone
+        _this.sequences.enter.nextAction(function () {
+          _this.callLifecycleEvent('postEnter');
+          _this.callLifecycleEvent('postAnimations');
+          animationsAreDone();
+        }, null, 'post-children-animation');
       });
     } else if (!flag && _this.node.parentNode) {
       _this.sequences.enter.truncate();
@@ -482,7 +488,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   ViewNode.prototype.getChildNodes = function () {

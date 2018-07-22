@@ -69,6 +69,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         this.parent.makeReactiveObject(this.parent.data, id, true);
       }
 
+      if (!Object.isExtensible(this.data)) {
+        return;
+      }
+
       defProp(this.data, '__rd__', {
         enumerable: false,
         configurable: true,
