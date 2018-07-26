@@ -193,7 +193,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   ViewNode.prototype.callLifecycleEvent = function (id) {
     const lifecycle = this.schema.lifecycle;
     if (lifecycle && typeof lifecycle[id] === 'function') {
-      lifecycle[id].call(this, this.inputs, this.data, this.sequences);
+      lifecycle[id].apply(this, Array.prototype.slice.call(arguments, 1));
     }
   };
 
@@ -273,6 +273,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
+        // if (_this.schema.class === 'ahah') debugger;
+        // if (_this.parent.schema.class === 'ahah') debugger;
         _this.hasBeenInserted();
       }, null, 'inserted');
 
@@ -283,13 +285,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       _this.parent.sequences.enter.next(function (next) {
         waitForNodeAndChildrenAnimations.then(next);
-      }, _this.refNode,'parent');
+      }, _this.refNode, 'parent');
 
       // Register self enter animation
       _this.populateEnterSequence(_this.sequences.enter);
 
       _this.inserted.then(function () {
-        if (_this.schema.class === 'ahah') debugger;
         // At this point all the animations for this node are registered
         // Run all the registered animations then call the animationsAreDone
         _this.sequences.enter.nextAction(function () {
@@ -356,6 +357,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     } else {
       _this.node.insertBefore(childNode.placeholder, position);
     }
+  };
+
+  ViewNode.prototype.getIndex = function () {
+    const indexOf = Array.prototype.indexOf;
+    const indexInParent = this.parent ? indexOf.call(this.parent.node.childNodes, this.getPlaceholder()) : 0;
+
+    const parentIndex = this.parent ? this.parent.getIndex() : 0;
+
+    return indexInParent;
   };
 
   /**
@@ -488,7 +498,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   ViewNode.prototype.getChildNodes = function () {

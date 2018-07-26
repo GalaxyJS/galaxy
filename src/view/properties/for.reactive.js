@@ -30,7 +30,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -97,7 +97,9 @@
       let newTrackMap = [];
 
       parent.inserted.then(function () {
-        if(parent.schema.class === 'ahah')debugger;
+        // if (parent.schema.class === 'ahah') {
+        //   debugger;
+        // }
         // Truncate on reset or actions that does not change the array length
         if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
           node.renderingFlow.truncate();
@@ -394,7 +396,7 @@
       // But this action wont get removed because it does not have a proper reference
 
       parentNode.sequences.enter.nextAction(function () {
-        parentNode.callLifecycleEvent('postForEnter');
+        parentNode.callLifecycleEvent('post$forEnter', newItems);
         next();
       }, node);
     });
