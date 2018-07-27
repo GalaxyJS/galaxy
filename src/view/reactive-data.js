@@ -164,7 +164,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     makeReactiveObject: function (data, key, shadow) {
       const _this = this;
       let value = data[key];
-      _this.oldValue[key] = value;
+
 
       defProp(data, key, {
         get: function () {
@@ -206,6 +206,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
+
+      _this.oldValue[key] = value;
     },
     /**
      *
@@ -237,9 +239,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       });
 
       _this.sync('length');
-      _this.oldValue = Object.assign({}, initialChanges);
       initialChanges.init = initialChanges;
       value.changes = initialChanges;
+      // _this.oldValue['changes'] = Object.assign({}, initialChanges);
       _this.makeReactiveObject(value, 'changes');
 
       // We override all the array methods which mutate the array
@@ -262,8 +264,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             changes.returnValue = returnValue;
             changes.init = initialChanges;
 
-            _this.oldValue = value.changes;
-
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
@@ -282,10 +282,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               });
             }
 
+            // const cacheOldValue = value.changes;
+            // _this.oldValue['changes'] = cacheOldValue;
             // For arrays we have to sync length manually
             // if we use notify here we will get
             _this.notifyDown('length');
             value.changes = changes;
+
 
             return returnValue;
           },
@@ -367,7 +370,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      *
      * @param node
      * @param {string} key
-     * @param value
+     * @param {*} value
+     * @param {*} oldValue
      */
     syncNode: function (node, key, value, oldValue) {
       // Pass a copy of the ArrayChange to every bound

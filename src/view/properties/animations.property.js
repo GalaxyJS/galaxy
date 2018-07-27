@@ -50,7 +50,7 @@
             }
 
             AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
-          }, 'populate-enter-sequence', 'self-enter');
+          });
         };
       }
 
@@ -70,6 +70,7 @@
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
           if (animations.config.leaveWithParent) {
             const parent = viewNode.parent;
+
             if (parent.transitory) {
               return;
             }
@@ -99,6 +100,7 @@
       const classAnimationsHandler = function () {
         viewNode.observer.on('class', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
+
           const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
@@ -265,6 +267,46 @@
 
   /**
    *
+   * @param {galaxy.View.ViewNode} viewNode
+   * @param {string} sequenceName
+   * @return {*}
+   */
+  AnimationMeta.getParentAnimationByName = function (viewNode, sequenceName) {
+    let node = viewNode.parent;
+    let animation = node.cache.animations;
+    let sequence = null;
+
+    while (!sequence) {
+      animation = node.cache.animations;
+      if (animation && animation.timeline.data && animation.timeline.data.am.name === sequenceName) {
+        sequence = animation;
+      } else {
+        node = node.parent;
+
+        if (!node) {
+          return null;
+        }
+      }
+    }
+
+    return sequence.timeline;
+  };
+
+  AnimationMeta.refresh = function (timeline) {
+    const parentChildren = timeline.getChildren(false, true, true);
+    timeline.clear();
+    parentChildren.forEach(function (item) {
+      if (item.data) {
+        const conf = item.data.config;
+        timeline.add(item, conf.position);
+      } else {
+        timeline.add(item);
+      }
+    });
+  };
+
+  /**
+   *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param descriptions
@@ -281,9 +323,14 @@
     const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
+    let sequenceName = newConfig.sequence;
 
-    if (newConfig.sequence) {
-      const animationMeta = AnimationMeta.get(newConfig.sequence);
+    if (newConfig.sequence instanceof Function) {
+      sequenceName = newConfig.sequence.call(viewNode);
+    }
+
+    if (sequenceName) {
+      const animationMeta = AnimationMeta.get(sequenceName);
 
       if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
         animationMeta.addOnComplete(onComplete);
@@ -300,6 +347,14 @@
 
         parent.addChild(viewNode, type, animationMeta, animationMetaTypeConfig);
       }
+
+      if (newConfig.startAfter) {
+        const parent = AnimationMeta.get(newConfig.startAfter);
+        const animationMetaTypeConfig = animationMeta.configs[type] || {};
+
+        parent.addAtEnd(viewNode, type, animationMeta, animationMetaTypeConfig);
+      }
+
     } else {
       AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
     }
@@ -353,51 +408,45 @@
    */
   AnimationMeta.prototype.addChild = function (viewNode, type, child, childConf) {
     const _this = this;
-    const animationTypeConfig = _this.configs[type] || {};
+    // const animationTypeConfig = _this.configs[type] || {};
     // const index = _this.children.indexOf(child.timeline);
     const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    const parentNodeTimelineChildren = parentNodeTimeline.getChildren(false);
+    const safdsad = AnimationMeta.getParentAnimationByName(viewNode, childConf.parent);
+    // const parentNodeTimelineChildren = parentNodeTimeline.getChildren(false);
 
     child.parent = _this;
 
-    if (parentNodeTimelineChildren.indexOf(viewNode.cache.animations.timeline) === -1) {
-      if (childConf.chainToParent) {
-        parentNodeTimeline.add(viewNode.cache.animations.timeline, childConf.position);
-        debugger;
-        const paaaarentNodeTimelineChildren = parentNodeTimeline.getChildren(false);
-      } else if (_this.children.indexOf(child.timeline) === -1) {
-        // const parentChildren = parentNodeTimeline.getChildren(false, true, true);
-        // debugger;
-        // _this.children.push(child.timeline);
-        // child.timeline.pause();
-        // parentNodeTimeline.add(function () {
-        //   child.timeline.resume();
-        // });
-        // parentNodeTimeline.resume();
-        //
-        // debugger;
-      } else {
-        const parentChildren = parentNodeTimeline.getChildren(false, true, true);
-        // debugger;
-      }
+    _this.children.push(child.timeline);
+    child.timeline.pause();
+    const csacac = _this.timeline.getChildren(false);
+    const caaaa = parentNodeTimeline.getChildren(false);
+    console.log(safdsad === parentNodeTimeline);
+    const duration = parentNodeTimeline.duration();
+    parentNodeTimeline.endTime();
+    parentNodeTimeline.startTime();
+    parentNodeTimeline.progress();
 
+    // debugger;
+    parentNodeTimeline.add(function () {
+      child.timeline.resume();
+    }, childConf.positionInParent || '+=0');
+
+    if (childConf.positionInParent) {
+      // debugger;
     }
 
-    // const parentChildren = parentNodeTimeline.getChildren(false, true, true);
-    //
-    // parentNodeTimeline.clear();
-    // parentChildren.forEach(function (item) {
-    //   if (item.data) {
-    //     // console.log(item.data)
-    //     const conf = item.data.config;
-    //     parentNodeTimeline.add(item, conf.position);
-    //   } else {
-    //     parentNodeTimeline.add(item);
-    //   }
-    // });
-    // const asdasd = _this.timeline.getChildren(false, true, true);
-    // debugger;
-    // parentNodeTimeline.play(0);
+    parentNodeTimeline.resume();
+  };
+
+  /**
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {'leave'|'enter'} type
+   * @param {AnimationMeta} child
+   * @param {AnimationConfig} childConf
+   */
+  AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
+    const _this = this;
+    _this.timeline.add(child.timeline);
   };
 
   AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
@@ -451,48 +500,51 @@
     const nodeTimeline = viewNode.cache.animations.timeline;
     nodeTimeline.data = {
       am: _this,
-      config: config
+      config: config,
+      n: viewNode.node
     };
+
+    // const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+    const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
+
+    nodeTimeline.add(tween);
+    // debugger;
+    if (_this.parent) {
+      const progress = _this.parent.timeline.progress();
+      // debugger;
+      if (progress === undefined) {
+        _this.parent.timeline.play(0);
+      } else {
+        _this.parent.timeline.resume();
+      }
+    }
+    // if the animation has no parent but its parent animation is the same as its own animation
+    // then it should intercept the animation in order to make the animation proper visual wise
+    else if (sameSequenceParentTimeline) {
+      const currentProgress = sameSequenceParentTimeline.progress();
+      // if the currentProgress is 0 or bigger than the nodeTimeline start time
+      // then we can intercept the parentNodeTimeline
+      if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
+        sameSequenceParentTimeline.add(nodeTimeline, config.position || '+=0');
+        AnimationMeta.refresh(_this.timeline);
+        return _this.timeline.play(0);
+      }
+    }
 
     if (children.indexOf(nodeTimeline) === -1) {
       _this.children.push(nodeTimeline);
       let progress = _this.timeline.progress();
-      // if (config.parent) {
-      //   _this.timeline.add(nodeTimeline, config.chainToParent ? '+=0' : config.position);
-      // } else {
-      _this.timeline.add(nodeTimeline, config.position);
-      // }
+      if (children.length) {
+        _this.timeline.add(nodeTimeline, config.position);
+      } else {
+        _this.timeline.add(nodeTimeline);
+      }
 
       if (!progress) {
         _this.timeline.play(0);
       }
     } else {
       _this.timeline.add(nodeTimeline, config.position);
-    }
-
-    const test = AnimationMeta.getParentTimeline(viewNode);
-
-    nodeTimeline.add(tween);
-// debugger;
-    if (_this.parent) {
-      const parentChildren = _this.parent.timeline.getChildren(false, true, true);
-      // debugger;
-      _this.parent.timeline.clear();
-      parentChildren.forEach(function (item) {
-        if (item.data) {
-          // console.log(item.data)
-          const conf = item.data.config;
-          _this.parent.timeline.add(item, conf.position);
-        } else {
-          _this.parent.timeline.add(item);
-        }
-      });
-
-      _this.parent.timeline.play(0);
-      // debugger;
-    } else if (test) {
-      // console.log(test.data.am === _this);
-      // debugger;
     }
   };
 

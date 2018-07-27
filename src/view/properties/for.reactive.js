@@ -20,7 +20,8 @@
         scope: scope,
         matches: matches,
         trackBy: matches.trackBy,
-        onDone: function () { }
+        onDone: function () { },
+        oldChanges: {}
       };
     },
     /**
@@ -94,12 +95,14 @@
       const parent = node.parent;
       const parentCache = parent.cache;
       const parentSchema = parent.schema;
-      let newTrackMap = [];
+      let newTrackMap = null;
 
+      if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
+        return;
+      }
+
+      config.oldChanges = changes;
       parent.inserted.then(function () {
-        // if (parent.schema.class === 'ahah') {
-        //   debugger;
-        // }
         // Truncate on reset or actions that does not change the array length
         if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
           node.renderingFlow.truncate();
@@ -179,7 +182,10 @@
         activateLeaveProcess(parentCache.$for);
 
         const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
-          config.trackMap = newTrackMap;
+          if (newTrackMap) {
+            config.trackMap = newTrackMap;
+          }
+
           if (changes.type === 'reset' && changes.params.length === 0) {
             return;
           }
@@ -294,7 +300,7 @@
           if (domManipulationOrder === 'cascade') {
             View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parent.sequences.leave);
           } else {
-            View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse());
+            View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave);
           }
 
           parent.sequences.leave.nextAction(function () {
@@ -356,10 +362,15 @@
         removedItems.forEach(function (node) {
           node.destroy();
         });
+        config.trackMap.splice(changes.params[0], changes.params[1]);
       } else if (changes.type === 'pop') {
-        config.nodes.pop().destroy();
+        const lastItem = config.nodes.pop();
+        lastItem && lastItem.destroy();
+        config.trackMap.pop();
       } else if (changes.type === 'shift') {
-        config.nodes.shift().destroy();
+        const firstItem = config.nodes.shift();
+        firstItem && firstItem.destroy();
+        config.trackMap.shift();
       } else if (changes.type === 'sort' || changes.type === 'reverse') {
         config.nodes.forEach(function (viewNode) {
           viewNode.destroy();
@@ -367,6 +378,7 @@
 
         config.nodes = [];
         newItems = changes.original;
+        Array.prototype[changes.type].call(config.trackMap);
       }
 
       let itemDataScope = nodeScopeData;
