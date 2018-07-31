@@ -249,6 +249,7 @@
    * @return {*}
    */
   AnimationMeta.getParentTimeline = function (viewNode) {
+    /** @type {galaxy.View.ViewNode}  */
     let node = viewNode;
     let animations = null;
 
@@ -296,6 +297,7 @@
     const parentChildren = timeline.getChildren(false, true, true);
     timeline.clear();
     parentChildren.forEach(function (item) {
+      console.log(item)
       if (item.data) {
         const conf = item.data.config;
         timeline.add(item, conf.position);
@@ -341,11 +343,11 @@
 
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
-        const parent = AnimationMeta.get(newConfig.parent);
+        // const parent = AnimationMeta.get(newConfig.parent);
         const animationMetaTypeConfig = animationMeta.configs[type] || {};
-        const parentTypeConfig = animationMeta.configs[type] || {};
-
-        parent.addChild(viewNode, type, animationMeta, animationMetaTypeConfig);
+        // const parentTypeConfig = animationMeta.configs[type] || {};
+// debugger;
+        animationMeta.addChild(viewNode, type, animationMetaTypeConfig);
       }
 
       if (newConfig.startAfter) {
@@ -368,7 +370,7 @@
   function AnimationMeta(name) {
     const _this = this;
     _this.name = name;
-    this.timeline = new TimelineLite({
+    _this.timeline = new TimelineLite({
       // paused: true,
       autoRemoveChildren: true,
       smoothChildTiming: true,
@@ -381,13 +383,14 @@
         });
         _this.children = [];
         _this.onCompletesActions = [];
+        // _this.timeline.kill();
       }
     });
     _this.onCompletesActions = [];
 
     _this.timeline.addLabel('beginning', 0);
     _this.configs = {};
-    _this.parent = null;
+    // _this.parent = null;
     _this.children = [];
     _this.timelinesMap = [];
   }
@@ -406,35 +409,32 @@
    * @param {AnimationMeta} child
    * @param {AnimationConfig} childConf
    */
-  AnimationMeta.prototype.addChild = function (viewNode, type, child, childConf) {
+  AnimationMeta.prototype.addChild = function (viewNode, type, childConf) {
     const _this = this;
-    // const animationTypeConfig = _this.configs[type] || {};
-    // const index = _this.children.indexOf(child.timeline);
     const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    const safdsad = AnimationMeta.getParentAnimationByName(viewNode, childConf.parent);
-    // const parentNodeTimelineChildren = parentNodeTimeline.getChildren(false);
+    const children = parentNodeTimeline.getChildren(false);
 
-    child.parent = _this;
+    _this.timeline.pause();
+    if (_this.children.indexOf(parentNodeTimeline) === -1) {
+      _this.children.push(parentNodeTimeline);
+      let posInParent = childConf.positionInParent || '+=0';
+      // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
+      if (parentNodeTimeline.timeline === null && children.length === 0) {
+        parentNodeTimeline.pause();
+        parentNodeTimeline._startTime = 0;
+        parentNodeTimeline.play(0);
 
-    _this.children.push(child.timeline);
-    child.timeline.pause();
-    const csacac = _this.timeline.getChildren(false);
-    const caaaa = parentNodeTimeline.getChildren(false);
-    console.log(safdsad === parentNodeTimeline);
-    const duration = parentNodeTimeline.duration();
-    parentNodeTimeline.endTime();
-    parentNodeTimeline.startTime();
-    parentNodeTimeline.progress();
+        if (posInParent.indexOf('-') === 0) {
+          posInParent = null;
+        }
+      }
 
-    // debugger;
-    parentNodeTimeline.add(function () {
-      child.timeline.resume();
-    }, childConf.positionInParent || '+=0');
-
-    if (childConf.positionInParent) {
-      // debugger;
+      parentNodeTimeline.add(function () {
+        _this.timeline.resume();
+      }, posInParent);
     }
 
+    // AnimationMeta.refresh(parentNodeTimeline);
     parentNodeTimeline.resume();
   };
 
@@ -483,17 +483,15 @@
         to || {});
     }
 
-    // tween.data = {
-    //   am: _this,
-    //   config: config
-    // };
-
     const children = _this.timeline.getChildren(false, true, true);
 
     viewNode.cache.animations = viewNode.cache.animations || {
       timeline: new TimelineLite({
         autoRemoveChildren: true,
-        smoothChildTiming: true
+        smoothChildTiming: true,
+        onComplete: function () {
+          // viewNode.cache.animations.timeline.kill();
+        }
       })
     };
 
@@ -503,24 +501,25 @@
       config: config,
       n: viewNode.node
     };
+    nodeTimeline.add(tween);
 
     // const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
     const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
 
-    nodeTimeline.add(tween);
-    // debugger;
-    if (_this.parent) {
-      const progress = _this.parent.timeline.progress();
-      // debugger;
-      if (progress === undefined) {
-        _this.parent.timeline.play(0);
-      } else {
-        _this.parent.timeline.resume();
-      }
-    }
+    // if (_this.parent) {
+    //   debugger;
+    //   const progress = _this.parent.timeline.progress();
+    //   // debugger;
+    //   if (progress === undefined) {
+    //     _this.parent.timeline.play(0);
+    //   } else {
+    //     _this.parent.timeline.resume();
+    //   }
+    // }
     // if the animation has no parent but its parent animation is the same as its own animation
     // then it should intercept the animation in order to make the animation proper visual wise
-    else if (sameSequenceParentTimeline) {
+    // debugger;
+    if (sameSequenceParentTimeline) {
       const currentProgress = sameSequenceParentTimeline.progress();
       // if the currentProgress is 0 or bigger than the nodeTimeline start time
       // then we can intercept the parentNodeTimeline
@@ -531,8 +530,12 @@
       }
     }
 
+    const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+
+    // const cccc = parentNodeTimeline ? parentNodeTimeline.getChildren(false) : null;
+
     if (children.indexOf(nodeTimeline) === -1) {
-      _this.children.push(nodeTimeline);
+      // _this.children.push(nodeTimeline);
       let progress = _this.timeline.progress();
       if (children.length) {
         _this.timeline.add(nodeTimeline, config.position);
@@ -540,7 +543,7 @@
         _this.timeline.add(nodeTimeline);
       }
 
-      if (!progress) {
+      if (progress === undefined) {
         _this.timeline.play(0);
       }
     } else {

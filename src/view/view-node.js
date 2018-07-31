@@ -126,6 +126,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.properties = [];
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
+    /** @type {galaxy.View.ViewNode} */
     _this.parent = null;
     _this.dependedObjects = [];
     _this.renderingFlow = new Galaxy.Sequence();
@@ -359,15 +360,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   };
 
-  ViewNode.prototype.getIndex = function () {
-    const indexOf = Array.prototype.indexOf;
-    const indexInParent = this.parent ? indexOf.call(this.parent.node.childNodes, this.getPlaceholder()) : 0;
-
-    const parentIndex = this.parent ? this.parent.getIndex() : 0;
-
-    return indexInParent;
-  };
-
   /**
    * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {string} propertyName
@@ -473,6 +465,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
           animationDone();
+        });
+
+        _this.parent.sequences.leave.nextAction(function () {
+          _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
         });
       }
     }
