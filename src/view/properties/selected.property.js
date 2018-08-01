@@ -25,7 +25,7 @@
         scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
       });
     },
-    value: function (viewNode, attr, value) {
+    value: function (viewNode, value) {
       const nativeNode = viewNode.node;
 
       viewNode.rendered.then(function () {

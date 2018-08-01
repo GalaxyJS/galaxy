@@ -38,7 +38,7 @@
         }
       });
     },
-    value: function (viewNode, attr, value) {
+    value: function (viewNode, value) {
       const nativeNode = viewNode.node;
 
       if (/\[\]$/.test(nativeNode.name)) {

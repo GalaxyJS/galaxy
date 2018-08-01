@@ -35,8 +35,8 @@
         });
       }
     },
-    value: function (viewNode, propertyName, value, oldValue) {
-      viewNode.node[propertyName] = value === undefined ? '' : value;
+    value: function (viewNode, value, oldValue, attr) {
+      viewNode.node[attr] = value === undefined ? '' : value;
     }
   };
 })(Galaxy.View);

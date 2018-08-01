@@ -3,8 +3,6 @@
 
 Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
-  const setAttr = Element.prototype.setAttribute;
-  const removeAttr = Element.prototype.removeAttribute;
 
   //------------------------------
 
@@ -24,8 +22,9 @@ Galaxy.View = /** @class */(function (G) {
   View.NODE_SCHEMA_PROPERTY_MAP = {
     tag: {
       type: 'none'
-      // createSetter
-      // value
+      // setup: function(viewNode, scopeReactiveData, property, expression) {}
+      // createSetter: function(viewNode, attrName, property, expression, scope) {}
+      // value: function(viewNode, attr, value, oldValue) {}
     },
     children: {
       type: 'none'
@@ -77,13 +76,17 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setAttr = function (viewNode, name, value, oldValue) {
+  View.setAttr = function setAttr(viewNode, name, value, oldValue) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value) {
-      setAttr.call(viewNode.node, name, value, oldValue);
+      viewNode.node.setAttribute(name, value);
     } else {
-      removeAttr.call(viewNode.node, name);
+      viewNode.node.removeAttribute(name);
     }
+  };
+
+  View.setProp = function setProp(viewNode, name, value) {
+    viewNode.node[name] = value;
   };
 
   View.createMirror = function (obj, forObj) {
@@ -565,7 +568,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -586,7 +589,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':

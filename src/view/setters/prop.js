@@ -6,19 +6,17 @@ Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expr
     throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
   }
 
-  const valueFn = property.value || function (vn, an, v, ov) {
-    vn.node[an] = v;
-  };
+  const valueFn = property.value || Galaxy.View.setProp;
 
   const setter = function (value, oldValue) {
     if (value instanceof Promise) {
       const asyncCall = function (asyncValue) {
-        valueFn(viewNode, property.name, asyncValue, oldValue);
+        valueFn(viewNode, asyncValue, oldValue, property.name);
         viewNode.notifyObserver(property.name, value, oldValue);
       };
       value.then(asyncCall).catch(asyncCall);
     } else {
-      valueFn(viewNode, property.name, value, oldValue);
+      valueFn(viewNode, value, oldValue, property.name);
       viewNode.notifyObserver(property.name, value, oldValue);
     }
   };

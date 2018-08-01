@@ -7,10 +7,9 @@
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
-     * @param attr
      * @param events
      */
-    value: function (viewNode, attr, events) {
+    value: function (viewNode, events) {
       if (events !== null && typeof events === 'object') {
         for (let name in events) {
           if (events.hasOwnProperty(name)) {

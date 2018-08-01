@@ -7,10 +7,9 @@
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
-     * @param {string} attr
      * @param value
      */
-    value: function (viewNode, attr, value) {
+    value: function (viewNode, value) {
       const textNode = viewNode.node['<>text'];
       const textValue = typeof value === 'undefined' || value === null ? '' : value;
 

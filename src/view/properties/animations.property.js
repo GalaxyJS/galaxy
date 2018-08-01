@@ -12,31 +12,28 @@
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
-     * @param attr
-     * @param animations
-     * @param oldConfig
-     * @param scopeData
+     * @param value
      */
-    value: function (viewNode, attr, animations, oldConfig, scopeData) {
-      if (viewNode.virtual || !animations) {
+    value: function (viewNode, value) {
+      if (viewNode.virtual || !value) {
         return;
       }
 
-      const enter = animations.enter;
+      const enter = value.enter;
       if (enter) {
         if (enter.sequence) {
           AnimationMeta.get(enter.sequence).configs.enter = enter;
         }
 
         viewNode.populateEnterSequence = function (sequence) {
-          animations.config = animations.config || {};
+          value.config = value.config || {};
 
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
           });
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
-          if (animations.config.enterWithParent) {
+          if (value.config.enterWithParent) {
             const parent = viewNode.parent;
             if (!parent.rendered.resolved) {
               return;
@@ -49,26 +46,26 @@
               return done();
             }
 
-            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, animations.config, done);
+            AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config, done);
           });
         };
       }
 
-      const leave = animations.leave;
+      const leave = value.leave;
       if (leave) {
         if (leave.sequence) {
           AnimationMeta.get(leave.sequence).configs.leave = leave;
         }
 
         viewNode.populateLeaveSequence = function (sequence) {
-          animations.config = animations.config || {};
+          value.config = value.config || {};
 
           sequence.onTruncate(function () {
             TweenLite.killTweensOf(viewNode.node);
           });
 
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
-          if (animations.config.leaveWithParent) {
+          if (value.config.leaveWithParent) {
             const parent = viewNode.parent;
 
             if (parent.transitory) {
@@ -93,7 +90,7 @@
             waitForAnimation.then(done);
           });
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, animations.config, animationDone);
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, animationDone);
         };
       }
 
@@ -105,7 +102,7 @@
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
-                const _config = animations['.' + item];
+                const _config = value['.' + item];
                 if (!_config) {
                   return;
                 }
@@ -113,14 +110,14 @@
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
                   classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-                  AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, animations.config, done);
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, value.config, done);
                 });
               }
             });
 
             oldClasses.forEach(function (item) {
               if (item && classes.indexOf(item) === -1) {
-                const _config = animations['.' + item];
+                const _config = value['.' + item];
                 if (!_config) {
                   return;
                 }
@@ -129,7 +126,7 @@
                   // requestAnimationFrame(function () {
                   const classAnimationConfig = Object.assign({}, _config);
                   classAnimationConfig.to = { className: '-=' + item || '' };
-                  AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, animations.config, done);
+                  AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
                   // });
                 });
               }
@@ -297,7 +294,6 @@
     const parentChildren = timeline.getChildren(false, true, true);
     timeline.clear();
     parentChildren.forEach(function (item) {
-      console.log(item)
       if (item.data) {
         const conf = item.data.config;
         timeline.add(item, conf.position);
@@ -503,22 +499,9 @@
     };
     nodeTimeline.add(tween);
 
-    // const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
-
-    // if (_this.parent) {
-    //   debugger;
-    //   const progress = _this.parent.timeline.progress();
-    //   // debugger;
-    //   if (progress === undefined) {
-    //     _this.parent.timeline.play(0);
-    //   } else {
-    //     _this.parent.timeline.resume();
-    //   }
-    // }
     // if the animation has no parent but its parent animation is the same as its own animation
     // then it should intercept the animation in order to make the animation proper visual wise
-    // debugger;
+    const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
     if (sameSequenceParentTimeline) {
       const currentProgress = sameSequenceParentTimeline.progress();
       // if the currentProgress is 0 or bigger than the nodeTimeline start time
@@ -529,10 +512,6 @@
         return _this.timeline.play(0);
       }
     }
-
-    const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-
-    // const cccc = parentNodeTimeline ? parentNodeTimeline.getChildren(false) : null;
 
     if (children.indexOf(nodeTimeline) === -1) {
       // _this.children.push(nodeTimeline);
