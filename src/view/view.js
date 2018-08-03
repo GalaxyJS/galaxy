@@ -76,7 +76,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setAttr = function setAttr(viewNode, name, value, oldValue) {
+  View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value) {
       viewNode.node.setAttribute(name, value);
@@ -85,7 +85,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setProp = function setProp(viewNode, name, value) {
+  View.setProp = function setProp(viewNode, value, oldValue, name) {
     viewNode.node[name] = value;
   };
 
@@ -532,11 +532,11 @@ Galaxy.View = /** @class */(function (G) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          View.setAttr(node, attributeName, asyncValue, oldValue);
+          View.setAttr(node, asyncValue, oldValue, attributeName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        View.setAttr(node, attributeName, value, oldValue);
+        View.setAttr(node, value, oldValue, attributeName);
       }
     };
   };

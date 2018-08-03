@@ -24,7 +24,7 @@ Galaxy.Sequence = /** @class */ (function () {
     _this.actions = [];
     _this.resolver = Promise.resolve();
 
-    this.reset();
+    _this.reset();
   }
 
   Sequence.prototype = {
@@ -34,10 +34,11 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.isFinished = false;
       _this.processing = false;
 
-      this.activeState = new Promise(function (resolve) {
+      _this.activeState = new Promise(function (resolve) {
         _this.activeStateResolve = function () {
           _this.isFinished = true;
           _this.processing = false;
+          // _this.truncateHandlers = [];
           resolve();
         };
       });

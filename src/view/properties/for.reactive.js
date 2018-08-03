@@ -97,9 +97,9 @@
       const parentSchema = parent.schema;
       let newTrackMap = null;
 
-      if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
-        return;
-      }
+      // if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
+      //   return;
+      // }
 
       config.oldChanges = changes;
       parent.inserted.then(function () {

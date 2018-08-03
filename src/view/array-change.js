@@ -1,6 +1,24 @@
 /* global Galaxy */
 
 Galaxy.View.ArrayChange = /** @class */ (function () {
+  // let lastTS = new Date().getTime();
+  // let counter = 0;
+  //
+  // function getTS() {
+  //   const currentTS = new Date().getTime();
+  //
+  //   if (currentTS === lastTS) {
+  //     counter++;
+  //
+  //     return currentTS + '-' + counter;
+  //   }
+  //
+  //   counter = 0;
+  //   lastTS = currentTS;
+  //
+  //   return currentTS + '-' + counter;
+  // }
+
   function ArrayChange() {
     this.init = null;
     this.original = null;
@@ -8,7 +26,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     this.returnValue = null;
     this.params = [];
     this.type = 'reset';
-    this.ts = new Date().getTime();
+    // this.ts = getTS();
 
     Object.preventExtensions(this);
   }
@@ -20,7 +38,7 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
     instance.snapshot = this.snapshot.slice(0);
     instance.params = this.params.slice(0);
     instance.type = this.type;
-    instance.ts = new Date().getTime();
+    // instance.ts = getTS();
 
     return instance;
   };

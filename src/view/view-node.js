@@ -467,9 +467,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animationDone();
         });
 
-        _this.parent.sequences.leave.nextAction(function () {
-          _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-        });
+        // TODO: make this is not needed and remove it
+        // _this.parent.sequences.leave.nextAction(function () {
+        // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
+        // });
       }
     }
 
