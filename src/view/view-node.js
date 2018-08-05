@@ -467,10 +467,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animationDone();
         });
 
-        // TODO: make this is not needed and remove it
-        // _this.parent.sequences.leave.nextAction(function () {
-        // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-        // });
+        if (rootSequence) {
+          rootSequence.nextAction(function () {
+            _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
+          });
+        }
       }
     }
 
@@ -495,7 +496,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   ViewNode.prototype.getChildNodes = function () {

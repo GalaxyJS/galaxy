@@ -38,7 +38,10 @@ Galaxy.Sequence = /** @class */ (function () {
         _this.activeStateResolve = function () {
           _this.isFinished = true;
           _this.processing = false;
-          // _this.truncateHandlers = [];
+          // console.log(_this.truncateHandlers.length);
+          if (_this.truncateHandlers.length > 1) {
+            _this.truncateHandlers = [];
+          }
           resolve();
         };
       });
@@ -79,9 +82,7 @@ Galaxy.Sequence = /** @class */ (function () {
 
         if (subActions.length) {
           const lastItem = subActions[subActions.length - 1];
-          // debugger
           this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
-          // debugger
         } else {
           _this.actions.push(act);
         }
@@ -101,13 +102,11 @@ Galaxy.Sequence = /** @class */ (function () {
       const _this = this;
       const oldAction = _this.actions.shift();
       const firstAction = _this.actions[0];
-      // console.log('should end',_this.actions.length, firstAction);
+
       if (firstAction) {
         _this.resolver.then(firstAction.run.bind(firstAction));
       } else if (oldAction) {
-        // _this.resolver.then(function () {
         _this.activeStateResolve();
-        // });
       }
     },
 
