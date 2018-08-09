@@ -31,7 +31,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -285,9 +285,8 @@
   function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
     return function () {
       const parent = node.parent;
-      // const schema = node.schema;
+      const schema = node.schema;
 
-      // node.renderingFlow.next(function leaveProcess(next) {
       // if parent leave sequence interrupted, then make sure these items will be removed from DOM
       parent.sequences.leave.onTruncate(function hjere() {
         itemsToBeRemoved.forEach(function (vn) {
@@ -297,28 +296,24 @@
       });
 
       if (itemsToBeRemoved.length) {
-        // let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
-        // if (schema.renderConfig.domManipulationOrder) {
-        //   domManipulationOrder = schema.renderConfig.domManipulationOrder;
-        // }
+        let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
+        if (schema.renderConfig.domManipulationOrder) {
+          domManipulationOrder = schema.renderConfig.domManipulationOrder;
+        }
 
-        // if (domManipulationOrder === 'cascade') {
-        //   View.ViewNode.destroyNodes(node, itemsToBeRemoved, null, parent.sequences.leave);
-        // } else {
-        //   // debugger;
-        View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
-        // }
+        if (domManipulationOrder === 'cascade') {
+          View.ViewNode.destroyNodes(node, itemsToBeRemoved, parent.sequences.leave, parent.sequences.leave);
+        } else {
+          View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
+        }
 
         parent.sequences.leave.nextAction(function () {
           parent.callLifecycleEvent('postForLeave');
           onDone();
-          // next();
         });
       } else {
         onDone();
-        // next();
       }
-      // });
     };
   }
 
@@ -331,7 +326,7 @@
     let onEachAction = function (vn) {
       this.push(vn);
     };
-    parentNode.sequences.enter.onTruncate(function () {
+    parentNode.sequences.enter.onTruncate(function $forPushProcess() {
       parentNode.sequences.enter.removeByRef(node);
     });
 

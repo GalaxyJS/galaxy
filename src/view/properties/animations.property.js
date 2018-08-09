@@ -28,8 +28,12 @@
         viewNode.populateEnterSequence = function (sequence) {
           value.config = value.config || {};
 
-          sequence.onTruncate(function () {
+          sequence.onTruncate(function animationEnter() {
+            const cssText = viewNode.node.style.cssText;
             TweenLite.killTweensOf(viewNode.node);
+            requestAnimationFrame(function () {
+              viewNode.node.style.cssText = cssText;
+            });
           });
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered

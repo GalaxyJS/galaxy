@@ -60,7 +60,7 @@ Galaxy.Sequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
-        position: position,
+        // position: position,
         data: {
           ref: ref
         },
@@ -75,20 +75,20 @@ Galaxy.Sequence = /** @class */ (function () {
         }
       };
 
-      if (position) {
-        const subActions = _this.actions.filter(function (act) {
-          return act.position === position;
-        });
-
-        if (subActions.length) {
-          const lastItem = subActions[subActions.length - 1];
-          this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
-        } else {
-          _this.actions.push(act);
-        }
-      } else {
-        _this.actions.push(act);
-      }
+      // if (position) {
+      //   const subActions = _this.actions.filter(function (act) {
+      //     return act.position === position;
+      //   });
+      //
+      //   if (subActions.length) {
+      //     const lastItem = subActions[subActions.length - 1];
+      //     this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
+      //   } else {
+      //     _this.actions.push(act);
+      //   }
+      // } else {
+      _this.actions.push(act);
+      // }
 
       if (!_this.processing) {
         _this.processing = true;
