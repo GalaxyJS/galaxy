@@ -274,8 +274,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        // if (_this.schema.class === 'ahah') debugger;
-        // if (_this.parent.schema.class === 'ahah') debugger;
         _this.hasBeenInserted();
       }, null, 'inserted');
 

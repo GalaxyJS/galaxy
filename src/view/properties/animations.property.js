@@ -46,7 +46,8 @@
 
           sequence.next(function (done) {
             // If the node is not in the DOM at this point, then skip its animations
-            if (viewNode.node.offsetParent === null) {
+            // if (viewNode.node.offsetParent === null) {
+            if (document.body.contains(viewNode.node) === null) {
               return done();
             }
 
@@ -127,11 +128,9 @@
                 }
 
                 classSequence.next(function (done) {
-                  // requestAnimationFrame(function () {
                   const classAnimationConfig = Object.assign({}, _config);
                   classAnimationConfig.to = { className: '-=' + item || '' };
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
-                  // });
                 });
               }
             });

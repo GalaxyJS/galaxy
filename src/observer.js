@@ -33,14 +33,15 @@ Galaxy.Observer = /** @class */ (function () {
       });
     }
 
-    this.context.__observers__.push(this);
+    this.context['__observers__'].push(this);
   }
 
   Observer.prototype = {
     remove: function () {
-      let index = this.context.__observers__.indexOf(this);
+      const observers = this.context.__observers__;
+      const index = observers.indexOf(this);
       if (index !== -1) {
-        this.context.__observers__.splice(index, 1);
+        observers.splice(index, 1);
       }
     },
     /**
