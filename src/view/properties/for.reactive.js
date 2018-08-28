@@ -177,7 +177,7 @@
         }
         // leave process will be empty if the type is not reset
         if (leaveProcess) {
-          if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+          if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
             parentCache.$for.leaveProcessList.push(leaveProcess);
           } else {
             parentCache.$for.leaveProcessList.unshift(leaveProcess);
@@ -296,12 +296,12 @@
       });
 
       if (itemsToBeRemoved.length) {
-        let domManipulationOrder = parent.schema.renderConfig.domManipulationOrder;
-        if (schema.renderConfig.domManipulationOrder) {
-          domManipulationOrder = schema.renderConfig.domManipulationOrder;
+        let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
+        if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
+          alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
         }
 
-        if (domManipulationOrder === 'cascade') {
+        if (alternateDOMFlow === false) {
           View.ViewNode.destroyNodes(node, itemsToBeRemoved, parent.sequences.leave, parent.sequences.leave);
         } else {
           View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);

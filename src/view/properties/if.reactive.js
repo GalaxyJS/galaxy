@@ -50,7 +50,7 @@
 
         const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
-        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+        if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
           parentCache.$if.leaveProcessList.push(process);
         } else {
           parentCache.$if.leaveProcessList.unshift(process);

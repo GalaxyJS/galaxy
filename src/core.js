@@ -344,6 +344,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           console.error(error.message + ': ' + module.url);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function')
           console.error(error);
+          reject();
           throw new Error(error);
         }
       });
