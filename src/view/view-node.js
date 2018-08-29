@@ -251,18 +251,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   ViewNode.prototype.setInDOM = function (flag) {
     let _this = this;
     _this.inDOM = flag;
+    const enterSequence = _this.sequences.enter;
+    const leaveSequence = _this.sequences.leave;
 
     // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
     if (flag && !_this.virtual) {
-      _this.sequences.leave.truncate();
+      leaveSequence.truncate();
       _this.callLifecycleEvent('preInsert');
 
       // remove the animation from the parent which are referring to this node
-      _this.sequences.enter.onTruncate(function () {
+      enterSequence.onTruncate(function () {
         _this.parent.sequences.enter.removeByRef(_this.refNode);
       });
 
-      _this.sequences.enter.nextAction(function () {
+      enterSequence.nextAction(function () {
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
@@ -285,23 +287,23 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }, _this.refNode, 'parent');
 
       // Register self enter animation
-      _this.populateEnterSequence(_this.sequences.enter);
+      _this.populateEnterSequence(enterSequence);
 
       _this.inserted.then(function () {
         // At this point all the animations for this node are registered
         // Run all the registered animations then call the animationsAreDone
-        _this.sequences.enter.nextAction(function () {
+        enterSequence.nextAction(function () {
           _this.callLifecycleEvent('postEnter');
           _this.callLifecycleEvent('postAnimations');
           animationsAreDone();
         }, null, 'post-children-animation');
       });
     } else if (!flag && _this.node.parentNode) {
-      _this.sequences.enter.truncate();
+      enterSequence.truncate();
       _this.callLifecycleEvent('preRemove');
 
       // remove the animation from the parent which are referring to this node
-      _this.sequences.leave.onTruncate(function () {
+      leaveSequence.onTruncate(function () {
         _this.transitory = false;
         _this.parent.sequences.leave.removeByRef(_this.refNode);
       });
@@ -318,9 +320,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         waitForNodeAnimation.then(next);
       }, _this.refNode);
 
-      _this.populateLeaveSequence(_this.sequences.leave);
+      _this.populateLeaveSequence(leaveSequence);
       // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-      _this.sequences.leave.nextAction(function () {
+      leaveSequence.nextAction(function () {
         if (!_this.placeholder.parentNode) {
           insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
         }
@@ -385,21 +387,22 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.Sequence} leaveSequence
+   * @param {Galaxy.Sequence} mainLeaveSequence
    * @param {Galaxy.Sequence} rootSequence
    */
-  ViewNode.prototype.destroy = function (leaveSequence, rootSequence) {
+  ViewNode.prototype.destroy = function (mainLeaveSequence, rootSequence) {
     const _this = this;
     _this.transitory = true;
+    const leaveSequence = _this.sequences.leave;
     // The node is the original node that is being removed
-    if (!leaveSequence) {
+    if (!mainLeaveSequence) {
       _this.origin = true;
       if (_this.inDOM) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
         // remove the animation from the parent which are referring to this node
-        _this.sequences.leave.onTruncate(function () {
+        leaveSequence.onTruncate(function () {
           _this.parent.sequences.leave.removeByRef(_this);
         });
 
@@ -416,9 +419,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }, _this);
 
         // Add children leave sequence to this node(parent node) leave sequence
-        _this.clean(_this.sequences.leave, rootSequence);
-        _this.populateLeaveSequence(_this.sequences.leave);
-        _this.sequences.leave.nextAction(function () {
+        _this.clean(leaveSequence, rootSequence);
+        _this.populateLeaveSequence(leaveSequence);
+        leaveSequence.nextAction(function () {
           if (_this.schema.renderConfig && _this.schema.renderConfig.alternateDOMFlow === false) {
             rootSequence.nextAction(function () {
               _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
@@ -435,20 +438,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.origin = false;
         }, _this);
       }
-    } else if (leaveSequence) {
+    } else if (mainLeaveSequence) {
       if (_this.inDOM) {
         _this.sequences.enter.truncate();
         _this.callLifecycleEvent('preDestroy');
 
-        _this.clean(_this.sequences.leave, rootSequence);
-        _this.populateLeaveSequence(_this.sequences.leave);
+        _this.clean(leaveSequence, rootSequence);
+        _this.populateLeaveSequence(leaveSequence);
 
         let animationDone;
         const waitForNodeAnimation = new Promise(function (resolve) {
           animationDone = resolve;
         });
 
-        leaveSequence.next(function (next) {
+        mainLeaveSequence.next(function (next) {
           waitForNodeAnimation.then(function () {
             _this.hasBeenDestroyed();
 
@@ -456,7 +459,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           });
         });
 
-        _this.sequences.leave.nextAction(function () {
+        leaveSequence.nextAction(function () {
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
           _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);

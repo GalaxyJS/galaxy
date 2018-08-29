@@ -597,15 +597,12 @@ Galaxy.View = /** @class */(function (G) {
         break;
 
       case 'prop':
-        View.createSetter(viewNode, property.name, null, null)(value, null);
+        View.createSetter(viewNode, attributeName, null, null)(value, null);
         break;
 
       case 'reactive': {
         // const reactiveApply = View.createSetter(viewNode, attributeName, null, scopeData);
         if (viewNode.setters[property.name]) {
-          value;
-          viewNode.node;
-          debugger;
           return;
         }
         // if(value instanceof Array) debugger;
