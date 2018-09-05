@@ -10,7 +10,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   }
 
   function createElem(t) {
-    return document.createElement(t);
+    return t === 'comment' ? document.createComment('ViewNode') : document.createElement(t);
   }
 
   function insertBefore(parentNode, newNode, referenceNode) {
@@ -495,7 +495,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   ViewNode.prototype.getChildNodes = function () {

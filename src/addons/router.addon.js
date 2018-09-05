@@ -12,7 +12,7 @@
     this.module = module;
     this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#/');
     this.oldURL = null;
-    this.oldResolveId = null;
+    this.oldResolveId = {};
     this.routes = null;
   }
 
@@ -71,8 +71,8 @@
 
       // Hard match
       if (routesPath.indexOf(path) !== -1) {
-        // debugger;
-        _this.oldResolveId = path;
+        // delete all old resolved ids
+        _this.oldResolveId = {};
         return _this.routes[path].call(null);
       }
 
@@ -89,10 +89,9 @@
         // Create a unique id for the combination of the route and its parameters
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
 
-        if (_this.oldResolveId !== resolveId) {
-          _this.oldResolveId = resolveId;
-          // debugger;
-          return _this.routes[dynamicRoute.id].call(null, params);
+        if (_this.oldResolveId[dynamicRoute.id] !== resolveId) {
+          _this.oldResolveId[dynamicRoute.id] = resolveId;
+          _this.routes[dynamicRoute.id].call(null, params);
         }
       }
     },
