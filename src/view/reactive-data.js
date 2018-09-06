@@ -165,7 +165,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const _this = this;
       let value = data[key];
 
-
       defProp(data, key, {
         get: function () {
           return value;
@@ -288,7 +287,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // if we use notify here we will get
             _this.notifyDown('length');
             value.changes = changes;
-
 
             return returnValue;
           },
@@ -546,6 +544,11 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             this.makeReactiveObject(this.data, key, true);
           }
           this.shadow[key].setData(this.data[key]);
+        }
+        // This will make sure that UI is updated properly
+        // for properties that has been removed from data
+        else {
+          this.sync(key);
         }
       }
     },

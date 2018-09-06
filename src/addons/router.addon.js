@@ -77,6 +77,8 @@
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
+      let parentRoute;
+      let matchCount = 0;
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(path);
@@ -85,14 +87,28 @@
           continue;
         }
 
+        matchCount++;
+
+        if (parentRoute) {
+          const match = parentRoute.paramFinderExpression.exec(path);
+          if (!match) {
+            continue;
+          }
+        }
+
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
         // Create a unique id for the combination of the route and its parameters
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
-
         if (_this.oldResolveId[dynamicRoute.id] !== resolveId) {
+          _this.oldResolveId = {};
           _this.oldResolveId[dynamicRoute.id] = resolveId;
           _this.routes[dynamicRoute.id].call(null, params);
+          parentRoute = dynamicRoute;
         }
+      }
+
+      if (matchCount === 0) {
+        console.warn('No associated route has been found');
       }
     },
 
