@@ -96,7 +96,7 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      window.requestAnimationFrame(function () {
+      Promise.resolve().then(function () {
         viewNode.renderingFlow.truncate();
         currentScope.load(moduleMeta, {
           element: viewNode

@@ -418,7 +418,6 @@
       _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
 
-// debugger;
       // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
       if (parentNodeTimeline.timeline === null && children.length === 0) {
         parentNodeTimeline.pause();
@@ -431,7 +430,6 @@
       }
       // parentNodeTimeline._startTime = 3;
       parentNodeTimeline.add(function () {
-        // debugger;
         _this.timeline.resume();
       }, posInParent);
     }
@@ -448,7 +446,9 @@
    */
   AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
     const _this = this;
+    child.timeline.pause();
     _this.timeline.add(child.timeline);
+    child.timeline.resume();
   };
 
   AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
