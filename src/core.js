@@ -306,7 +306,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             module.source :
             new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
           // TODO: Find out what should the 'this' refer to
-          moduleSource.call({}, module.scope);
+          moduleSource.call(module.scope, module.scope);
 
           Reflect.deleteProperty(module, 'source');
 
@@ -341,8 +341,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           resolve(currentModule);
         }
         catch (error) {
-          console.error(error.message + ': ' + module.url + ', Search for es6 features in your code and remove them, e.g. arrow function');
+          console.error(error.message + ': ' + module.url);
+          console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function')
           console.error(error);
+          reject();
           throw new Error(error);
         }
       });

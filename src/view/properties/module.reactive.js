@@ -35,13 +35,33 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          _this.renderingFlow.truncate();
-          _this.clean();
+          Promise.resolve().then(function () {
+            // Only truncate renderingFlow if the node is in the DOM
+            if (_this.inDOM) {
+              _this.renderingFlow.truncate();
+            }
 
-          moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+            _this.renderingFlow.nextAction(function () {
+              const nodes = _this.getChildNodes();
+              _this.clean(_this.sequences.leave);
+              _this.sequences.leave.nextAction(function () {
+                _this.flush(nodes);
+              });
+
+              moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+            });
+          });
         });
       } else if (!moduleMeta) {
-        _this.clean();
+        Promise.resolve().then(function () {
+          _this.renderingFlow.nextAction(function () {
+            const nodes = _this.getChildNodes();
+            _this.clean(_this.sequences.leave);
+            _this.sequences.leave.nextAction(function () {
+              _this.flush(nodes);
+            });
+          });
+        });
       }
 
       data.moduleMeta = moduleMeta;

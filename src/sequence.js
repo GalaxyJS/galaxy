@@ -24,7 +24,7 @@ Galaxy.Sequence = /** @class */ (function () {
     _this.actions = [];
     _this.resolver = Promise.resolve();
 
-    this.reset();
+    _this.reset();
   }
 
   Sequence.prototype = {
@@ -34,10 +34,14 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.isFinished = false;
       _this.processing = false;
 
-      this.activeState = new Promise(function (resolve) {
+      _this.activeState = new Promise(function (resolve) {
         _this.activeStateResolve = function () {
           _this.isFinished = true;
           _this.processing = false;
+          // console.log(_this.truncateHandlers.length);
+          if (_this.truncateHandlers.length > 1) {
+            _this.truncateHandlers = [];
+          }
           resolve();
         };
       });
@@ -45,7 +49,7 @@ Galaxy.Sequence = /** @class */ (function () {
       return _this;
     },
 
-    next: function (action, ref) {
+    next: function (action, ref, position) {
       const _this = this;
 
       // if sequence was finished, then reset the sequence
@@ -56,6 +60,7 @@ Galaxy.Sequence = /** @class */ (function () {
       // we create an act object in order to be able to change the process on the fly
       // when this sequence is truncated, then the process of any active action should be disabled
       const act = {
+        // position: position,
         data: {
           ref: ref
         },
@@ -70,7 +75,20 @@ Galaxy.Sequence = /** @class */ (function () {
         }
       };
 
+      // if (position) {
+      //   const subActions = _this.actions.filter(function (act) {
+      //     return act.position === position;
+      //   });
+      //
+      //   if (subActions.length) {
+      //     const lastItem = subActions[subActions.length - 1];
+      //     this.actions.splice(_this.actions.indexOf(lastItem) + 1, 0, act);
+      //   } else {
+      //     _this.actions.push(act);
+      //   }
+      // } else {
       _this.actions.push(act);
+      // }
 
       if (!_this.processing) {
         _this.processing = true;
@@ -84,13 +102,11 @@ Galaxy.Sequence = /** @class */ (function () {
       const _this = this;
       const oldAction = _this.actions.shift();
       const firstAction = _this.actions[0];
-      // console.log('should end',_this.actions.length, firstAction);
+
       if (firstAction) {
         _this.resolver.then(firstAction.run.bind(firstAction));
       } else if (oldAction) {
-        // _this.resolver.then(function () {
         _this.activeStateResolve();
-        // });
       }
     },
 
@@ -138,11 +154,11 @@ Galaxy.Sequence = /** @class */ (function () {
       }
     },
 
-    nextAction: function (action, ref) {
+    nextAction: function (action, ref, position) {
       this.next(function (done) {
         action.call(this);
         done('sequence-action');
-      }, ref);
+      }, ref, position);
     }
   };
   return Sequence;

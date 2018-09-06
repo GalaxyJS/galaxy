@@ -14,7 +14,7 @@
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -39,7 +39,9 @@
         }
 
         const waitStepDone = registerWaitStep(parentCache.$if);
-        waitStepDone();
+        node.renderingFlow.nextAction(function () {
+          waitStepDone();
+        });
       } else {
         if (!node.rendered.resolved) {
           node.inDOM = false;
@@ -48,7 +50,7 @@
 
         const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
-        if (parentSchema.renderConfig && parentSchema.renderConfig.domManipulationOrder === 'cascade') {
+        if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
           parentCache.$if.leaveProcessList.push(process);
         } else {
           parentCache.$if.leaveProcessList.unshift(process);

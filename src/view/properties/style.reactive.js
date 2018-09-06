@@ -3,7 +3,7 @@
 (function (GV) {
   const NAME = 'style';
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['style.config'] = {
+  GV.NODE_SCHEMA_PROPERTY_MAP[NAME + '.config'] = {
     type: 'none'
   };
 

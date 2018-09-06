@@ -3,19 +3,28 @@
 
 Galaxy.View = /** @class */(function (G) {
   const defProp = Object.defineProperty;
-  const setAttr = Element.prototype.setAttribute;
-  const removeAttr = Element.prototype.removeAttribute;
 
   //------------------------------
 
+  View.EMPTY_CALL = function () {};
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
-  View.REACTIVE_BEHAVIORS = {};
+  View.REACTIVE_BEHAVIORS = {
+    // example: {
+    //   regex: null,
+    //   prepare: function (matches, scope) {},
+    //   install: function (config) {},
+    //   apply: function (config, value, oldValue, expressionFn) {}
+    // }
+  };
 
   View.NODE_SCHEMA_PROPERTY_MAP = {
     tag: {
       type: 'none'
+      // setup: function(viewNode, scopeReactiveData, property, expression) {}
+      // createSetter: function(viewNode, attrName, property, expression, scope) {}
+      // value: function(viewNode, attr, value, oldValue) {}
     },
     children: {
       type: 'none'
@@ -67,13 +76,17 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setAttr = function (viewNode, name, value, oldValue) {
+  View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value) {
-      setAttr.call(viewNode.node, name, value, oldValue);
+      viewNode.node.setAttribute(name, value);
     } else {
-      removeAttr.call(viewNode.node, name);
+      viewNode.node.removeAttribute(name);
     }
+  };
+
+  View.setProp = function setProp(viewNode, value, oldValue, name) {
+    viewNode.node[name] = value;
   };
 
   View.createMirror = function (obj, forObj) {
@@ -269,8 +282,8 @@ Galaxy.View = /** @class */(function (G) {
 
     let middle = '';
     for (let i = 0, len = variables.length; i < len; i++) {
-      // middle += 'prop(scope, "' + variables[i] + '").' + variables[i] + ',';
-      middle += 'prop(scope, "' + variables[i] + '"),';
+      // middle += 'properties(scope, "' + variables[i] + '").' + variables[i] + ',';
+      middle += 'properties(scope, "' + variables[i] + '"),';
     }
 
     // Take care of variables that contain square brackets like '[variable_name]'
@@ -279,7 +292,7 @@ Galaxy.View = /** @class */(function (G) {
     // middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
     functionContent += middle.substring(0, middle.length - 1) + ']';
 
-    const func = new Function('prop, scope', functionContent);
+    const func = new Function('properties, scope', functionContent);
     View.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
 
     return func;
@@ -343,44 +356,44 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Object} bindings
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
-    let value = scopeData;
-
-    if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
-      if (scopeData.hasOwnProperty('__rd__')) {
-        parentReactiveData = scopeData.__rd__;
-      } else {
-        parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, value);
-      }
-    }
-
     const propertyKeysPaths = bindings.propertyKeysPaths;
-    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, value, bindings);
+    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
 
+    let value = scopeData;
     let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
-
     for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
       propertyKey = propertyKeysPaths[i];
       childPropertyKeyPath = null;
 
       propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
-        propertyKey = propertyKeyPathItems.shift();
-        childPropertyKeyPath = propertyKeyPathItems.join('.');
+        propertyKey = propertyKeyPathItems[0];
+        childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
-      // if (propertyKeyPath === 'this') debugger;
+      if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
+        if (scopeData.hasOwnProperty('__rd__')) {
+          parentReactiveData = scopeData.__rd__;
+        } else {
+          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData);
+        }
+      }
+      // When the node belongs to a nested $for, the scopeData would refer to the for item data
+      // But developer should still be able to access root scopeData
+      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+        propertyKey === 'data') {
+        parentReactiveData = null;
+      }
+
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (i === 0 && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
-        i = 1;
-        propertyKey = propertyKeyPathItems.shift();
-        bindings.propertyKeysPaths = propertyKeyPathItems;
+      if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof Galaxy.View.ViewNode) {
+        propertyKey = propertyKeyPathItems[1];
+        bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
         parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
-        // debugger;
         value = View.propertyLookup(root.data, propertyKey);
-        // debugger;
       } else if (value) {
         value = View.propertyLookup(value, propertyKey);
       }
@@ -391,7 +404,6 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       let reactiveData;
-
       if (initValue instanceof Object) {
         reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
       } else if (childPropertyKeyPath) {
@@ -427,7 +439,8 @@ Galaxy.View = /** @class */(function (G) {
           }
 
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
-            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\n');
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\nProperty name: `' +
+            propertyKey + '`\n');
         }
 
         parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
@@ -441,6 +454,7 @@ Galaxy.View = /** @class */(function (G) {
         }, root);
       }
     }
+
   };
 
   /**
@@ -455,7 +469,7 @@ Galaxy.View = /** @class */(function (G) {
     const keys = Object.keys(subjects);
     let attributeName;
     let attributeValue;
-    const subjectsClone = cloneSubject ? Galaxy.clone(subjects) : subjects;
+    const subjectsClone = cloneSubject ? Galaxy.clone(subjects)/*Object.assign({}, subjects)*/ : subjects;
 
     let parentReactiveData;
     if (!(data instanceof Galaxy.Scope)) {
@@ -491,31 +505,6 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param property
-   * @returns {Function}
-   */
-  View.createPropertySetter = function (node, property) {
-    if (!property.name) {
-      throw new Error('createPropertySetter: property.name is mandatory in order to create property setter');
-    }
-
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          node.node[property.name] = asyncValue;
-          node.notifyObserver(property.name, asyncValue, oldValue);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        node.node[property.name] = value;
-        node.notifyObserver(property.name, value, oldValue);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} attributeName
    * @param property
    * @returns {Function}
@@ -543,11 +532,11 @@ Galaxy.View = /** @class */(function (G) {
     return function (value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          View.setAttr(node, attributeName, asyncValue, oldValue);
+          View.setAttr(node, asyncValue, oldValue, attributeName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else {
-        View.setAttr(node, attributeName, value, oldValue);
+        View.setAttr(node, value, oldValue, attributeName);
       }
     };
   };
@@ -558,22 +547,16 @@ Galaxy.View = /** @class */(function (G) {
    * @param {string} key
    * @param scopeData
    */
-  View.installReactiveBehavior = function (node, key, scopeData) {
-    let behavior = View.REACTIVE_BEHAVIORS[key];
-    let bindTo = node.schema[key];
-
-    if (behavior) {
-      const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
-      const data = behavior.prepare.call(node, matches, scopeData);
-      if (data !== undefined) {
-        node.cache[key] = data;
-      }
-
-      const needValueAssign = behavior.install.call(node, data);
-      return needValueAssign === undefined || needValueAssign === null ? true : needValueAssign;
+  View.installReactiveBehavior = function (behavior, node, key, scopeData) {
+    const bindTo = node.schema[key];
+    const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+    const data = behavior.prepare.call(node, matches, scopeData);
+    if (data !== undefined) {
+      node.cache[key] = data;
     }
 
-    return true;
+    const needValueAssignment = behavior.install.call(node, data);
+    return needValueAssignment === undefined || needValueAssignment === null ? true : needValueAssignment;
   };
 
   View.PROPERTY_SETTERS = {
@@ -585,21 +568,21 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    let property = View.NODE_SCHEMA_PROPERTY_MAP[key];
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
-    if (!property) {
-      property = {
-        type: 'attr'
-      };
-    }
-
-    if (property.util) {
-      property.util(viewNode, scopeProperty, key, expression);
+    if (property.setup && scopeProperty) {
+      property.setup(viewNode, scopeProperty, key, expression);
     }
 
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
       return function () { };
+    }
+
+    // This is the lowest level where the developer can modify the property setter behavior
+    // By defining 'createSetter' for the property you can implement your custom functionality for setter
+    if (property.createSetter) {
+      return property.createSetter(viewNode, key, property, expression);
     }
 
     return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
@@ -614,15 +597,12 @@ Galaxy.View = /** @class */(function (G) {
         break;
 
       case 'prop':
-        View.createPropertySetter(viewNode, property)(value, null);
+        View.createSetter(viewNode, attributeName, null, null)(value, null);
         break;
 
       case 'reactive': {
         // const reactiveApply = View.createSetter(viewNode, attributeName, null, scopeData);
         if (viewNode.setters[property.name]) {
-          value;
-          viewNode.node;
-          debugger;
           return;
         }
         // if(value instanceof Array) debugger;
@@ -637,9 +617,9 @@ Galaxy.View = /** @class */(function (G) {
         viewNode.node.addEventListener(attributeName, value.bind(viewNode), false);
         break;
 
-      case 'custom':
-        View.createCustomSetter(viewNode, attributeName, property)(value, null);
-        break;
+      // case 'custom':
+      //   View.createCustomSetter(viewNode, attributeName, property)(value, null);
+      //   break;
     }
   };
 
@@ -676,11 +656,12 @@ Galaxy.View = /** @class */(function (G) {
       const viewNode = new View.ViewNode(nodeSchema, null, refNode);
       parent.registerChild(viewNode, position);
 
-      // Behaviors definition stage
+      // Behaviors installation stage
       for (i = 0, len = keys.length; i < len; i++) {
         attributeName = keys[i];
-        if (View.REACTIVE_BEHAVIORS[attributeName]) {
-          const needValueAssign = View.installReactiveBehavior(viewNode, attributeName, scopeData);
+        const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+        if (behavior) {
+          const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
           if (needValueAssign !== false) {
             needInitKeys.push(attributeName);
           }
@@ -694,16 +675,7 @@ Galaxy.View = /** @class */(function (G) {
         attributeName = needInitKeys[i];
         attributeValue = nodeSchema[attributeName];
 
-        let bindings = View.getBindings(attributeValue);
-        // const intersect = bindings.propertyKeysPaths ? bindings.propertyKeysPaths.some(function (item) {
-        //   return -1 !== viewNode.cache._skipPropertyNames.indexOf(item);
-        // }) : false;
-        //
-        // if (intersect) {
-        //   debugger
-        //   continue;
-        // }
-
+        const bindings = View.getBindings(attributeValue);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
         } else {
@@ -718,6 +690,7 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
+
         viewNode.inserted.then(function () {
           viewNode.callLifecycleEvent('postChildrenInsert');
         });
@@ -778,7 +751,7 @@ Galaxy.View = /** @class */(function (G) {
         View.createNode(_this.container, _this.scope, schema, null);
         _this.container.sequences.enter.nextAction(function () {
           next();
-        });
+        }, null, 'container-enter');
       });
     },
     broadcast: function (event) {
