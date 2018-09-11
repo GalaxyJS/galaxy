@@ -37,9 +37,8 @@
       }
 
       const reactive = GV.bindSubjectsToData(this, data.subjects, data.scope, true);
-      data.reactive = reactive;
 
-      this.inputs = data.reactive;
+      this.inputs = reactive;
 
       return false;
     },
@@ -53,7 +52,8 @@
        * @return {*}
        */
       create: function () {
-        scope.inputs = scope.element.cache.inputs.reactive;
+        // scope.inputs = scope.element.cache.inputs.reactive;
+        // scope.inputs = scope.element.inputs;
         return scope.inputs;
       },
       finalize: function () { }
