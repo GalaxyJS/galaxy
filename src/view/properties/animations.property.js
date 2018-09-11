@@ -447,13 +447,24 @@
   AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
     const _this = this;
 
-    if (_this.timeline.progress() !== undefined) {
-      child.timeline.pause();
-    }
+    // if (_this.timeline.progress() !== undefined) {
+    //   child.timeline.pause();
+    // }
+    //
+    // _this.timeline.add(function () {
+    //   child.timeline.resume();
+    // });
 
-    _this.timeline.add(function () {
-      child.timeline.resume();
-    });
+    const children = _this.timeline.getChildren(false, true, true);
+
+    if (children.indexOf(child.timeline) !== -1) {
+    } else if (children.length) {
+      _this.timeline.add(child.timeline);
+      _this.timeline.add(function () {
+        _this.timeline.remove(child.timeline);
+        child.timeline.resume();
+      });
+    }
   };
 
   AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
