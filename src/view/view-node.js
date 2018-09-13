@@ -116,7 +116,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
-    _this.cache = {};
     _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
@@ -137,6 +136,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
+
+    const cache = {};
+    defProp(_this, 'cache', {
+      enumerable: false,
+      configurable: false,
+      value: cache
+    });
 
     _this.hasBeenRendered = null;
     _this.rendered = new Promise(function (done) {
@@ -495,7 +501,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   ViewNode.prototype.getChildNodes = function () {

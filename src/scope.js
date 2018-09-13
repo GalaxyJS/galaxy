@@ -12,20 +12,29 @@ Galaxy.Scope = /** @class */ (function () {
    * @memberOf Galaxy
    */
   function Scope(module, element) {
-    this.systemId = module.systemId;
-    this.parentScope = module.parentScope || null;
-    this.element = element || null;
-    this.exports = {};
-    this.uri = new Galaxy.GalaxyURI(module.url);
-    this.eventHandlers = {};
-    this.observers = [];
-    this.data = {};
+    const _this = this;
+    _this.systemId = module.systemId;
+    _this.parentScope = module.parentScope || null;
+    _this.element = element || null;
+    _this.exports = {};
+    _this.uri = new Galaxy.GalaxyURI(module.url);
+    _this.eventHandlers = {};
+    _this.observers = [];
+    _this.data = {};
 
-    defProp(this, '__imports__', {
+    defProp(_this, '__imports__', {
       value: {},
       writable: false,
       enumerable: false,
       configurable: false
+    });
+
+    defProp(_this, 'inputs', {
+      enumerable: true,
+      configurable: false,
+      get: function () {
+        return _this.element.inputs;
+      }
     });
 
     this.on('module.destroy', this.destroy.bind(this));
