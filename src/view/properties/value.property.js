@@ -36,7 +36,9 @@
       }
     },
     value: function (viewNode, value, oldValue, attr) {
-      viewNode.node[attr] = value === undefined ? '' : value;
+      // input field parse the value which has been passed to it into a string
+      // that why we need to parse undefined and null into an empty string
+      viewNode.node[attr] = value === undefined || value === null ? '' : value;
     }
   };
 })(Galaxy.View);

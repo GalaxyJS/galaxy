@@ -412,8 +412,13 @@
     // remove the animation from the parent which are referring to node
     // TODO: All actions related to the for nodes will be removed.
     // But this action wont get removed because it does not have a proper reference
-
     parentNode.sequences.enter.nextAction(function () {
+      const postChildrenInsertEvent = new CustomEvent('post$forEnter', {
+        detail: {
+          $forItems: newItems
+        }
+      });
+      parentNode.broadcast(postChildrenInsertEvent);
       parentNode.callLifecycleEvent('post$forEnter', newItems);
       // next();
     }, node);
