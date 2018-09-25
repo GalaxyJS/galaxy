@@ -164,17 +164,31 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               return '';
             }
 
+            if (response.headers.get('content-type') !== 'application/javascript') {
+              return Promise.resolve(function () {
+                return response.text().then(function (content) {
+                  return { type: response.headers.get('content-type'), content: content };
+                });
+              });
+            }
+
             return response.text();
           }).catch(reject);
         }
 
-        contentFetcher.then(function (moduleContent) {
-          _this.compileModuleContent(module, moduleContent, invokers).then(function (compiledModule) {
-            return _this.executeCompiledModule(compiledModule).then(resolve);
-          });
+        const compilationStep = function (moduleContent) {
+          return _this.compileModuleContent(module, moduleContent, invokers);
+        };
 
-          return moduleContent;
-        }).catch(reject);
+        const executionStep = function (compiledModule) {
+          return _this.executeCompiledModule(compiledModule);
+        };
+
+        contentFetcher
+          .then(compilationStep)
+          .then(executionStep)
+          .then(resolve)
+          .catch(reject);
       });
 
       return promise;
@@ -190,7 +204,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
       const promise = new Promise(function (resolve, reject) {
-        let doneImporting = function (module, imports) {
+        const doneImporting = function (module, imports) {
           imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
 
           if (imports.length === 0) {
@@ -212,6 +226,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             unique.push(item);
             return { url: item };
           }).filter(Boolean);
+        } else if (typeof moduleConstructor === 'object' && moduleConstructor !== null) {
+          console.warn('content type is not supported yet!');
+          console.info(moduleConstructor.content);
+          reject('content type is not supported yet!');
         } else {
           // extract imports from the source code
           // removing comments cause an bug
@@ -241,17 +259,22 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         if (imports.length) {
           const importsCopy = imports.slice(0);
           imports.forEach(function (item) {
-            let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+            const moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+            // Module is an addon
             if (moduleAddOnProvider) {
-              let providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-              let addOnInstance = providerStages.create();
+              const providerStages = moduleAddOnProvider.handler.call(null, scope, module);
+              const addOnInstance = providerStages.create();
               module.registerAddOn(item.url, addOnInstance);
               module.addOnProviders.push(providerStages);
 
               doneImporting(module, importsCopy);
-            } else if (importedLibraries[item.url] && !item.fresh) {
+            }
+            // Module is already loaded and we don't need a new instance of it (Singleton)
+            else if (importedLibraries[item.url] && !item.fresh) {
               doneImporting(module, importsCopy);
-            } else {
+            }
+            // Module is not loaded
+            else {
               const importId = item.url;
               if (item.url.indexOf('./') === 0) {
                 item.url = scope.uri.path + item.url.substr(2);
