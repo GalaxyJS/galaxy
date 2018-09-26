@@ -114,7 +114,7 @@
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
+                  classAnimationConfig.to = Object.assign({className: '+=' + item || ''}, _config.to || {});
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, value.config, done);
                 });
               }
@@ -129,7 +129,7 @@
 
                 classSequence.next(function (done) {
                   const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = { className: '-=' + item || '' };
+                  classAnimationConfig.to = {className: '-=' + item || ''};
                   AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
                 });
               }
@@ -382,7 +382,6 @@
         });
         _this.children = [];
         _this.onCompletesActions = [];
-        // _this.timeline.kill();
       }
     });
     _this.onCompletesActions = [];
@@ -412,8 +411,8 @@
     const _this = this;
     const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
     const children = parentNodeTimeline.getChildren(false);
-
     _this.timeline.pause();
+    let passed = false;
     if (_this.children.indexOf(parentNodeTimeline) === -1) {
       _this.children.push(parentNodeTimeline);
       let posInParent = childConf.positionInParent || '+=0';
@@ -428,11 +427,21 @@
           posInParent = null;
         }
       }
-      // parentNodeTimeline._startTime = 3;
+
       parentNodeTimeline.add(function () {
+        passed = true;
         _this.timeline.resume();
       }, posInParent);
     }
+    viewNode.destroyed.then(function () {
+      // TODO: Test this code to ultimate to make sure it has no bug
+      // TODO: smashing populate in list rendering was causing the list not to re render and this fixed it
+      if (!passed && _this.timeline.paused()) {
+        _this.timeline.play(0);
+        _this.timeline.clear();
+      }
+    });
+
 
     // AnimationMeta.refresh(parentNodeTimeline);
     parentNodeTimeline.resume();

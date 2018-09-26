@@ -31,7 +31,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -264,6 +264,10 @@
         return promise.resolved !== true;
       });
 
+      const stat = $forData.queue.map(function (item, i) {
+        return i + ' ' + item.resolved;
+      });
+
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
         $forData.queue = $forData.queue.filter(function (p) {
@@ -275,6 +279,7 @@
         return;
       }
 
+      $forData.queue = [];
       $forData.mainPromise = null;
       callback();
     };
@@ -397,6 +402,7 @@
     const vCreateNode = View.createNode;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
+
       for (let i = 0, len = newItems.length; i < len; i++) {
         itemDataScope = View.createMirror(nodeScopeData);
         itemDataScope['__rootScopeData__'] = config.scope;
