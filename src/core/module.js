@@ -53,7 +53,13 @@ Galaxy.Module.Content = /** @class */ (function () {
    * @returns {*}
    */
   Content.parse = function (ModuleContent) {
-    return parsers[ModuleContent.type].call(null, ModuleContent.content);
+    const parser = parsers[ModuleContent.type];
+
+    if (parser) {
+      return parser.call(null, ModuleContent.content, ModuleContent.metaData);
+    }
+
+    return parsers['default'].call(null, ModuleContent.content, ModuleContent.metaData);
   };
 
   /**
@@ -72,9 +78,10 @@ Galaxy.Module.Content = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.Module
    */
-  function Content(type, content) {
+  function Content(type, content, metaData) {
     this.type = type;
     this.content = content;
+    this.metaData = metaData;
   }
 
   Content.prototype = {};
