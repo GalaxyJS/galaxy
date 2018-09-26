@@ -42,3 +42,42 @@ Galaxy.Module = /** @class */ (function () {
 
   return Module;
 }(Galaxy || {}));
+
+Galaxy.Module.Content = /** @class */ (function () {
+
+  const parsers = {};
+
+  /**
+   *
+   * @param {Galaxy.Module.Content} ModuleContent
+   * @returns {*}
+   */
+  Content.parse = function (ModuleContent) {
+    return parsers[ModuleContent.type].call(null, ModuleContent.content);
+  };
+
+  /**
+   *
+   * @param {string} type
+   * @param {function} parser
+   */
+  Content.registerParser = function (type, parser) {
+    parsers[type] = parser;
+  };
+
+  /**
+   *
+   * @param {string} type
+   * @param {*} content
+   * @constructor
+   * @memberOf Galaxy.Module
+   */
+  function Content(type, content) {
+    this.type = type;
+    this.content = content;
+  }
+
+  Content.prototype = {};
+
+  return Content;
+}(Galaxy || {}));

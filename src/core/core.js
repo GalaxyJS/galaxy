@@ -164,11 +164,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               return '';
             }
 
-            if (response.headers.get('content-type') !== 'application/javascript') {
-              return Promise.resolve(function () {
-                return response.text().then(function (content) {
-                  return { type: response.headers.get('content-type'), content: content };
-                });
+            const contentType = response.headers.get('content-type');
+            if (contentType !== 'application/javascript') {
+              return response.text().then(function (content) {
+                return new Galaxy.Module.Content(contentType, content);
               });
             }
 
@@ -224,16 +223,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
 
             unique.push(item);
-            return { url: item };
+            return {url: item};
           }).filter(Boolean);
-        } else if (typeof moduleConstructor === 'object' && moduleConstructor !== null) {
+        } else if (moduleConstructor instanceof Galaxy.Module.Content) {
           console.warn('content type is not supported yet!');
           console.info(moduleConstructor.content);
           reject('content type is not supported yet!');
         } else {
-          // extract imports from the source code
-          // removing comments cause an bug
-          // moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
           moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
             let query = path.match(/([\S]+)/gm);
             let url = query[query.length - 1];
@@ -364,7 +360,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         }
         catch (error) {
           console.error(error.message + ': ' + module.url);
-          console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function')
+          console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
           console.error(error);
           reject();
           throw new Error(error);

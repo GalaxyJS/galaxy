@@ -14,11 +14,10 @@ let sources = {
     // Polyfills
     'src/polyfills/*.js',
     // Core
-    'src/core.js',
-    'src/*.js',
+    'src/core/core.js',
+    'src/core/**/*.js',
     // View
     'src/view/view.js',
-    'src/view/properties/*.js',
     'src/view/**/*.js',
     // Module addons
     'src/addons/*.js'
