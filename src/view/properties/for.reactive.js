@@ -31,7 +31,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -264,10 +264,6 @@
         return promise.resolved !== true;
       });
 
-      const stat = $forData.queue.map(function (item, i) {
-        return i + ' ' + item.resolved;
-      });
-
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
         $forData.queue = $forData.queue.filter(function (p) {
@@ -415,9 +411,6 @@
       }
     }
 
-    // remove the animation from the parent which are referring to node
-    // TODO: All actions related to the for nodes will be removed.
-    // But this action wont get removed because it does not have a proper reference
     parentNode.sequences.enter.nextAction(function () {
       const postChildrenInsertEvent = new CustomEvent('post$forEnter', {
         detail: {
@@ -426,9 +419,9 @@
       });
       parentNode.broadcast(postChildrenInsertEvent);
       parentNode.callLifecycleEvent('post$forEnter', newItems);
-      // next();
+      // parentNode.stream.filter('dom').filter('childList').next('post$forEnter');
+      parentNode.stream.pour('post$forEnter', 'dom childList');
     }, node);
-    // });
   }
 })(Galaxy.View);
 

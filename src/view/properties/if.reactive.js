@@ -133,6 +133,7 @@
         return;
       }
 
+      $ifData.queue = [];
       $ifData.mainPromise = null;
       callback();
     };

@@ -158,6 +158,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
         _this.inserted.resolved = true;
+        _this.stream.pour('inserted', 'dom');
         done();
       };
     });
@@ -166,10 +167,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.destroyed = new Promise(function (done) {
       _this.hasBeenDestroyed = function () {
         _this.destroyed.resolved = true;
+        _this.stream.pour('destroyed', 'dom');
         done();
       };
     });
     _this.destroyed.resolved = false;
+
+    _this.stream = new Galaxy.Stream();
 
     /**
      *
@@ -255,7 +259,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {boolean} flag
    */
   ViewNode.prototype.setInDOM = function (flag) {
-    let _this = this;
+    const _this = this;
     _this.inDOM = flag;
     const enterSequence = _this.sequences.enter;
     const leaveSequence = _this.sequences.leave;
@@ -343,6 +347,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.transitory = false;
         _this.node.style.cssText = '';
         _this.callLifecycleEvent('postAnimations');
+        _this.stream.pour('removed','dom');
         animationDone();
       });
     }
@@ -442,6 +447,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           animationDone();
           _this.node.style.cssText = '';
           _this.origin = false;
+          _this.stream.pour('removed', 'dom');
         }, _this);
       }
     } else if (mainLeaveSequence) {
@@ -501,7 +507,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({reactiveData: reactiveData, item: item});
+    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
   };
 
   ViewNode.prototype.getChildNodes = function () {

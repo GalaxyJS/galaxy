@@ -33,6 +33,10 @@
             nativeNode.value = scopeReactiveData.data[id];
           }
         });
+
+        nativeNode.stream.filter('dom').filter('childList').subscribe(function() {
+
+        });
       }
     },
     value: function (viewNode, value) {
