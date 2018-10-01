@@ -8,7 +8,7 @@
       let query = path.match(/([\S]+)/gm);
       let url = query[query.length - 1];
       if (unique.indexOf(url) !== -1) {
-        return 'Scope.__imports__[\'' + url + '\']';
+        return 'Scope.import(\'' + url + '\')';
       }
 
       unique.push(url);
@@ -17,7 +17,7 @@
         fresh: query.indexOf('new') !== -1
       });
 
-      return 'Scope.__imports__[\'' + url + '\']';
+      return 'Scope.import(\'' + url + '\')';
     });
 
     return {

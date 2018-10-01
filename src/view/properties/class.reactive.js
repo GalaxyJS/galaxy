@@ -41,12 +41,11 @@
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
         return node.setAttribute('class', value.join(' '));
-      } else if (value === null) {
+      } else if (value === null || value === undefined) {
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
-
       // when value is an object
       const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);

@@ -525,25 +525,6 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param {string} attributeName
-   * @returns {Function}
-   */
-  View.createDefaultSetter = function (node, attributeName) {
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          View.setAttr(node, asyncValue, oldValue, attributeName);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        View.setAttr(node, value, oldValue, attributeName);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
@@ -568,7 +549,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -589,11 +570,12 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
-        View.createDefaultSetter(viewNode, attributeName)(value, null);
+        View.PROPERTY_SETTERS['attr'](viewNode, attributeName, property)(value, null);
+        // View.createDefaultSetter(viewNode, attributeName)(value, null);
         break;
 
       case 'prop':
@@ -623,89 +605,82 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} parent
-   * @param {Object} scopeData
-   * @param {Object} nodeSchema
-   * @param position
-   */
-  View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
-    let i = 0, len = 0;
-
-    if (typeof nodeSchema === 'string') {
-      const content = document.createElement('div');
-      content.innerHTML = nodeSchema;
-      const nodes = Array.prototype.slice.call(content.childNodes);
-      nodes.forEach(function (node) {
-        parent.node.appendChild(node);
-      });
-
-      return nodes;
-    }
-
-    if (nodeSchema instanceof Array) {
-      for (i = 0, len = nodeSchema.length; i < len; i++) {
-        View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
-      }
-    } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
-      let attributeValue, attributeName;
-      const keys = Object.keys(nodeSchema);
-      const needInitKeys = [];
-
-      const viewNode = new View.ViewNode(nodeSchema, null, refNode);
-      parent.registerChild(viewNode, position);
-
-      // Behaviors installation stage
-      for (i = 0, len = keys.length; i < len; i++) {
-        attributeName = keys[i];
-        const behavior = View.REACTIVE_BEHAVIORS[attributeName];
-        if (behavior) {
-          const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
-          if (needValueAssign !== false) {
-            needInitKeys.push(attributeName);
-          }
-        } else {
-          needInitKeys.push(attributeName);
-        }
-      }
-
-      // Value assignment stage
-      for (i = 0, len = needInitKeys.length; i < len; i++) {
-        attributeName = needInitKeys[i];
-        attributeValue = nodeSchema[attributeName];
-
-        const bindings = View.getBindings(attributeValue);
-        if (bindings.propertyKeysPaths) {
-          View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
-        } else {
-          View.setPropertyForNode(viewNode, attributeName, attributeValue);
-        }
-      }
-
-      viewNode.callLifecycleEvent('postInit');
-      if (!viewNode.virtual) {
-        if (viewNode.inDOM) {
-          viewNode.setInDOM(true);
-        }
-
-        View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
-
-        viewNode.inserted.then(function () {
-          viewNode.callLifecycleEvent('postChildrenInsert');
-        });
-      }
-
-      // viewNode.onReady promise will be resolved after all the dom manipulations are done
-      requestAnimationFrame(function () {
-        viewNode.sequences.enter.nextAction(function () {
-          viewNode.hasBeenRendered();
-        });
-      });
-
-      return viewNode;
-    }
-  };
+  // View.createNode = function (parent, scopeData, nodeSchema, position, refNode) {
+  //   let i = 0, len = 0;
+  //
+  //   if (typeof nodeSchema === 'string') {
+  //     const content = document.createElement('div');
+  //     content.innerHTML = nodeSchema;
+  //     const nodes = Array.prototype.slice.call(content.childNodes);
+  //     nodes.forEach(function (node) {
+  //       parent.node.appendChild(node);
+  //     });
+  //
+  //     return nodes;
+  //   }
+  //
+  //   if (nodeSchema instanceof Array) {
+  //     for (i = 0, len = nodeSchema.length; i < len; i++) {
+  //       View.createNode(parent, scopeData, nodeSchema[i], null, refNode);
+  //     }
+  //   } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+  //     let attributeValue, attributeName;
+  //     const keys = Object.keys(nodeSchema);
+  //     const needInitKeys = [];
+  //
+  //     const viewNode = new View.ViewNode(nodeSchema, null, refNode);
+  //     parent.registerChild(viewNode, position);
+  //
+  //     // Behaviors installation stage
+  //     for (i = 0, len = keys.length; i < len; i++) {
+  //       attributeName = keys[i];
+  //       const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+  //       if (behavior) {
+  //         const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
+  //         if (needValueAssign !== false) {
+  //           needInitKeys.push(attributeName);
+  //         }
+  //       } else {
+  //         needInitKeys.push(attributeName);
+  //       }
+  //     }
+  //
+  //     // Value assignment stage
+  //     for (i = 0, len = needInitKeys.length; i < len; i++) {
+  //       attributeName = needInitKeys[i];
+  //       attributeValue = nodeSchema[attributeName];
+  //
+  //       const bindings = View.getBindings(attributeValue);
+  //       if (bindings.propertyKeysPaths) {
+  //         View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+  //       } else {
+  //         View.setPropertyForNode(viewNode, attributeName, attributeValue);
+  //       }
+  //     }
+  //
+  //     viewNode.callLifecycleEvent('postInit');
+  //     if (!viewNode.virtual) {
+  //       if (viewNode.inDOM) {
+  //         viewNode.setInDOM(true);
+  //       }
+  //
+  //       View.createNode(viewNode, scopeData, nodeSchema.children, null, refNode);
+  //
+  //       viewNode.inserted.then(function () {
+  //         viewNode.callLifecycleEvent('postChildrenInsert');
+  //       });
+  //     }
+  //
+  //     // viewNode.onReady promise will be resolved after all the dom manipulations are done
+  //     requestAnimationFrame(function () {
+  //       viewNode.sequences.enter.nextAction(function () {
+  //         viewNode.hasBeenRendered();
+  //       });
+  //     });
+  //
+  //     return viewNode;
+  //   }
+  // };
 
   /**
    *
@@ -721,12 +696,12 @@ Galaxy.View = /** @class */(function (G) {
       cleanContainer: false
     };
 
-    if (scope.element instanceof View.ViewNode) {
+    if (scope.element instanceof Galaxy.View.ViewNode) {
       _this.container = scope.element;
     } else {
-      _this.container = new View.ViewNode({
+      _this.container = new Galaxy.View.ViewNode({
         tag: scope.element.tagName
-      }, scope.element);
+      }, scope.element, _this);
 
       _this.container.sequences.enter.nextAction(function () {
         _this.container.hasBeenRendered();
@@ -748,17 +723,101 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       _this.container.renderingFlow.next(function (next) {
-        View.createNode(_this.container, _this.scope, schema, null);
+        _this.createNode(schema, _this.container, _this.scope, null);
         _this.container.sequences.enter.nextAction(function () {
           next();
         }, null, 'container-enter');
       });
     },
+    style: function (styleSchema) {
+      // this.createNode(Object.assign({}, styleSchema));
+    },
     broadcast: function (event) {
       this.container.broadcast(event);
     },
-    createNode: function (schema, parent, position) {
-      return View.createNode(parent || this.container, this.scope, schema, position);
+    /**
+     *
+     * @param {Object} nodeSchema
+     * @param {Galaxy.View.ViewNode} parent
+     * @param {Object} scopeData
+     * @param {Node|Element|null} position
+     * @param {Node|Element|null} refNode
+     */
+    createNode: function (nodeSchema, parent, scopeData, position, refNode) {
+      const _this = this;
+      let i = 0, len = 0;
+      if (typeof nodeSchema === 'string') {
+        const content = document.createElement('div');
+        content.innerHTML = nodeSchema;
+        const nodes = Array.prototype.slice.call(content.childNodes);
+        nodes.forEach(function (node) {
+          parent.node.appendChild(node);
+        });
+
+        return nodes;
+      }
+
+      if (nodeSchema instanceof Array) {
+        for (i = 0, len = nodeSchema.length; i < len; i++) {
+          _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
+        }
+      } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+        let attributeValue, attributeName;
+        const keys = Object.keys(nodeSchema);
+        const needInitKeys = [];
+
+        const viewNode = new Galaxy.View.ViewNode(nodeSchema, null, refNode, _this);
+        parent.registerChild(viewNode, position);
+
+        // Behaviors installation stage
+        for (i = 0, len = keys.length; i < len; i++) {
+          attributeName = keys[i];
+          const behavior = View.REACTIVE_BEHAVIORS[attributeName];
+          if (behavior) {
+            const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
+            if (needValueAssign !== false) {
+              needInitKeys.push(attributeName);
+            }
+          } else {
+            needInitKeys.push(attributeName);
+          }
+        }
+
+        // Value assignment stage
+        for (i = 0, len = needInitKeys.length; i < len; i++) {
+          attributeName = needInitKeys[i];
+          attributeValue = nodeSchema[attributeName];
+
+          const bindings = View.getBindings(attributeValue);
+          if (bindings.propertyKeysPaths) {
+            View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+          } else {
+            View.setPropertyForNode(viewNode, attributeName, attributeValue);
+          }
+        }
+
+        viewNode.callLifecycleEvent('postInit');
+        if (!viewNode.virtual) {
+          if (viewNode.inDOM) {
+            viewNode.setInDOM(true);
+          }
+
+          _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
+
+          viewNode.inserted.then(function () {
+            viewNode.callLifecycleEvent('postChildrenInsert');
+          });
+        }
+
+        // viewNode.onReady promise will be resolved after all the dom manipulations are done
+        requestAnimationFrame(function () {
+          viewNode.sequences.enter.nextAction(function () {
+            viewNode.hasBeenRendered();
+          });
+        });
+
+        return viewNode;
+      }
     }
   };
 

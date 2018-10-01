@@ -8,6 +8,10 @@ Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expr
         valueFn(viewNode, asyncValue, oldValue, attrName);
       };
       value.then(asyncCall).catch(asyncCall);
+    } else if (value instanceof Function) {
+      const result = value.call(viewNode);
+      valueFn(viewNode, result, value.oldResult, attrName);
+      value.oldResult = value;
     } else {
       valueFn(viewNode, value, oldValue, attrName);
     }

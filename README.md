@@ -9,6 +9,17 @@
 # GalaxyJS
 ## The framework to build fancy web applications.
 
+Here is what I mean by fancy
+
+#### Animations!? No problemo
+some GIF
+
+#### Data binding!? Done!
+some GIF to show data binding
+
+#### Performance!?  -Blazing fast-
+GalaxyJS uses native javascript setter/getter for binding
+
 **[Download here](https://github.com/GalaxyJS/galaxy/releases/latest)**
 
 ## Wanna learn more!?

@@ -159,9 +159,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
           contentFetcher = Galaxy.moduleContents[url] = fetch(url).then(function (response) {
-            if (response.status !== 200) {
-              reject(response);
-              return '';
+            if (!response.ok) {
+              console.error(response.statusText, url);
+              return reject(response.statusText);
             }
 
             const contentType = response.headers.get('content-type');
@@ -200,7 +200,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       const promise = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
+          imports.splice(imports.indexOf(/*module.importId || */module.url) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -238,13 +238,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
             // Module is not loaded
             else {
-              // const importId = item.url;
               if (item.url.indexOf('./') === 0) {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
               Galaxy.load({
-                importId: item.url,
                 name: item.name,
                 url: item.url,
                 fresh: item.fresh,
@@ -273,7 +271,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     executeCompiledModule: function (module) {
       const promise = new Promise(function (resolve, reject) {
         try {
-          for (const item in module.addOns) {
+          for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
           }
 
@@ -300,7 +298,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
           Reflect.deleteProperty(module, 'addOnProviders');
 
-          const mId = module.importId;
+          const mId = module.url;
           if (!importedLibraries[mId]) {
             importedLibraries[mId] = {
               name: mId,

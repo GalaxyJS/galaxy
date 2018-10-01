@@ -2,6 +2,9 @@
   "plugins": [
     "jasmine"
   ],
+  "parserOptions": {
+    "sourceType": "module"
+  },
   "env": {
     "browser": true,
     "jasmine": true,

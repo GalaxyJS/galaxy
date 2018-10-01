@@ -55,6 +55,11 @@ Galaxy.Scope = /** @class */ (function () {
      * @return {*}
      */
     import: function (libId) {
+      // if the id starts with `./` then we will replace it with the current scope path.
+      if (libId.indexOf('./') === 0) {
+        libId = libId.replace('./', this.uri.path);
+      }
+
       return this['__imports__'][libId];
     },
     /**

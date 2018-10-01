@@ -25,7 +25,7 @@ Galaxy.Stream = /** @class */ (function () {
         const currentType = pathParts.shift();
         this.filter(currentType).pour(data, pathParts.join(' '));
       } else {
-        for (const subGroup in this.subStreams) {
+        for (let subGroup in this.subStreams) {
           if (this.subStreams.hasOwnProperty(subGroup)) {
             const stream = this.subStreams[subGroup];
             stream.pour(data);

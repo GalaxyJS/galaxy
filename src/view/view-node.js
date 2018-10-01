@@ -105,12 +105,15 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param schema
-   * @param {Node|Element} node
+   * @param {Node|Element|null} node
+   * @param {Node|Element|null} refNode
+   * @param {Galaxy.View} view
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(schema, node, refNode) {
+  function ViewNode(schema, node, refNode, view) {
     const _this = this;
+    _this.view = view;
     /** @type {Node|Element|*} */
     _this.node = node || createElem(schema.tag || 'div');
     _this.refNode = refNode || _this.node;
@@ -347,7 +350,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.transitory = false;
         _this.node.style.cssText = '';
         _this.callLifecycleEvent('postAnimations');
-        _this.stream.pour('removed','dom');
+        _this.stream.pour('removed', 'dom');
         animationDone();
       });
     }
@@ -507,7 +510,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
    * @param {Object} item
    */
   ViewNode.prototype.addDependedObject = function (reactiveData, item) {
-    this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+    this.dependedObjects.push({reactiveData: reactiveData, item: item});
   };
 
   ViewNode.prototype.getChildNodes = function () {

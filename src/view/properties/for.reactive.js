@@ -31,7 +31,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -395,7 +395,7 @@
     Reflect.deleteProperty(templateSchema, '$for');
 
     const gClone = Galaxy.clone;
-    const vCreateNode = View.createNode;
+    const view = node.view;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
 
@@ -406,7 +406,7 @@
         itemDataScope['$forIndex'] = i;
         let cns = gClone(templateSchema);
 
-        const vn = vCreateNode(parentNode, itemDataScope, cns, placeholdersPositions[i] || defaultPosition, node);
+        const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
         onEachAction.call(nodes, vn, positions[i]);
       }
     }
