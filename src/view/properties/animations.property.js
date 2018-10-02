@@ -397,153 +397,152 @@
    *
    * @param {callback} action
    */
-  AnimationMeta.prototype.addOnComplete = function (action) {
-    this.onCompletesActions.push(action);
-  };
+  AnimationMeta.prototype = {
+    addOnComplete: function (action) {
+      this.onCompletesActions.push(action);
+    },
+    /**
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {'leave'|'enter'} type
+     * @param {AnimationConfig} childConf
+     */
+    addChild: function (viewNode, type, childConf) {
+      const _this = this;
+      const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+      const children = parentNodeTimeline.getChildren(false);
+      _this.timeline.pause();
 
-  /**
-   * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'leave'|'enter'} type
-   * @param {AnimationConfig} childConf
-   */
-  AnimationMeta.prototype.addChild = function (viewNode, type, childConf) {
-    const _this = this;
-    const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    const children = parentNodeTimeline.getChildren(false);
-    _this.timeline.pause();
+      if (_this.children.indexOf(parentNodeTimeline) === -1) {
+        const i = _this.children.push(parentNodeTimeline);
+        let posInParent = childConf.positionInParent || '+=0';
 
-    if (_this.children.indexOf(parentNodeTimeline) === -1) {
-      const i = _this.children.push(parentNodeTimeline);
-      let posInParent = childConf.positionInParent || '+=0';
+        // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
+        if (parentNodeTimeline.timeline === null || children.length === 0) {
+          parentNodeTimeline.pause();
+          parentNodeTimeline._startTime = 0;
+          parentNodeTimeline.play(0);
 
-      // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
-      if (parentNodeTimeline.timeline === null || children.length === 0) {
-        parentNodeTimeline.pause();
-        parentNodeTimeline._startTime = 0;
-        parentNodeTimeline.play(0);
+          if (posInParent.indexOf('-') === 0) {
+            posInParent = null;
+          }
+        }
+        parentNodeTimeline.add(function () {
+          _this.children.splice(i - 1, 1);
+          _this.timeline.resume();
+        }, posInParent);
 
-        if (posInParent.indexOf('-') === 0) {
-          posInParent = null;
+      }
+
+      parentNodeTimeline.resume();
+    },
+    /**
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {'leave'|'enter'} type
+     * @param {AnimationMeta} child
+     * @param {AnimationConfig} childConf
+     */
+    addAtEnd: function (viewNode, type, child, childConf) {
+      const _this = this;
+
+      // if (_this.timeline.progress() !== undefined) {
+      //   child.timeline.pause();
+      // }
+      //
+      // _this.timeline.add(function () {
+      //   child.timeline.resume();
+      // });
+
+      const children = _this.timeline.getChildren(false, true, true);
+
+      if (children.indexOf(child.timeline) !== -1) {
+      } else if (children.length) {
+        _this.timeline.add(child.timeline);
+        _this.timeline.add(function () {
+          _this.timeline.remove(child.timeline);
+          child.timeline.resume();
+        });
+      }
+    },
+
+    add: function (viewNode, config, onComplete) {
+      const _this = this;
+      const to = Object.assign({}, config.to || {});
+      to.onComplete = onComplete;
+      to.onStartParams = [viewNode];
+
+      let onStart = config.onStart;
+      to.onStart = onStart;
+
+      let tween = null;
+      let duration = config.duration;
+      if (duration instanceof Function) {
+        duration = config.duration.call(viewNode);
+      }
+
+      if (config.from && config.to) {
+        tween = TweenLite.fromTo(viewNode.node,
+          duration || 0,
+          config.from || {},
+          to);
+      } else if (config.from) {
+        let from = Object.assign({}, config.from || {});
+        from.onComplete = onComplete;
+        from.onStartParams = [viewNode];
+        from.onStart = onStart;
+        tween = TweenLite.from(viewNode.node,
+          duration || 0,
+          from || {});
+      } else {
+        tween = TweenLite.to(viewNode.node,
+          duration || 0,
+          to || {});
+      }
+
+      const children = _this.timeline.getChildren(false, true, true);
+
+      viewNode.cache.animations = viewNode.cache.animations || {
+        timeline: new TimelineLite({
+          autoRemoveChildren: true,
+          smoothChildTiming: true
+        })
+      };
+
+      const nodeTimeline = viewNode.cache.animations.timeline;
+      nodeTimeline.data = {
+        am: _this,
+        config: config,
+        n: viewNode.node
+      };
+      nodeTimeline.add(tween);
+
+      // if the animation has no parent but its parent animation is the same as its own animation
+      // then it should intercept the animation in order to make the animation proper visual wise
+      const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
+      if (sameSequenceParentTimeline) {
+        const currentProgress = sameSequenceParentTimeline.progress();
+        // if the currentProgress is 0 or bigger than the nodeTimeline start time
+        // then we can intercept the parentNodeTimeline
+        if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
+          _this.timeline.add(nodeTimeline, config.position || '+=0');
+          return;
         }
       }
-      parentNodeTimeline.add(function () {
-        _this.children.splice(i - 1, 1);
-        _this.timeline.resume();
-      }, posInParent);
 
-    }
+      if (children.indexOf(nodeTimeline) === -1) {
+        // _this.children.push(nodeTimeline);
+        let progress = _this.timeline.progress();
+        if (children.length) {
+          _this.timeline.add(nodeTimeline, config.position);
+        } else {
+          _this.timeline.add(nodeTimeline);
+        }
 
-    parentNodeTimeline.resume();
-  };
-
-  /**
-   * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'leave'|'enter'} type
-   * @param {AnimationMeta} child
-   * @param {AnimationConfig} childConf
-   */
-  AnimationMeta.prototype.addAtEnd = function (viewNode, type, child, childConf) {
-    const _this = this;
-
-    // if (_this.timeline.progress() !== undefined) {
-    //   child.timeline.pause();
-    // }
-    //
-    // _this.timeline.add(function () {
-    //   child.timeline.resume();
-    // });
-
-    const children = _this.timeline.getChildren(false, true, true);
-
-    if (children.indexOf(child.timeline) !== -1) {
-    } else if (children.length) {
-      _this.timeline.add(child.timeline);
-      _this.timeline.add(function () {
-        _this.timeline.remove(child.timeline);
-        child.timeline.resume();
-      });
-    }
-  };
-
-  AnimationMeta.prototype.add = function (viewNode, config, onComplete) {
-    const _this = this;
-    const to = Object.assign({}, config.to || {});
-    to.onComplete = onComplete;
-    to.onStartParams = [viewNode];
-
-    let onStart = config.onStart;
-    to.onStart = onStart;
-
-    let tween = null;
-    let duration = config.duration;
-    if (duration instanceof Function) {
-      duration = config.duration.call(viewNode);
-    }
-
-    if (config.from && config.to) {
-      tween = TweenLite.fromTo(viewNode.node,
-        duration || 0,
-        config.from || {},
-        to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
-      from.onComplete = onComplete;
-      from.onStartParams = [viewNode];
-      from.onStart = onStart;
-      tween = TweenLite.from(viewNode.node,
-        duration || 0,
-        from || {});
-    } else {
-      tween = TweenLite.to(viewNode.node,
-        duration || 0,
-        to || {});
-    }
-
-    const children = _this.timeline.getChildren(false, true, true);
-
-    viewNode.cache.animations = viewNode.cache.animations || {
-      timeline: new TimelineLite({
-        autoRemoveChildren: true,
-        smoothChildTiming: true
-      })
-    };
-
-    const nodeTimeline = viewNode.cache.animations.timeline;
-    nodeTimeline.data = {
-      am: _this,
-      config: config,
-      n: viewNode.node
-    };
-    nodeTimeline.add(tween);
-
-    // if the animation has no parent but its parent animation is the same as its own animation
-    // then it should intercept the animation in order to make the animation proper visual wise
-    const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
-    if (sameSequenceParentTimeline) {
-      const currentProgress = sameSequenceParentTimeline.progress();
-      // if the currentProgress is 0 or bigger than the nodeTimeline start time
-      // then we can intercept the parentNodeTimeline
-      // debugger;
-      if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
-        _this.timeline.add(nodeTimeline, config.position || '+=0');
-        return;
-      }
-    }
-
-    if (children.indexOf(nodeTimeline) === -1) {
-      // _this.children.push(nodeTimeline);
-      let progress = _this.timeline.progress();
-      if (children.length) {
-        _this.timeline.add(nodeTimeline, config.position);
+        if (progress === undefined) {
+          _this.timeline.play(0);
+        }
       } else {
-        _this.timeline.add(nodeTimeline);
+        _this.timeline.add(nodeTimeline, config.position);
       }
-
-      if (progress === undefined) {
-        _this.timeline.play(0);
-      }
-    } else {
-      _this.timeline.add(nodeTimeline, config.position);
     }
   };
 
