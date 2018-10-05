@@ -13,7 +13,8 @@
       this.virtualize();
 
       return {
-        propName: matches.as || matches[1],
+        as: matches.as || matches[1],
+        indexAs: matches.indexAs,
         trackMap: [],
         positions: [],
         nodes: [],
@@ -31,7 +32,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -389,7 +390,8 @@
     }
 
     let itemDataScope = nodeScopeData;
-    const pn = config.propName;
+    const as = config.as;
+    const indexAs = config.indexAs;
     const nodes = config.nodes;
     const templateSchema = node.cloneSchema();
     Reflect.deleteProperty(templateSchema, '$for');
@@ -399,15 +401,28 @@
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
 
-      for (let i = 0, len = newItems.length; i < len; i++) {
-        itemDataScope = View.createMirror(nodeScopeData);
-        itemDataScope['__rootScopeData__'] = config.scope;
-        itemDataScope[pn] = c[i];
-        itemDataScope['$forIndex'] = i;
-        let cns = gClone(templateSchema);
+      if (indexAs) {
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          itemDataScope = View.createMirror(nodeScopeData);
+          itemDataScope['__rootScopeData__'] = config.scope;
+          itemDataScope[as] = c[i];
+          itemDataScope[indexAs] = i;
+          let cns = gClone(templateSchema);
 
-        const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
-        onEachAction.call(nodes, vn, positions[i]);
+          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          onEachAction.call(nodes, vn, positions[i]);
+        }
+      } else {
+        // if the indexAs is not specified we run the loop without setting the for index for performance gain
+        for (let i = 0, len = newItems.length; i < len; i++) {
+          itemDataScope = View.createMirror(nodeScopeData);
+          itemDataScope['__rootScopeData__'] = config.scope;
+          itemDataScope[as] = c[i];
+          let cns = gClone(templateSchema);
+
+          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          onEachAction.call(nodes, vn, positions[i]);
+        }
       }
     }
 
