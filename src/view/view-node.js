@@ -78,7 +78,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       });
     } else if (schemas instanceof Object) {
       __node__.value = null;
-      defProp(schemas, '__node__', __node__);
+      defProp(schemas, 'node', __node__);
       ViewNode.cleanReferenceNode(schemas.children);
     }
   };
@@ -185,7 +185,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
 
     __node__.value = this.node;
-    defProp(this.schema, '__node__', __node__);
+    defProp(this.schema, 'node', __node__);
 
     referenceToThis.value = this;
     defProp(this.node, 'galaxyViewNode', referenceToThis);
@@ -500,7 +500,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       _this.properties = [];
       _this.dependedObjects = [];
       _this.inDOM = false;
-      _this.schema.__node__ = undefined;
+      _this.schema.node = undefined;
       _this.inputs = {};
     },
 
