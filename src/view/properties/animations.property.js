@@ -107,30 +107,26 @@
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
-                const _config = value['.' + item];
+                const _config = value['+=' + item] || value['.' + item];
                 if (!_config) {
                   return;
                 }
 
                 classSequence.next(function (done) {
-                  const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = Object.assign({ className: '+=' + item || '' }, _config.to || {});
-                  AnimationMeta.installGSAPAnimation(viewNode, 'class-add', classAnimationConfig, value.config, done);
+                  AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
                 });
               }
             });
 
             oldClasses.forEach(function (item) {
               if (item && classes.indexOf(item) === -1) {
-                const _config = value['.' + item];
+                const _config = value['-=' + item] || value['.' + item];
                 if (!_config) {
                   return;
                 }
 
                 classSequence.next(function (done) {
-                  const classAnimationConfig = Object.assign({}, _config);
-                  classAnimationConfig.to = { className: '-=' + item || '' };
-                  AnimationMeta.installGSAPAnimation(viewNode, 'class-remove', classAnimationConfig, value.config, done);
+                  AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
                 });
               }
             });
@@ -237,7 +233,7 @@
    */
   AnimationMeta.parseStep = function (node, step) {
     if (step instanceof Function) {
-      return step(node);
+      return step.call(node);
     }
 
     return step;
@@ -293,19 +289,6 @@
     return sequence.timeline;
   };
 
-  // AnimationMeta.refresh = function (timeline) {
-  //   const parentChildren = timeline.getChildren(false, true, true);
-  //   timeline.clear();
-  //   parentChildren.forEach(function (item) {
-  //     if (item.data) {
-  //       const conf = item.data.config;
-  //       timeline.add(item, conf.position);
-  //     } else {
-  //       timeline.add(item);
-  //     }
-  //   });
-  // };
-
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
@@ -315,10 +298,12 @@
    */
   AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
-    const to = AnimationMeta.parseStep(viewNode, descriptions.to);
+    let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
     if (type !== 'leave' && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
+    } else if (type.indexOf('+=') === 0 || type.indexOf('-=') === 0) {
+      to = Object.assign(to || {}, {className: type});
     }
 
     const newConfig = Object.assign({}, descriptions);
@@ -469,6 +454,7 @@
       const to = Object.assign({}, config.to || {});
       to.onComplete = onComplete;
       to.onStartParams = [viewNode];
+      to.callbackScope = viewNode;
 
       let onStart = config.onStart;
       to.onStart = onStart;

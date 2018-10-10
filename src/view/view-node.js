@@ -510,7 +510,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+      this.dependedObjects.push({reactiveData: reactiveData, item: item});
     },
 
     getChildNodes: function () {

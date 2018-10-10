@@ -147,6 +147,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     walk: function (data) {
       const _this = this;
+
+      if(data instanceof Node) return;
+
       if (data instanceof Array) {
         _this.makeReactiveArray(data);
       } else if (data instanceof Object) {
