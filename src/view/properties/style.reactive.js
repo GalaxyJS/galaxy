@@ -44,6 +44,10 @@
       const _this = this;
       const node = _this.node;
 
+      if (expression) {
+        value = expression();
+      }
+
       if (typeof value === 'string') {
         return node.setAttribute('style', value);
       } else if (value instanceof Array) {

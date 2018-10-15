@@ -30,27 +30,31 @@
       }
 
       /** @type Galaxy.View.ViewNode */
-      const viewNode = this;
-      const node = viewNode.node;
+      const _this = this;
+      const node = _this.node;
 
       if (expression) {
         value = expression();
       }
 
+      const oldClassList = _this.node.className.split(' ');
       if (typeof value === 'string') {
+        _this.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
+        _this.notifyObserver('classList', value, oldClassList);
         return node.setAttribute('class', value.join(' '));
       } else if (value === null || value === undefined) {
+        _this.notifyObserver('classList', [], oldClassList);
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
       // when value is an object
-      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
+      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
+      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -60,21 +64,21 @@
           }
         }
 
-        applyClasses.call(viewNode, '*', true, false, staticClasses);
+        applyClasses.call(_this, '*', true, false, staticClasses);
 
-        viewNode.rendered.then(function () {
-          applyClasses.call(viewNode, '*', true, false, clone);
+        _this.rendered.then(function () {
+          applyClasses.call(_this, '*', true, false, clone);
 
           observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(viewNode, key, value, oldValue, clone);
+            applyClasses.call(_this, key, value, oldValue, clone);
           });
         });
       } else {
         observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(viewNode, key, value, oldValue, clone);
+          applyClasses.call(_this, key, value, oldValue, clone);
         });
 
-        applyClasses.call(viewNode, '*', true, false, clone);
+        applyClasses.call(_this, '*', true, false, clone);
       }
     }
   };
@@ -110,6 +114,7 @@
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.sequences.classList.nextAction(function () {
       _this.node.setAttribute('class', newClasses.join(' '));
+      _this.notifyObserver('classList', newClasses, oldClasses);
     });
   }
 })(Galaxy.View);

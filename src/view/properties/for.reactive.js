@@ -32,7 +32,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -43,9 +43,13 @@
       } else if (config.matches) {
         const bindings = View.getBindings(config.matches.data);
         config.watch = bindings.propertyKeysPaths;
+        node.localPropertyNames.add(config.matches.as);
+        if (config.matches.indexAs) {
+          node.localPropertyNames.add(config.matches.indexAs);
+        }
+
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
-          node.localPropertyNames.add(config.matches.as);
           bindings.propertyKeysPaths.forEach(function (path) {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -55,7 +59,7 @@
             }
           });
         } else if (config.matches.data instanceof Array) {
-          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.matches.data, null);
+          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.matches.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
           value.params = config.matches.data;
           setter(value);

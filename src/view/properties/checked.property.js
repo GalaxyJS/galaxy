@@ -22,34 +22,52 @@
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {
-        if (/\[\]$/.test(nativeNode.name)) {
+        if (/\[\]$/.test(nativeNode.name) && nativeNode.type !== 'radio') {
           const data = scopeReactiveData.data[id];
+          // if the node does not have value attribute, then we take its default value into the account
+          // The default value for checkbox is 'on' but we translate that to true
+          const value = nativeNode.hasAttribute('value') ? nativeNode.value : true;
           if (data instanceof Array) {
-            if (data.indexOf(nativeNode.value) === -1) {
-              data.push(nativeNode.value);
+            if (data.indexOf(value) === -1) {
+              data.push(value);
             } else {
-              data.splice(data.indexOf(nativeNode.value), 1);
+              data.splice(data.indexOf(value), 1);
             }
           } else {
-            scopeReactiveData.data[id] = [nativeNode.value];
+            scopeReactiveData.data[id] = [value];
           }
-        } else {
+        }
+        // if node has a value, then its value will be assigned according to its checked state
+        else if (nativeNode.hasAttribute('value')) {
+          scopeReactiveData.data[id] = nativeNode.checked ? nativeNode.value : null;
+        }
+        // if node has no value, then checked state would be its value
+        else {
           scopeReactiveData.data[id] = nativeNode.checked;
         }
       });
     },
     value: function (viewNode, value) {
       const nativeNode = viewNode.node;
+      viewNode.renderingFlow.nextAction(function () {
+        if (/\[\]$/.test(nativeNode.name)) {
+          if (nativeNode.type === 'radio') {
+            console.error('Inputs with type `radio` can not provide array as a value.');
+            return console.warn('Read about radio input at: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/radio');
+          }
 
-      if (/\[\]$/.test(nativeNode.name)) {
-        if (value instanceof Array) {
-          nativeNode.checked = value.indexOf(nativeNode.value) !== -1;
+          const nodeValue = nativeNode.hasAttribute('value') ? nativeNode.value : true;
+          if (value instanceof Array) {
+            nativeNode.checked = value.indexOf(nodeValue) !== -1;
+          } else {
+            nativeNode.checked = value === nodeValue;
+          }
+        } else if (nativeNode.hasAttribute('value')) {
+          nativeNode.checked = value === nativeNode.value;
         } else {
-          nativeNode.checked = false;
+          nativeNode.checked = value;
         }
-      } else {
-        nativeNode.checked = value;
-      }
+      });
     }
   };
 })(Galaxy.View);

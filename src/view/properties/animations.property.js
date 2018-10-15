@@ -100,19 +100,32 @@
       }
 
       const classAnimationsHandler = function () {
-        viewNode.observer.on('class', function (classes, oldClasses) {
+        viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
 
           const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
+                if (item.indexOf('@') === 0) {
+                  const classEvent = value[item];
+                  if (classEvent) {
+                    classSequence.nextAction(function () {
+                      viewNode.node.classList.remove(item);
+                      AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
+                    });
+                  }
+
+                  return;
+                }
+
                 const _config = value['+=' + item] || value['.' + item];
                 if (!_config) {
                   return;
                 }
 
-                classSequence.next(function (done) {
+                classSequence.nextAction(function (done) {
+                  viewNode.node.classList.remove(item);
                   AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
                 });
               }
@@ -125,7 +138,8 @@
                   return;
                 }
 
-                classSequence.next(function (done) {
+                classSequence.nextAction(function (done) {
+                  viewNode.node.classList.add(item);
                   AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
                 });
               }
@@ -178,7 +192,9 @@
       const userOnComplete = to.onComplete;
       to.onComplete = function () {
         userOnComplete();
-        onComplete();
+        if (onComplete) {
+          onComplete();
+        }
       };
     } else {
       to.onComplete = onComplete;
@@ -190,7 +206,7 @@
       duration = config.duration.call(node);
     }
 
-    if (config.from && config.to) {
+    if (config.from && to) {
       tween = TweenLite.fromTo(node,
         config.duration || 0,
         config.from || {},
@@ -300,10 +316,14 @@
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
-    if (type !== 'leave' && to) {
+    const classModification = type.indexOf('+=') === 0 || type.indexOf('-=') === 0;
+
+    if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
-    } else if (type.indexOf('+=') === 0 || type.indexOf('-=') === 0) {
-      to = Object.assign(to || {}, {className: type});
+    } else if (classModification) {
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+    } else if (type.indexOf('@') === 0) {
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
 
     const newConfig = Object.assign({}, descriptions);

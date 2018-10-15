@@ -36,7 +36,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ReactiveData(id, data, p, ts) {
+  function ReactiveData(id, data, p) {
     const parent = p || scopeBuilder();
     this.data = data;
     this.id = parent.id + '.' + id;
@@ -348,6 +348,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const map = this.nodesMap[propertyKey];
       const oldValue = _this.oldValue[propertyKey];
       const value = this.data[propertyKey];
+
+      // notify the observers on the data
+      Galaxy.Observer.notify(_this.data, propertyKey, value, oldValue);
 
       if (map) {
         map.nodes.forEach(function (node, i) {
