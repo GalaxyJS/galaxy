@@ -284,8 +284,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }
 
           const source = module.source;
-          const moduleSource = typeof module.source === 'function' ?
-            module.source :
+          const moduleSource = typeof source === 'function' ?
+            source :
             new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
           moduleSource.call(module.scope, module.scope);
 

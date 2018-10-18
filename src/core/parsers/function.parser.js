@@ -1,5 +1,5 @@
 (function () {
-  Galaxy.Module.Content.registerParser('application/javascript', parser);
+  Galaxy.Module.Content.registerParser('function', parser);
 
   function parser(content, metaData) {
     const unique = [];
