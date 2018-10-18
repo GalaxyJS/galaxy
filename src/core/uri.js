@@ -13,9 +13,10 @@ Galaxy.GalaxyURI = /** @class */ (function () {
     let myRegexp = /([^\t\n]+)\//g;
     let match = myRegexp.exec(urlParser.pathname);
 
-    this.paresdURL = urlParser.href;
+    this.parsedURL = urlParser.href;
     this.path = match ? match[0] : '/';
     this.base = window.location.pathname;
+    this.protocol = urlParser.protocol;
   }
 
   return GalaxyURI;

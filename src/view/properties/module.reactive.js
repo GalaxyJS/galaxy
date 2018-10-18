@@ -89,8 +89,8 @@
           });
         }
 
-        if (tempURI.parsedURL === currentScope.uri.paresdURL) {
-          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.paresdURL + ' tries to load itself.');
+        if (tempURI.parsedURL === currentScope.uri.parsedURL) {
+          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.parsedURL + ' tries to load itself.');
         }
 
         moduleScope = moduleScope.parentScope;

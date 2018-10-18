@@ -439,7 +439,7 @@ Galaxy.View = /** @class */(function (G) {
           }
 
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
-            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.paresdURL + '\nProperty name: `' +
+            'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.parsedURL + '\nProperty name: `' +
             propertyKey + '`\n');
         }
 

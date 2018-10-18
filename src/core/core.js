@@ -119,7 +119,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
       return str.join('&');
     },
-
     /**
      *
      * @param module
