@@ -1,6 +1,6 @@
 /* global Galaxy */
 
-(function () {
+(function (Galaxy) {
   const View = Galaxy.View;
   View.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
     type: 'reactive',
@@ -442,5 +442,5 @@
       parentNode.stream.pour('post$forEnter', 'dom childList');
     }, node);
   }
-})(Galaxy.View);
+})(Galaxy);
 

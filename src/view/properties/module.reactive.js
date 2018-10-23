@@ -1,12 +1,12 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
   };
 
-  GV.REACTIVE_BEHAVIORS['module'] = {
+  Galaxy.View.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
     prepare: function (matches, scope) {
       return {
@@ -112,5 +112,5 @@
       });
     };
   };
-})(Galaxy.View);
+})(Galaxy);
 

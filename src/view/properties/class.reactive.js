@@ -1,13 +1,13 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['class'] = {
     type: 'reactive',
     name: 'class'
   };
 
-  GV.REACTIVE_BEHAVIORS['class'] = {
-    regex: GV.BINDING_SYNTAX_REGEX,
+  Galaxy.View.REACTIVE_BEHAVIORS['class'] = {
+    regex: Galaxy.View.BINDING_SYNTAX_REGEX,
     prepare: function (m, s) {
       return {
         scope: s
@@ -51,7 +51,7 @@
 
       node.setAttribute('class', []);
       // when value is an object
-      const clone = GV.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
@@ -117,5 +117,5 @@
       _this.notifyObserver('classList', newClasses, oldClasses);
     });
   }
-})(Galaxy.View);
+})(Galaxy);
 

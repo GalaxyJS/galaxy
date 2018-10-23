@@ -1,7 +1,7 @@
 /* global Galaxy */
 
-(function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['on'] = {
     type: 'prop',
     name: 'on',
     /**

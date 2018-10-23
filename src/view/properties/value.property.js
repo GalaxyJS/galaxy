@@ -1,11 +1,11 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
     type: 'none'
   };
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['value'] = {
     type: 'prop',
     name: 'value',
     /**
@@ -41,5 +41,5 @@
       viewNode.node[attr] = value === undefined || value === null ? '' : value;
     }
   };
-})(Galaxy.View);
+})(Galaxy);
 

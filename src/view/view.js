@@ -1,7 +1,7 @@
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.View = /** @class */(function (G) {
+Galaxy.View = /** @class */(function () {
   const defProp = Object.defineProperty;
 
   //------------------------------
@@ -18,6 +18,15 @@ Galaxy.View = /** @class */(function (G) {
     //   apply: function (config, value, oldValue, expressionFn) {}
     // }
   };
+
+  /**
+   *
+   * @typedef {Object} Galaxy.View.SchemaProperty
+   * @property {string} [type]
+   * @property {Function} [setup]
+   * @property {Function} [createSetter]
+   * @property {Function} [value]
+   */
 
   View.NODE_SCHEMA_PROPERTY_MAP = {
     tag: {
@@ -289,7 +298,6 @@ Galaxy.View = /** @class */(function (G) {
     // Take care of variables that contain square brackets like '[variable_name]'
     // for the convenience of the programmer
 
-    // middle = middle.substring(0, middle.length - 1).replace(/<>/g, '');
     functionContent += middle.substring(0, middle.length - 1) + ']';
 
     const func = new Function('properties, scope', functionContent);
@@ -299,7 +307,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createExpressionFunction = function (host, handler, variables, scope) {
-    let getExpressionArguments = Galaxy.View.createExpressionArgumentsProvider(variables);
+    const getExpressionArguments = Galaxy.View.createExpressionArgumentsProvider(variables);
 
     const fn = function () {
       let args = [];
@@ -316,6 +324,7 @@ Galaxy.View = /** @class */(function (G) {
     fn.getArgs = function () {
       return getExpressionArguments.call(host, Galaxy.View.safePropertyLookup, scope);
     };
+
     return fn;
   };
 
@@ -333,9 +342,6 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const dependencies = bindings.propertyKeysPaths;
-    // bindings.propertyKeysPaths = dependencies.map(function (name) {
-    //   return name.replace(/<>/g, '');
-    // });
 
     // Generate expression arguments
     try {
@@ -549,7 +555,11 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
+    /**
+     *
+     * @type {Galaxy.View.SchemaProperty}
+     */
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -569,25 +579,25 @@ Galaxy.View = /** @class */(function (G) {
     return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {string} attributeName
+   * @param {*} value
+   */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
-        View.PROPERTY_SETTERS['attr'](viewNode, attributeName, property)(value, null);
-        // View.createDefaultSetter(viewNode, attributeName)(value, null);
-        break;
-
       case 'prop':
         View.createSetter(viewNode, attributeName, null, null)(value, null);
         break;
 
       case 'reactive': {
-        // const reactiveApply = View.createSetter(viewNode, attributeName, null, scopeData);
         if (viewNode.setters[property.name]) {
           return;
         }
-        // if(value instanceof Array) debugger;
         const reactiveApply = View.createSetter(viewNode, attributeName, null, null);
         viewNode.setters[property.name] = reactiveApply;
 
@@ -598,10 +608,6 @@ Galaxy.View = /** @class */(function (G) {
       case 'event':
         viewNode.node.addEventListener(attributeName, value.bind(viewNode), false);
         break;
-
-      // case 'custom':
-      //   View.createCustomSetter(viewNode, attributeName, property)(value, null);
-      //   break;
     }
   };
 
@@ -745,4 +751,4 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   return View;
-}(Galaxy || {}));
+}());

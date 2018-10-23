@@ -1,7 +1,7 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['selected'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['selected'] = {
     type: 'prop',
     name: 'selected',
     /**
@@ -20,7 +20,7 @@
 
       // Don't do anything if the node is an option tag
       if (viewNode.schema.tag === 'select') {
-        const bindings = GV.getBindings(viewNode.schema.selected);
+        const bindings = Galaxy.View.getBindings(viewNode.schema.selected);
         const id = bindings.propertyKeysPaths[0].split('.').pop();
         const nativeNode = viewNode.node;
 
@@ -55,5 +55,5 @@
       });
     }
   };
-})(Galaxy.View);
+})(Galaxy);
 

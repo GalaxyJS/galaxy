@@ -1,7 +1,7 @@
 /* global Galaxy */
 
-(function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
     type: 'prop',
     name: 'text',
     /**

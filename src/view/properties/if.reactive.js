@@ -1,12 +1,12 @@
 /* global Galaxy */
 
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
+(function (Galaxy) {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
     type: 'reactive',
     name: '$if'
   };
 
-  GV.REACTIVE_BEHAVIORS['$if'] = {
+  Galaxy.View.REACTIVE_BEHAVIORS['$if'] = {
     prepare: function () {
       return {
         onDone: function () { }
@@ -165,5 +165,5 @@
       });
     };
   }
-})(Galaxy.View);
+})(Galaxy);
 

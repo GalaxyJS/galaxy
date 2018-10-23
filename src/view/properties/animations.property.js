@@ -1,12 +1,12 @@
 /* global Galaxy, TweenLite, TimelineLite */
 'use strict';
 
-(function (G) {
+(function (Galaxy) {
   if (!window.TweenLite || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
+  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
     /**
@@ -321,9 +321,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
 
     const newConfig = Object.assign({}, descriptions);
