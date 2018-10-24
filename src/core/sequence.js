@@ -34,17 +34,18 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.isFinished = false;
       _this.processing = false;
 
-      _this.activeState = new Promise(function (resolve) {
-        _this.activeStateResolve = function () {
-          _this.isFinished = true;
-          _this.processing = false;
-          // console.log(_this.truncateHandlers.length);
-          if (_this.truncateHandlers.length > 1) {
-            _this.truncateHandlers = [];
-          }
-          resolve();
+      _this.activeState = new Promise((function (_host) {
+        return function (resolve) {
+          _host.activeStateResolve = function () {
+            _host.isFinished = true;
+            _host.processing = false;
+            if (_host.truncateHandlers.length > 1) {
+              _host.truncateHandlers = [];
+            }
+            resolve();
+          };
         };
-      });
+      })(_this));
 
       return _this;
     },

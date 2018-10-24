@@ -26,13 +26,9 @@
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       if (nativeNode.type === 'number') {
-        nativeNode.addEventListener('input', function () {
-          scopeReactiveData.data[id] = nativeNode.value ? Number(nativeNode.value) : null;
-        });
+        nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData.data, id));
       } else {
-        nativeNode.addEventListener('keyup', function () {
-          scopeReactiveData.data[id] = nativeNode.value;
-        });
+        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData.data, id));
       }
     },
     value: function (viewNode, value, oldValue, attr) {
@@ -41,5 +37,17 @@
       viewNode.node[attr] = value === undefined || value === null ? '' : value;
     }
   };
+
+  function createNumberHandler(_node, _data, _id) {
+    return function () {
+      _data[_id] = _node.value ? Number(_node.value) : null;
+    };
+  }
+
+  function createHandler(_node, _data, _id) {
+    return function () {
+      _data[_id] = _node.value;
+    };
+  }
 })(Galaxy);
 

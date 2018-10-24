@@ -1,6 +1,8 @@
 /* global Galaxy */
 
 Galaxy.View.ReactiveData = /** @class */ (function () {
+  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
+  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
     'push',
@@ -13,7 +15,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
   ];
   const objKeys = Object.keys;
   const defProp = Object.defineProperty;
-  const scopeBuilder = function () {
+
+  function scopeBuilder() {
     return {
       id: '{Scope}',
       shadow: {},
@@ -25,9 +28,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       makeReactiveObject: function () { },
       addKeyToShadow: function () { }
     };
-  };
+  }
 
-  const getKeys = function (obj) {
+  function getKeys(obj) {
     if (obj instanceof Array) {
       const keys = ['length'];
       if (obj.hasOwnProperty('changes')) {
@@ -38,43 +41,60 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     } else {
       return Object.keys(obj);
     }
-  };
+  }
 
-  // const create = function (host, key, shadow) {
-  //   return {
-  //     get: function () {
-  //       return value;
-  //     },
-  //     set: function (val) {
-  //       if (value === val) {
-  //         // If value is array, then sync should be called so nodes that are listening to array itself get updated
-  //         if (val instanceof Array) {
-  //           host.sync(key);
-  //         } else if (val instanceof Object) {
-  //           host.notifyDown(key);
-  //         }
-  //         return;
-  //       }
-  //
-  //       host.oldValue[key] = value;
-  //       value = val;
-  //
-  //       // This means that the property suppose to be an object and there probably active binds to it
-  //       if (host.shadow[key]) {
-  //         host.makeKeyEnum(key);
-  //         // setData provide downward data flow
-  //         host.shadow[key].setData(val);
-  //       }
-  //
-  //       host.notify(key);
-  //     },
-  //     enumerable: !shadow,
-  //     configurable: true
-  //   };
-  // }
+  function makeReactiveObject(host, data, key, value, shadow) {
+    const property = Object.getOwnPropertyDescriptor(data, key);
+    if (property && property.configurable === false) {
+      return;
+    }
 
-  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
-  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
+    // cater for pre-defined getter/setters
+    const getter = property && property.get;
+
+    defProp(data, key, {
+      get: function () {
+        return getter ? getter.call(data) : value;
+      },
+      set: function (val) {
+        if (value === val) {
+          // If value is array, then sync should be called so nodes that are listening to array itself get updated
+          if (val instanceof Array) {
+            host.sync(key);
+          } else if (val instanceof Object) {
+            host.notifyDown(key);
+          }
+          return;
+        }
+
+        host.oldValue[key] = value;
+        value = val;
+
+        // This means that the property suppose to be an object and there probably active binds to it
+        if (host.shadow[key]) {
+          host.makeKeyEnum(key);
+          // setData provide downward data flow
+          host.shadow[key].setData(val);
+        }
+
+        host.notify(key);
+      },
+      enumerable: !shadow,
+      configurable: true
+    });
+
+    if (host.shadow[key]) {
+      host.shadow[key].setData(value);
+    } else {
+      host.shadow[key] = null;
+    }
+
+    // Update the ui for this key
+    // This is for when the makeReactive method has been called by setData
+    host.sync(key);
+
+    host.oldValue[key] = value;
+  }
 
   /**
    * @param {string} id
@@ -113,7 +133,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return this.parent.shadow[id];
         }
         this.data = {};
-        makeReactiveObject(this.parent, this.parent.data, id, true);
+        makeReactiveObject(this.parent, this.parent.data, id, this.parent.data[id], true);
       }
 
       if (!Object.isExtensible(this.data)) {
@@ -131,54 +151,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
     this.fixHierarchy(id, this);
   }
-
-  const makeReactiveObject = function (_this, data, key, shadow) {
-    // const _this = this;
-    let value = data[key];
-
-    defProp(data, key, {
-      get: function reactiveGetter() {
-        return value;
-      },
-      set: function (val) {
-        if (value === val) {
-          // If value is array, then sync should be called so nodes that are listening to array itself get updated
-          if (val instanceof Array) {
-            _this.sync(key);
-          } else if (val instanceof Object) {
-            _this.notifyDown(key);
-          }
-          return;
-        }
-
-        _this.oldValue[key] = value;
-        value = val;
-
-        // This means that the property suppose to be an object and there probably active binds to it
-        if (_this.shadow[key]) {
-          _this.makeKeyEnum(key);
-          // setData provide downward data flow
-          _this.shadow[key].setData(val);
-        }
-
-        _this.notify(key);
-      },
-      enumerable: !shadow,
-      configurable: true
-    });
-
-    if (_this.shadow[key]) {
-      _this.shadow[key].setData(value);
-    } else {
-      _this.shadow[key] = null;
-    }
-
-    // Update the ui for this key
-    // This is for when the makeReactive method has been called by setData
-    _this.sync(key);
-
-    _this.oldValue[key] = value;
-  };
 
   ReactiveData.prototype = {
     // If parent data is an array, then this would be an item inside the array
@@ -206,7 +178,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           } else {
             // changes should only propagate downward
             this.notifyDown(key);
-            // Reflect.deleteProperty(this.shadow, key);
           }
         }
 
@@ -251,7 +222,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         _this.makeReactiveArray(data);
       } else if (data instanceof Object) {
         for (let key in data) {
-          makeReactiveObject(_this, data, key);
+          makeReactiveObject(_this, data, key, data[key]);
         }
       }
     },
@@ -298,7 +269,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.init = initialChanges;
       value.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      makeReactiveObject(_this, value, 'changes');
+      makeReactiveObject(_this, value, 'changes', initialChanges);
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -590,7 +561,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
 
       if (!this.data.hasOwnProperty(key)) {
-        makeReactiveObject(this, this.data, key, false);
+        makeReactiveObject(this, this.data, key, this.data[key], false);
       }
     },
     /**
@@ -601,7 +572,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         // Only reactive properties should be added to data
         if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
           if (!this.data.hasOwnProperty(key)) {
-            makeReactiveObject(this, this.data, key, true);
+            makeReactiveObject(this, this.data, key, this.data[key], true);
           }
           this.shadow[key].setData(this.data[key]);
         }
