@@ -158,6 +158,7 @@
   /**
    *
    * @typedef {Object} AnimationConfig
+   * @property {string} [parent]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
    * @property {number} [duration]
@@ -348,10 +349,10 @@
       // Add to parent should happen after the animation is added to the child
       if (newConfig.parent) {
         // const parent = AnimationMeta.get(newConfig.parent);
-        const animationMetaTypeConfig = animationMeta.configs[type] || {};
+        // const animationMetaTypeConfig = animationMeta.configs[type] || {};
         // const parentTypeConfig = animationMeta.configs[type] || {};
 // debugger;
-        animationMeta.addChild(viewNode, type, animationMetaTypeConfig);
+        animationMeta.addChild(viewNode, type, newConfig);
       }
 
       if (newConfig.startAfter) {
@@ -409,17 +410,31 @@
     /**
      * @param {Galaxy.View.ViewNode} viewNode
      * @param {'leave'|'enter'} type
-     * @param {AnimationConfig} childConf
+     * @param {AnimationConfig} config
      */
-    addChild: function (viewNode, type, childConf) {
+    addChild: function (viewNode, type, config) {
       const _this = this;
-      const parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+      const parent = config.parent;
+      let parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+
+      if (parent === true) {
+        parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
+      } else if (parent) {
+        parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
+      }
+
+      // console.log(config);
+      // if (type === 'leave') {
+      //   parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
+      //   // debugger;
+      //   // return;
+      // }
       const children = parentNodeTimeline.getChildren(false);
       _this.timeline.pause();
 
       if (_this.children.indexOf(parentNodeTimeline) === -1) {
         const i = _this.children.push(parentNodeTimeline);
-        let posInParent = childConf.positionInParent || '+=0';
+        let posInParent = config.positionInParent || '+=0';
 
         // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
         if (parentNodeTimeline.timeline === null || children.length === 0) {
@@ -449,17 +464,9 @@
     addAtEnd: function (viewNode, type, child, childConf) {
       const _this = this;
 
-      // if (_this.timeline.progress() !== undefined) {
-      //   child.timeline.pause();
-      // }
-      //
-      // _this.timeline.add(function () {
-      //   child.timeline.resume();
-      // });
-
       const children = _this.timeline.getChildren(false, true, true);
-
       if (children.indexOf(child.timeline) !== -1) {
+        // Do nothing for now
       } else if (children.length) {
         _this.timeline.add(child.timeline);
         _this.timeline.add(function () {

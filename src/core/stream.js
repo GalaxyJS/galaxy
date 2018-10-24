@@ -41,10 +41,23 @@ Galaxy.Stream = /** @class */ (function () {
       return stream;
     },
 
+    /**
+     *
+     * @param handler
+     * @return {function} unsubscribe callback
+     */
     subscribe: function (handler) {
-      if (this.handlers.indexOf(handler) === -1) {
-        this.handlers.push(handler);
+      const _this = this;
+      if (_this.handlers.indexOf(handler) === -1) {
+        _this.handlers.push(handler);
       }
+
+      return function unsubscribe() {
+        const index = _this.handlers.indexOf(handler);
+        if (index === -1) {
+          _this.handlers.splice(index, 1);
+        }
+      };
     },
 
     subscribeOnce: function (handler) {

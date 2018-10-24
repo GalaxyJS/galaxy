@@ -28,15 +28,19 @@
           scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
         });
 
-        nativeNode.addEventListener('post$forEnter', function () {
+        // nativeNode.addEventListener('post$forEnter', function () {
+        //   if (scopeReactiveData.data[id] && !nativeNode.value) {
+        //     nativeNode.value = scopeReactiveData.data[id];
+        //   }
+        // });
+
+        const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
           if (scopeReactiveData.data[id] && !nativeNode.value) {
             nativeNode.value = scopeReactiveData.data[id];
           }
         });
 
-        nativeNode.stream.filter('dom').filter('childList').subscribe(function() {
-
-        });
+        viewNode.destroyed.then(unsubscribe);
       }
     },
     value: function (viewNode, value) {

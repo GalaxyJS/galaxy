@@ -22,7 +22,7 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = GV.getBindings(viewNode.schema.value);
+      const bindings = Galaxy.View.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       if (nativeNode.type === 'number') {

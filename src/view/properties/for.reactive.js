@@ -111,6 +111,8 @@
       //   return;
       // }
 
+      // console.log(config.oldChanges === changes)
+
       config.oldChanges = changes;
       parent.inserted.then(function () {
         // Truncate on reset or actions that does not change the array length
