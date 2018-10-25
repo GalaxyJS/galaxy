@@ -24,9 +24,12 @@
         const id = bindings.propertyKeysPaths[0].split('.').pop();
         const nativeNode = viewNode.node;
 
-        nativeNode.addEventListener('change', function () {
-          scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
-        });
+        // nativeNode.addEventListener('change', function () {
+        //   debugger;
+        //   id;
+        //   scopeReactiveData;
+        //   // scopeReactiveData.data[id] = nativeNode.options[nativeNode.selectedIndex].value;
+        // });
 
         // nativeNode.addEventListener('post$forEnter', function () {
         //   if (scopeReactiveData.data[id] && !nativeNode.value) {
@@ -36,7 +39,7 @@
 
         const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
           if (scopeReactiveData.data[id] && !nativeNode.value) {
-            nativeNode.value = scopeReactiveData.data[id];
+            // nativeNode.value = scopeReactiveData.data[id];
           }
         });
 

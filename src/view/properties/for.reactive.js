@@ -32,7 +32,7 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -224,12 +224,15 @@
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
+        removeOnTruncateHandler();
+        // parent.sequences.leave.removeOnTruncate(onTruncateHandler);
         waitForDestroy.resolved = true;
         resolve();
       };
     });
 
-    parent.sequences.leave.onTruncate(function () {
+    // Wait step won't be resolve if the parent leave sequence get truncated. that's why we need to resolve it if that happens
+    const removeOnTruncateHandler = parent.sequences.leave.onTruncate(function passWaitStep() {
       if (!waitForDestroy.resolved) {
         destroyDone();
       }
@@ -295,15 +298,15 @@
       const parent = node.parent;
       const schema = node.schema;
 
-      // if parent leave sequence interrupted, then make sure these items will be removed from DOM
-      parent.sequences.leave.onTruncate(function hjere() {
-        itemsToBeRemoved.forEach(function (vn) {
-          vn.sequences.leave.truncate();
-          vn.detach();
-        });
-      });
-
       if (itemsToBeRemoved.length) {
+        // if parent leave sequence interrupted, then make sure these items will be removed from DOM
+        parent.sequences.leave.onTruncate(function $forLeaveSequenceInterruptionResolver() {
+          itemsToBeRemoved.forEach(function (vn) {
+            vn.sequences.leave.truncate();
+            vn.detach();
+          });
+        });
+
         let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
         if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
           alternateDOMFlow = schema.renderConfig.alternateDOMFlow;

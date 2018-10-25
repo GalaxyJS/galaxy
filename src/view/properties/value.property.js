@@ -25,28 +25,30 @@
       const bindings = Galaxy.View.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
-      if (nativeNode.type === 'number') {
-        nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData.data, id));
-      } else {
-        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData.data, id));
-      }
+      // if (nativeNode.type === 'number') {
+      //   nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
+      // } else {
+      //   nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
+      // }
     },
     value: function (viewNode, value, oldValue, attr) {
       // input field parse the value which has been passed to it into a string
       // that why we need to parse undefined and null into an empty string
-      viewNode.node[attr] = value === undefined || value === null ? '' : value;
+      if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+        viewNode.node.value = value === undefined || value === null ? '' : value;
+      }
     }
   };
 
   function createNumberHandler(_node, _data, _id) {
     return function () {
-      _data[_id] = _node.value ? Number(_node.value) : null;
+      _data.data[_id] = _node.value ? Number(_node.value) : null;
     };
   }
 
   function createHandler(_node, _data, _id) {
     return function () {
-      _data[_id] = _node.value;
+      _data.data[_id] = _node.value;
     };
   }
 })(Galaxy);

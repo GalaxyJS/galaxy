@@ -16,6 +16,7 @@ Galaxy.Sequence = /** @class */ (function () {
     _this.activeStateResolve = null;
     _this.isFinished = false;
     _this.processing = false;
+    _this.truncating = false;
     /** activeState is a promise that will resolve when all the sequence activities has been resolved
      *
      * @type {Promise}
@@ -112,14 +113,34 @@ Galaxy.Sequence = /** @class */ (function () {
     },
 
     onTruncate: function (act) {
-      if (this.truncateHandlers.indexOf(act) === -1) {
-        this.truncateHandlers.push(act);
+      const _this = this;
+      if (_this.truncateHandlers.indexOf(act) === -1) {
+        _this.truncateHandlers.push(act);
+      }
+
+      return function removeOnTruncate() {
+        if (_this.truncating) {
+          return;
+        }
+
+        const index = _this.truncateHandlers.indexOf(act);
+        if (index !== -1) {
+          _this.truncateHandlers.splice(index, 1);
+        }
+      };
+    },
+
+    removeOnTruncate: function (act) {
+      const index = this.truncateHandlers.indexOf(act);
+      if (index !== -1) {
+        this.truncateHandlers.splice(index, 1);
       }
     },
 
     truncate: function () {
       const _this = this;
 
+      _this.truncating = true;
       _this.actions.forEach(function (item) {
         item.process = disabledProcess;
       });
@@ -133,6 +154,7 @@ Galaxy.Sequence = /** @class */ (function () {
       _this.truncateHandlers = [];
       _this.isFinished = true;
       _this.processing = false;
+      _this.truncating = false;
       _this.actions = [];
 
       return _this;
