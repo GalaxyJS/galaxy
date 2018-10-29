@@ -25,11 +25,11 @@
       const bindings = Galaxy.View.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
-      // if (nativeNode.type === 'number') {
-      //   nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
-      // } else {
-      //   nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
-      // }
+      if (nativeNode.type === 'number') {
+        nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
+      } else {
+        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
+      }
     },
     value: function (viewNode, value, oldValue, attr) {
       // input field parse the value which has been passed to it into a string
@@ -40,15 +40,15 @@
     }
   };
 
-  function createNumberHandler(_node, _data, _id) {
+  function createNumberHandler(_node, _rd, _id) {
     return function () {
-      _data.data[_id] = _node.value ? Number(_node.value) : null;
+      _rd.data[_id] = _node.value ? Number(_node.value) : null;
     };
   }
 
-  function createHandler(_node, _data, _id) {
+  function createHandler(_node, _rd, _id) {
     return function () {
-      _data.data[_id] = _node.value;
+      _rd.data[_id] = _node.value;
     };
   }
 })(Galaxy);

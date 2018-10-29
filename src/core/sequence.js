@@ -130,13 +130,6 @@ Galaxy.Sequence = /** @class */ (function () {
       };
     },
 
-    removeOnTruncate: function (act) {
-      const index = this.truncateHandlers.indexOf(act);
-      if (index !== -1) {
-        this.truncateHandlers.splice(index, 1);
-      }
-    },
-
     truncate: function () {
       const _this = this;
 

@@ -77,6 +77,7 @@
      * @param {Function} expression
      */
     apply: function (config, changes, oldChanges, expression) {
+      // The idea is that when the
       if (expression) {
         changes = expression();
         if (changes === null || changes === undefined) {
@@ -106,12 +107,6 @@
       const parentCache = parent.cache;
       const parentSchema = parent.schema;
       let newTrackMap = null;
-
-      // if (changes.ts === config.oldChanges.ts && changes.type === config.oldChanges.type) {
-      //   return;
-      // }
-
-      // console.log(config.oldChanges === changes)
 
       config.oldChanges = changes;
       parent.inserted.then(function () {
@@ -225,7 +220,6 @@
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
         removeOnTruncateHandler();
-        // parent.sequences.leave.removeOnTruncate(onTruncateHandler);
         waitForDestroy.resolved = true;
         resolve();
       };
