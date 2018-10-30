@@ -25,6 +25,15 @@
         oldChanges: {}
       };
     },
+
+    /**
+     *
+     * @typedef {Object} RenderJobManager
+     * @property {Array.<Function>} steps
+     * @property {Array.<Promise>} queue
+     * @property {Promise} mainPromise
+     */
+
     /**
      *
      * @param config Return of prepare method
@@ -32,7 +41,11 @@
     install: function (config) {
       const node = this;
       const parentNode = node.parent;
-      parentNode.cache.$for = parentNode.cache.$for || { leaveProcessList: [], queue: [], mainPromise: null };
+      /**
+       *
+       * @type {RenderJobManager}
+       */
+      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
       if (config.matches instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -68,6 +81,7 @@
 
       return false;
     },
+
     /**
      *
      * @this {Galaxy.View.ViewNode}
@@ -109,17 +123,19 @@
       let newTrackMap = null;
 
       config.oldChanges = changes;
-      parent.inserted.then(function () {
+      parent.inserted.then(afterInserted);
+
+      function afterInserted() {
         // Truncate on reset or actions that does not change the array length
         if (changes.type === 'reset' || changes.type === 'reverse' || changes.type === 'sort') {
           node.renderingFlow.truncate();
           node.renderingFlow.onTruncate(function () {
-            config.onDone.ignore = true;
+            whenAllLeavesAreDone.ignore = true;
           });
         }
 
-        const waitStepDone = registerWaitStep(parentCache.$for, parent);
-        let leaveProcess = null;
+        const waitStepDone = registerWaitStep(parentCache.$for, parent.sequences.leave);
+        let leaveStep = null;
         if (config.trackBy instanceof Function && changes.type === 'reset') {
           newTrackMap = changes.params.map(function (item, i) {
             return config.trackBy.call(node, item, i);
@@ -156,7 +172,7 @@
             return hasBeenRemoved.indexOf(node) === -1;
           });
 
-          leaveProcess = createLeaveProcess(node, hasBeenRemoved, config, function () {
+          leaveStep = createLeaveStep(node, hasBeenRemoved, function () {
             changes = newChanges;
             waitStepDone();
           });
@@ -166,29 +182,30 @@
             config.trackMap = newTrackMap;
           }
         } else if (changes.type === 'reset') {
-          const nodes = config.nodes.slice(0);
+          const nodesToBeRemoved = config.nodes.slice(0);
           config.nodes = [];
-
-          leaveProcess = createLeaveProcess(node, nodes, config, function () {
+          leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
             changes = Object.assign({}, changes);
             changes.type = 'push';
             waitStepDone();
           });
         } else {
+          // if type is not 'reset' then there is no need for leave step
           Promise.resolve().then(waitStepDone);
         }
+
         // leave process will be empty if the type is not reset
-        if (leaveProcess) {
+        if (leaveStep) {
           if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
-            parentCache.$for.leaveProcessList.push(leaveProcess);
+            parentCache.$for.steps.push(leaveStep);
           } else {
-            parentCache.$for.leaveProcessList.unshift(leaveProcess);
+            parentCache.$for.steps.unshift(leaveStep);
           }
         }
 
         activateLeaveProcess(parentCache.$for);
 
-        const whenAllDestroysAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
+        const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$for, function () {
           if (newTrackMap) {
             config.trackMap = newTrackMap;
           }
@@ -199,23 +216,22 @@
 
           createPushProcess(node, config, changes, config.scope);
         });
-        config.onDone = whenAllDestroysAreDone;
 
-        parentCache.$for.mainPromise =
-          parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
+        parentCache.$for.mainPromise = parentCache.$for.mainPromise || Promise.all(parentCache.$for.queue);
         // When all the destroy processes of all the $for inside parentNode is done
         // This make sure that $for's which are children of the same parent act as one $for
-        parentCache.$for.mainPromise.then(whenAllDestroysAreDone);
-      });
+        parentCache.$for.mainPromise.then(whenAllLeavesAreDone);
+      }
     }
   };
 
   /**
    *
-   * @param $forData
+   * @param {RenderJobManager} jobManager
+   * @param {Galaxy.Sequence} parentLeaveSequence
    * @returns {Function}
    */
-  function registerWaitStep($forData, parent) {
+  function registerWaitStep(jobManager, parentLeaveSequence) {
     let destroyDone;
     const waitForDestroy = new Promise(function (resolve) {
       destroyDone = function () {
@@ -226,99 +242,111 @@
     });
 
     // Wait step won't be resolve if the parent leave sequence get truncated. that's why we need to resolve it if that happens
-    const removeOnTruncateHandler = parent.sequences.leave.onTruncate(function passWaitStep() {
+    const removeOnTruncateHandler = parentLeaveSequence.onTruncate(function passWaitStep() {
       if (!waitForDestroy.resolved) {
         destroyDone();
       }
     });
 
-    $forData.queue.push(waitForDestroy);
+    jobManager.queue.push(waitForDestroy);
     return destroyDone;
   }
 
-  function activateLeaveProcess(parentCache) {
-    if (parentCache.leaveProcessList.length && !parentCache.leaveProcessList.active) {
-      parentCache.leaveProcessList.active = true;
-      // We start the leaving process in the next frame so the app has enough time to register all the leave processes
+  /**
+   *
+   * @param {RenderJobManager} jobManager
+   */
+  function activateLeaveProcess(jobManager) {
+    if (jobManager.steps.length && !jobManager.steps.active) {
+      jobManager.steps.active = true;
+      // We start the leaving process in the next tick so the app has enough time to register all the leave processes
       // that belong to parentNode
       Promise.resolve().then(function () {
-        parentCache.leaveProcessList.forEach(function (action) {
+        jobManager.steps.forEach(function (action) {
           action();
         });
-        parentCache.leaveProcessList = [];
-        parentCache.leaveProcessList.active = false;
+        jobManager.steps = [];
+        jobManager.steps.active = false;
       });
     }
   }
 
   /**
    *
-   * @param {Object} $forData
+   * @param {RenderJobManager} jobManager
    * @param {Function} callback
    * @returns {Function}
    */
-  function createWhenAllDoneProcess($forData, callback) {
-    const whenAllDestroysAreDone = function () {
-      if (whenAllDestroysAreDone.ignore) {
+  function createWhenAllDoneProcess(jobManager, callback) {
+    const whenAllDone = function () {
+      if (whenAllDone.ignore) {
         return;
       }
       // Because the items inside queue will change on the fly we have manually check whether all the
       // promises have resolved and if not we hav eto use Promise.all on the list again
-      const allNotResolved = $forData.queue.some(function (promise) {
+      const allNotResolved = jobManager.queue.some(function (promise) {
         return promise.resolved !== true;
       });
 
       if (allNotResolved) {
         // if not all resolved, then listen to the list again
-        $forData.queue = $forData.queue.filter(function (p) {
+        jobManager.queue = jobManager.queue.filter(function (p) {
           return !p.resolved;
         });
 
-        $forData.mainPromise = Promise.all($forData.queue);
-        $forData.mainPromise.then(whenAllDestroysAreDone);
+        jobManager.mainPromise = Promise.all(jobManager.queue);
+        jobManager.mainPromise.then(whenAllDone);
         return;
       }
 
-      $forData.queue = [];
-      $forData.mainPromise = null;
+      jobManager.queue = [];
+      jobManager.mainPromise = null;
       callback();
     };
 
-    return whenAllDestroysAreDone;
+    return whenAllDone;
   }
 
-  function createLeaveProcess(node, itemsToBeRemoved, config, onDone) {
-    return function () {
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Array.<Galaxy.View.ViewNode>} itemsToBeRemoved
+   * @param {Function} onDone
+   * @return {*}
+   */
+  function createLeaveStep(node, itemsToBeRemoved, onDone) {
+    if (!itemsToBeRemoved.length) {
+      return onDone;
+    }
+
+    return function $forLeaveStep() {
       const parent = node.parent;
+      const parentLeaveSequence = parent.sequences.leave;
       const schema = node.schema;
 
-      if (itemsToBeRemoved.length) {
-        // if parent leave sequence interrupted, then make sure these items will be removed from DOM
-        parent.sequences.leave.onTruncate(function $forLeaveSequenceInterruptionResolver() {
-          itemsToBeRemoved.forEach(function (vn) {
-            vn.sequences.leave.truncate();
-            vn.detach();
-          });
+      // if parent leave sequence interrupted, then make sure these items will be removed from DOM
+      parentLeaveSequence.onTruncate(function $forLeaveSequenceInterruptionResolver() {
+        itemsToBeRemoved.forEach(function (vn) {
+          vn.sequences.leave.truncate();
+          vn.detach();
         });
+      });
 
-        let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
-        if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
-          alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
-        }
-
-        if (alternateDOMFlow === false) {
-          View.ViewNode.destroyNodes(node, itemsToBeRemoved, parent.sequences.leave, parent.sequences.leave);
-        } else {
-          View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parent.sequences.leave, parent.sequences.leave);
-        }
-
-        parent.sequences.leave.nextAction(function () {
-          parent.callLifecycleEvent('postForLeave');
-          onDone();
-        });
-      } else {
-        onDone();
+      let alternateDOMFlow = parent.schema.renderConfig.alternateDOMFlow;
+      if (schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
+        alternateDOMFlow = schema.renderConfig.alternateDOMFlow;
       }
+
+      if (alternateDOMFlow === false) {
+        View.ViewNode.destroyNodes(node, itemsToBeRemoved, parentLeaveSequence, parentLeaveSequence);
+      } else {
+        View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parentLeaveSequence, parentLeaveSequence);
+      }
+
+      parentLeaveSequence.nextAction(function () {
+        parent.callLifecycleEvent('postForLeave');
+        onDone();
+      });
     };
   }
 
@@ -335,7 +363,6 @@
       parentNode.sequences.enter.removeByRef(node);
     });
 
-    // node.renderingFlow.next(function forPushProcess(next) {
     if (changes.type === 'push') {
       let length = config.nodes.length;
 
@@ -430,14 +457,7 @@
     }
 
     parentNode.sequences.enter.nextAction(function () {
-      const postChildrenInsertEvent = new CustomEvent('post$forEnter', {
-        detail: {
-          $forItems: newItems
-        }
-      });
-      parentNode.broadcast(postChildrenInsertEvent);
       parentNode.callLifecycleEvent('post$forEnter', newItems);
-      // parentNode.stream.filter('dom').filter('childList').next('post$forEnter');
       parentNode.stream.pour('post$forEnter', 'dom childList');
     }, node);
   }
