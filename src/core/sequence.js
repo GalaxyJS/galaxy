@@ -8,6 +8,43 @@ Galaxy.Sequence = /** @class */ (function () {
   /**
    *
    * @constructor
+   * @memberOf Galaxy.Sequence
+   */
+  function Process() {
+    const _this = this;
+    let _resolve;
+    const p = new Promise(function (resolve) {
+      _resolve = resolve;
+    });
+    _this.then = p.then;
+
+    _this.cancel = function () {
+      _this._canceled = true;
+    };
+
+    _this.proceed = function () {
+      if (_this._canceled) {
+        return;
+      }
+
+      _resolve();
+    };
+
+    _this.then = p.then.bind(p);
+  }
+
+  Process.prototype = {
+    _canceled: false,
+    cancel: null,
+    proceed: null,
+    then: null
+  };
+
+  Sequence.Process = Process;
+
+  /**
+   *
+   * @constructor
    * @memberOf Galaxy
    */
   function Sequence() {
