@@ -559,7 +559,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -586,7 +586,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -628,7 +628,7 @@ Galaxy.View = /** @class */(function () {
     if (scope.element instanceof Galaxy.View.ViewNode) {
       _this.container = scope.element;
     } else {
-      _this.container = new Galaxy.View.ViewNode({
+      _this.container = new Galaxy.View.ViewNode(null, {
         tag: scope.element.tagName
       }, scope.element, _this);
 
@@ -695,7 +695,7 @@ Galaxy.View = /** @class */(function () {
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
 
-        const viewNode = new Galaxy.View.ViewNode(nodeSchema, null, refNode, _this);
+        const viewNode = new Galaxy.View.ViewNode(parent, nodeSchema, null, refNode, _this);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage

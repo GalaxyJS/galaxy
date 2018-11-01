@@ -9,6 +9,9 @@
   Galaxy.View.REACTIVE_BEHAVIORS['$if'] = {
     prepare: function () {
       return {
+        leaveProcessList: [],
+        queue: [],
+        mainPromise: null,
         onDone: function () { }
       };
     },

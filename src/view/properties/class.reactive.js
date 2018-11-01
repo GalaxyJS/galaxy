@@ -37,7 +37,7 @@
         value = expression();
       }
 
-      const oldClassList = _this.node.className.split(' ');
+      const oldClassList = _this.node.className.classList;
       if (typeof value === 'string') {
         _this.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
@@ -53,6 +53,7 @@
       // when value is an object
       const clone = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
+
 
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);

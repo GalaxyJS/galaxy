@@ -84,7 +84,7 @@
         if (!(currentScope instanceof Galaxy.Scope)) {
           currentScope = new Galaxy.Scope({
             systemId: '$for-item',
-            url: moduleMeta.url,
+            url: cache.scope.__parent__.uri.parsedURL,
             parentScope: cache.scope.__parent__
           });
         }

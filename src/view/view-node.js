@@ -9,7 +9,17 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     return commentNode.cloneNode(t);
   }
 
-  function createElem(t) {
+  /**
+   *
+   * @param t
+   * @param {Galaxy.View.ViewNode} p
+   * @returns {any}
+   */
+  function createElem(t, p) {
+    if (t === 'svg' || (p && p.schema.tag === 'svg')) {
+      return document.createElementNS('http://www.w3.org/2000/svg', t);
+    }
+
     return t === 'comment' ? document.createComment('ViewNode') : document.createElement(t);
   }
 
@@ -105,17 +115,18 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
   /**
    *
    * @param schema
+   * @param {Galaxy.View.ViewNode} parent
    * @param {Node|Element|null} node
    * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(schema, node, refNode, view) {
+  function ViewNode(parent, schema, node, refNode, view) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
-    _this.node = node || createElem(schema.tag || 'div');
+    _this.node = node || createElem(schema.tag || 'div', parent);
     _this.refNode = refNode || _this.node;
     _this.schema = schema;
     _this.data = {};
@@ -127,7 +138,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
-    _this.parent = null;
+    _this.parent = parent;
     _this.dependedObjects = [];
     _this.renderingFlow = new Galaxy.Sequence();
     _this.sequences = {
@@ -363,7 +374,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      */
     registerChild: function (childNode, position) {
       const _this = this;
-      childNode.parent = _this;
+      // childNode.parent = _this;
 
       if (_this.contentRef) {
         _this.contentRef.insertBefore(childNode.placeholder, position);
