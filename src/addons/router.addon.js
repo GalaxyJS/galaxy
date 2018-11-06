@@ -9,11 +9,19 @@
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
   function SimpleRouter(module) {
+    const _this = this;
     this.module = module;
     this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#/');
-    this.oldURL = null;
+    this.oldURL = '';
     this.oldResolveId = {};
     this.routes = null;
+
+    Object.defineProperty(this, 'urlParts', {
+      get: function () {
+        return _this.oldURL.split('/').slice(1);
+      },
+      enumerable: true
+    });
   }
 
   SimpleRouter.prototype = {
@@ -153,6 +161,10 @@
           this.callMatchRoute(hash);
         }
       }
+    },
+
+    getURLParts: function () {
+      return this.oldURL.split('/').slice(1);
     },
 
     destroy: function () {

@@ -49,7 +49,7 @@
     },
     value: function (viewNode, value) {
       const nativeNode = viewNode.node;
-      viewNode.renderingFlow.nextAction(function () {
+      viewNode.rendered.then(function () {
         if (/\[\]$/.test(nativeNode.name)) {
           if (nativeNode.type === 'radio') {
             console.error('Inputs with type `radio` can not provide array as a value.');
