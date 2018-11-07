@@ -53,7 +53,8 @@ Galaxy.Module.Content = /** @class */ (function () {
    * @returns {*}
    */
   Content.parse = function (ModuleContent) {
-    const parser = parsers[ModuleContent.type];
+    const safeType = (ModuleContent.type || '').split(';')[0];
+    const parser = parsers[safeType];
 
     if (parser) {
       return parser.call(null, ModuleContent.content, ModuleContent.metaData);
