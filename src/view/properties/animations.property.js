@@ -186,39 +186,42 @@
     return sequence.split('/').filter(Boolean);
   };
 
-  AnimationMeta.createTween = function (node, config, onComplete) {
-    let to = Object.assign({}, config.to || {});
+  AnimationMeta.createTween = function (viewNode, config, onComplete) {
+    const node = viewNode.node;
+    let from = AnimationMeta.parseStep(viewNode, config.from);
+    let to = AnimationMeta.parseStep(viewNode, config.to);
+    const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
-    if (to.onComplete) {
-      const userOnComplete = to.onComplete;
-      to.onComplete = function () {
-        userOnComplete();
-        if (onComplete) {
-          onComplete();
-        }
-      };
-    } else {
-      to.onComplete = onComplete;
+
+    if (to) {
+      to = Object.assign({}, to);
+
+      if (to.onComplete) {
+        const userDefinedOnComplete = to.onComplete;
+        to.onComplete = function () {
+          userDefinedOnComplete();
+          if (onComplete) {
+            onComplete();
+          }
+        };
+      } else {
+        to.onComplete = onComplete;
+      }
     }
+
     let tween = null;
-
-    let duration = config.duration;
-    if (duration instanceof Function) {
-      duration = config.duration.call(node);
-    }
-
-    if (config.from && to) {
+    if (from && to) {
       tween = TweenLite.fromTo(node,
-        config.duration || 0,
-        config.from || {},
+        duration,
+        from,
         to);
-    } else if (config.from) {
-      let from = Object.assign({}, config.from || {});
+    } else if (from) {
+      from = Object.assign({}, from || {});
 
       if (from.onComplete) {
-        const userOnComplete = to.onComplete;
+        const userDefinedOnComplete = from.onComplete;
         from.onComplete = function () {
-          userOnComplete();
+          userDefinedOnComplete();
           onComplete();
         };
       } else {
@@ -226,12 +229,12 @@
       }
 
       tween = TweenLite.from(node,
-        duration || 0,
-        from || {});
-    } else {
+        duration,
+        from);
+    } else if (to) {
       tween = TweenLite.to(node,
-        duration || 0,
-        to || {});
+        duration,
+        to);
     }
 
     return tween;
@@ -322,9 +325,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
 
     const newConfig = Object.assign({}, descriptions);
@@ -363,7 +366,7 @@
       }
 
     } else {
-      AnimationMeta.createTween(viewNode.node, newConfig, onComplete);
+      AnimationMeta.createTween(viewNode, newConfig, onComplete);
     }
   };
 

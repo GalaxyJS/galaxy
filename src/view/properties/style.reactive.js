@@ -52,6 +52,11 @@
         return node.setAttribute('style', value);
       } else if (value instanceof Array) {
         return node.setAttribute('style', value.join(' '));
+      }
+      if (value instanceof Promise) {
+        value.then(function (_value) {
+          setStyle(node, _value);
+        });
       } else if (value === null) {
         return node.removeAttribute('style');
       }
@@ -60,18 +65,27 @@
 
       const observer = new Galaxy.Observer(reactiveStyle);
       observer.onAll(function (key, value, oldValue) {
-        applyStyles.call(_this, reactiveStyle);
+        setStyle(node, reactiveStyle);
       });
 
-      applyStyles.call(_this, reactiveStyle);
+      setStyle(node, reactiveStyle);
     }
   };
 
-  function applyStyles(value) {
+  function setStyle(node, value) {
     if (value instanceof Object) {
-      Object.assign(this.node.style, value);
+      for (let key in value) {
+        const valueObj = value[key];
+        if (valueObj instanceof Promise) {
+          valueObj.then(function (v) {
+            node.style[key] = v;
+          });
+        } else {
+          node.style[key] = valueObj;
+        }
+      }
     } else {
-      this.node.setAttribute('style', value);
+      node.setAttribute('style', value);
     }
   }
 })(Galaxy);
