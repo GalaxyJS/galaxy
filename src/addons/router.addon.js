@@ -112,6 +112,8 @@
           _this.oldResolveId[dynamicRoute.id] = resolveId;
           _this.routes[dynamicRoute.id].call(null, params);
           parentRoute = dynamicRoute;
+          // Routes order is important and longer route should have higher priority
+          break;
         }
       }
 
