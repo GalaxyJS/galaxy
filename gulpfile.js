@@ -30,8 +30,9 @@ gulp.task('build-galaxy', function () {
     concat('galaxy.js'),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/'),
-    gulp.dest('C:/xampp/htdocs/TeamScreen/public/assets/galaxyjs')
+    // gulp.dest('../imerce-viewer/assets/'),
+    // gulp.dest('C:/xampp/htdocs/TeamScreen/public/assets/galaxyjs')
+    gulp.dest('C:/xampp/htdocs/MyBI/app/assets')
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
