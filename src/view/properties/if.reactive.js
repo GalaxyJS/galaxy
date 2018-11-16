@@ -35,22 +35,17 @@
         config.onDone.ignore = true;
       });
 
-      if (value) {
-        // Only apply $if logic on the elements that are rendered
-        if (!node.rendered.resolved) {
-          return;
-        }
+      // Only apply $if logic on the elements that are rendered
+      if (!node.rendered.resolved) {
+        return;
+      }
 
+      if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);
         node.renderingFlow.nextAction(function () {
           waitStepDone();
         });
       } else {
-        if (!node.rendered.resolved) {
-          node.inDOM = false;
-          return;
-        }
-
         const waitStepDone = registerWaitStep(parentCache.$if);
         const process = createFalseProcess(node, waitStepDone);
         if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
