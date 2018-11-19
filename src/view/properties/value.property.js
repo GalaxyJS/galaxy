@@ -28,14 +28,16 @@
       if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
       } else {
-        nativeNode.addEventListener('keyup', createHandler(nativeNode, scopeReactiveData, id));
+        nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
     value: function (viewNode, value, oldValue, attr) {
       // input field parse the value which has been passed to it into a string
-      // that why we need to parse undefined and null into an empty string
-      if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+      // that's why we need to parse undefined and null into an empty string
+      // if (document.activeElement !== viewNode.node || !viewNode.node.value) {
+      if (value !== viewNode.node.value || !viewNode.node.value) {
         viewNode.node.value = value === undefined || value === null ? '' : value;
+        // viewNode.node.dispatchEvent(new KeyboardEvent('keyup'));
       }
     }
   };
@@ -46,9 +48,9 @@
     };
   }
 
-  function createHandler(_node, _rd, _id) {
-    return function () {
-      _rd.data[_id] = _node.value;
+  function createHandler(_rd, _id) {
+    return function (event) {
+      _rd.data[_id] = event.target.value;
     };
   }
 })(Galaxy);

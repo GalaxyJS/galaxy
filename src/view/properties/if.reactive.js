@@ -36,9 +36,12 @@
       });
 
       // Only apply $if logic on the elements that are rendered
-      if (!node.rendered.resolved) {
-        return;
-      }
+      // if (!node.rendered.resolved) {
+      //   if (!value) {
+      //
+      //   }
+      //   return;
+      // }
 
       if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);

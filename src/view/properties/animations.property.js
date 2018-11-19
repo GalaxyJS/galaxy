@@ -192,7 +192,6 @@
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
-
     if (to) {
       to = Object.assign({}, to);
 

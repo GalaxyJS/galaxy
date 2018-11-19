@@ -383,6 +383,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     },
 
+    createNode: function (schema, localScope) {
+      this.view.createNode(schema, this, localScope);
+    },
+
     /**
      * @param {Galaxy.View.ReactiveData} reactiveData
      * @param {string} propertyName

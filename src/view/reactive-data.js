@@ -367,6 +367,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       if (map) {
         map.nodes.forEach(function (node, i) {
           const key = map.keys[i];
+
           _this.syncNode(node, key, value, oldValue);
         });
       }
@@ -497,9 +498,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
         let initValue = this.data[dataKey];
         // We need initValue for cases where ui is bound to a property of an null object
-        if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
-          initValue = {};
-        }
+        // TODO: This line seem obsolete
+        // if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
+        //   initValue = {};
+        // }
 
         // if initValue is a change object, then we have to use its init for nodes that are newly being added
         // if the dataKey is length then ignore this line and use initValue which represent the length of array

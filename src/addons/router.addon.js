@@ -108,7 +108,7 @@
       if (routeIndex !== -1) {
         // delete all old resolved ids
         _this.oldResolveId = {};
-        return routes[routeIndex].act.call(null, parentParams);
+        return routes[routeIndex].act.call(null, {}, parentParams);
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
@@ -202,7 +202,7 @@
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
-          this.callMatchRoute(this.routes, hash);
+          this.callMatchRoute(this.routes, hash, {});
         }
       }
     },
