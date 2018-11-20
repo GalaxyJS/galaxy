@@ -17,7 +17,7 @@
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
+      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -30,18 +30,18 @@
         value = expression();
       }
 
+      // Only apply $if logic on the elements that are rendered
+      if (!node.rendered.resolved) {
+        if (!value) {
+          node.inDOM = false;
+        }
+        return;
+      }
+
       node.renderingFlow.truncate();
       node.renderingFlow.onTruncate(function () {
         config.onDone.ignore = true;
       });
-
-      // Only apply $if logic on the elements that are rendered
-      // if (!node.rendered.resolved) {
-      //   if (!value) {
-      //
-      //   }
-      //   return;
-      // }
 
       if (value) {
         const waitStepDone = registerWaitStep(parentCache.$if);

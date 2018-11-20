@@ -31,7 +31,7 @@
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
-    value: function (viewNode, value, oldValue, attr) {
+    value: function (viewNode, value) {
       // input field parse the value which has been passed to it into a string
       // that's why we need to parse undefined and null into an empty string
       // if (document.activeElement !== viewNode.node || !viewNode.node.value) {
