@@ -334,9 +334,9 @@
       }
 
       if (alternateDOMFlow === false) {
-        View.ViewNode.destroyNodes(node, itemsToBeRemoved, parentLeaveSequence, parentLeaveSequence);
+        View.ViewNode.destroyNodes( itemsToBeRemoved, parentLeaveSequence, parentLeaveSequence);
       } else {
-        View.ViewNode.destroyNodes(node, itemsToBeRemoved.reverse(), parentLeaveSequence, parentLeaveSequence);
+        View.ViewNode.destroyNodes( itemsToBeRemoved.reverse(), parentLeaveSequence, parentLeaveSequence);
       }
 
       parentLeaveSequence.nextAction(function () {

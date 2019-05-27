@@ -88,7 +88,7 @@ Galaxy.View = /** @class */(function () {
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
-    if (value) {
+    if (value !== null && value !== undefined) {
       viewNode.node.setAttribute(name, value);
     } else {
       viewNode.node.removeAttribute(name);
@@ -108,25 +108,6 @@ Galaxy.View = /** @class */(function () {
     });
 
     return result;
-  };
-
-  View.getAllViewNodes = function (node) {
-    let item, viewNodes = [];
-
-    const childNodes = Array.prototype.slice(node.childNodes, 0);
-    for (let i = 0, len = childNodes.length; i < len; i++) {
-      item = node.childNodes[i];
-
-      if (item['galaxyViewNode'] !== undefined) {
-        viewNodes.push(item.galaxyViewNode);
-      }
-
-      viewNodes = viewNodes.concat(View.getAllViewNodes(item));
-    }
-
-    return viewNodes.filter(function (value, index, self) {
-      return self.indexOf(value) === index;
-    });
   };
 
   /**
@@ -558,7 +539,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -586,7 +567,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -734,7 +715,6 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
-            console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }

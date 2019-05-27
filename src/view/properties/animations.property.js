@@ -164,6 +164,9 @@
    * @property {number} [duration]
    * @property {object} [from]
    * @property {object} [to]
+   * @property {string} [attachTo]
+   * @property {string} [addTo]
+   * @property {string} [appendTo]
    */
 
   AnimationMeta.ANIMATIONS = {};

@@ -95,14 +95,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
    * @param {Galaxy.Sequence} sequence
    * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View.ViewNode
    * @static
    */
-  ViewNode.destroyNodes = function (node, toBeRemoved, sequence, root) {
+  ViewNode.destroyNodes = function (toBeRemoved, sequence, root) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
@@ -525,7 +524,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({reactiveData: reactiveData, item: item});
+      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {
@@ -555,7 +554,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       items.forEach(function (vn) {
         vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
       });
-      
+
     },
 
     /**
@@ -580,7 +579,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
       // children should also get destroyed as child
       if (leaveSequence) {
-        ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
+        ViewNode.destroyNodes(toBeRemoved, leaveSequence, root);
 
         return _this.renderingFlow;
       }
@@ -591,7 +590,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           return _this.renderingFlow;
         }
 
-        ViewNode.destroyNodes(_this, toBeRemoved, null, root || _this.sequences.leave);
+        ViewNode.destroyNodes(toBeRemoved, null, root || _this.sequences.leave);
 
         _this.sequences.leave.nextAction(function () {
           _this.callLifecycleEvent('postClean');
