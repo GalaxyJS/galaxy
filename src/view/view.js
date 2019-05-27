@@ -6,7 +6,8 @@ Galaxy.View = /** @class */(function () {
 
   //------------------------------
 
-  View.EMPTY_CALL = function () {};
+  View.EMPTY_CALL = function () {
+  };
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
 
@@ -136,7 +137,7 @@ Galaxy.View = /** @class */(function () {
   View.getBindings = function (value) {
     let propertyKeysPaths = null;
     let isExpression = false;
-    const type = typeof(value);
+    const type = typeof (value);
     let modifiers = null;
     let handler = null;
 
@@ -149,8 +150,7 @@ Galaxy.View = /** @class */(function () {
         modifiers = null;
         propertyKeysPaths = null;
       }
-    }
-    else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
+    } else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
       propertyKeysPaths = value.slice(0);
       handler = propertyKeysPaths.pop();
       isExpression = true;
@@ -347,8 +347,7 @@ Galaxy.View = /** @class */(function () {
     try {
       bindings.expressionFn = Galaxy.View.createExpressionFunction(target, bindings.handler, dependencies, scope);
       return bindings.expressionFn;
-    }
-    catch (exception) {
+    } catch (exception) {
       throw console.error(exception.message + '\n', dependencies);
     }
   };
@@ -536,7 +535,7 @@ Galaxy.View = /** @class */(function () {
    */
   View.installReactiveBehavior = function (behavior, node, key, scopeData) {
     const bindTo = node.schema[key];
-    const matches = behavior.regex ? (typeof(bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
+    const matches = behavior.regex ? (typeof (bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
     const data = behavior.prepare.call(node, matches, scopeData);
     if (data !== undefined) {
       node.cache[key] = data;
@@ -567,7 +566,8 @@ Galaxy.View = /** @class */(function () {
 
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
-      return function () { };
+      return function () {
+      };
     }
 
     // This is the lowest level where the developer can modify the property setter behavior
@@ -690,7 +690,7 @@ Galaxy.View = /** @class */(function () {
         for (i = 0, len = nodeSchema.length; i < len; i++) {
           _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
         }
-      } else if (nodeSchema !== null && typeof(nodeSchema) === 'object') {
+      } else if (nodeSchema !== null && typeof (nodeSchema) === 'object') {
         let attributeValue, attributeName;
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
@@ -734,6 +734,7 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
+            console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }

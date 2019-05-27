@@ -542,11 +542,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       return nodes;
     },
 
+    get index() {
+      if (this.parent) {
+        return this.parent.index + ':' + (Array.prototype.indexOf.call(this.parent.node.childNodes, this.anchor) || 0);
+      }
+
+      return 0;
+    },
+
     flush: function (nodes) {
       const items = nodes || this.getChildNodes();
       items.forEach(function (vn) {
         vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
       });
+      
     },
 
     /**
@@ -598,6 +607,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @returns {*}
      */
     getPlaceholder: function () {
+      if (this.inDOM) {
+        return this.node;
+      }
+
+      return this.placeholder;
+    },
+
+    get anchor() {
       if (this.inDOM) {
         return this.node;
       }
