@@ -1,5 +1,8 @@
 /* global Galaxy, Promise */
 'use strict';
+
+window.AsyncFunction = Object.getPrototypeOf(async function () {
+}).constructor;
 /**
  * @exports Galaxy
  */
@@ -65,7 +68,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       clone.__proto__ = obj.__proto__;
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
-          if (typeof(obj[i]) === 'object' && obj[i] !== null) {
+          if (typeof (obj[i]) === 'object' && obj[i] !== null) {
 
             clone[i] = Galaxy.clone(obj[i]);
           } else {
@@ -286,7 +289,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
-            new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
+            new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
           moduleSource.call(module.scope, module.scope);
 
           Reflect.deleteProperty(module, 'source');
@@ -309,8 +312,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
           currentModule.init();
           resolve(currentModule);
-        }
-        catch (error) {
+        } catch (error) {
           console.error(error.message + ': ' + module.url);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
           console.error(error);

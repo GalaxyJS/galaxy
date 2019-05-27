@@ -1,5 +1,5 @@
 /* global require */
-// COre
+// Core
 const gulp = require('gulp');
 const pump = require('pump');
 // plugins
@@ -7,7 +7,6 @@ const uglify = require('gulp-uglify');
 const babel = require('gulp-babel');
 const concat = require('gulp-concat');
 // TTD
-const Server = require('karma').Server;
 
 let sources = {
   galaxy: [
@@ -24,8 +23,8 @@ let sources = {
   ]
 };
 
-gulp.task('build-galaxy', function () {
-  return pump([
+const build = function (done) {
+  pump([
     gulp.src(sources.galaxy),
     concat('galaxy.js'),
     gulp.dest('dist/'),
@@ -40,14 +39,13 @@ gulp.task('build-galaxy', function () {
       console.info(error.stack);
     }
   });
-});
+  done();
+};
 
-gulp.task('build-galaxy-production', function () {
-  return pump([
+const buildProduction = function (done) {
+  pump([
     gulp.src(sources.galaxy),
-    babel({
-      presets: ['es2015-script']
-    }),
+    babel(),
     concat('galaxy.min.js'),
     uglify({compress: true}),
     gulp.dest('dist/'),
@@ -60,17 +58,17 @@ gulp.task('build-galaxy-production', function () {
       console.info(error.stack);
     }
   });
-});
+  done();
+};
 
-gulp.task('start-development', ['build-galaxy'], function () {
+const watchAndBuild = function (done) {
   gulp.watch([
     'src/**/*.*',
     'site/**/*.html'
-  ], ['build-galaxy']);
-});
+  ], build);
+  done();
+};
 
-gulp.task('tdd', function (done) {
-  new Server({
-    configFile: __dirname + '/karma.config.js'
-  }, done).start();
-});
+gulp.task('build-galaxy', build);
+gulp.task('build-galaxy-production', buildProduction);
+gulp.task('start-development', gulp.series(build, watchAndBuild));
