@@ -144,8 +144,7 @@
                 });
               }
             });
-          }
-          catch (exception) {
+          } catch (exception) {
             console.warn(exception);
           }
         });
@@ -315,7 +314,8 @@
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
-   * @param descriptions
+   * @param {AnimationConfig} descriptions
+   * @param config
    * @param {callback} onComplete
    */
   AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
@@ -331,7 +331,7 @@
     } else if (type.indexOf('@') === 0) {
       to = Object.assign(to || {}, {overwrite: 'none'});
     }
-
+    /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
@@ -352,20 +352,29 @@
       }
 
       // Add to parent should happen after the animation is added to the child
-      if (newConfig.parent) {
-        // const parent = AnimationMeta.get(newConfig.parent);
-        // const animationMetaTypeConfig = animationMeta.configs[type] || {};
-        // const parentTypeConfig = animationMeta.configs[type] || {};
-// debugger;
-        animationMeta.addChild(viewNode, type, newConfig);
+      // if (newConfig.parent) {
+      //   animationMeta.addChild(viewNode, type, newConfig);
+      // }
+
+      // if(newConfig.attachTo === 'main-nav-items') debugger;
+      if (newConfig.addTo) {
+        animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
       }
 
-      if (newConfig.startAfter) {
-        const parent = AnimationMeta.get(newConfig.startAfter);
-        const animationMetaTypeConfig = animationMeta.configs[type] || {};
-
-        parent.addAtEnd(viewNode, type, animationMeta, animationMetaTypeConfig);
+      if (newConfig.attachTo) {
+        animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
       }
+
+      if (newConfig.appendTo) {
+        animationMeta.addTo(newConfig.attachTo, newConfig.positionInParent);
+      }
+
+      // if (newConfig.startAfter) {
+      //   const parent = AnimationMeta.get(newConfig.startAfter);
+      //   const animationMetaTypeConfig = animationMeta.configs[type] || {};
+      //
+      //   parent.addAtEnd(viewNode, type, animationMeta, animationMetaTypeConfig);
+      // }
 
     } else {
       AnimationMeta.createTween(viewNode, newConfig, onComplete);
@@ -411,6 +420,37 @@
   AnimationMeta.prototype = {
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
+    },
+    addTo(sequenceName, pip) {
+      const animationMeta = AnimationMeta.get(sequenceName);
+      const children = animationMeta.timeline.getChildren(false);
+      const farChildren = children.filter((item) => !item._time);
+
+      if (children.indexOf(this.timeline) === -1) {
+        animationMeta.timeline.pause();
+        if(sequenceName ==='main-nav-items' ) debugger;
+        animationMeta.timeline.add(this.timeline, this.timeline._time);
+        animationMeta.timeline.resume();
+      }
+    },
+    attachTo(sequenceName, pip) {
+      const animationMeta = AnimationMeta.get(sequenceName);
+      const children = animationMeta.timeline.getChildren(false);
+
+      if (children.indexOf(this.timeline) === -1) {
+        this.timeline.pause();
+        animationMeta.timeline.add(() => {
+          this.timeline.resume();
+        }, pip || '+=0');
+      }
+    },
+    appendTo(sequenceName) {
+      const animationMeta = AnimationMeta.get(sequenceName);
+
+      this.timeline.pause();
+      animationMeta.eventCallback('onComplete', () => {
+        this.timeline.resume();
+      });
     },
     /**
      * @param {Galaxy.View.ViewNode} viewNode

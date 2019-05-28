@@ -130,6 +130,7 @@
             whenAllLeavesAreDone.cancel();
           });
         }
+        if(parent.schema.class === 'sub-nav-container') debugger;
 
         const waitStepDone = registerWaitStep(parentCache.$for, parent.sequences.leave);
         let leaveStep = null;
