@@ -38,7 +38,7 @@
         const hostSuffix = '[' + ids.host + ']';
         const contentSuffix = '[' + ids.content + ']';
         const parsedCSSRules = [];
-        const host = /(\:host)/g;
+        const host = /(:host)/g;
         const selector = /([^\s+>~,]+)/g;
         const selectorReplacer = function (item) {
           if (item === ':host') {
@@ -59,7 +59,15 @@
         Scope.exports = {
           tag: 'style',
           id: Scope.systemId,
-          text: parsedCSSText
+          text: parsedCSSText,
+          _apply() {
+            this.parent.node.setAttribute(ids.host, '');
+            const children = this.parent.schema.children || [];
+            children.forEach((child) => {
+              child[ids.content] = '';
+            });
+            console.log(children)
+          }
         };
       }
     };

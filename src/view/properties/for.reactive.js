@@ -42,7 +42,7 @@
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -96,7 +96,6 @@
         }
 
         if (!(changes instanceof Galaxy.View.ArrayChange)) {
-          console.warn(changes);
           throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         }
       }
@@ -130,7 +129,7 @@
             whenAllLeavesAreDone.cancel();
           });
         }
-        if(parent.schema.class === 'sub-nav-container') debugger;
+        if (parent.schema.class === 'sub-nav-container') debugger;
 
         const waitStepDone = registerWaitStep(parentCache.$for, parent.sequences.leave);
         let leaveStep = null;

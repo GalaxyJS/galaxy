@@ -88,7 +88,7 @@ Galaxy.View = /** @class */(function () {
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
-    if (value) {
+    if (value !== null && value !== undefined) {
       viewNode.node.setAttribute(name, value);
     } else {
       viewNode.node.removeAttribute(name);
@@ -359,6 +359,7 @@ Galaxy.View = /** @class */(function () {
    * @param {Galaxy.View.ReactiveData} parentReactiveData
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
+   * @param {Galaxy.View.ViewNode | undefined} root
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
@@ -734,7 +735,7 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
-            console.log(viewNode.index)
+            // console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }
