@@ -20,6 +20,36 @@ Galaxy.View = /** @class */(function () {
     // }
   };
 
+  View.TO_BE_CREATED = {};
+
+  View.LAST_CREATE_FRAME_ID = null;
+
+  View.CREATE_IN_NEXT_FRAME = function (node, action) {
+    if (View.LAST_CREATE_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+      View.LAST_CREATE_FRAME_ID = null;
+    }
+
+    View.TO_BE_CREATED[node.index] = {
+      node,
+      action
+    };
+
+    const keys = Object.keys(View.TO_BE_CREATED).sort();
+
+    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+      console.log(keys);
+      keys.forEach((key) => {
+        const batch = View.TO_BE_CREATED[key];
+        if (!batch) {
+          return;
+        }
+        batch.action();
+        Reflect.deleteProperty(View.TO_BE_CREATED, key);
+      });
+    });
+  };
+
   /**
    *
    * @typedef {Object} Galaxy.View.SchemaProperty
@@ -108,6 +138,25 @@ Galaxy.View = /** @class */(function () {
     });
 
     return result;
+  };
+
+  View.getAllViewNodes = function (node) {
+    let item, viewNodes = [];
+
+    const childNodes = Array.prototype.slice(node.childNodes, 0);
+    for (let i = 0, len = childNodes.length; i < len; i++) {
+      item = node.childNodes[i];
+
+      if (item['galaxyViewNode'] !== undefined) {
+        viewNodes.push(item.galaxyViewNode);
+      }
+
+      viewNodes = viewNodes.concat(View.getAllViewNodes(item));
+    }
+
+    return viewNodes.filter(function (value, index, self) {
+      return self.indexOf(value) === index;
+    });
   };
 
   /**
@@ -340,6 +389,7 @@ Galaxy.View = /** @class */(function () {
    * @param {Galaxy.View.ReactiveData} parentReactiveData
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
+   * @param {Galaxy.View.ViewNode | undefined} root
    */
   View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
@@ -539,7 +589,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -567,7 +617,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -632,12 +682,12 @@ Galaxy.View = /** @class */(function () {
         _this.container.node.innerHTML = '';
       }
 
-      _this.container.renderingFlow.next(function (next) {
-        _this.createNode(schema, _this.container, _this.scope, null);
-        _this.container.sequences.enter.nextAction(function () {
-          next();
-        }, null, 'container-enter');
-      });
+      // _this.container.renderingFlow.next(function (next) {
+      _this.createNode(schema, _this.container, _this.scope, null);
+      // _this.container.sequences.enter.nextAction(function () {
+      //   next();
+      // }, null, 'container-enter');
+      // });
     },
     style: function (styleSchema) {
       // this.createNode(Object.assign({}, styleSchema));
@@ -715,16 +765,17 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
+            // console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }
 
         // viewNode.onReady promise will be resolved after all the dom manipulations are done
-        viewNode.sequences.enter.nextAction(function () {
-          requestAnimationFrame(function () {
-            viewNode.hasBeenRendered();
-          });
-        });
+        // viewNode.sequences.enter.nextAction(function () {
+        //   requestAnimationFrame(function () {
+        //     viewNode.hasBeenRendered();
+        //   });
+        // });
 
         return viewNode;
       }

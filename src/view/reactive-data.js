@@ -225,10 +225,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     },
     /**
      *
-     * @param value
+     * @param arr
      * @returns {*}
      */
-    makeReactiveArray: function (value) {
+    makeReactiveArray: function (arr) {
       /**
        *
        * @type {Galaxy.View.ReactiveData}
@@ -236,16 +236,16 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
        */
       const _this = this;
 
-      if (value.hasOwnProperty('changes')) {
-        return value.changes;
+      if (arr.hasOwnProperty('changes')) {
+        return arr.changes;
       }
       // _this.makeReactiveObject(value, 'changes', true);
 
       const initialChanges = new Galaxy.View.ArrayChange();
-      initialChanges.original = value;
-      initialChanges.snapshot = value.slice(0);
+      initialChanges.original = arr;
+      initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
-      initialChanges.params = value;
+      initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
         if (item !== null && typeof item === 'object') {
           new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
@@ -254,14 +254,14 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       _this.sync('length');
       initialChanges.init = initialChanges;
-      value.changes = initialChanges;
+      arr.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      _this.makeReactiveObject(value, 'changes');
+      _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
         const originalMethod = ARRAY_PROTO[method];
-        defProp(value, method, {
+        defProp(arr, method, {
           value: function () {
             let i = arguments.length;
             const args = new Array(i);
@@ -271,8 +271,8 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
             const returnValue = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
-            changes.original = value;
-            changes.snapshot = value.slice(0);
+            changes.original = arr;
+            changes.snapshot = arr.slice(0);
             changes.type = method;
             changes.params = args;
             changes.returnValue = returnValue;
@@ -301,7 +301,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             // For arrays we have to sync length manually
             // if we use notify here we will get
             _this.notifyDown('length');
-            value.changes = changes;
+            arr.changes = changes;
 
             return returnValue;
           },

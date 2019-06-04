@@ -60,16 +60,13 @@
           tag: 'style',
           id: Scope.systemId,
           text: parsedCSSText,
-          hostId: ids.host,
-          contentId: ids.content,
-          stuff: function (s) {
-            console.log(this.parent.schema);
+          _apply() {
+            this.parent.node.setAttribute(ids.host, '');
             const children = this.parent.schema.children || [];
-
-            this.parent.node.setAttribute(ids.host, '')
             children.forEach((child) => {
               child[ids.content] = '';
             });
+            console.log(children)
           }
         };
       }
