@@ -20,6 +20,36 @@ Galaxy.View = /** @class */(function () {
     // }
   };
 
+  View.TO_BE_CREATED = {};
+
+  View.LAST_CREATE_FRAME_ID = null;
+
+  View.CREATE_IN_NEXT_FRAME = function (node, action) {
+    if (View.LAST_CREATE_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+      View.LAST_CREATE_FRAME_ID = null;
+    }
+
+    View.TO_BE_CREATED[node.index] = {
+      node,
+      action
+    };
+
+    const keys = Object.keys(View.TO_BE_CREATED).sort();
+
+    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+      console.log(keys);
+      keys.forEach((key) => {
+        const batch = View.TO_BE_CREATED[key];
+        if (!batch) {
+          return;
+        }
+        batch.action();
+        Reflect.deleteProperty(View.TO_BE_CREATED, key);
+      });
+    });
+  };
+
   /**
    *
    * @typedef {Object} Galaxy.View.SchemaProperty
@@ -652,12 +682,12 @@ Galaxy.View = /** @class */(function () {
         _this.container.node.innerHTML = '';
       }
 
-      _this.container.renderingFlow.next(function (next) {
-        _this.createNode(schema, _this.container, _this.scope, null);
-        _this.container.sequences.enter.nextAction(function () {
-          next();
-        }, null, 'container-enter');
-      });
+      // _this.container.renderingFlow.next(function (next) {
+      _this.createNode(schema, _this.container, _this.scope, null);
+      // _this.container.sequences.enter.nextAction(function () {
+      //   next();
+      // }, null, 'container-enter');
+      // });
     },
     style: function (styleSchema) {
       // this.createNode(Object.assign({}, styleSchema));
@@ -741,11 +771,11 @@ Galaxy.View = /** @class */(function () {
         }
 
         // viewNode.onReady promise will be resolved after all the dom manipulations are done
-        viewNode.sequences.enter.nextAction(function () {
-          requestAnimationFrame(function () {
-            viewNode.hasBeenRendered();
-          });
-        });
+        // viewNode.sequences.enter.nextAction(function () {
+        //   requestAnimationFrame(function () {
+        //     viewNode.hasBeenRendered();
+        //   });
+        // });
 
         return viewNode;
       }

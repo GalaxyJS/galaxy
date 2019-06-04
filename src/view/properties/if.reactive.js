@@ -12,12 +12,13 @@
         leaveProcessList: [],
         queue: [],
         mainPromise: null,
-        onDone: function () { }
+        onDone: function () {
+        }
       };
     },
     install: function (config) {
       const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
+      parentNode.cache.$if = parentNode.cache.$if || {leaveProcessList: [], queue: [], mainPromise: null};
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
@@ -38,37 +39,42 @@
         return;
       }
 
-      node.renderingFlow.truncate();
-      node.renderingFlow.onTruncate(function () {
-        config.onDone.ignore = true;
+      // node.renderingFlow.truncate();
+      // node.renderingFlow.onTruncate(function () {
+      //   config.onDone.ignore = true;
+      // });
+
+
+      Galaxy.View.CREATE_IN_NEXT_FRAME(node, function () {
+        node.setInDOM(value);
       });
 
-      if (value) {
-        const waitStepDone = registerWaitStep(parentCache.$if);
-        node.renderingFlow.nextAction(function () {
-          waitStepDone();
-        });
-      } else {
-        const waitStepDone = registerWaitStep(parentCache.$if);
-        const process = createFalseProcess(node, waitStepDone);
-        if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
-          parentCache.$if.leaveProcessList.push(process);
-        } else {
-          parentCache.$if.leaveProcessList.unshift(process);
-        }
-      }
-
-      activateLeaveProcess(parentCache.$if);
-
-      const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
-        if (value) {
-          runTrueProcess(node);
-        }
-      });
-      config.onDone = whenAllLeavesAreDone;
-
-      parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
-      parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
+      // if (value) {
+      //   const waitStepDone = registerWaitStep(parentCache.$if);
+      //   node.renderingFlow.nextAction(function () {
+      //     waitStepDone();
+      //   });
+      // } else {
+      //   const waitStepDone = registerWaitStep(parentCache.$if);
+      //   const process = createFalseProcess(node, waitStepDone);
+      //   if (parentSchema.renderConfig && parentSchema.renderConfig.alternateDOMFlow === false) {
+      //     parentCache.$if.leaveProcessList.push(process);
+      //   } else {
+      //     parentCache.$if.leaveProcessList.unshift(process);
+      //   }
+      // }
+      //
+      // activateLeaveProcess(parentCache.$if);
+      //
+      // const whenAllLeavesAreDone = createWhenAllDoneProcess(parentCache.$if, function () {
+      //   if (value) {
+      //     runTrueProcess(node);
+      //   }
+      // });
+      // config.onDone = whenAllLeavesAreDone;
+      //
+      // parentCache.$if.mainPromise = parentCache.$if.mainPromise || Promise.all(parentNode.cache.$if.queue);
+      // parentCache.$if.mainPromise.then(whenAllLeavesAreDone);
     }
   };
 

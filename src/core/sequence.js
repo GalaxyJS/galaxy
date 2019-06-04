@@ -178,6 +178,9 @@ Galaxy.Sequence = /** @class */ (function () {
       let i = 0;
       const len = _this.truncateHandlers.length;
       for (; i < len; i++) {
+        if (!_this.truncateHandlers[i]) {
+          continue;
+        }
         _this.truncateHandlers[i].call(this);
       }
 

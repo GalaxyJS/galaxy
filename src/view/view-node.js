@@ -112,6 +112,65 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   };
 
+  ViewNode.TO_BE_DESTROYED = {};
+
+  ViewNode.LAST_FRAME_ID = null;
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+   * @param {Galaxy.Sequence} sequence
+   * @param {Galaxy.Sequence} root
+   * @memberOf Galaxy.View.ViewNode
+   * @static
+   */
+  ViewNode.destroyInNextFrame = function (node, toBeRemoved, sequence, root) {
+    if (ViewNode.LAST_FRAME_ID) {
+      cancelAnimationFrame(ViewNode.LAST_FRAME_ID);
+      ViewNode.LAST_FRAME_ID = null;
+    }
+
+    ViewNode.TO_BE_DESTROYED[node.index] = {
+      node,
+      toBeRemoved,
+      sequence,
+      root
+    };
+
+    const keys = Object.keys(ViewNode.TO_BE_DESTROYED).sort().reverse();
+
+    ViewNode.LAST_FRAME_ID = requestAnimationFrame(() => {
+      // console.log(keys);
+      keys.forEach((key) => {
+        const batch = ViewNode.TO_BE_DESTROYED[key];
+        if (!batch) {
+          // console.log(ViewNode.TO_BE_DESTROYED,key);
+          return;
+        }
+        ViewNode.destroyNodes(batch.node, batch.toBeRemoved, batch.sequence, batch.root);
+        Reflect.deleteProperty(ViewNode.TO_BE_DESTROYED, key);
+      });
+
+      // console.log(ViewNode.TO_BE_DESTROYED)
+    });
+  };
+
+  ViewNode.createIndex = function (i) {
+    if (i < 10) {
+      return i + '';
+    }
+
+    let r = '9';
+    let res = i - 10;
+    while (res >= 10) {
+      r += '9';
+      res -= 10;
+    }
+
+    return r + res;
+  };
+
   /**
    *
    * @param schema
@@ -240,7 +299,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     virtualize: function () {
       this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
-      // this.placeholder.nodeValue = 'tag: ' + this.schema.tag;
       this.virtual = true;
       this.setInDOM(false);
     },
@@ -284,44 +342,60 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.callLifecycleEvent('preInsert');
 
         // remove the animation from the parent which are referring to this node
-        enterSequence.onTruncate(function () {
-          _this.parent.sequences.enter.removeByRef(_this.refNode);
+        // enterSequence.onTruncate(function () {
+        //   _this.parent.sequences.enter.removeByRef(_this.refNode);
+        // });
+        //
+        // enterSequence.nextAction(function () {
+        //   if (!_this.node.parentNode) {
+        //     insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        //   }
+        //
+        //   if (_this.placeholder.parentNode) {
+        //     removeChild(_this.placeholder.parentNode, _this.placeholder);
+        //   }
+        //
+        //   _this.callLifecycleEvent('postInsert');
+        //   _this.hasBeenInserted();
+        //   // GV.CREATE_IN_NEXT_FRAME(_this, _this.hasBeenInserted);
+        // }, null, 'inserted');
+        if (!_this.node.parentNode) {
+          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+        }
+
+        if (_this.placeholder.parentNode) {
+          removeChild(_this.placeholder.parentNode, _this.placeholder);
+        }
+
+        _this.callLifecycleEvent('postInsert');
+        _this.hasBeenInserted();
+
+        GV.CREATE_IN_NEXT_FRAME(_this, function () {
+          _this.populateEnterSequence();
+          _this.hasBeenRendered();
         });
 
-        enterSequence.nextAction(function () {
-          if (!_this.node.parentNode) {
-            insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-          }
+        // let animationsAreDone;
+        // const waitForNodeAndChildrenAnimations = new Promise(function (resolve) {
+        //   animationsAreDone = resolve;
+        // });
 
-          if (_this.placeholder.parentNode) {
-            removeChild(_this.placeholder.parentNode, _this.placeholder);
-          }
-
-          _this.callLifecycleEvent('postInsert');
-          _this.hasBeenInserted();
-        }, null, 'inserted');
-
-        let animationsAreDone;
-        const waitForNodeAndChildrenAnimations = new Promise(function (resolve) {
-          animationsAreDone = resolve;
-        });
-
-        _this.parent.sequences.enter.next(function (next) {
-          waitForNodeAndChildrenAnimations.then(next);
-        }, _this.refNode, 'parent');
+        // _this.parent.sequences.enter.next(function (next) {
+        //   waitForNodeAndChildrenAnimations.then(next);
+        // }, _this.refNode, 'parent');
 
         // Register self enter animation
-        _this.populateEnterSequence(enterSequence);
+        // _this.populateEnterSequence(enterSequence);
 
-        _this.inserted.then(function () {
-          // At this point all the animations for this node are registered
-          // Run all the registered animations then call the animationsAreDone
-          enterSequence.nextAction(function () {
-            _this.callLifecycleEvent('postEnter');
-            _this.callLifecycleEvent('postAnimations');
-            animationsAreDone();
-          }, null, 'post-children-animation');
-        });
+        // _this.inserted.then(function () {
+        //   // At this point all the animations for this node are registered
+        //   // Run all the registered animations then call the animationsAreDone
+        //   enterSequence.nextAction(function () {
+        //     _this.callLifecycleEvent('postEnter');
+        //     _this.callLifecycleEvent('postAnimations');
+        //     animationsAreDone();
+        //   }, null, 'post-children-animation');
+        // });
       } else if (!flag && _this.node.parentNode) {
         enterSequence.truncate();
         _this.callLifecycleEvent('preRemove');
@@ -544,9 +618,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     get index() {
       if (this.parent) {
-        return this.parent.index + ':' + (Array.prototype.indexOf.call(this.parent.node.childNodes, this.anchor) || 0);
+        const i = Array.prototype.indexOf.call(this.parent.node.childNodes, this.anchor);
+        return this.parent.index + '-' + (ViewNode.createIndex(i) || 0);
       }
-
       return 0;
     },
 
@@ -555,7 +629,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       items.forEach(function (vn) {
         vn.node.parentNode && removeChild(vn.node.parentNode, vn.node);
       });
-      
+
     },
 
     /**
@@ -580,7 +654,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
       // children should also get destroyed as child
       if (leaveSequence) {
-        ViewNode.destroyNodes(_this, toBeRemoved, leaveSequence, root);
+        ViewNode.destroyInNextFrame(_this, toBeRemoved, leaveSequence, root);
 
         return _this.renderingFlow;
       }
@@ -591,7 +665,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           return _this.renderingFlow;
         }
 
-        ViewNode.destroyNodes(_this, toBeRemoved, null, root || _this.sequences.leave);
+        ViewNode.destroyInNextFrame(_this, toBeRemoved, null, root || _this.sequences.leave);
 
         _this.sequences.leave.nextAction(function () {
           _this.callLifecycleEvent('postClean');
