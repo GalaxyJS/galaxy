@@ -54,7 +54,6 @@
       const clone = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new Galaxy.Observer(clone);
 
-
       if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
@@ -113,10 +112,10 @@
     const newClasses = getClasses(classes);
 
     _this.notifyObserver('class', newClasses, oldClasses);
-    _this.sequences.classList.nextAction(function () {
-      _this.node.setAttribute('class', newClasses.join(' '));
-      _this.notifyObserver('classList', newClasses, oldClasses);
-    });
+    // _this.sequences.classList.nextAction(function () {
+    _this.node.setAttribute('class', newClasses.join(' '));
+    _this.notifyObserver('classList', newClasses, oldClasses);
+    // });
   }
 })(Galaxy);
 

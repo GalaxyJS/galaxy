@@ -6,6 +6,14 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
+  function insertBefore(parentNode, newNode, referenceNode) {
+    parentNode.insertBefore(newNode, referenceNode);
+  }
+
+  function removeChild(node, child) {
+    node.removeChild(child);
+  }
+
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
@@ -63,12 +71,12 @@
           AnimationMeta.get(leave.sequence).configs.leave = leave;
         }
 
-        viewNode.populateLeaveSequence = function (sequence) {
+        viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 
-          sequence.onTruncate(function () {
-            TweenLite.killTweensOf(viewNode.node);
-          });
+          // sequence.onTruncate(function () {
+          //   TweenLite.killTweensOf(viewNode.node);
+          // });
 
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
           if (value.config.leaveWithParent) {
@@ -87,16 +95,44 @@
             return;
           }
 
-          let animationDone;
-          const waitForAnimation = new Promise(function (resolve) {
-            animationDone = resolve;
-          });
+          // let animationDone;
+          // const waitForAnimation = new Promise(function (resolve) {
+          //   animationDone = resolve;
+          // });
 
-          sequence.next(function (done) {
-            waitForAnimation.then(done);
-          });
+          // sequence.next(function (done) {
+          //   waitForAnimation.then(done);
+          // });
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, animationDone);
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, function () {
+            if (!flag) {
+              if (!viewNode.placeholder.parentNode) {
+                insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+              }
+
+              if (viewNode.node.parentNode) {
+                removeChild(viewNode.node.parentNode, viewNode.node);
+              }
+            } else {
+              viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
+              viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+            }
+          });
+        };
+      } else {
+        viewNode.populateLeaveSequence = function (flag) {
+          if (!flag) {
+            if (!viewNode.placeholder.parentNode) {
+              insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+            }
+
+            if (viewNode.node.parentNode) {
+              removeChild(viewNode.node.parentNode, viewNode.node);
+            }
+          } else {
+            viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
+            viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+          }
         };
       }
 
@@ -104,17 +140,17 @@
         viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
 
-          const classSequence = viewNode.sequences.classList;
+          // const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
                 if (item.indexOf('@') === 0) {
                   const classEvent = value[item];
                   if (classEvent) {
-                    classSequence.nextAction(function () {
-                      viewNode.node.classList.remove(item);
-                      AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
-                    });
+                    // classSequence.nextAction(function () {
+                    viewNode.node.classList.remove(item);
+                    AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
+                    // });
                   }
 
                   return;
@@ -125,10 +161,10 @@
                   return;
                 }
 
-                classSequence.nextAction(function (done) {
-                  viewNode.node.classList.remove(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
-                });
+                // classSequence.nextAction(function (done) {
+                viewNode.node.classList.remove(item);
+                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
+                // });
               }
             });
 
@@ -139,10 +175,10 @@
                   return;
                 }
 
-                classSequence.nextAction(function (done) {
-                  viewNode.node.classList.add(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
-                });
+                // classSequence.nextAction(function (done) {
+                viewNode.node.classList.add(item);
+                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
+                // });
               }
             });
           } catch (exception) {
@@ -237,6 +273,8 @@
       tween = TweenLite.to(node,
         duration,
         to);
+    } else {
+      onComplete();
     }
 
     return tween;
@@ -328,9 +366,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -344,7 +382,6 @@
 
     if (sequenceName) {
       const animationMeta = AnimationMeta.get(sequenceName);
-
 
       if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
         animationMeta.addOnComplete(onComplete);
@@ -599,7 +636,8 @@
       //     return;
       //   }
       // }
-
+      // const indexes =
+// debugger;
       if (children.indexOf(tween) === -1) {
         // _this.children.push(nodeTimeline);
         let progress = _this.timeline.progress();

@@ -20,6 +20,66 @@ Galaxy.View = /** @class */(function () {
     // }
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+   * @param {Galaxy.Sequence} sequence
+   * @param {Galaxy.Sequence} root
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.destroyNodes = function (node, toBeRemoved, sequence, root) {
+    let remove = null;
+
+    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
+      remove = toBeRemoved[i];
+      // remove.renderingFlow.truncate();
+      remove.destroy(sequence, root);
+    }
+  };
+
+  View.TO_BE_DESTROYED = {};
+
+  View.LAST_FRAME_ID = null;
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Function} action
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.DESTROY_IN_NEXT_FRAME = function (node, action) {
+    if (View.LAST_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_FRAME_ID);
+      View.LAST_FRAME_ID = null;
+    }
+
+    View.TO_BE_DESTROYED[node.index] = {
+      node,
+      action
+    };
+
+    const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+
+    View.LAST_FRAME_ID = requestAnimationFrame(() => {
+      // console.log(keys);
+      keys.forEach((key) => {
+        const batch = View.TO_BE_DESTROYED[key];
+        if (!batch) {
+          // console.log(View.TO_BE_DESTROYED,key);
+          return;
+        }
+        batch.action();
+        // View.destroyNodes(batch.node, batch.toBeRemoved, batch.sequence, batch.root);
+        Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
+      });
+
+      // console.log(ViewNode.TO_BE_DESTROYED)
+    });
+  };
+
   View.TO_BE_CREATED = {};
 
   View.LAST_CREATE_FRAME_ID = null;
@@ -589,7 +649,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -617,7 +677,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -663,12 +723,12 @@ Galaxy.View = /** @class */(function () {
         tag: scope.element.tagName
       }, scope.element, _this);
 
-      _this.container.sequences.enter.nextAction(function () {
-        _this.container.hasBeenRendered();
-      });
+      // _this.container.sequences.enter.nextAction(function () {
+      _this.container.hasBeenRendered();
+      // });
     }
 
-    _this.renderingFlow = this.container.renderingFlow;
+    // _this.renderingFlow = this.container.renderingFlow;
   }
 
   View.prototype = {

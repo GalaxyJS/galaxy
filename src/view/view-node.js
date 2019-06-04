@@ -107,53 +107,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      remove.renderingFlow.truncate();
+      // remove.renderingFlow.truncate();
       remove.destroy(sequence, root);
     }
-  };
-
-  ViewNode.TO_BE_DESTROYED = {};
-
-  ViewNode.LAST_FRAME_ID = null;
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.Sequence} sequence
-   * @param {Galaxy.Sequence} root
-   * @memberOf Galaxy.View.ViewNode
-   * @static
-   */
-  ViewNode.destroyInNextFrame = function (node, toBeRemoved, sequence, root) {
-    if (ViewNode.LAST_FRAME_ID) {
-      cancelAnimationFrame(ViewNode.LAST_FRAME_ID);
-      ViewNode.LAST_FRAME_ID = null;
-    }
-
-    ViewNode.TO_BE_DESTROYED[node.index] = {
-      node,
-      toBeRemoved,
-      sequence,
-      root
-    };
-
-    const keys = Object.keys(ViewNode.TO_BE_DESTROYED).sort().reverse();
-
-    ViewNode.LAST_FRAME_ID = requestAnimationFrame(() => {
-      // console.log(keys);
-      keys.forEach((key) => {
-        const batch = ViewNode.TO_BE_DESTROYED[key];
-        if (!batch) {
-          // console.log(ViewNode.TO_BE_DESTROYED,key);
-          return;
-        }
-        ViewNode.destroyNodes(batch.node, batch.toBeRemoved, batch.sequence, batch.root);
-        Reflect.deleteProperty(ViewNode.TO_BE_DESTROYED, key);
-      });
-
-      // console.log(ViewNode.TO_BE_DESTROYED)
-    });
   };
 
   ViewNode.createIndex = function (i) {
@@ -199,13 +155,13 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
     _this.dependedObjects = [];
-    _this.renderingFlow = new Galaxy.Sequence();
-    _this.sequences = {
-      enter: new Galaxy.Sequence(),
-      leave: new Galaxy.Sequence(),
-      destroy: new Galaxy.Sequence(),
-      classList: new Galaxy.Sequence()
-    };
+    // _this.renderingFlow = new Galaxy.Sequence();
+    // _this.sequences = {
+    //   enter: new Galaxy.Sequence(),
+    //   leave: new Galaxy.Sequence(),
+    //   destroy: new Galaxy.Sequence(),
+    //   classList: new Galaxy.Sequence()
+    // };
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
@@ -333,32 +289,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     setInDOM: function (flag) {
       const _this = this;
       _this.inDOM = flag;
-      const enterSequence = _this.sequences.enter;
-      const leaveSequence = _this.sequences.leave;
+      // const enterSequence = _this.sequences.enter;
+      // const leaveSequence = _this.sequences.leave;
 
       // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
       if (flag && !_this.virtual) {
-        leaveSequence.truncate();
+        // leaveSequence.truncate();
         _this.callLifecycleEvent('preInsert');
 
-        // remove the animation from the parent which are referring to this node
-        // enterSequence.onTruncate(function () {
-        //   _this.parent.sequences.enter.removeByRef(_this.refNode);
-        // });
-        //
-        // enterSequence.nextAction(function () {
-        //   if (!_this.node.parentNode) {
-        //     insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
-        //   }
-        //
-        //   if (_this.placeholder.parentNode) {
-        //     removeChild(_this.placeholder.parentNode, _this.placeholder);
-        //   }
-        //
-        //   _this.callLifecycleEvent('postInsert');
-        //   _this.hasBeenInserted();
-        //   // GV.CREATE_IN_NEXT_FRAME(_this, _this.hasBeenInserted);
-        // }, null, 'inserted');
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
@@ -368,75 +306,39 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        _this.hasBeenInserted();
-
+        _this.node.style.visibility = 'hidden';
+        // console.log(_this.node, _this.index);
         GV.CREATE_IN_NEXT_FRAME(_this, function () {
+          _this.node.style.visibility = null;
+          _this.hasBeenInserted();
           _this.populateEnterSequence();
           _this.hasBeenRendered();
         });
-
-        // let animationsAreDone;
-        // const waitForNodeAndChildrenAnimations = new Promise(function (resolve) {
-        //   animationsAreDone = resolve;
-        // });
-
-        // _this.parent.sequences.enter.next(function (next) {
-        //   waitForNodeAndChildrenAnimations.then(next);
-        // }, _this.refNode, 'parent');
-
-        // Register self enter animation
-        // _this.populateEnterSequence(enterSequence);
-
-        // _this.inserted.then(function () {
-        //   // At this point all the animations for this node are registered
-        //   // Run all the registered animations then call the animationsAreDone
-        //   enterSequence.nextAction(function () {
-        //     _this.callLifecycleEvent('postEnter');
-        //     _this.callLifecycleEvent('postAnimations');
-        //     animationsAreDone();
-        //   }, null, 'post-children-animation');
-        // });
       } else if (!flag && _this.node.parentNode) {
-        enterSequence.truncate();
+        // enterSequence.truncate();
         _this.callLifecycleEvent('preRemove');
-
-        // remove the animation from the parent which are referring to this node
-        leaveSequence.onTruncate(function () {
-          _this.transitory = false;
-          _this.parent.sequences.leave.removeByRef(_this.refNode);
-        });
 
         _this.origin = true;
         _this.transitory = true;
 
-        let animationDone;
-        const waitForNodeAnimation = new Promise(function (resolve) {
-          animationDone = resolve;
-        });
+        GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+          _this.populateLeaveSequence(false);
 
-        _this.parent.sequences.leave.next(function (next) {
-          waitForNodeAnimation.then(next);
-        }, _this.refNode);
-
-        _this.populateLeaveSequence(leaveSequence);
-        // Start the :leave sequence and go to next dom manipulation step when the whole sequence is done
-        leaveSequence.nextAction(function () {
-          if (!_this.placeholder.parentNode) {
-            insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-          }
-          _this.callLifecycleEvent('postLeave');
-
-          if (_this.node.parentNode) {
-            removeChild(_this.node.parentNode, _this.node);
-          }
-          _this.callLifecycleEvent('postRemove');
+          // if (!_this.placeholder.parentNode) {
+          //   insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
+          // }
+          // _this.callLifecycleEvent('postLeave');
+          //
+          // if (_this.node.parentNode) {
+          //   removeChild(_this.node.parentNode, _this.node);
+          // }
+          // _this.callLifecycleEvent('postRemove');
 
           _this.origin = false;
           _this.transitory = false;
           _this.node.style.cssText = '';
           _this.callLifecycleEvent('postAnimations');
           _this.stream.pour('removed', 'dom');
-          animationDone();
         });
       }
     },
@@ -496,85 +398,37 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     destroy: function (mainLeaveSequence, rootSequence) {
       const _this = this;
       _this.transitory = true;
-      const leaveSequence = _this.sequences.leave;
+      const leaveSequence = true;
+
       // The node is the original node that is being removed
       if (!mainLeaveSequence) {
         _this.origin = true;
         if (_this.inDOM) {
-          _this.sequences.enter.truncate();
-          _this.callLifecycleEvent('preDestroy');
-
-          // remove the animation from the parent which are referring to this node
-          leaveSequence.onTruncate(function () {
-            _this.parent.sequences.leave.removeByRef(_this);
-          });
-
-          let animationDone;
-          const waitForNodeAnimation = new Promise(function (resolve) {
-            animationDone = resolve;
-          });
-
-          _this.parent.sequences.leave.next(function (next) {
-            waitForNodeAnimation.then(function () {
-              _this.hasBeenDestroyed();
-              next();
-            });
-          }, _this);
-
-          // Add children leave sequence to this node(parent node) leave sequence
           _this.clean(leaveSequence, rootSequence);
           _this.populateLeaveSequence(leaveSequence);
-          leaveSequence.nextAction(function () {
-            if (_this.schema.renderConfig && _this.schema.renderConfig.alternateDOMFlow === false) {
-              rootSequence.nextAction(function () {
-                _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-              });
-            } else {
-              _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-            }
 
-            _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
+          GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+            // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
+            //
+            // _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
             _this.callLifecycleEvent('postRemove');
             _this.callLifecycleEvent('postDestroy');
-            animationDone();
+
             _this.node.style.cssText = '';
-            _this.origin = false;
-            _this.stream.pour('removed', 'dom');
-          }, _this);
+          });
         }
       } else if (mainLeaveSequence) {
         if (_this.inDOM) {
-          _this.sequences.enter.truncate();
-          _this.callLifecycleEvent('preDestroy');
-
           _this.clean(leaveSequence, rootSequence);
           _this.populateLeaveSequence(leaveSequence);
 
-          let animationDone;
-          const waitForNodeAnimation = new Promise(function (resolve) {
-            animationDone = resolve;
-          });
-
-          mainLeaveSequence.next(function (next) {
-            waitForNodeAnimation.then(function () {
-              _this.hasBeenDestroyed();
-
-              next();
-            });
-          });
-
-          leaveSequence.nextAction(function () {
+          GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+            // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
+            //
+            // _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
             _this.callLifecycleEvent('postRemove');
             _this.callLifecycleEvent('postDestroy');
-            _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
-            animationDone();
           });
-
-          if (rootSequence) {
-            rootSequence.nextAction(function () {
-              _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-            });
-          }
         }
       }
 
@@ -599,7 +453,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({reactiveData: reactiveData, item: item});
+      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {
@@ -642,38 +496,19 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const _this = this;
       const toBeRemoved = _this.getChildNodes();
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.alternateDOMFlow === false) {
-        toBeRemoved.reverse().forEach(function (node) {
-          // Inherit parent alternateDOMFlow if no explicit alternateDOMFlow is specified
-          if (!node.schema.renderConfig.hasOwnProperty('alternateDOMFlow')) {
-            node.schema.renderConfig.alternateDOMFlow = false;
-          }
-        });
-      }
-
       // If leaveSequence is present we assume that this is being destroyed as a child, therefore its
       // children should also get destroyed as child
       if (leaveSequence) {
-        ViewNode.destroyInNextFrame(_this, toBeRemoved, leaveSequence, root);
+        GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+          GV.destroyNodes(_this, toBeRemoved, leaveSequence, root);
+        });
 
-        return _this.renderingFlow;
+        return;
       }
 
-      _this.renderingFlow.next(function (next) {
-        if (!toBeRemoved.length) {
-          next();
-          return _this.renderingFlow;
-        }
-
-        ViewNode.destroyInNextFrame(_this, toBeRemoved, null, root || _this.sequences.leave);
-
-        _this.sequences.leave.nextAction(function () {
-          _this.callLifecycleEvent('postClean');
-          next();
-        });
+      GV.DESTROY_IN_NEXT_FRAME(_this, () => {
+        GV.destroyNodes(_this, toBeRemoved, null, root);
       });
-
-      return _this.renderingFlow;
     },
 
     /**
