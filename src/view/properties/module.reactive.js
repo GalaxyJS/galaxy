@@ -42,23 +42,24 @@
           // }
 
           // _this.renderingFlow.nextAction(function () {
-          const nodes = _this.getChildNodes();
-          _this.clean();
+          // const nodes = _this.getChildNodes();
+          _this.clean(true);
           // _this.sequences.leave.nextAction(function () {
-          _this.flush(nodes);
+          // _this.flush(nodes);
           // });
 
-          moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
+          moduleLoaderGenerator(_this, data, moduleMeta)(function () {
+          });
           // });
           // });
         });
       } else if (!moduleMeta) {
         // Promise.resolve().then(function () {
         //   _this.renderingFlow.nextAction(function () {
-        const nodes = _this.getChildNodes();
-        _this.clean();
+        // const nodes = _this.getChildNodes();
+        _this.clean(true);
         // _this.sequences.leave.nextAction(function () {
-        _this.flush(nodes);
+        // _this.flush(nodes);
         // });
         // });
         // });
@@ -96,20 +97,20 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      Promise.resolve().then(function () {
-        // viewNode.renderingFlow.truncate();
-        currentScope.load(moduleMeta, {
-          element: viewNode
-        }).then(function (module) {
-          cache.module = module;
-          viewNode.node.setAttribute('module', module.systemId);
-          module.start();
-          done();
-        }).catch(function (response) {
-          console.error(response);
-          done();
-        });
+      // Promise.resolve().then(function () {
+      // viewNode.renderingFlow.truncate();
+      currentScope.load(moduleMeta, {
+        element: viewNode
+      }).then(function (module) {
+        cache.module = module;
+        viewNode.node.setAttribute('module', module.systemId);
+        module.start();
+        done();
+      }).catch(function (response) {
+        console.error(response);
+        done();
       });
+      // });
     };
   };
 })(Galaxy);

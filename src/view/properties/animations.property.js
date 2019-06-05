@@ -6,14 +6,6 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  function insertBefore(parentNode, newNode, referenceNode) {
-    parentNode.insertBefore(newNode, referenceNode);
-  }
-
-  function removeChild(node, child) {
-    node.removeChild(child);
-  }
-
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
@@ -36,14 +28,6 @@
         viewNode.populateEnterSequence = function (sequence1) {
           value.config = value.config || {};
 
-          // sequence.onTruncate(function animationEnter() {
-          //   const cssText = viewNode.node.style.cssText;
-          //   TweenLite.killTweensOf(viewNode.node);
-          //   requestAnimationFrame(function () {
-          //     viewNode.node.style.cssText = cssText;
-          //   });
-          // });
-
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
           if (value.config.enterWithParent) {
             const parent = viewNode.parent;
@@ -55,10 +39,10 @@
           // sequence.next(function (done) {
           // If the node is not in the DOM at this point, then skip its animations
           // if (viewNode.node.offsetParent === null) {
-          if (document.body.contains(viewNode.node) === null) {
-            // return done();
-            return;
-          }
+          // if (document.body.contains(viewNode.node) === null) {
+          //   // return done();
+          //   return;
+          // }
 
           AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config);
           // });
@@ -74,10 +58,6 @@
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 
-          // sequence.onTruncate(function () {
-          //   TweenLite.killTweensOf(viewNode.node);
-          // });
-
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
           if (value.config.leaveWithParent) {
             const parent = viewNode.parent;
@@ -87,53 +67,22 @@
             }
           }
 
+          if (TweenLite.getTweensOf(viewNode.node).length) {
+            TweenLite.killTweensOf(viewNode.node);
+          }
+
           // in the case which the viewNode is not visible, then ignore its animation
           if (viewNode.node.offsetWidth === 0 ||
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            return;
+            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
-          // let animationDone;
-          // const waitForAnimation = new Promise(function (resolve) {
-          //   animationDone = resolve;
-          // });
-
-          // sequence.next(function (done) {
-          //   waitForAnimation.then(done);
-          // });
-
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, function () {
-            if (!flag) {
-              if (!viewNode.placeholder.parentNode) {
-                insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
-              }
-
-              if (viewNode.node.parentNode) {
-                removeChild(viewNode.node.parentNode, viewNode.node);
-              }
-            } else {
-              viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
-              viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
-            }
-          });
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode));
         };
       } else {
-        viewNode.populateLeaveSequence = function (flag) {
-          if (!flag) {
-            if (!viewNode.placeholder.parentNode) {
-              insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
-            }
-
-            if (viewNode.node.parentNode) {
-              removeChild(viewNode.node.parentNode, viewNode.node);
-            }
-          } else {
-            viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
-            viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
-          }
-        };
+        viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
       }
 
       const classAnimationsHandler = function () {
@@ -366,9 +315,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -382,10 +331,10 @@
 
     if (sequenceName) {
       const animationMeta = AnimationMeta.get(sequenceName);
-
+      // debugger;
       if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
-        animationMeta.addOnComplete(onComplete);
-        animationMeta.add(viewNode, newConfig);
+        // animationMeta.addOnComplete(onComplete);
+        animationMeta.add(viewNode, newConfig, onComplete);
       } else {
         animationMeta.add(viewNode, newConfig, onComplete);
       }
@@ -442,6 +391,7 @@
         _this.onCompletesActions.forEach(function (action) {
           action();
         });
+        _this.nodes = [];
         _this.children = [];
         _this.onCompletesActions = [];
         // AnimationMeta.ANIMATIONS[_this.name].timeline.clear();
@@ -451,8 +401,8 @@
 
     _this.timeline.addLabel('beginning', 0);
     _this.configs = {};
-    // _this.parent = null;
     _this.children = [];
+    _this.nodes = [];
     _this.timelinesMap = [];
   }
 
@@ -618,9 +568,33 @@
       //   config: config,
       //   n: viewNode.node
       // };
-      // if (this.name === 'sub-nav-items') {
+
+      if (_this.nodes.indexOf(viewNode) === -1) {
+        _this.nodes.push({v: viewNode, t: tween, p: config.position});
+
+        _this.nodes.sort((a, b) => {
+          return a.v.index > b.v.index ? 1 : -1;
+        });
+      }
+
+      const time = _this.timeline._time;
+
+      // if (_this.name === 'main-nav-items' && time) {
+      //
       //   debugger;
       // }
+
+      // if (time < 0.3) {
+      _this.timeline.clear();
+      _this.nodes.forEach((actor) => {
+        _this.timeline.add(actor.t, actor.p || '+=0');
+      });
+      // }
+
+      if (time) {
+        _this.timeline.play(time);
+      }
+
 
       // nodeTimeline.add(tween);
 
@@ -637,22 +611,22 @@
       //   }
       // }
       // const indexes =
-// debugger;
-      if (children.indexOf(tween) === -1) {
-        // _this.children.push(nodeTimeline);
-        let progress = _this.timeline.progress();
-        if (children.length) {
-          _this.timeline.add(tween, config.position);
-        } else {
-          _this.timeline.add(tween);
-        }
-
-        if (progress === undefined) {
-          _this.timeline.play(0);
-        }
-      } else {
-        _this.timeline.add(tween, config.position);
-      }
+      // debugger;
+      // if (children.indexOf(tween) === -1) {
+      //   // _this.children.push(nodeTimeline);
+      //   let progress = _this.timeline.progress();
+      //   if (children.length) {
+      //     _this.timeline.add(tween, config.position);
+      //   } else {
+      //     _this.timeline.add(tween);
+      //   }
+      //
+      //   if (progress === undefined) {
+      //     _this.timeline.play(0);
+      //   }
+      // } else {
+      //   _this.timeline.add(tween, config.position);
+      // }
     }
   };
   window.AM = AnimationMeta;

@@ -98,7 +98,7 @@ Galaxy.View = /** @class */(function () {
     const keys = Object.keys(View.TO_BE_CREATED).sort();
 
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      console.log(keys);
+      // console.log(keys);
       keys.forEach((key) => {
         const batch = View.TO_BE_CREATED[key];
         if (!batch) {

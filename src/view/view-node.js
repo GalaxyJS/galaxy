@@ -93,25 +93,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
   };
 
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.Sequence} sequence
-   * @param {Galaxy.Sequence} root
-   * @memberOf Galaxy.View.ViewNode
-   * @static
-   */
-  ViewNode.destroyNodes = function (node, toBeRemoved, sequence, root) {
-    let remove = null;
-
-    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
-      remove = toBeRemoved[i];
-      // remove.renderingFlow.truncate();
-      remove.destroy(sequence, root);
-    }
-  };
-
   ViewNode.createIndex = function (i) {
     if (i < 10) {
       return i + '';
@@ -125,6 +106,22 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     }
 
     return r + res;
+  };
+
+  ViewNode.REMOVE_SELF = function (flag) {
+    const viewNode = this;
+    if (!flag) {
+      if (!viewNode.placeholder.parentNode) {
+        insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+      }
+
+      if (viewNode.node.parentNode) {
+        removeChild(viewNode.node.parentNode, viewNode.node);
+      }
+    } else {
+      viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
+      viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+    }
   };
 
   /**
@@ -270,9 +267,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      *
      * @param {Galaxy.Sequence} sequence
      */
-    populateLeaveSequence: function (sequence) {
-
-    },
+    populateLeaveSequence: ViewNode.REMOVE_SELF,
 
     detach: function () {
       const _this = this;
@@ -306,10 +301,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        _this.node.style.visibility = 'hidden';
-        // console.log(_this.node, _this.index);
+        _this.node.style.display = 'none';
+        _this.node.setAttribute('data-state', 'enter');
+
         GV.CREATE_IN_NEXT_FRAME(_this, function () {
-          _this.node.style.visibility = null;
+          _this.node.style.display = null;
           _this.hasBeenInserted();
           _this.populateEnterSequence();
           _this.hasBeenRendered();
@@ -323,16 +319,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         GV.DESTROY_IN_NEXT_FRAME(_this, () => {
           _this.populateLeaveSequence(false);
-
-          // if (!_this.placeholder.parentNode) {
-          //   insertBefore(_this.node.parentNode, _this.placeholder, _this.node);
-          // }
-          // _this.callLifecycleEvent('postLeave');
-          //
-          // if (_this.node.parentNode) {
-          //   removeChild(_this.node.parentNode, _this.node);
-          // }
-          // _this.callLifecycleEvent('postRemove');
 
           _this.origin = false;
           _this.transitory = false;
@@ -392,7 +378,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     /**
      *
-     * @param {Galaxy.Sequence} mainLeaveSequence
+     * @param {Boolean} mainLeaveSequence
      * @param {Galaxy.Sequence} rootSequence
      */
     destroy: function (mainLeaveSequence, rootSequence) {
@@ -406,11 +392,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (_this.inDOM) {
           _this.clean(leaveSequence, rootSequence);
           _this.populateLeaveSequence(leaveSequence);
+          _this.node.setAttribute('data-state', 'leave-origin');
 
           GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-            // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-            //
-            // _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
             _this.callLifecycleEvent('postRemove');
             _this.callLifecycleEvent('postDestroy');
 
@@ -421,11 +405,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         if (_this.inDOM) {
           _this.clean(leaveSequence, rootSequence);
           _this.populateLeaveSequence(leaveSequence);
+          _this.node.setAttribute('data-state', 'leave');
 
           GV.DESTROY_IN_NEXT_FRAME(_this, () => {
-            // _this.node.parentNode && removeChild(_this.node.parentNode, _this.node);
-            //
-            // _this.placeholder.parentNode && removeChild(_this.placeholder.parentNode, _this.placeholder);
             _this.callLifecycleEvent('postRemove');
             _this.callLifecycleEvent('postDestroy');
           });
@@ -453,7 +435,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
+      this.dependedObjects.push({reactiveData: reactiveData, item: item});
     },
 
     getChildNodes: function () {
@@ -462,7 +444,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       for (let i = cn.length - 1; i >= 0; i--) {
         const node = cn[i]['galaxyViewNode'];
 
-        if (node !== undefined) {
+        if (node !== undefined/* && !node.transitory*/) {
           nodes.push(node);
         }
       }
