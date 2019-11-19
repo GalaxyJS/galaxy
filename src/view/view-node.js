@@ -110,6 +110,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   ViewNode.REMOVE_SELF = function (flag) {
     const viewNode = this;
+    // console.log([viewNode], flag)
     if (!flag) {
       if (!viewNode.placeholder.parentNode) {
         insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
@@ -121,6 +122,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     } else {
       viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
       viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.hasBeenDestroyed();
     }
   };
 
@@ -306,6 +308,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         GV.CREATE_IN_NEXT_FRAME(_this, function () {
           _this.node.style.display = null;
+          _this.node.setAttribute('data-state', 'enter-active');
           _this.hasBeenInserted();
           _this.populateEnterSequence();
           _this.hasBeenRendered();
@@ -445,6 +448,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         const node = cn[i]['galaxyViewNode'];
 
         if (node !== undefined/* && !node.transitory*/) {
+          debugger;
           nodes.push(node);
         }
       }

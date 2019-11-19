@@ -64,19 +64,14 @@ Galaxy.View = /** @class */(function () {
     const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
 
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      // console.log(keys);
       keys.forEach((key) => {
         const batch = View.TO_BE_DESTROYED[key];
         if (!batch) {
-          // console.log(View.TO_BE_DESTROYED,key);
           return;
         }
         batch.action();
-        // View.destroyNodes(batch.node, batch.toBeRemoved, batch.sequence, batch.root);
         Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
       });
-
-      // console.log(ViewNode.TO_BE_DESTROYED)
     });
   };
 
@@ -98,7 +93,6 @@ Galaxy.View = /** @class */(function () {
     const keys = Object.keys(View.TO_BE_CREATED).sort();
 
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      // console.log(keys);
       keys.forEach((key) => {
         const batch = View.TO_BE_CREATED[key];
         if (!batch) {
@@ -762,6 +756,7 @@ Galaxy.View = /** @class */(function () {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
+     * @return {Galaxy.View.ViewNode}
      */
     createNode: function (nodeSchema, parent, scopeData, position, refNode) {
       const _this = this;

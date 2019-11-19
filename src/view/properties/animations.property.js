@@ -25,7 +25,7 @@
           AnimationMeta.get(enter.sequence).configs.enter = enter;
         }
 
-        viewNode.populateEnterSequence = function (sequence1) {
+        viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
@@ -36,16 +36,7 @@
             }
           }
 
-          // sequence.next(function (done) {
-          // If the node is not in the DOM at this point, then skip its animations
-          // if (viewNode.node.offsetParent === null) {
-          // if (document.body.contains(viewNode.node) === null) {
-          //   // return done();
-          //   return;
-          // }
-
           AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config);
-          // });
         };
       }
 
@@ -76,13 +67,14 @@
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
+            TweenLite.killTweensOf(viewNode.node);
+            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, true);
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode));
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, true));
         };
       } else {
-        viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
+        // viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
       }
 
       const classAnimationsHandler = function () {
@@ -452,54 +444,6 @@
     /**
      * @param {Galaxy.View.ViewNode} viewNode
      * @param {'leave'|'enter'} type
-     * @param {AnimationConfig} config
-     */
-    // addChild: function (viewNode, type, config) {
-    //   const _this = this;
-    //   const parent = config.parent;
-    //   let parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    //
-    //   if (parent === true) {
-    //     parentNodeTimeline = AnimationMeta.getParentTimeline(viewNode);
-    //   } else if (parent) {
-    //     parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
-    //   }
-    //
-    //   // console.log(config);
-    //   // if (type === 'leave') {
-    //   //   parentNodeTimeline = AnimationMeta.get(config.parent).timeline;
-    //   //   // debugger;
-    //   //   // return;
-    //   // }
-    //   const children = parentNodeTimeline.getChildren(false);
-    //   _this.timeline.pause();
-    //
-    //   if (_this.children.indexOf(parentNodeTimeline) === -1) {
-    //     const i = _this.children.push(parentNodeTimeline);
-    //     let posInParent = config.positionInParent || '+=0';
-    //
-    //     // In the case that the parentNodeTimeline has not timeline then its _startTime should be 0
-    //     if (parentNodeTimeline.timeline === null || children.length === 0) {
-    //       parentNodeTimeline.pause();
-    //       parentNodeTimeline._startTime = 0;
-    //       parentNodeTimeline.play(0);
-    //
-    //       if (posInParent.indexOf('-') === 0) {
-    //         posInParent = null;
-    //       }
-    //     }
-    //     parentNodeTimeline.add(function () {
-    //       _this.children.splice(i - 1, 1);
-    //       _this.timeline.resume();
-    //     }, posInParent);
-    //
-    //   }
-    //
-    //   parentNodeTimeline.resume();
-    // },
-    /**
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {'leave'|'enter'} type
      * @param {AnimationMeta} child
      * @param {AnimationConfig} childConf
      */
@@ -553,79 +497,32 @@
           to || {});
       }
 
-      const children = _this.timeline.getChildren(false, true, true);
-
-      // viewNode.cache.animations = viewNode.cache.animations || {
-      //   timeline: new TimelineLite({
-      //     autoRemoveChildren: true,
-      //     smoothChildTiming: true
-      //   })
-      // };
-
-      // const nodeTimeline = viewNode.cache.animations.timeline;
-      // nodeTimeline.data = {
-      //   am: _this,
-      //   config: config,
-      //   n: viewNode.node
-      // };
-
       if (_this.nodes.indexOf(viewNode) === -1) {
-        _this.nodes.push({v: viewNode, t: tween, p: config.position});
-
-        _this.nodes.sort((a, b) => {
-          return a.v.index > b.v.index ? 1 : -1;
+        _this.nodes.push({
+          v: viewNode,
+          t: tween,
+          p: config.position
         });
       }
 
-      const time = _this.timeline._time;
-
-      // if (_this.name === 'main-nav-items' && time) {
+      // const time = _this.timeline._time;
+      // _this.timeline.pause();
+      // _this.timeline.clear();
+      // const aliveNodes = _this.nodes.filter((actor) => !actor.v.destroyed.resolved);
+      // console.log(aliveNodes);
+      // aliveNodes.forEach((actor) => {
+      //   // if (actor.v.destroyed.resolved) return;
       //
-      //   debugger;
-      // }
+      //   // console.log(actor.v)
+      //   _this.timeline.add(actor.t, actor.p || '+=0');
+      // });
 
-      // if (time < 0.3) {
-      _this.timeline.clear();
-      _this.nodes.forEach((actor) => {
-        _this.timeline.add(actor.t, actor.p || '+=0');
-      });
-      // }
-
-      if (time) {
-        _this.timeline.play(time);
-      }
-
-
-      // nodeTimeline.add(tween);
-
-      // if the animation has no parent but its parent animation is the same as its own animation
-      // then it should intercept the animation in order to make the animation proper visual wise
-      // const sameSequenceParentTimeline = AnimationMeta.getParentAnimationByName(viewNode, _this.name);
-      // if (sameSequenceParentTimeline) {
-      //   const currentProgress = sameSequenceParentTimeline.progress();
-      //   // if the currentProgress is 0 or bigger than the nodeTimeline start time
-      //   // then we can intercept the parentNodeTimeline
-      //   if (nodeTimeline.startTime() < currentProgress || currentProgress === 0) {
-      //     _this.timeline.add(nodeTimeline, config.position || '+=0');
-      //     return;
-      //   }
-      // }
-      // const indexes =
-      // debugger;
-      // if (children.indexOf(tween) === -1) {
-      //   // _this.children.push(nodeTimeline);
-      //   let progress = _this.timeline.progress();
-      //   if (children.length) {
-      //     _this.timeline.add(tween, config.position);
-      //   } else {
-      //     _this.timeline.add(tween);
-      //   }
+      // if (time) {
       //
-      //   if (progress === undefined) {
-      //     _this.timeline.play(0);
-      //   }
+      //   _this.timeline.play(time);
       // } else {
-      //   _this.timeline.add(tween, config.position);
+      _this.timeline.add(tween, config.position || '+=0');
+      // _this.timeline.play(0);
       // }
     }
   };
