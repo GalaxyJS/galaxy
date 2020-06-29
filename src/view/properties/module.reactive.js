@@ -35,34 +35,12 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          // Promise.resolve().then(function () {
-          // Only truncate renderingFlow if the node is in the DOM
-          // if (_this.inDOM) {
-          //   _this.renderingFlow.truncate();
-          // }
+          _this.clean();
 
-          // _this.renderingFlow.nextAction(function () {
-          // const nodes = _this.getChildNodes();
-          _this.clean(true);
-          // _this.sequences.leave.nextAction(function () {
-          // _this.flush(nodes);
-          // });
-
-          moduleLoaderGenerator(_this, data, moduleMeta)(function () {
-          });
-          // });
-          // });
+          moduleLoaderGenerator(_this, data, moduleMeta)();
         });
       } else if (!moduleMeta) {
-        // Promise.resolve().then(function () {
-        //   _this.renderingFlow.nextAction(function () {
-        // const nodes = _this.getChildNodes();
-        _this.clean(true);
-        // _this.sequences.leave.nextAction(function () {
-        // _this.flush(nodes);
-        // });
-        // });
-        // });
+        _this.clean();
       }
 
       data.moduleMeta = moduleMeta;
@@ -70,7 +48,7 @@
   };
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
-    return function (done) {
+    return function () {
       if (cache.module) {
         cache.module.destroy();
       }
@@ -97,20 +75,19 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      // Promise.resolve().then(function () {
-      // viewNode.renderingFlow.truncate();
-      currentScope.load(moduleMeta, {
-        element: viewNode
-      }).then(function (module) {
-        cache.module = module;
-        viewNode.node.setAttribute('module', module.systemId);
-        module.start();
-        done();
-      }).catch(function (response) {
-        console.error(response);
-        done();
+      Galaxy.View.CREATE_IN_NEXT_FRAME(viewNode, () => {
+        currentScope.load(moduleMeta, {
+          element: viewNode
+        }).then(function (module) {
+          cache.module = module;
+          viewNode.node.setAttribute('module', module.systemId);
+          module.start();
+          // done();
+        }).catch(function (response) {
+          console.error(response);
+          // done();
+        });
       });
-      // });
     };
   };
 })(Galaxy);

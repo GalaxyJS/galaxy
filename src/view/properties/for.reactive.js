@@ -42,7 +42,7 @@
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -114,8 +114,8 @@
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       const parent = node.parent;
-      const parentCache = parent.cache;
-      const parentSchema = parent.schema;
+      // const parentCache = parent.cache;
+      // const parentSchema = parent.schema;
       let newTrackMap = null;
 
       config.oldChanges = changes;
@@ -175,20 +175,11 @@
             // waitStepDone();
           });
         } else if (changes.type === 'reset') {
-          // if (node.cache.$forProcessing) {
-          //   return node.cache.$forPushProcess = () => {
-          //     changes = Object.assign({}, changes);
-          //     changes.type = 'push';
-          //     // createPushProcess(node, config, changes, config.scope);
-          //   };
-          // }
-
           const nodesToBeRemoved = config.nodes.slice(0);
           config.nodes = [];
           leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
             changes = Object.assign({}, changes);
             changes.type = 'push';
-            // waitStepDone();
           });
         } else {
           // if (node.cache.$forProcessing) {
@@ -235,9 +226,9 @@
     }
 
     return function $forLeaveStep() {
-      View.DESTROY_IN_NEXT_FRAME(node, () => {
-        View.destroyNodes(node, itemsToBeRemoved.reverse(), true);
-      });
+      // View.DESTROY_IN_NEXT_FRAME(node, () => {
+      View.destroyNodes(node, itemsToBeRemoved.reverse());
+      // });
 
       onDone();
     };
@@ -343,14 +334,8 @@
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
           onEachAction.call(nodes, vn, positions[i]);
         }
-
-        // if (vn)
-        //   vn.rendered.then(() => {
-        //     debugger;
-        //   });
       }
     }
-
 
     node.cache.$forProcessing = false;
   }

@@ -14,7 +14,7 @@
       unique.push(url);
       imports.push({
         url: url,
-        fresh: query.indexOf('new') !== -1
+        fresh: query.indexOf('new') === 0
       });
 
       return 'Scope.import(\'' + url + '\')';

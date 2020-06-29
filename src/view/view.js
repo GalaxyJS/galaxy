@@ -24,19 +24,18 @@ Galaxy.View = /** @class */(function () {
    *
    * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {Galaxy.Sequence} sequence
-   * @param {Galaxy.Sequence} root
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (node, toBeRemoved, sequence, root) {
+  View.destroyNodes = function (node, toBeRemoved) {
+    // View.DESTROY_IN_NEXT_FRAME(node, () => {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      // remove.renderingFlow.truncate();
-      remove.destroy(sequence, root);
+      remove.destroy();
     }
+    // });
   };
 
   View.TO_BE_DESTROYED = {};
@@ -56,12 +55,20 @@ Galaxy.View = /** @class */(function () {
       View.LAST_FRAME_ID = null;
     }
 
-    View.TO_BE_DESTROYED[node.index] = {
-      node,
-      action
-    };
+    if (View.TO_BE_DESTROYED[node.index]) {
+      View.TO_BE_DESTROYED[node.index].push({
+        node,
+        action
+      });
+    } else {
+      View.TO_BE_DESTROYED[node.index] = [{
+        node,
+        action
+      }];
+    }
 
     const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+    View._sort_value = keys;
 
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
       keys.forEach((key) => {
@@ -69,7 +76,10 @@ Galaxy.View = /** @class */(function () {
         if (!batch) {
           return;
         }
-        batch.action();
+        batch.forEach(function (b) {
+          b.action();
+        });
+
         Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
       });
     });
@@ -85,10 +95,22 @@ Galaxy.View = /** @class */(function () {
       View.LAST_CREATE_FRAME_ID = null;
     }
 
-    View.TO_BE_CREATED[node.index] = {
-      node,
-      action
-    };
+    if (View.TO_BE_CREATED[node.index]) {
+      View.TO_BE_CREATED[node.index].push({
+        node,
+        action
+      });
+    } else {
+      View.TO_BE_CREATED[node.index] = [{
+        node,
+        action
+      }];
+    }
+
+    // View.TO_BE_CREATED[node.index] = {
+    //   node,
+    //   action
+    // };
 
     const keys = Object.keys(View.TO_BE_CREATED).sort();
 
@@ -98,7 +120,10 @@ Galaxy.View = /** @class */(function () {
         if (!batch) {
           return;
         }
-        batch.action();
+        batch.forEach(function (b) {
+          b.action();
+        });
+
         Reflect.deleteProperty(View.TO_BE_CREATED, key);
       });
     });

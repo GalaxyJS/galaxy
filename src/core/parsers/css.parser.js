@@ -57,6 +57,7 @@
         const parsedCSSText = parsedCSSRules.join('\n');
 
         Scope.exports = {
+          _temp: true,
           tag: 'style',
           id: Scope.systemId,
           text: parsedCSSText,

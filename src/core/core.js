@@ -20,7 +20,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     return a;
   };
 
-  const importedLibraries = {};
+  const cachedModules = {};
 
   /**
    *
@@ -173,17 +173,17 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }).catch(reject);
         }
 
-        const compilationStep = function (moduleContent) {
-          return _this.compileModuleContent(module, moduleContent, invokers);
-        };
+        // const compilationStep = function (moduleContent) {
+        //   return _this.compileModuleContent(module, moduleContent, invokers);
+        // };
 
-        const executionStep = function (compiledModule) {
-          return _this.executeCompiledModule(compiledModule);
-        };
+        // const executionStep = function (compiledModule) {
+        //   return _this.executeCompiledModule(compiledModule);
+        // };
 
         contentFetcher
-          .then(compilationStep)
-          .then(executionStep)
+          .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
+          .then(compiledModule => _this.executeCompiledModule(compiledModule))
           .then(resolve)
           .catch(reject);
       });
@@ -202,7 +202,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       const promise = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(/*module.importId || */module.url) - 1, 1);
+          imports.splice(imports.indexOf(module.url) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -235,7 +235,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               doneImporting(module, importsCopy);
             }
             // Module is already loaded and we don't need a new instance of it (Singleton)
-            else if (importedLibraries[item.url] && !item.fresh) {
+            else if (cachedModules[item.url] && !item.fresh) {
               doneImporting(module, importsCopy);
             }
             // Module is not loaded
@@ -244,6 +244,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
+              // if(item.url === '/galaxy/site/modules/api/test.css') debugger;
               Galaxy.load({
                 name: item.name,
                 url: item.url,
@@ -277,11 +278,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             module.scope.inject(item, module.addOns[item]);
           }
 
-          for (let item in importedLibraries) {
-            if (importedLibraries.hasOwnProperty(item)) {
-              const asset = importedLibraries[item];
+          for (let item in cachedModules) {
+            if (cachedModules.hasOwnProperty(item)) {
+              const asset = cachedModules[item];
               if (asset.module) {
-                module.scope.inject(asset.name, asset.module);
+                module.scope.inject(asset.libId, asset.module);
               }
             }
           }
@@ -300,10 +301,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
           Reflect.deleteProperty(module, 'addOnProviders');
 
-          const mId = module.url;
-          if (!importedLibraries[mId]) {
-            importedLibraries[mId] = {
-              name: mId,
+          const libId = module.url;
+          // if the module export hast _temp then do not cache the module
+          if (module.scope.exports._temp) {
+            module.scope.parentScope.inject(libId, module.scope.exports);
+          } else if (!cachedModules[libId]) {
+            cachedModules[libId] = {
+              libId: libId,
               module: module.scope.exports
             };
           }

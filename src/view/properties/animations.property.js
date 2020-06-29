@@ -1,8 +1,8 @@
-/* global Galaxy, TweenLite, TimelineLite */
+/* global Galaxy, gsap, TimelineLite */
 'use strict';
 
 (function (Galaxy) {
-  if (!window.TweenLite || !window.TimelineLite) {
+  if (!window.gsap || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
@@ -42,6 +42,12 @@
 
       const leave = value.leave;
       if (leave) {
+
+        if (leave === true) {
+          viewNode.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
+          return;
+        }
+
         if (leave.sequence) {
           AnimationMeta.get(leave.sequence).configs.leave = leave;
         }
@@ -58,20 +64,21 @@
             }
           }
 
-          if (TweenLite.getTweensOf(viewNode.node).length) {
-            TweenLite.killTweensOf(viewNode.node);
+          if (gsap.getTweensOf(viewNode.node).length) {
+            gsap.killTweensOf(viewNode.node);
           }
-
+          // Galaxy.View.TO_BE_DESTROYED;
+          // debugger;
           // in the case which the viewNode is not visible, then ignore its animation
           if (viewNode.node.offsetWidth === 0 ||
             viewNode.node.offsetHeight === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
-            TweenLite.killTweensOf(viewNode.node);
-            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, true);
+            gsap.killTweensOf(viewNode.node);
+            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
-
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, true));
+          // debugger;
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       } else {
         // viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
@@ -136,14 +143,14 @@
    *
    * @typedef {Object} AnimationConfig
    * @property {string} [parent]
+   * @property {Promise} [await]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
    * @property {number} [duration]
    * @property {object} [from]
    * @property {object} [to]
-   * @property {string} [attachTo]
    * @property {string} [addTo]
-   * @property {string} [appendTo]
+
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -190,7 +197,7 @@
 
     let tween = null;
     if (from && to) {
-      tween = TweenLite.fromTo(node,
+      tween = gsap.fromTo(node,
         duration,
         from,
         to);
@@ -207,11 +214,11 @@
         from.onComplete = onComplete;
       }
 
-      tween = TweenLite.from(node,
+      tween = gsap.from(node,
         duration,
         from);
     } else if (to) {
-      tween = TweenLite.to(node,
+      tween = gsap.to(node,
         duration,
         to);
     } else {
@@ -307,9 +314,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -336,17 +343,32 @@
       // }
 
       // if(newConfig.attachTo === 'main-nav-items') debugger;
+
+      if (newConfig.await) {
+        const am = AnimationMeta.get(newConfig.addTo);
+
+        if (!am.aaa) {
+          // am.aaa = newConfig.await();
+          // am.timeline.addPause('+=0');
+          // // animationMeta.timeline.addPause('+=0');
+          // // debugger;
+          // newConfig.await().then(function () {
+          //
+          // });
+        }
+      }
+
       if (newConfig.addTo) {
         animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
       }
 
-      if (newConfig.attachTo) {
-        animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
-      }
-
-      if (newConfig.appendTo) {
-        animationMeta.appendTo(newConfig.appendTo, newConfig.positionInParent);
-      }
+      // if (newConfig.attachTo) {
+      //   animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
+      // }
+      //
+      // if (newConfig.appendTo) {
+      //   animationMeta.appendTo(newConfig.appendTo, newConfig.positionInParent);
+      // }
 
       // if (newConfig.startAfter) {
       //   const parent = AnimationMeta.get(newConfig.startAfter);
@@ -373,10 +395,13 @@
       autoRemoveChildren: true,
       smoothChildTiming: false,
       onComplete: function () {
-        // if(name === 'sub-nav-container') {
-        //   // const cc = _this.timeline.getChildren(false);
-        //   debugger;
+        // if(name === 'card') {
+        // const cc = _this.timeline.getChildren(false);
+        // debugger;
+        // console.log(name)
         // }
+        // _this.timeline.clear();
+        AnimationMeta.ANIMATIONS[name] = null;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
@@ -410,13 +435,36 @@
       console.log(sequenceName);
       const animationMeta = AnimationMeta.get(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
-      const farChildren = children.filter((item) => !item._time);
-      debugger;
+      // const farChildren = children.filter((item) => !item._time);
+
       if (children.indexOf(this.timeline) === -1) {
         animationMeta.timeline.pause();
+        // debugger;
         // if(sequenceName ==='main-nav-items' ) debugger;
-        animationMeta.timeline.add(this.timeline, this.timeline._time);
+        animationMeta.timeline.add(this.timeline);
+        // animationMeta.timeline.add(function () {
+        //   debugger
+        //   animationMeta.timeline.remove(this.timeline);
+        // });
         animationMeta.timeline.resume();
+      } else {
+        // debugger;
+        animationMeta.timeline.pause();
+        const time = animationMeta.timeline.time();
+        animationMeta.timeline.clear();
+        // console.log(children);
+        // animationMeta.timeline.invalidate();
+        children.forEach(function (t) {
+          if (t.data === 'isPause') {
+            animationMeta.timeline.addPause();
+          } else {
+            animationMeta.timeline.add(t);
+          }
+
+        });
+        // animationMeta.timeline.resume();
+        animationMeta.timeline.play(time);
+        // debugger;
       }
     },
     attachTo(sequenceName, pip) {
@@ -438,7 +486,7 @@
 
       this.timeline.pause();
       animationMeta.timeline.eventCallback('onComplete', () => {
-        this.timeline.resume();
+        this.timeline.play(0);
       });
     },
     /**
@@ -479,7 +527,7 @@
       }
 
       if (config.from && config.to) {
-        tween = TweenLite.fromTo(viewNode.node,
+        tween = gsap.fromTo(viewNode.node,
           duration || 0,
           config.from || {},
           to);
@@ -488,11 +536,11 @@
         from.onComplete = onComplete;
         from.onStartParams = [viewNode];
         from.onStart = onStart;
-        tween = TweenLite.from(viewNode.node,
+        tween = gsap.from(viewNode.node,
           duration || 0,
           from || {});
       } else {
-        tween = TweenLite.to(viewNode.node,
+        tween = gsap.to(viewNode.node,
           duration || 0,
           to || {});
       }
@@ -505,7 +553,7 @@
         });
       }
 
-      // const time = _this.timeline._time;
+      const time = _this.timeline._time;
       // _this.timeline.pause();
       // _this.timeline.clear();
       // const aliveNodes = _this.nodes.filter((actor) => !actor.v.destroyed.resolved);
