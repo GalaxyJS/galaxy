@@ -42,7 +42,7 @@
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
+      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
 
       if (config.options instanceof Array) {
         View.makeBinding(this, '$for', undefined, config.scope, {
@@ -113,13 +113,12 @@
 
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
-      const parent = node.parent;
-      // const parentCache = parent.cache;
-      // const parentSchema = parent.schema;
       let newTrackMap = null;
 
       config.oldChanges = changes;
-      View.CREATE_IN_NEXT_FRAME(node, afterInserted);
+      // View.CREATE_IN_NEXT_FRAME(node.index, afterInserted);
+      // afterInserted();
+      requestAnimationFrame(afterInserted);
 
       function afterInserted() {
         let leaveStep = null;

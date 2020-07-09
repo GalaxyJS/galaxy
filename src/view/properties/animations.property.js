@@ -6,6 +6,13 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
+  const recursiveKill = (node) => {
+    Array.prototype.forEach.call(node.childNodes, recursiveKill);
+    if (gsap.getTweensOf(node).length) {
+      gsap.killTweensOf(node);
+    }
+  };
+
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
@@ -42,15 +49,14 @@
 
       const leave = value.leave;
       if (leave) {
-
-        if (leave === true) {
-          viewNode.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
-          return;
-        }
-
-        if (leave.sequence) {
-          AnimationMeta.get(leave.sequence).configs.leave = leave;
-        }
+        // if (leave === true) {
+        //   viewNode.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
+        //   return;
+        // }
+        //
+        // if (leave.sequence) {
+        //   AnimationMeta.get(leave.sequence).configs.leave = leave;
+        // }
 
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
@@ -64,11 +70,15 @@
             }
           }
 
-          if (gsap.getTweensOf(viewNode.node).length) {
-            gsap.killTweensOf(viewNode.node);
-          }
-          // Galaxy.View.TO_BE_DESTROYED;
-          // debugger;
+
+          // if (viewNode.node.classList.contains('box')) debugger
+          // if (viewNode.node.classList.contains('anime')) debugger
+          // recursiveKill(viewNode.node);
+
+          // if (gsap.getTweensOf(viewNode.node).length) {
+          //   gsap.killTweensOf(viewNode.node);
+          // }
+
           // in the case which the viewNode is not visible, then ignore its animation
           if (viewNode.node.offsetWidth === 0 ||
             viewNode.node.offsetHeight === 0 ||
@@ -314,9 +324,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);

@@ -9,6 +9,7 @@
       viewNode.rendered.then(function () {
         if (viewNode.schema.tag.toLowerCase() === 'form') {
           const children = viewNode.node.querySelectorAll('input, textarea, select, button');
+
           if (value) {
             Array.prototype.forEach.call(children, function (input) {
               input.setAttribute('disabled', '');
@@ -21,7 +22,7 @@
         }
       });
 
-      Galaxy.View.setAttr(viewNode, value, oldValue, attr);
+      Galaxy.View.setAttr(viewNode, value ? '' : null, oldValue, attr);
     }
   };
 })(Galaxy);

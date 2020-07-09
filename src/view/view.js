@@ -28,103 +28,105 @@ Galaxy.View = /** @class */(function () {
    * @static
    */
   View.destroyNodes = function (node, toBeRemoved) {
-    // View.DESTROY_IN_NEXT_FRAME(node, () => {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
       remove.destroy();
     }
-    // });
   };
 
   View.TO_BE_DESTROYED = {};
-
   View.LAST_FRAME_ID = null;
-
   /**
    *
-   * @param {Galaxy.View.ViewNode} node
+   * @param {string} index
    * @param {Function} action
    * @memberOf Galaxy.View
    * @static
    */
-  View.DESTROY_IN_NEXT_FRAME = function (node, action) {
+  View.DESTROY_IN_NEXT_FRAME = function (index, action) {
     if (View.LAST_FRAME_ID) {
       cancelAnimationFrame(View.LAST_FRAME_ID);
       View.LAST_FRAME_ID = null;
     }
 
-    if (View.TO_BE_DESTROYED[node.index]) {
-      View.TO_BE_DESTROYED[node.index].push({
-        node,
-        action
-      });
+    if (View.TO_BE_DESTROYED[index]) {
+      View.TO_BE_DESTROYED[index].push(action);
     } else {
-      View.TO_BE_DESTROYED[node.index] = [{
-        node,
-        action
-      }];
+      View.TO_BE_DESTROYED[index] = [action];
     }
 
-    const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
-    View._sort_value = keys;
-
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
+      const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+      // const keys = Object.keys(View.TO_BE_DESTROYED).sort((a, b) => {
+      //   if (a.length > b.length) {
+      //     return -1;
+      //   } else if (a.length < b.length) {
+      //     return 1;
+      //   }
+      //
+      //   if (a > b) {
+      //     return -1;
+      //   }
+      //
+      //   if (a < b) {
+      //     return 1;
+      //   }
+      //
+      //   return 0;
+      // });
+
       keys.forEach((key) => {
         const batch = View.TO_BE_DESTROYED[key];
         if (!batch) {
           return;
         }
-        batch.forEach(function (b) {
-          b.action();
-        });
 
-        Reflect.deleteProperty(View.TO_BE_DESTROYED, key);
+        while (batch.length) {
+          const action = batch.shift();
+          action();
+        }
+        // batch.forEach(function (_action) {
+        //   _action();
+        // });
+
+        // View.TO_BE_DESTROYED[key] = null;
       });
     });
   };
 
   View.TO_BE_CREATED = {};
-
   View.LAST_CREATE_FRAME_ID = null;
-
-  View.CREATE_IN_NEXT_FRAME = function (node, action) {
+  /**
+   *
+   * @param {string} index
+   * @param {Function} action
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.CREATE_IN_NEXT_FRAME = function (index, action) {
     if (View.LAST_CREATE_FRAME_ID) {
       cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
       View.LAST_CREATE_FRAME_ID = null;
     }
 
-    if (View.TO_BE_CREATED[node.index]) {
-      View.TO_BE_CREATED[node.index].push({
-        node,
-        action
-      });
-    } else {
-      View.TO_BE_CREATED[node.index] = [{
-        node,
-        action
-      }];
-    }
-
-    // View.TO_BE_CREATED[node.index] = {
-    //   node,
-    //   action
-    // };
-
-    const keys = Object.keys(View.TO_BE_CREATED).sort();
+    const target = View.TO_BE_CREATED[index] || [];
+    target.push(action);
+    View.TO_BE_CREATED[index] = target;
 
     View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+      const keys = Object.keys(View.TO_BE_CREATED).sort();
       keys.forEach((key) => {
         const batch = View.TO_BE_CREATED[key];
         if (!batch) {
           return;
         }
-        batch.forEach(function (b) {
-          b.action();
-        });
-
-        Reflect.deleteProperty(View.TO_BE_CREATED, key);
+        while (batch.length) {
+          const action = batch.shift();
+          action();
+        }
+        // View.TO_BE_CREATED[key] = null;
       });
     });
   };
@@ -668,7 +670,7 @@ Galaxy.View = /** @class */(function () {
      *
      * @type {Galaxy.View.SchemaProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -696,7 +698,7 @@ Galaxy.View = /** @class */(function () {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':

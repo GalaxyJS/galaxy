@@ -75,17 +75,15 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      Galaxy.View.CREATE_IN_NEXT_FRAME(viewNode, () => {
+      Galaxy.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
         currentScope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {
           cache.module = module;
           viewNode.node.setAttribute('module', module.systemId);
           module.start();
-          // done();
         }).catch(function (response) {
           console.error(response);
-          // done();
         });
       });
     };
