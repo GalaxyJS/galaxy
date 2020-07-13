@@ -68,8 +68,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       clone.__proto__ = obj.__proto__;
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
-          if (typeof (obj[i]) === 'object' && obj[i] !== null) {
-
+          if (obj[i] instanceof Promise) {
+            clone[i] = obj[i];
+          } else if (typeof (obj[i]) === 'object' && obj[i] !== null) {
             clone[i] = Galaxy.clone(obj[i]);
           } else {
             // console.info(Object.getOwnPropertyDescriptor(obj, i).enumerable, i);

@@ -29,7 +29,9 @@
       }
 
       node.rendered.then(() => {
-        node.setInDOM(value);
+        if (node.inDOM !== value) {
+          node.setInDOM(value);
+        }
       });
     }
   };

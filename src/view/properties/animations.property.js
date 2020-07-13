@@ -49,51 +49,50 @@
 
       const leave = value.leave;
       if (leave) {
-        // if (leave === true) {
-        //   viewNode.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
-        //   return;
-        // }
-        //
-        // if (leave.sequence) {
-        //   AnimationMeta.get(leave.sequence).configs.leave = leave;
-        // }
-
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
-          if (value.config.leaveWithParent) {
+          if (value.config.leaveWithParent || value.leave.withParent) {
             const parent = viewNode.parent;
 
             if (parent.transitory) {
+              if (gsap.getTweensOf(viewNode.node).length) {
+                gsap.killTweensOf(viewNode.node);
+              }
               return;
             }
           }
 
+          if (gsap.getTweensOf(viewNode.node).length) {
+            gsap.killTweensOf(viewNode.node);
+          }
 
-          // if (viewNode.node.classList.contains('box')) debugger
-          // if (viewNode.node.classList.contains('anime')) debugger
-          // recursiveKill(viewNode.node);
-
-          // if (gsap.getTweensOf(viewNode.node).length) {
-          //   gsap.killTweensOf(viewNode.node);
+          const rect = viewNode.node.getBoundingClientRect();
+          // if (viewNode.node.classList.contains('box')) {
+          //   viewNode.node.style.border = '1px solid red';
+          //   console.log(viewNode.node.offsetHeight, rect.height)
           // }
-
           // in the case which the viewNode is not visible, then ignore its animation
-          if (viewNode.node.offsetWidth === 0 ||
-            viewNode.node.offsetHeight === 0 ||
+          if (rect.width === 0 ||
+            rect.height === 0 ||
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
             gsap.killTweensOf(viewNode.node);
             return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
-          // debugger;
+
+          // if (viewNode.node.offsetWidth === 0 ||
+          //   viewNode.node.offsetHeight === 0 ||
+          //   viewNode.node.style.opacity === '0' ||
+          //   viewNode.node.style.visibility === 'hidden') {
+          //   gsap.killTweensOf(viewNode.node);
+          //   return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
+          // }
+
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
-      } else {
-        // viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode);
       }
-
       const classAnimationsHandler = function () {
         viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
@@ -160,7 +159,6 @@
    * @property {object} [from]
    * @property {object} [to]
    * @property {string} [addTo]
-
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -324,9 +322,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -340,32 +338,22 @@
 
     if (sequenceName) {
       const animationMeta = AnimationMeta.get(sequenceName);
-      // debugger;
+      if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
+        animationMeta.timeline.add(function() {
+          console.log('inja',newConfig.position)
+          newConfig.await.then(() => {
+            animationMeta.timeline.resume();
+          });
+        }, newConfig.position);
+        animationMeta.timeline.addPause(newConfig.position);
+
+        animationMeta.awaits.push(newConfig.await);
+      }
+
       if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
-        // animationMeta.addOnComplete(onComplete);
         animationMeta.add(viewNode, newConfig, onComplete);
       } else {
         animationMeta.add(viewNode, newConfig, onComplete);
-      }
-      // Add to parent should happen after the animation is added to the child
-      // if (newConfig.parent) {
-      //   animationMeta.addChild(viewNode, type, newConfig);
-      // }
-
-      // if(newConfig.attachTo === 'main-nav-items') debugger;
-
-      if (newConfig.await) {
-        const am = AnimationMeta.get(newConfig.addTo);
-
-        if (!am.aaa) {
-          // am.aaa = newConfig.await();
-          // am.timeline.addPause('+=0');
-          // // animationMeta.timeline.addPause('+=0');
-          // // debugger;
-          // newConfig.await().then(function () {
-          //
-          // });
-        }
       }
 
       if (newConfig.addTo) {
@@ -401,16 +389,9 @@
     const _this = this;
     _this.name = name;
     _this.timeline = new TimelineLite({
-      // paused: true,
       autoRemoveChildren: true,
       smoothChildTiming: false,
       onComplete: function () {
-        // if(name === 'card') {
-        // const cc = _this.timeline.getChildren(false);
-        // debugger;
-        // console.log(name)
-        // }
-        // _this.timeline.clear();
         AnimationMeta.ANIMATIONS[name] = null;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
@@ -419,9 +400,9 @@
           action();
         });
         _this.nodes = [];
+        _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
-        // AnimationMeta.ANIMATIONS[_this.name].timeline.clear();
       }
     });
     _this.onCompletesActions = [];
@@ -430,6 +411,7 @@
     _this.configs = {};
     _this.children = [];
     _this.nodes = [];
+    _this.awaits = [];
     _this.timelinesMap = [];
   }
 
@@ -446,35 +428,11 @@
       const animationMeta = AnimationMeta.get(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
       // const farChildren = children.filter((item) => !item._time);
-
+     if(this.timeline.paused()) {
+       debugger;
+     }
       if (children.indexOf(this.timeline) === -1) {
-        animationMeta.timeline.pause();
-        // debugger;
-        // if(sequenceName ==='main-nav-items' ) debugger;
         animationMeta.timeline.add(this.timeline);
-        // animationMeta.timeline.add(function () {
-        //   debugger
-        //   animationMeta.timeline.remove(this.timeline);
-        // });
-        animationMeta.timeline.resume();
-      } else {
-        // debugger;
-        animationMeta.timeline.pause();
-        const time = animationMeta.timeline.time();
-        animationMeta.timeline.clear();
-        // console.log(children);
-        // animationMeta.timeline.invalidate();
-        children.forEach(function (t) {
-          if (t.data === 'isPause') {
-            animationMeta.timeline.addPause();
-          } else {
-            animationMeta.timeline.add(t);
-          }
-
-        });
-        // animationMeta.timeline.resume();
-        animationMeta.timeline.play(time);
-        // debugger;
       }
     },
     attachTo(sequenceName, pip) {
@@ -555,13 +513,13 @@
           to || {});
       }
 
-      if (_this.nodes.indexOf(viewNode) === -1) {
-        _this.nodes.push({
-          v: viewNode,
-          t: tween,
-          p: config.position
-        });
-      }
+      // if (_this.nodes.indexOf(viewNode) === -1) {
+      //   _this.nodes.push({
+      //     v: viewNode,
+      //     t: tween,
+      //     p: config.position
+      //   });
+      // }
 
       const time = _this.timeline._time;
       // _this.timeline.pause();
@@ -579,6 +537,7 @@
       //
       //   _this.timeline.play(time);
       // } else {
+      // if(config.wait)debugger;
       _this.timeline.add(tween, config.position || '+=0');
       // _this.timeline.play(0);
       // }
