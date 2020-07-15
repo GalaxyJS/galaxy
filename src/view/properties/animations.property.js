@@ -322,9 +322,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -339,13 +339,12 @@
     if (sequenceName) {
       const animationMeta = AnimationMeta.get(sequenceName);
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
-        animationMeta.timeline.add(function() {
-          console.log('inja',newConfig.position)
-          newConfig.await.then(() => {
-            animationMeta.timeline.resume();
-          });
-        }, newConfig.position);
-        animationMeta.timeline.addPause(newConfig.position);
+        // animationMeta.timeline.add(() => {
+        //   gsap.globalTimeline.pause();
+        //   newConfig.await.then(() => {
+        //     gsap.globalTimeline.resume();
+        //   });
+        // }, newConfig.position);
 
         animationMeta.awaits.push(newConfig.await);
       }
@@ -359,22 +358,6 @@
       if (newConfig.addTo) {
         animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
       }
-
-      // if (newConfig.attachTo) {
-      //   animationMeta.attachTo(newConfig.attachTo, newConfig.positionInParent);
-      // }
-      //
-      // if (newConfig.appendTo) {
-      //   animationMeta.appendTo(newConfig.appendTo, newConfig.positionInParent);
-      // }
-
-      // if (newConfig.startAfter) {
-      //   const parent = AnimationMeta.get(newConfig.startAfter);
-      //   const animationMetaTypeConfig = animationMeta.configs[type] || {};
-      //
-      //   parent.addAtEnd(viewNode, type, animationMeta, animationMetaTypeConfig);
-      // }
-
     } else {
       AnimationMeta.createTween(viewNode, newConfig, onComplete);
     }
@@ -428,9 +411,9 @@
       const animationMeta = AnimationMeta.get(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
       // const farChildren = children.filter((item) => !item._time);
-     if(this.timeline.paused()) {
-       debugger;
-     }
+      if (this.timeline.paused()) {
+        debugger;
+      }
       if (children.indexOf(this.timeline) === -1) {
         animationMeta.timeline.add(this.timeline);
       }
@@ -521,26 +504,11 @@
       //   });
       // }
 
-      const time = _this.timeline._time;
-      // _this.timeline.pause();
-      // _this.timeline.clear();
-      // const aliveNodes = _this.nodes.filter((actor) => !actor.v.destroyed.resolved);
-      // console.log(aliveNodes);
-      // aliveNodes.forEach((actor) => {
-      //   // if (actor.v.destroyed.resolved) return;
-      //
-      //   // console.log(actor.v)
-      //   _this.timeline.add(actor.t, actor.p || '+=0');
-      // });
-
-      // if (time) {
-      //
-      //   _this.timeline.play(time);
-      // } else {
-      // if(config.wait)debugger;
-      _this.timeline.add(tween, config.position || '+=0');
-      // _this.timeline.play(0);
-      // }
+      if (_this.timeline.getChildren(false).length === 0) {
+        _this.timeline.add(tween);
+      } else {
+        _this.timeline.add(tween, config.position || '+=0');
+      }
     }
   };
   window.AM = AnimationMeta;

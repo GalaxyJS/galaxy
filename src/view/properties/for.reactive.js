@@ -113,104 +113,103 @@
 
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
-      let newTrackMap = null;
-
       config.oldChanges = changes;
-      // View.CREATE_IN_NEXT_FRAME(node.index, afterInserted);
-      // afterInserted();
-      requestAnimationFrame(afterInserted);
-
-      function afterInserted() {
-        let leaveStep = null;
-        if (config.trackBy instanceof Function && changes.type === 'reset') {
-          newTrackMap = changes.params.map(function (item, i) {
-            return config.trackBy.call(node, item, i);
-          });
-          // list of nodes that should be removed
-          const hasBeenRemoved = [];
-          config.trackMap.forEach(function (id, i) {
-            if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
-              hasBeenRemoved.push(config.nodes[i]);
-            }
-          });
-
-          const newParams = [];
-          const positions = [];
-          newTrackMap.forEach(function (id, i) {
-            if (config.trackMap.indexOf(id) === -1) {
-              newParams.push(changes.params[i]);
-              positions.push(i);
-            }
-          });
-          config.positions = positions;
-
-          const newChanges = new Galaxy.View.ArrayChange();
-          newChanges.init = changes.init;
-          newChanges.type = changes.type;
-          newChanges.original = changes.original;
-          newChanges.params = newParams;
-          newChanges.__rd__ = changes.__rd__;
-          if (newChanges.type === 'reset' && newChanges.params.length) {
-            newChanges.type = 'push';
-          }
-
-          config.nodes = config.nodes.filter(function (node) {
-            return hasBeenRemoved.indexOf(node) === -1;
-          });
-
-          // Map should be updated asap if the newChanges.type is reset
-          if (newChanges.type === 'reset' && newChanges.params.length === 0) {
-            config.trackMap = newTrackMap;
-          }
-
-          if (node.cache.$forProcessing) {
-            return node.cache.$forPushProcess = () => {
-              createPushProcess(node, config, newChanges, config.scope);
-            };
-          }
-
-          leaveStep = createLeaveStep(node, hasBeenRemoved, function () {
-            changes = newChanges;
-            // waitStepDone();
-          });
-        } else if (changes.type === 'reset') {
-          const nodesToBeRemoved = config.nodes.slice(0);
-          config.nodes = [];
-          leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
-            changes = Object.assign({}, changes);
-            changes.type = 'push';
-          });
-        } else {
-          // if (node.cache.$forProcessing) {
-          //   return node.cache.$forPushProcess = () => {
-          //     createPushProcess(node, config, changes, config.scope);
-          //   };
-          // }
-          // if type is not 'reset' then there is no need for leave step
-          // Promise.resolve().then(() => {
-          //   node.cache.$forProcessing = false;
-          // });
-        }
-
-        // if $forProcessing is true, then there is no need for a new leave step
-        // we just need to update the $forPushProcess
-        node.cache.$forProcessing = true;
-
-        if (leaveStep) {
-          leaveStep.call();
-        }
-
-        node.cache.$forPushProcess = () => {
-          createPushProcess(node, config, changes, config.scope);
-        };
-
-        // $forPushProcess can change on the fly therefore we need to register a function
-        // that calls the latest $forPushProcess
-        // waitForLeave.then(() => {
-        node.cache.$forPushProcess.call();
-      }
+      requestAnimationFrame(() => {
+        afterInserted(node, config, changes);
+      });
     }
   };
+
+  function afterInserted(node, config, changes) {
+    let leaveStep = null;
+    let newTrackMap = null;
+    if (config.trackBy instanceof Function && changes.type === 'reset') {
+      newTrackMap = changes.params.map(function (item, i) {
+        return config.trackBy.call(node, item, i);
+      });
+      // list of nodes that should be removed
+      const hasBeenRemoved = [];
+      config.trackMap.forEach(function (id, i) {
+        if (newTrackMap.indexOf(id) === -1 && config.nodes[i]) {
+          hasBeenRemoved.push(config.nodes[i]);
+        }
+      });
+
+      const newParams = [];
+      const positions = [];
+      newTrackMap.forEach(function (id, i) {
+        if (config.trackMap.indexOf(id) === -1) {
+          newParams.push(changes.params[i]);
+          positions.push(i);
+        }
+      });
+      config.positions = positions;
+
+      const newChanges = new Galaxy.View.ArrayChange();
+      newChanges.init = changes.init;
+      newChanges.type = changes.type;
+      newChanges.original = changes.original;
+      newChanges.params = newParams;
+      newChanges.__rd__ = changes.__rd__;
+      if (newChanges.type === 'reset' && newChanges.params.length) {
+        newChanges.type = 'push';
+      }
+
+      config.nodes = config.nodes.filter(function (node) {
+        return hasBeenRemoved.indexOf(node) === -1;
+      });
+
+      // Map should be updated asap if the newChanges.type is reset
+      if (newChanges.type === 'reset' && newChanges.params.length === 0) {
+        config.trackMap = newTrackMap;
+      }
+
+      if (node.cache.$forProcessing) {
+        return node.cache.$forPushProcess = () => {
+          createPushProcess(node, config, newChanges, config.scope);
+        };
+      }
+
+      leaveStep = createLeaveStep(node, hasBeenRemoved, function () {
+        changes = newChanges;
+        // waitStepDone();
+      });
+    } else if (changes.type === 'reset') {
+      const nodesToBeRemoved = config.nodes.slice(0);
+      config.nodes = [];
+      leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
+        changes = Object.assign({}, changes);
+        changes.type = 'push';
+      });
+    } else {
+      // if (node.cache.$forProcessing) {
+      //   return node.cache.$forPushProcess = () => {
+      //     createPushProcess(node, config, changes, config.scope);
+      //   };
+      // }
+      // if type is not 'reset' then there is no need for leave step
+      // Promise.resolve().then(() => {
+      //   node.cache.$forProcessing = false;
+      // });
+    }
+
+    // if $forProcessing is true, then there is no need for a new leave step
+    // we just need to update the $forPushProcess
+    node.cache.$forProcessing = true;
+
+    if (leaveStep) {
+      leaveStep.call();
+    }
+
+    node.cache.$forPushProcess = () => {
+      createPushProcess(node, config, changes, config.scope);
+    };
+
+    // $forPushProcess can change on the fly therefore we need to register a function
+    // that calls the latest $forPushProcess
+    // waitForLeave.then(() => {
+    node.cache.$forPushProcess.call();
+  }
 
   /**
    *

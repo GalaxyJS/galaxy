@@ -221,24 +221,24 @@ Galaxy.View = /** @class */(function () {
     return result;
   };
 
-  View.getAllViewNodes = function (node) {
-    let item, viewNodes = [];
-
-    const childNodes = Array.prototype.slice(node.childNodes, 0);
-    for (let i = 0, len = childNodes.length; i < len; i++) {
-      item = node.childNodes[i];
-
-      if (item['galaxyViewNode'] !== undefined) {
-        viewNodes.push(item.galaxyViewNode);
-      }
-
-      viewNodes = viewNodes.concat(View.getAllViewNodes(item));
-    }
-
-    return viewNodes.filter(function (value, index, self) {
-      return self.indexOf(value) === index;
-    });
-  };
+  // View.getAllViewNodes = function (node) {
+  //   let item, viewNodes = [];
+  //
+  //   const childNodes = Array.prototype.slice(node.childNodes, 0);
+  //   for (let i = 0, len = childNodes.length; i < len; i++) {
+  //     item = node.childNodes[i];
+  //
+  //     if (item['galaxyViewNode'] !== undefined) {
+  //       viewNodes.push(item.galaxyViewNode);
+  //     }
+  //
+  //     viewNodes = viewNodes.concat(View.getAllViewNodes(item));
+  //   }
+  //
+  //   return viewNodes.filter(function (value, index, self) {
+  //     return self.indexOf(value) === index;
+  //   });
+  // };
 
   /**
    *
