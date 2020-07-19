@@ -6,12 +6,12 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  const recursiveKill = (node) => {
-    Array.prototype.forEach.call(node.childNodes, recursiveKill);
-    if (gsap.getTweensOf(node).length) {
-      gsap.killTweensOf(node);
-    }
-  };
+  // const recursiveKill = (node) => {
+  //   Array.prototype.forEach.call(node.childNodes, recursiveKill);
+  //   if (gsap.getTweensOf(node).length) {
+  //     gsap.killTweensOf(node);
+  //   }
+  // };
 
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
@@ -322,9 +322,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -338,25 +338,34 @@
 
     if (sequenceName) {
       const animationMeta = AnimationMeta.get(sequenceName);
+
+      // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
+      if (newConfig.addTo) {
+        animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
+      }
+
+      // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
-        // animationMeta.timeline.add(() => {
-        //   gsap.globalTimeline.pause();
-        //   newConfig.await.then(() => {
-        //     gsap.globalTimeline.resume();
-        //   });
-        // }, newConfig.position);
+        let parent = animationMeta.timeline;
+        while (parent.parent !== gsap.globalTimeline) {
+          parent = parent.parent;
+        }
+
+        parent.add(() => {
+          parent.pause();
+          newConfig.await.then(() => {
+            parent.resume();
+          });
+        });
 
         animationMeta.awaits.push(newConfig.await);
       }
 
+      // add node with it's animation to the 'animationMeta.timeline'
       if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
         animationMeta.add(viewNode, newConfig, onComplete);
       } else {
         animationMeta.add(viewNode, newConfig, onComplete);
-      }
-
-      if (newConfig.addTo) {
-        animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
       }
     } else {
       AnimationMeta.createTween(viewNode, newConfig, onComplete);
@@ -407,57 +416,10 @@
       this.onCompletesActions.push(action);
     },
     addTo(sequenceName, pip) {
-      console.log(sequenceName);
       const animationMeta = AnimationMeta.get(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
-      // const farChildren = children.filter((item) => !item._time);
-      if (this.timeline.paused()) {
-        debugger;
-      }
       if (children.indexOf(this.timeline) === -1) {
-        animationMeta.timeline.add(this.timeline);
-      }
-    },
-    attachTo(sequenceName, pip) {
-      const animationMeta = AnimationMeta.get(sequenceName);
-      const children = animationMeta.timeline.getChildren(false);
-
-      if (animationMeta.children.indexOf(this.timeline) === -1) {
-        this.timeline.pause();
-        // debugger;
-        animationMeta.timeline.add(() => {
-          this.timeline.resume();
-        }, pip || '+=0');
-        animationMeta.children.push(this.timeline);
-        // animationMeta.timeline.add(this.timeline, pip || '+=0');
-      }
-    },
-    appendTo(sequenceName) {
-      const animationMeta = AnimationMeta.get(sequenceName);
-
-      this.timeline.pause();
-      animationMeta.timeline.eventCallback('onComplete', () => {
-        this.timeline.play(0);
-      });
-    },
-    /**
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {'leave'|'enter'} type
-     * @param {AnimationMeta} child
-     * @param {AnimationConfig} childConf
-     */
-    addAtEnd: function (viewNode, type, child, childConf) {
-      const _this = this;
-
-      const children = _this.timeline.getChildren(false, true, true);
-      if (children.indexOf(child.timeline) !== -1) {
-        // Do nothing for now
-      } else if (children.length) {
-        _this.timeline.add(child.timeline);
-        _this.timeline.add(function () {
-          _this.timeline.remove(child.timeline);
-          child.timeline.resume();
-        });
+        animationMeta.timeline.add(this.timeline, pip);
       }
     },
 
@@ -495,14 +457,6 @@
           duration || 0,
           to || {});
       }
-
-      // if (_this.nodes.indexOf(viewNode) === -1) {
-      //   _this.nodes.push({
-      //     v: viewNode,
-      //     t: tween,
-      //     p: config.position
-      //   });
-      // }
 
       if (_this.timeline.getChildren(false).length === 0) {
         _this.timeline.add(tween);
