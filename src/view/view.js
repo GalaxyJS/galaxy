@@ -1,4 +1,4 @@
-/* global Galaxy, Promise */
+/* global Galaxy */
 'use strict';
 
 Galaxy.View = /** @class */(function () {
@@ -10,126 +10,6 @@ Galaxy.View = /** @class */(function () {
   };
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
   View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
-
-  View.REACTIVE_BEHAVIORS = {
-    // example: {
-    //   regex: null,
-    //   prepare: function (matches, scope) {},
-    //   install: function (config) {},
-    //   apply: function (config, value, oldValue, expressionFn) {}
-    // }
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @memberOf Galaxy.View
-   * @static
-   */
-  View.destroyNodes = function (node, toBeRemoved) {
-    let remove = null;
-
-    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
-      remove = toBeRemoved[i];
-      remove.destroy();
-    }
-  };
-
-  View.TO_BE_DESTROYED = {};
-  View.LAST_FRAME_ID = null;
-  /**
-   *
-   * @param {string} index
-   * @param {Function} action
-   * @memberOf Galaxy.View
-   * @static
-   */
-  View.DESTROY_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_FRAME_ID);
-      View.LAST_FRAME_ID = null;
-    }
-
-    if (View.TO_BE_DESTROYED[index]) {
-      View.TO_BE_DESTROYED[index].push(action);
-    } else {
-      View.TO_BE_DESTROYED[index] = [action];
-    }
-
-    View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
-      // const keys = Object.keys(View.TO_BE_DESTROYED).sort((a, b) => {
-      //   if (a.length > b.length) {
-      //     return -1;
-      //   } else if (a.length < b.length) {
-      //     return 1;
-      //   }
-      //
-      //   if (a > b) {
-      //     return -1;
-      //   }
-      //
-      //   if (a < b) {
-      //     return 1;
-      //   }
-      //
-      //   return 0;
-      // });
-
-      keys.forEach((key) => {
-        const batch = View.TO_BE_DESTROYED[key];
-        if (!batch) {
-          return;
-        }
-
-        while (batch.length) {
-          const action = batch.shift();
-          action();
-        }
-        // batch.forEach(function (_action) {
-        //   _action();
-        // });
-
-        // View.TO_BE_DESTROYED[key] = null;
-      });
-    });
-  };
-
-  View.TO_BE_CREATED = {};
-  View.LAST_CREATE_FRAME_ID = null;
-  /**
-   *
-   * @param {string} index
-   * @param {Function} action
-   * @memberOf Galaxy.View
-   * @static
-   */
-  View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_CREATE_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-      View.LAST_CREATE_FRAME_ID = null;
-    }
-
-    const target = View.TO_BE_CREATED[index] || [];
-    target.push(action);
-    View.TO_BE_CREATED[index] = target;
-
-    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      const keys = Object.keys(View.TO_BE_CREATED).sort();
-      keys.forEach((key) => {
-        const batch = View.TO_BE_CREATED[key];
-        if (!batch) {
-          return;
-        }
-        while (batch.length) {
-          const action = batch.shift();
-          action();
-        }
-        // View.TO_BE_CREATED[key] = null;
-      });
-    });
-  };
 
   /**
    *
@@ -197,6 +77,110 @@ Galaxy.View = /** @class */(function () {
     }
   };
 
+  View.REACTIVE_BEHAVIORS = {
+    // example: {
+    //   regex: null,
+    //   prepare: function (matches, scope) {},
+    //   install: function (config) {},
+    //   apply: function (config, value, oldValue, expressionFn) {}
+    // }
+  };
+
+  View.PROPERTY_SETTERS = {
+
+    'none': function () {
+      return View.EMPTY_CALL;
+    }
+  };
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} node
+   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.destroyNodes = function (node, toBeRemoved) {
+    let remove = null;
+
+    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
+      remove = toBeRemoved[i];
+      remove.destroy();
+    }
+  };
+
+  View.TO_BE_DESTROYED = {};
+  View.LAST_FRAME_ID = null;
+  /**
+   *
+   * @param {string} index
+   * @param {Function} action
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.DESTROY_IN_NEXT_FRAME = function (index, action) {
+    if (View.LAST_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_FRAME_ID);
+      View.LAST_FRAME_ID = null;
+    }
+
+    if (View.TO_BE_DESTROYED[index]) {
+      View.TO_BE_DESTROYED[index].push(action);
+    } else {
+      View.TO_BE_DESTROYED[index] = [action];
+    }
+
+    View.LAST_FRAME_ID = requestAnimationFrame(() => {
+      const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+      keys.forEach((key) => {
+        const batch = View.TO_BE_DESTROYED[key];
+        if (!batch) {
+          return;
+        }
+
+        let action;
+        while (batch.length) {
+          action = batch.shift();
+          action();
+        }
+      });
+    });
+  };
+
+  View.TO_BE_CREATED = {};
+  View.LAST_CREATE_FRAME_ID = null;
+  /**
+   *
+   * @param {string} index
+   * @param {Function} action
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.CREATE_IN_NEXT_FRAME = function (index, action) {
+    if (View.LAST_CREATE_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+      View.LAST_CREATE_FRAME_ID = null;
+    }
+
+    const target = View.TO_BE_CREATED[index] || [];
+    target.push(action);
+    View.TO_BE_CREATED[index] = target;
+
+    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+      const keys = Object.keys(View.TO_BE_CREATED).sort();
+      keys.forEach((key) => {
+        const batch = View.TO_BE_CREATED[key];
+        if (!batch) {
+          return;
+        }
+        while (batch.length) {
+          const action = batch.shift();
+          action();
+        }
+      });
+    });
+  };
+
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
     if (value !== null && value !== undefined) {
@@ -220,25 +204,6 @@ Galaxy.View = /** @class */(function () {
 
     return result;
   };
-
-  // View.getAllViewNodes = function (node) {
-  //   let item, viewNodes = [];
-  //
-  //   const childNodes = Array.prototype.slice(node.childNodes, 0);
-  //   for (let i = 0, len = childNodes.length; i < len; i++) {
-  //     item = node.childNodes[i];
-  //
-  //     if (item['galaxyViewNode'] !== undefined) {
-  //       viewNodes.push(item.galaxyViewNode);
-  //     }
-  //
-  //     viewNodes = viewNodes.concat(View.getAllViewNodes(item));
-  //   }
-  //
-  //   return viewNodes.filter(function (value, index, self) {
-  //     return self.indexOf(value) === index;
-  //   });
-  // };
 
   /**
    *
@@ -336,19 +301,21 @@ Galaxy.View = /** @class */(function () {
     const original = data;
     let target = data;
     let temp = data;
-    // var nestingLevel = 0;
+    let nestingLevel = 0;
+    let parent;
     if (data[property] === undefined) {
       while (temp.__parent__) {
-        if (temp.__parent__.hasOwnProperty(property)) {
-          target = temp.__parent__;
+        parent = temp.__parent__;
+        if (parent.hasOwnProperty(property)) {
+          target = parent;
           break;
         }
 
-        // if (nestingLevel++ >= 1000) {
-        //   throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
-        // }
+        if (nestingLevel++ >= 1000) {
+          throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
+        }
 
-        temp = temp.__parent__;
+        temp = parent;
       }
 
       // if the property is not found in the parents then return the original object as the context
@@ -408,7 +375,6 @@ Galaxy.View = /** @class */(function () {
 
     // Take care of variables that contain square brackets like '[variable_name]'
     // for the convenience of the programmer
-
     functionContent += middle.substring(0, middle.length - 1) + ']';
 
     const func = new Function('properties, scope', functionContent);
@@ -622,26 +588,6 @@ Galaxy.View = /** @class */(function () {
   /**
    *
    * @param {Galaxy.View.ViewNode} node
-   * @param {string} attributeName
-   * @param property
-   * @returns {Function}
-   */
-  View.createCustomSetter = function (node, attributeName, property) {
-    return function (value, oldValue) {
-      if (value instanceof Promise) {
-        const asyncCall = function (asyncValue) {
-          property.handler(node, attributeName, asyncValue, oldValue);
-        };
-        value.then(asyncCall).catch(asyncCall);
-      } else {
-        property.handler(node, attributeName, value, oldValue);
-      }
-    };
-  };
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
@@ -657,14 +603,6 @@ Galaxy.View = /** @class */(function () {
     return needValueAssignment === undefined || needValueAssignment === null ? true : needValueAssignment;
   };
 
-  View.PROPERTY_SETTERS = {
-    'none': function () {
-      return function () {
-
-      };
-    }
-  };
-
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
     /**
      *
@@ -678,8 +616,7 @@ Galaxy.View = /** @class */(function () {
 
     // if viewNode is virtual, then the expression should be ignored
     if (property.type !== 'reactive' && viewNode.virtual) {
-      return function () {
-      };
+      return View.EMPTY_CALL;
     }
 
     // This is the lowest level where the developer can modify the property setter behavior
@@ -744,12 +681,8 @@ Galaxy.View = /** @class */(function () {
         tag: scope.element.tagName
       }, scope.element, _this);
 
-      // _this.container.sequences.enter.nextAction(function () {
       _this.container.hasBeenRendered();
-      // });
     }
-
-    // _this.renderingFlow = this.container.renderingFlow;
   }
 
   View.prototype = {
@@ -763,15 +696,7 @@ Galaxy.View = /** @class */(function () {
         _this.container.node.innerHTML = '';
       }
 
-      // _this.container.renderingFlow.next(function (next) {
       _this.createNode(schema, _this.container, _this.scope, null);
-      // _this.container.sequences.enter.nextAction(function () {
-      //   next();
-      // }, null, 'container-enter');
-      // });
-    },
-    style: function (styleSchema) {
-      // this.createNode(Object.assign({}, styleSchema));
     },
     broadcast: function (event) {
       this.container.broadcast(event);
@@ -847,17 +772,9 @@ Galaxy.View = /** @class */(function () {
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
 
           viewNode.inserted.then(function () {
-            // console.log(viewNode.index)
             viewNode.callLifecycleEvent('postChildrenInsert');
           });
         }
-
-        // viewNode.onReady promise will be resolved after all the dom manipulations are done
-        // viewNode.sequences.enter.nextAction(function () {
-        //   requestAnimationFrame(function () {
-        //     viewNode.hasBeenRendered();
-        //   });
-        // });
 
         return viewNode;
       }

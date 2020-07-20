@@ -92,7 +92,10 @@
 
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
+      } else {
+        viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF;
       }
+
       const classAnimationsHandler = function () {
         viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
@@ -322,9 +325,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
+      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);

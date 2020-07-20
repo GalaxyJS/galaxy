@@ -4,6 +4,7 @@
 Galaxy.View.ViewNode = /** @class */ (function (GV) {
   const commentNode = document.createComment('');
   const defProp = Object.defineProperty;
+  const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
 
   function createComment(t) {
     return commentNode.cloneNode(t);
@@ -11,16 +12,20 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   /**
    *
-   * @param t
-   * @param {Galaxy.View.ViewNode} p
-   * @returns {any}
+   * @param {string} tagName
+   * @param {Galaxy.View.ViewNode} parentViewNode
+   * @returns {HTMLElement|Comment}
    */
-  function createElem(t, p) {
-    if (t === 'svg' || (p && p.schema.tag === 'svg')) {
-      return document.createElementNS('http://www.w3.org/2000/svg', t);
+  function createElem(tagName, parentViewNode) {
+    if (tagName === 'svg' || (parentViewNode && parentViewNode.schema.tag === 'svg')) {
+      return document.createElementNS('http://www.w3.org/2000/svg', tagName);
     }
 
-    return t === 'comment' ? document.createComment('ViewNode') : document.createElement(t);
+    if (tagName === 'comment') {
+      return document.createComment('ViewNode');
+    }
+
+    return document.createElement(tagName);
   }
 
   function insertBefore(parentNode, newNode, referenceNode) {
@@ -255,7 +260,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      *
      * @param {Galaxy.Sequence} sequence
      */
-    populateEnterSequence: Galaxy.View.EMPTY_CALL,
+    populateEnterSequence: EMPTY_CALL,
 
     /**
      *
@@ -294,9 +299,10 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.callLifecycleEvent('postInsert');
         _this.node.style.display = 'none';
         _this.hasBeenInserted();
-        _this.hasBeenRendered();
+
         GV.CREATE_IN_NEXT_FRAME(_this.index, function () {
           _this.node.style.display = '';
+          _this.hasBeenRendered();
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
@@ -387,15 +393,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
       if (hasAnimation) {
         if (!_this.populateLeaveSequence) {
-          _this.populateLeaveSequence = Galaxy.View.EMPTY_CALL;
+          _this.populateLeaveSequence = EMPTY_CALL;
         }
       } else {
-        _this.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF;
+        _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
         return;
       }
 
       for (let i = 0, len = children.length; i < len; i++) {
-        // const n = children[i];
         children[i].updateChildrenLeaveSequence(hasAnimation);
       }
     },

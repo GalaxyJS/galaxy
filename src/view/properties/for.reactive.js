@@ -44,13 +44,7 @@
        */
       parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
 
-      if (config.options instanceof Array) {
-        View.makeBinding(this, '$for', undefined, config.scope, {
-          isExpression: false,
-          modifiers: null,
-          propertyKeysPaths: [config.options[2] + '.changes']
-        }, this);
-      } else if (config.options) {
+      if (config.options) {
         const bindings = View.getBindings(config.options.data);
         config.watch = bindings.propertyKeysPaths;
         node.localPropertyNames.add(config.options.as);
@@ -101,7 +95,9 @@
       }
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
-        return console.warn('$for data is not a type of ArrayChange\nPassed type is ' + typeof changes, config.options);
+        return console.warn('%c$for %cdata is not a type of ArrayChange' +
+          '\ndata: ' + config.options.data +
+          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
       if (!changes || typeof changes === 'string') {
@@ -121,7 +117,7 @@
   };
 
   function afterInserted(node, config, changes) {
-    let leaveStep = null;
+    // let leaveStep = null;
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {
@@ -170,36 +166,19 @@
         };
       }
 
-      leaveStep = createLeaveStep(node, hasBeenRemoved, function () {
-        changes = newChanges;
-        // waitStepDone();
-      });
+      View.destroyNodes(node, hasBeenRemoved.reverse());
+      changes = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      leaveStep = createLeaveStep(node, nodesToBeRemoved, function () {
-        changes = Object.assign({}, changes);
-        changes.type = 'push';
-      });
-    } else {
-      // if (node.cache.$forProcessing) {
-      //   return node.cache.$forPushProcess = () => {
-      //     createPushProcess(node, config, changes, config.scope);
-      //   };
-      // }
-      // if type is not 'reset' then there is no need for leave step
-      // Promise.resolve().then(() => {
-      //   node.cache.$forProcessing = false;
-      // });
+      View.destroyNodes(node, nodesToBeRemoved.reverse());
+      changes = Object.assign({}, changes);
+      changes.type = 'push';
     }
 
     // if $forProcessing is true, then there is no need for a new leave step
     // we just need to update the $forPushProcess
     node.cache.$forProcessing = true;
-
-    if (leaveStep) {
-      leaveStep.call();
-    }
 
     node.cache.$forPushProcess = () => {
       createPushProcess(node, config, changes, config.scope);
@@ -207,29 +186,7 @@
 
     // $forPushProcess can change on the fly therefore we need to register a function
     // that calls the latest $forPushProcess
-    // waitForLeave.then(() => {
     node.cache.$forPushProcess.call();
-  }
-
-  /**
-   *
-   * @param {Galaxy.View.ViewNode} node
-   * @param {Array.<Galaxy.View.ViewNode>} itemsToBeRemoved
-   * @param {Function} onDone
-   * @return {Function}
-   */
-  function createLeaveStep(node, itemsToBeRemoved, onDone) {
-    if (!itemsToBeRemoved.length) {
-      return onDone;
-    }
-
-    return function $forLeaveStep() {
-      // View.DESTROY_IN_NEXT_FRAME(node, () => {
-      View.destroyNodes(node, itemsToBeRemoved.reverse());
-      // });
-
-      onDone();
-    };
   }
 
   function createPushProcess(node, config, changes, nodeScopeData) {
