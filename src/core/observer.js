@@ -25,15 +25,16 @@ Galaxy.Observer = /** @class */ (function () {
     this.subjectsActions = {};
     this.allSubjectAction = [];
 
-    if (!this.context.hasOwnProperty('__observers__')) {
-      defProp(context, '__observers__', {
+    const __observers__ = '__observers__';
+    if (!this.context.hasOwnProperty(__observers__)) {
+      defProp(context, __observers__, {
         value: [],
         writable: true,
         configurable: true
       });
     }
 
-    this.context['__observers__'].push(this);
+    this.context[__observers__].push(this);
   }
 
   Observer.prototype = {

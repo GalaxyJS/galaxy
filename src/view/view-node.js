@@ -256,16 +256,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       this.setInDOM(false);
     },
 
-    /**
-     *
-     * @param {Galaxy.Sequence} sequence
-     */
     populateEnterSequence: EMPTY_CALL,
 
-    /**
-     *
-     * @param {Galaxy.Sequence} sequence
-     */
     populateLeaveSequence: null,
 
     detach: function () {
@@ -447,7 +439,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @param {Object} item
      */
     addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({reactiveData: reactiveData, item: item});
+      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {

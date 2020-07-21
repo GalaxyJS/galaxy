@@ -69,10 +69,6 @@
           }
 
           const rect = viewNode.node.getBoundingClientRect();
-          // if (viewNode.node.classList.contains('box')) {
-          //   viewNode.node.style.border = '1px solid red';
-          //   console.log(viewNode.node.offsetHeight, rect.height)
-          // }
           // in the case which the viewNode is not visible, then ignore its animation
           if (rect.width === 0 ||
             rect.height === 0 ||
@@ -100,17 +96,14 @@
         viewNode.observer.on('classList', function (classes, oldClasses) {
           oldClasses = oldClasses || [];
 
-          // const classSequence = viewNode.sequences.classList;
           try {
             classes.forEach(function (item) {
               if (item && oldClasses.indexOf(item) === -1) {
                 if (item.indexOf('@') === 0) {
                   const classEvent = value[item];
                   if (classEvent) {
-                    // classSequence.nextAction(function () {
                     viewNode.node.classList.remove(item);
                     AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
-                    // });
                   }
 
                   return;
@@ -121,10 +114,8 @@
                   return;
                 }
 
-                // classSequence.nextAction(function (done) {
                 viewNode.node.classList.remove(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config, done);
-                // });
+                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config);
               }
             });
 
@@ -135,10 +126,8 @@
                   return;
                 }
 
-                // classSequence.nextAction(function (done) {
                 viewNode.node.classList.add(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config, done);
-                // });
+                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config);
               }
             });
           } catch (exception) {
@@ -325,9 +314,9 @@
     if (type !== 'leave' && !classModification && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
-      to = Object.assign(to || {}, {className: type, overwrite: 'none'});
+      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
     } else if (type.indexOf('@') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);

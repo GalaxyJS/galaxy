@@ -1,10 +1,11 @@
 {
   "name": "galaxyjs",
-  "version": "0.9.0",
+  "version": "4.0.0",
   "keywords": [
     "modular",
     "web components",
-    "frontend library"
+    "frontend library",
+    "framework"
   ],
   "author": {
     "name": "Eeliya Rasta",

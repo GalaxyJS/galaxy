@@ -1,5 +1,10 @@
 /* global Galaxy, Promise */
 'use strict';
+/*!
+ * GalaxyJS
+ * Eeliya Rasta
+ * Released under the MIT License.
+ */
 
 window.AsyncFunction = Object.getPrototypeOf(async function () {
 }).constructor;
@@ -201,7 +206,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
-      const promise = new Promise(function (resolve, reject) {
+      const compilationStep = new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
           imports.splice(imports.indexOf(module.url) - 1, 1);
 
@@ -245,7 +250,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 item.url = scope.uri.path + item.url.substr(2);
               }
 
-              // if(item.url === '/galaxy/site/modules/api/test.css') debugger;
               Galaxy.load({
                 name: item.name,
                 url: item.url,
@@ -264,7 +268,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         resolve(module);
       });
 
-      return promise;
+      return compilationStep;
     },
 
     /**

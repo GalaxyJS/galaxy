@@ -76,6 +76,7 @@ Galaxy.Module.Content = /** @class */ (function () {
    *
    * @param {string} type
    * @param {*} content
+   * @param {*} metaData
    * @constructor
    * @memberOf Galaxy.Module
    */

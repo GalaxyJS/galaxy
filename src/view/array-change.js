@@ -17,10 +17,8 @@ Galaxy.View.ArrayChange = /** @class */ (function () {
       const instance = new Galaxy.View.ArrayChange();
       instance.init = this.init;
       instance.original = this.original;
-      // instance.snapshot = this.snapshot.slice(0);
       instance.params = this.params.slice(0);
       instance.type = this.type;
-      // instance.ts = getTS();
 
       return instance;
     }
