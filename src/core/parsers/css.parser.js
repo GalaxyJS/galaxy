@@ -59,6 +59,7 @@
         Scope.exports = {
           _temp: true,
           tag: 'style',
+          type: 'text/css',
           id: Scope.systemId,
           text: parsedCSSText,
           _apply() {
@@ -67,7 +68,7 @@
             children.forEach((child) => {
               child[ids.content] = '';
             });
-            console.log(children)
+            // console.log(children)
           }
         };
       }

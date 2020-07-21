@@ -297,11 +297,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.callLifecycleEvent('postInsert');
-        _this.node.style.display = 'none';
+        _this.node.style.setProperty('display', 'none');
         _this.hasBeenInserted();
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, function () {
-          _this.node.style.display = '';
+          // _this.node.style.display = '';
+          _this.node.style.removeProperty('display');
           _this.hasBeenRendered();
           _this.populateEnterSequence();
         });

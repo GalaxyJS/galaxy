@@ -77,7 +77,7 @@
       for (let key in value) {
         const valueObj = value[key];
         if (valueObj instanceof Promise) {
-          valueObj.then(function (v) {
+          valueObj.then((v) => {
             node.style[key] = v;
           });
         } else {
