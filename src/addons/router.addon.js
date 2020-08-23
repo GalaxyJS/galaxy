@@ -32,7 +32,8 @@
       this.routes = this.parseRoutes(routes);
 
       this.listener = this.detect.bind(this);
-      window.addEventListener('hashchange', this.listener);
+      window.addEventListener('popstate', this.listener);
+      // window.addEventListener('hashchange', this.listener);
       this.detect();
     },
 
@@ -135,10 +136,6 @@
           const parts = hash.split('/').slice(2);
 
           _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-
-          // _this.routesMap[dynamicRoute.id].call(routeScope, params);
-          // parentRoute = dynamicRoute;
-          // depth = dynamicRoute.id.split('/').length;
           break;
         }
       }
@@ -212,7 +209,8 @@
     },
 
     destroy: function () {
-      window.removeEventListener('hashchange', this.listener);
+      window.removeEventListener('popstate', this.listener);
+      // window.removeEventListener('hashchange', this.listener);
     }
   };
 

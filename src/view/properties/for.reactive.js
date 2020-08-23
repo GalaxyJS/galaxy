@@ -42,7 +42,7 @@
        *
        * @type {RenderJobManager}
        */
-      parentNode.cache.$for = parentNode.cache.$for || {steps: [], queue: [], mainPromise: null};
+      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
       if (config.options) {
         const bindings = View.getBindings(config.options.data);
@@ -54,7 +54,7 @@
 
         if (bindings.propertyKeysPaths) {
           View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
-          bindings.propertyKeysPaths.forEach(function (path) {
+          bindings.propertyKeysPaths.forEach((path) => {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
               node.addDependedObject(rd, node);

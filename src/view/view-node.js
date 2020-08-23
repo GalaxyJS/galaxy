@@ -303,6 +303,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = true;
         _this.transitory = true;
+        const flag = _this.hasAnimation();
+        _this.updateChildrenLeaveSequence(flag);
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(false);
           _this.origin = false;
@@ -402,6 +404,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      *
      */
     destroy: function () {
+      // if(this.virtual)debugger
       const _this = this;
       _this.transitory = true;
 
@@ -410,6 +413,14 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.updateChildrenLeaveSequence(flag);
         _this.clean();
       }
+      _this.properties.forEach(function (reactiveData) {
+        reactiveData.removeNode(_this);
+      });
+
+      _this.dependedObjects.forEach(function (dependent) {
+        dependent.reactiveData.removeNode(dependent.item);
+      });
+
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(true);
@@ -417,14 +428,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
           _this.callLifecycleEvent('postDestroy');
         }
 
-        _this.properties.forEach(function (reactiveData) {
-          reactiveData.removeNode(_this);
-        });
-
-        _this.dependedObjects.forEach(function (dependent) {
-          dependent.reactiveData.removeNode(dependent.item);
-        });
-
+        _this.localPropertyNames.clear();
         _this.properties = [];
         _this.dependedObjects = [];
         _this.inDOM = false;
@@ -444,13 +448,9 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
     getChildNodes: function () {
       const nodes = [];
-      const cn = Array.prototype.slice.call(this.node.children, 0);
+      const cn = Array.prototype.slice.call(this.node.childNodes, 0);
       for (let i = cn.length - 1; i >= 0; i--) {
-        // const node = cn[i]['_gvn'];
-
-        // if (node !== undefined) {
-        //   nodes.push(node);
-        // }
+        // All the nodes that are ViewNode
         const node = cn[i];
         if ('_gvn' in cn[i]) {
           nodes.push(node['_gvn']);

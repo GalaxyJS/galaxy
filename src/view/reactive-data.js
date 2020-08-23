@@ -1,5 +1,39 @@
 /* global Galaxy */
 
+// const data = {
+//   a: {
+//     b: {
+//       c: 'something',
+//       _c_path: ['a.b.c', 'x.y.a.b.c']
+//     },
+//     _b_path: ['a.b', 'x.y.a.b']
+//   },
+//   _a_path: ['a', 'x.y.a']
+// };
+//
+// const data2 = {
+//   x: {
+//     y: data,
+//     _y_path: ['x.y']
+//   },
+//   _x_path: ['x']
+// };
+//
+// const fromTemplate = {
+//   'a.b.c': {
+//     keys: ['text'],
+//     nodes: ['p']
+//   },
+//   'x.y.a.b.c': {
+//     keys: ['text'],
+//     nodes: ['h3']
+//   },
+//   'a.b': {
+//     keys: ['text'],
+//     nodes: ['pre']
+//   }
+// };
+
 Galaxy.View.ReactiveData = /** @class */ (function () {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
@@ -58,11 +92,19 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     this.refs = [];
     this.shadow = {};
     this.oldValue = {};
+    this.nodeCount = 0;
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       this.refs = this.data.__rd__.refs;
+
       const refExist = this.getRefById(this.id);
       if (refExist) {
+        // Sometime a object is already reactive, but its parent is dead, meaning all references to it are lost
+        // In such a case that parent con be replace with a live parent
+        if (this.parent.isDead && refExist.parent.refs.length === 1 && refExist.parent.refs[0] === refExist.parent) {
+          refExist.parent = parent;
+        }
+
         this.fixHierarchy(id, refExist);
         return refExist;
       }
@@ -70,7 +112,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       this.refs.push(this);
     } else {
       this.refs.push(this);
-
       // data === null means that parent does not have this id
       if (this.data === null) {
         // if a property with same id already exist in the parent shadow, then return it instead of making a new one
@@ -160,7 +201,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     walk: function (data) {
       const _this = this;
 
-      if(data instanceof Node) return;
+      if (data instanceof Node) return;
 
       if (data instanceof Array) {
         _this.makeReactiveArray(data);
@@ -178,11 +219,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     makeReactiveObject: function (data, key, shadow) {
       const _this = this;
+      const property = Object.getOwnPropertyDescriptor(data, key);
+      const getter = property && property.get;
       let value = data[key];
 
       defProp(data, key, {
         get: function () {
-          return value;
+          return getter ? getter.call(data) : value;
         },
         set: function (val) {
           if (value === val) {
@@ -334,7 +377,20 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       });
 
       _this.sync(key);
-      _this.parent.notify(_this.keyInParent);
+      if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
+        const seen = {};
+        seen[_this.keyInParent] = true;
+        const allKeys = _this.refs.map((item) => item.keyInParent);
+        const keys = allKeys.filter((item) => {
+          return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+        });
+
+        keys.forEach(kip => {
+          _this.parent.notify(kip);
+        });
+      } else {
+        _this.parent.notify(_this.keyInParent);
+      }
     },
 
     notifyDown: function (key) {
@@ -367,7 +423,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       if (map) {
         map.nodes.forEach(function (node, i) {
           const key = map.keys[i];
-
           _this.syncNode(node, key, value, oldValue);
         });
       }
@@ -446,18 +501,21 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         else {
           this.data.__rd__.removeRef(this);
 
-          const nextOwener = this.refs[0];
+          const nextOwner = this.refs[0];
           defProp(this.data, '__rd__', {
             enumerable: false,
             configurable: true,
-            value: nextOwener
+            value: nextOwner
           });
 
-          nextOwener.walk(this.data);
+          nextOwner.walk(this.data);
 
           this.refs = [this];
         }
       }
+    },
+    get isDead() {
+      return this.nodeCount === 0;
     },
     /**
      *
@@ -471,9 +529,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     },
     /**
      *
-     * @param node
+     * @param {Galaxy.View.ViewNode} node
      * @param {string} nodeKey
-     * @param dataKey
+     * @param {string} dataKey
      * @param expression
      */
     addNode: function (node, nodeKey, dataKey, expression) {
@@ -489,6 +547,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // Check if the node with the same property already exist
       // Insure that same node with different property bind can exist
       if (index === -1 || map.keys[index] !== nodeKey) {
+        this.nodeCount++;
         if (node instanceof Galaxy.View.ViewNode && !node.setters[nodeKey]) {
           node.installSetter(this, nodeKey, expression);
         }
@@ -536,6 +595,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         while ((index = map.nodes.indexOf(node)) !== -1) {
           map.nodes.splice(index, 1);
           map.keys.splice(index, 1);
+          this.nodeCount--;
         }
       }
     },
@@ -564,10 +624,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             this.makeReactiveObject(this.data, key, true);
           }
           this.shadow[key].setData(this.data[key]);
-        }
-        // This will make sure that UI is updated properly
-        // for properties that has been removed from data
-        else if (keys.indexOf(key) === -1) {
+        } else if (keys.indexOf(key) === -1) {
+          // This will make sure that UI is updated properly
+          // for properties that has been removed from data
           this.sync(key);
         }
       }

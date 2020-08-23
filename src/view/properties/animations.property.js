@@ -6,13 +6,6 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  // const recursiveKill = (node) => {
-  //   Array.prototype.forEach.call(node.childNodes, recursiveKill);
-  //   if (gsap.getTweensOf(node).length) {
-  //     gsap.killTweensOf(node);
-  //   }
-  // };
-
   Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
@@ -43,12 +36,23 @@
             }
           }
 
+          if (gsap.getTweensOf(viewNode.node).length) {
+            gsap.killTweensOf(viewNode.node);
+          }
+
           AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config);
         };
       }
 
       const leave = value.leave;
       if (leave) {
+        // We need an empty enter animation in order to have a proper behavior for $if
+        if (!enter && viewNode.schema.$if) {
+          console.warn('The following node has `$if` and a `leave` animation but does NOT have a `enter` animation.' +
+            '\nThis can result in unexpected UI behavior.\nTry to define a `enter` animation that negates the leave animation to prevent unexpected behavior\n\n');
+          console.warn(viewNode.node);
+        }
+
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 

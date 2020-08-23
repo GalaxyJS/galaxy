@@ -456,6 +456,7 @@ Galaxy.View = /** @class */(function () {
         propertyKey = propertyKeyPathItems[0];
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
+
       if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
           parentReactiveData = scopeData.__rd__;
@@ -516,7 +517,7 @@ Galaxy.View = /** @class */(function () {
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
         if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
-          // If the propertyKey is refering to some local value then there is no error
+          // If the propertyKey is referring to some local value then there is no error
           if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
           }
@@ -526,7 +527,8 @@ Galaxy.View = /** @class */(function () {
             propertyKey + '`\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn, scopeData);
+        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
+
       }
 
       if (childPropertyKeyPath !== null) {
