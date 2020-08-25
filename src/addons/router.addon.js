@@ -10,8 +10,11 @@
 
   function SimpleRouter(module) {
     const _this = this;
+    this.config = {
+      baseURL: '/'
+    };
     this.module = module;
-    this.root = module.id === 'system' ? '#' : module.systemId.replace('system/', '#/');
+    this.root = module.id === 'system' ? '/' : module.systemId.replace('system/', '/');
     this.oldURL = '';
     this.oldResolveId = {};
     this.routes = [];
@@ -34,6 +37,7 @@
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
       // window.addEventListener('hashchange', this.listener);
+
       this.detect();
     },
 
@@ -63,7 +67,9 @@
         path = '/' + path;
       }
 
-      window.location.hash = path;
+      // window.location.hash = path;
+      history.pushState({ path }, '', this.config.baseURL + path);
+      this.detect();
     },
 
     navigateFromHere: function (path) {
@@ -94,12 +100,13 @@
         }
       }
 
-      return normalizedHash.replace(_this.root, '') || '/';
+      return normalizedHash.replace(this.config.baseURL, '') || '/';
     },
 
     callMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       const path = _this.normalizeHash(hash);
+
       const routesPath = routes.map(function (item) {
         return item.path;
       });
@@ -114,7 +121,7 @@
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
       let matchCount = 0;
-
+      // debugger;
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(path);
@@ -148,8 +155,7 @@
     callRoute: function (route, hash, params, parentParams) {
       if (route.act instanceof Function) {
         route.act.call(null, params, parentParams);
-      }
-      else if (route.act instanceof Object) {
+      } else if (route.act instanceof Object) {
         const routes = this.parseRoutes(route.act);
         if (route.act._canActivate instanceof Function) {
           if (!route.act._canActivate.call(null, params, parentParams)) {
@@ -194,8 +200,9 @@
     },
 
     detect: function () {
-      const hash = window.location.hash || '#/';
-
+      const hash = window.location.pathname || '/';
+      // const sssa= hash.replace(/\/+$/, '').replace(/^\/+/, '^/');
+      // debugger
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;

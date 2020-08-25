@@ -110,7 +110,7 @@
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
     const newClasses = getClasses(classes);
-// debugger;
+    // debugger;
     _this.notifyObserver('class', newClasses, oldClasses);
     // _this.sequences.classList.nextAction(function () {
     _this.node.setAttribute('class', newClasses.join(' '));

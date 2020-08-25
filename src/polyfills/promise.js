@@ -13,7 +13,7 @@
 }(this, (function () { 'use strict';
 
   function objectOrFunction(x) {
-    var type = typeof x;
+    let type = typeof x;
     return x !== null && (type === 'object' || type === 'function');
   }
 
@@ -23,7 +23,7 @@
 
 
 
-  var _isArray = void 0;
+  let _isArray = void 0;
   if (Array.isArray) {
     _isArray = Array.isArray;
   } else {
@@ -32,13 +32,13 @@
     };
   }
 
-  var isArray = _isArray;
+  let isArray = _isArray;
 
-  var len = 0;
-  var vertxNext = void 0;
-  var customSchedulerFn = void 0;
+  let len = 0;
+  let vertxNext = void 0;
+  let customSchedulerFn = void 0;
 
-  var asap = function asap(callback, arg) {
+  let asap = function asap(callback, arg) {
     queue[len] = callback;
     queue[len + 1] = arg;
     len += 2;
@@ -62,15 +62,15 @@
     asap = asapFn;
   }
 
-  var browserWindow = typeof window !== 'undefined' ? window : undefined;
-  var browserGlobal = browserWindow || {};
-  var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-  var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+  let browserWindow = typeof window !== 'undefined' ? window : undefined;
+  let browserGlobal = browserWindow || {};
+  let BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+  let isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
 
-// test for web worker but not in IE10
-  var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+  // test for web worker but not in IE10
+  let isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
 
-// node
+  // node
   function useNextTick() {
     // node version 0.10.x displays a deprecation warning when nextTick is used recursively
     // see https://github.com/cujojs/when/issues/410 for details
@@ -79,7 +79,7 @@
     };
   }
 
-// vertx
+  // vertx
   function useVertxTimer() {
     if (typeof vertxNext !== 'undefined') {
       return function () {
@@ -91,9 +91,9 @@
   }
 
   function useMutationObserver() {
-    var iterations = 0;
-    var observer = new BrowserMutationObserver(flush);
-    var node = document.createTextNode('');
+    let iterations = 0;
+    let observer = new BrowserMutationObserver(flush);
+    let node = document.createTextNode('');
     observer.observe(node, { characterData: true });
 
     return function () {
@@ -101,9 +101,9 @@
     };
   }
 
-// web worker
+  // web worker
   function useMessageChannel() {
-    var channel = new MessageChannel();
+    let channel = new MessageChannel();
     channel.port1.onmessage = flush;
     return function () {
       return channel.port2.postMessage(0);
@@ -113,7 +113,7 @@
   function useSetTimeout() {
     // Store setTimeout reference so es6-promise will be unaffected by
     // other code modifying setTimeout (like sinon.useFakeTimers())
-    var globalSetTimeout = setTimeout;
+    let globalSetTimeout = setTimeout;
     return function () {
       return globalSetTimeout(flush, 1);
     };
@@ -121,9 +121,9 @@
 
   var queue = new Array(1000);
   function flush() {
-    for (var i = 0; i < len; i += 2) {
-      var callback = queue[i];
-      var arg = queue[i + 1];
+    for (let i = 0; i < len; i += 2) {
+      let callback = queue[i];
+      let arg = queue[i + 1];
 
       callback(arg);
 
@@ -136,7 +136,7 @@
 
   function attemptVertx() {
     try {
-      var vertx = Function('return this')().require('vertx');
+      let vertx = Function('return this')().require('vertx');
       vertxNext = vertx.runOnLoop || vertx.runOnContext;
       return useVertxTimer();
     } catch (e) {
@@ -145,7 +145,7 @@
   }
 
   var scheduleFlush = void 0;
-// Decide what async method to use to triggering processing of queued callbacks:
+  // Decide what async method to use to triggering processing of queued callbacks:
   if (isNode) {
     scheduleFlush = useNextTick();
   } else if (BrowserMutationObserver) {
@@ -159,19 +159,19 @@
   }
 
   function then(onFulfillment, onRejection) {
-    var parent = this;
+    let parent = this;
 
-    var child = new this.constructor(noop);
+    let child = new this.constructor(noop);
 
     if (child[PROMISE_ID] === undefined) {
       makePromise(child);
     }
 
-    var _state = parent._state;
+    let _state = parent._state;
 
 
     if (_state) {
-      var callback = arguments[_state - 1];
+      let callback = arguments[_state - 1];
       asap(function () {
         return invokeCallback(_state, child, callback, parent._result);
       });
@@ -215,13 +215,13 @@
    */
   function resolve$1(object) {
     /*jshint validthis:true */
-    var Constructor = this;
+    let Constructor = this;
 
     if (object && typeof object === 'object' && object.constructor === Constructor) {
       return object;
     }
 
-    var promise = new Constructor(noop);
+    let promise = new Constructor(noop);
     resolve(promise, object);
     return promise;
   }
@@ -230,12 +230,12 @@
 
   function noop() {}
 
-  var PENDING = void 0;
-  var FULFILLED = 1;
-  var REJECTED = 2;
+  let PENDING = void 0;
+  let FULFILLED = 1;
+  let REJECTED = 2;
 
   function selfFulfillment() {
-    return new TypeError("You cannot resolve a promise with itself");
+    return new TypeError('You cannot resolve a promise with itself');
   }
 
   function cannotReturnOwn() {
@@ -252,8 +252,8 @@
 
   function handleForeignThenable(promise, thenable, then$$1) {
     asap(function (promise) {
-      var sealed = false;
-      var error = tryThen(then$$1, thenable, function (value) {
+      let sealed = false;
+      let error = tryThen(then$$1, thenable, function (value) {
         if (sealed) {
           return;
         }
@@ -311,7 +311,7 @@
     if (promise === value) {
       reject(promise, selfFulfillment());
     } else if (objectOrFunction(value)) {
-      var then$$1 = void 0;
+      let then$$1 = void 0;
       try {
         then$$1 = value.then;
       } catch (error) {
@@ -356,8 +356,8 @@
   }
 
   function subscribe(parent, child, onFulfillment, onRejection) {
-    var _subscribers = parent._subscribers;
-    var length = _subscribers.length;
+    let _subscribers = parent._subscribers;
+    let length = _subscribers.length;
 
 
     parent._onerror = null;
@@ -372,18 +372,18 @@
   }
 
   function publish(promise) {
-    var subscribers = promise._subscribers;
-    var settled = promise._state;
+    let subscribers = promise._subscribers;
+    let settled = promise._state;
 
     if (subscribers.length === 0) {
       return;
     }
 
-    var child = void 0,
+    let child = void 0,
       callback = void 0,
       detail = promise._result;
 
-    for (var i = 0; i < subscribers.length; i += 3) {
+    for (let i = 0; i < subscribers.length; i += 3) {
       child = subscribers[i];
       callback = subscribers[i + settled];
 
@@ -398,7 +398,7 @@
   }
 
   function invokeCallback(settled, promise, callback, detail) {
-    var hasCallback = isFunction(callback),
+    let hasCallback = isFunction(callback),
       value = void 0,
       error = void 0,
       succeeded = true;
@@ -444,7 +444,7 @@
     }
   }
 
-  var id = 0;
+  let id = 0;
   function nextId() {
     return id++;
   }
@@ -460,7 +460,7 @@
     return new Error('Array Methods must be provided an Array');
   }
 
-  var Enumerator = function () {
+  let Enumerator = function () {
     function Enumerator(Constructor, input) {
       this._instanceConstructor = Constructor;
       this.promise = new Constructor(noop);
@@ -490,20 +490,20 @@
     }
 
     Enumerator.prototype._enumerate = function _enumerate(input) {
-      for (var i = 0; this._state === PENDING && i < input.length; i++) {
+      for (let i = 0; this._state === PENDING && i < input.length; i++) {
         this._eachEntry(input[i], i);
       }
     };
 
     Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
-      var c = this._instanceConstructor;
-      var resolve$$1 = c.resolve;
+      let c = this._instanceConstructor;
+      let resolve$$1 = c.resolve;
 
 
       if (resolve$$1 === resolve$1) {
-        var _then = void 0;
-        var error = void 0;
-        var didError = false;
+        let _then = void 0;
+        let error = void 0;
+        let didError = false;
         try {
           _then = entry.then;
         } catch (e) {
@@ -517,7 +517,7 @@
           this._remaining--;
           this._result[i] = entry;
         } else if (c === Promise$1) {
-          var promise = new c(noop);
+          let promise = new c(noop);
           if (didError) {
             reject(promise, error);
           } else {
@@ -535,7 +535,7 @@
     };
 
     Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
-      var promise = this.promise;
+      let promise = this.promise;
 
 
       if (promise._state === PENDING) {
@@ -554,7 +554,7 @@
     };
 
     Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
-      var enumerator = this;
+      let enumerator = this;
 
       subscribe(promise, undefined, function (value) {
         return enumerator._settledAt(FULFILLED, i, value);
@@ -684,7 +684,7 @@
    */
   function race(entries) {
     /*jshint validthis:true */
-    var Constructor = this;
+    let Constructor = this;
 
     if (!isArray(entries)) {
       return new Constructor(function (_, reject) {
@@ -692,8 +692,8 @@
       });
     } else {
       return new Constructor(function (resolve, reject) {
-        var length = entries.length;
-        for (var i = 0; i < length; i++) {
+        let length = entries.length;
+        for (let i = 0; i < length; i++) {
           Constructor.resolve(entries[i]).then(resolve, reject);
         }
       });
@@ -736,8 +736,8 @@
    */
   function reject$1(reason) {
     /*jshint validthis:true */
-    var Constructor = this;
-    var promise = new Constructor(noop);
+    let Constructor = this;
+    let promise = new Constructor(noop);
     reject(promise, reason);
     return promise;
   }
@@ -747,7 +747,7 @@
   }
 
   function needsNew() {
-    throw new TypeError("Failed to construct 'Promise': Please use the 'new' operator, this object constructor cannot be called as a function.");
+    throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
   }
 
   /**
@@ -1097,8 +1097,8 @@
 
 
     Promise.prototype.finally = function _finally(callback) {
-      var promise = this;
-      var constructor = promise.constructor;
+      let promise = this;
+      let constructor = promise.constructor;
 
       if (isFunction(callback)) {
         return promise.then(function (value) {
@@ -1129,7 +1129,7 @@
 
   /*global self*/
   function polyfill() {
-    var local = void 0;
+    let local = void 0;
 
     if (typeof global !== 'undefined') {
       local = global;
@@ -1143,10 +1143,10 @@
       }
     }
 
-    var P = local.Promise;
+    let P = local.Promise;
 
     if (P) {
-      var promiseToString = null;
+      let promiseToString = null;
       try {
         promiseToString = Object.prototype.toString.call(P.resolve());
       } catch (e) {
@@ -1161,7 +1161,7 @@
     local.Promise = Promise$1;
   }
 
-// Strange compat..
+  // Strange compat..
   Promise$1.polyfill = polyfill;
   Promise$1.Promise = Promise$1;
 
