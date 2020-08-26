@@ -21,15 +21,11 @@
 
       const enter = value.enter;
       if (enter) {
-        if (enter.sequence) {
-          AnimationMeta.get(enter.sequence).configs.enter = enter;
-        }
-
         viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
 
           // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
-          if (value.config.enterWithParent) {
+          if (value.config.withParent) {
             const parent = viewNode.parent;
             if (!parent.rendered.resolved) {
               return;
@@ -57,7 +53,7 @@
           value.config = value.config || {};
 
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
-          if (value.config.leaveWithParent || value.leave.withParent) {
+          if (value.leave.withParent) {
             const parent = viewNode.parent;
 
             if (parent.transitory) {
@@ -82,14 +78,7 @@
             return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
-          // if (viewNode.node.offsetWidth === 0 ||
-          //   viewNode.node.offsetHeight === 0 ||
-          //   viewNode.node.style.opacity === '0' ||
-          //   viewNode.node.style.visibility === 'hidden') {
-          //   gsap.killTweensOf(viewNode.node);
-          //   return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
-          // }
-
+          // debugger
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       } else {
@@ -144,6 +133,8 @@
     }
   };
 
+  Galaxy.View.AnimationMeta = AnimationMeta;
+
   /**
    *
    * @typedef {Object} AnimationConfig
@@ -159,19 +150,6 @@
 
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
-
-  /**
-   *
-   * @param {string} name
-   * @return {AnimationMeta}
-   */
-  AnimationMeta.get = function (name) {
-    if (!AnimationMeta.ANIMATIONS[name]) {
-      AnimationMeta.ANIMATIONS[name] = new AnimationMeta(name);
-    }
-
-    return AnimationMeta.ANIMATIONS[name];
-  };
 
   AnimationMeta.parseSequence = function (sequence) {
     return sequence.split('/').filter(Boolean);
@@ -333,7 +311,7 @@
     }
 
     if (sequenceName) {
-      const animationMeta = AnimationMeta.get(sequenceName);
+      const animationMeta = new AnimationMeta(sequenceName);
 
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
@@ -374,33 +352,39 @@
    * @class
    */
   function AnimationMeta(name) {
+    if (AnimationMeta.ANIMATIONS[name]) {
+      return AnimationMeta.ANIMATIONS[name];
+    }
+
     const _this = this;
     _this.name = name;
     _this.timeline = new TimelineLite({
       autoRemoveChildren: true,
       smoothChildTiming: false,
+      paused: true,
       onComplete: function () {
-        AnimationMeta.ANIMATIONS[name] = null;
         if (_this.parent) {
           _this.parent.timeline.remove(_this.timeline);
         }
         _this.onCompletesActions.forEach(function (action) {
-          action();
+          action(_this.timeline);
         });
         _this.nodes = [];
         _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
+        AnimationMeta.ANIMATIONS[name] = null;
       }
     });
     _this.onCompletesActions = [];
-
-    _this.timeline.addLabel('beginning', 0);
+    _this.started = false;
     _this.configs = {};
     _this.children = [];
     _this.nodes = [];
     _this.awaits = [];
     _this.timelinesMap = [];
+
+    AnimationMeta.ANIMATIONS[name] = this;
   }
 
   /**
@@ -412,10 +396,14 @@
       this.onCompletesActions.push(action);
     },
     addTo(sequenceName, pip) {
-      const animationMeta = AnimationMeta.get(sequenceName);
+      const animationMeta = new AnimationMeta(sequenceName);
       const children = animationMeta.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
         animationMeta.timeline.add(this.timeline, pip);
+        if (!animationMeta.started) {
+          animationMeta.started = true;
+          animationMeta.timeline.resume();
+        }
       }
     },
 
@@ -458,6 +446,11 @@
         _this.timeline.add(tween);
       } else {
         _this.timeline.add(tween, config.position || '+=0');
+      }
+
+      if (!_this.started) {
+        _this.started = true;
+        _this.timeline.resume();
       }
     }
   };

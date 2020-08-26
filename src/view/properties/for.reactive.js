@@ -13,6 +13,7 @@
       this.virtualize();
 
       return {
+        throttleId: null,
         nodes: [],
         options: options,
         oldChanges: {},
@@ -100,6 +101,10 @@
           '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
+      if (config.throttleId) {
+        window.cancelAnimationFrame(config.throttleId);
+      }
+
       if (!changes || typeof changes === 'string') {
         changes = {
           type: 'reset',
@@ -110,7 +115,7 @@
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
       config.oldChanges = changes;
-      requestAnimationFrame(() => {
+      config.throttleId = window.requestAnimationFrame(() => {
         afterInserted(node, config, changes);
       });
     }

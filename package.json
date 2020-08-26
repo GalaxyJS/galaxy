@@ -16,6 +16,9 @@
     "url": "https://github.com/GalaxyJS/galaxy.git"
   },
   "license": "MIT",
+  "scripts": {
+    "start-spa": "ws --spa index.html --config-file lws.config.js"
+  },
   "contributors": [],
   "dependencies": {},
   "devDependencies": {
@@ -26,6 +29,7 @@
     "gulp-babel": "^8.0.0",
     "gulp-concat": "^2.6.1",
     "gulp-uglify": "^3.0.2",
+    "local-web-server": "^4.2.1",
     "pump": "^3.0.0"
   }
 }

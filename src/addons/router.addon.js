@@ -62,13 +62,12 @@
     },
 
     navigate: function (path) {
-      path = path.replace(/^#\//, '/');
+      path = this.config.baseURL + path.replace(/^#\//, '/');
       if (path.indexOf('/') !== 0) {
         path = '/' + path;
       }
 
-      // window.location.hash = path;
-      history.pushState({ path }, '', this.config.baseURL + path);
+      history.pushState({}, '', path);
       this.detect();
     },
 
@@ -85,8 +84,6 @@
     },
 
     normalizeHash: function (hash) {
-      const _this = this;
-
       if (hash.indexOf('#!/') === 0) {
         throw new Error('Please use `#/` instead of `#!/` for you hash');
       }
@@ -100,7 +97,7 @@
         }
       }
 
-      return normalizedHash.replace(this.config.baseURL, '') || '/';
+      return normalizedHash.replace(this.config.baseURL, '/').replace(this.root, '/') || '/';
     },
 
     callMatchRoute: function (routes, hash, parentParams) {
@@ -201,7 +198,6 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      // const sssa= hash.replace(/\/+$/, '').replace(/^\/+/, '^/');
       // debugger
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {

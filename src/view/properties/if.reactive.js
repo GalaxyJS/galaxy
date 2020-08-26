@@ -9,29 +9,29 @@
   Galaxy.View.REACTIVE_BEHAVIORS['$if'] = {
     prepare: function () {
       return {
-        leaveProcessList: [],
-        queue: [],
-        mainPromise: null,
-        onDone: function () {
-        }
+        throttleId: null,
       };
     },
     install: function (config) {
-      const parentNode = this.parent;
-      parentNode.cache.$if = parentNode.cache.$if || { leaveProcessList: [], queue: [], mainPromise: null };
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
 
+      if (config.throttleId) {
+        window.cancelAnimationFrame(config.throttleId);
+      }
+
       if (expression) {
         value = expression();
       }
 
-      node.rendered.then(() => {
-        if (node.inDOM !== value) {
-          node.setInDOM(value);
-        }
+      config.throttleId = window.requestAnimationFrame(() => {
+        node.rendered.then(() => {
+          if (node.inDOM !== value) {
+            node.setInDOM(value);
+          }
+        });
       });
     }
   };
