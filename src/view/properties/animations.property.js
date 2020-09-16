@@ -49,6 +49,7 @@
           console.warn(viewNode.node);
         }
 
+        viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (flag) {
           value.config = value.config || {};
 

@@ -461,7 +461,7 @@ Galaxy.View = /** @class */(function () {
         if (scopeData.hasOwnProperty('__rd__')) {
           parentReactiveData = scopeData.__rd__;
         } else {
-          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData);
+          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
@@ -728,15 +728,11 @@ Galaxy.View = /** @class */(function () {
         nodes.forEach(function (node) {
           parent.node.appendChild(node);
         });
-
-        return nodes;
-      }
-
-      if (nodeSchema instanceof Array) {
+      } else if (nodeSchema instanceof Array) {
         for (i = 0, len = nodeSchema.length; i < len; i++) {
           _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
         }
-      } else if (nodeSchema !== null && typeof (nodeSchema) === 'object') {
+      } else if (nodeSchema instanceof Object) {
         let attributeValue, attributeName;
         const keys = Object.keys(nodeSchema);
         const needInitKeys = [];
@@ -762,7 +758,6 @@ Galaxy.View = /** @class */(function () {
         for (i = 0, len = needInitKeys.length; i < len; i++) {
           attributeName = needInitKeys[i];
           attributeValue = nodeSchema[attributeName];
-
           const bindings = View.getBindings(attributeValue);
           if (bindings.propertyKeysPaths) {
             View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
@@ -773,12 +768,8 @@ Galaxy.View = /** @class */(function () {
 
         viewNode.callLifecycleEvent('postInit');
         if (!viewNode.virtual) {
-          if (viewNode.inDOM) {
-            viewNode.setInDOM(true);
-          }
-
+          viewNode.setInDOM(true);
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
-
           viewNode.inserted.then(function () {
             viewNode.callLifecycleEvent('postChildrenInsert');
           });

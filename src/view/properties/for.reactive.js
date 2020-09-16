@@ -122,7 +122,6 @@
   };
 
   function afterInserted(node, config, changes) {
-    // let leaveStep = null;
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {

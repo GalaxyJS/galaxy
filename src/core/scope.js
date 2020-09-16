@@ -66,6 +66,7 @@ Galaxy.Scope = /** @class */ (function () {
      *
      */
     destroy: function () {
+      this.data = null;
       this.observers.forEach(function (observer) {
         observer.remove();
       });
