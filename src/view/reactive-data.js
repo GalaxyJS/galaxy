@@ -99,10 +99,9 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // if (this.id === '{Scope}.data.products') debugger;
       const refExist = this.getRefById(this.id);
       if (refExist) {
-        // Sometime an object is already reactive, but its parent is dead, meaning all references to it are lost
+        // Sometimes an object is already reactive, but its parent is dead, meaning all references to it are lost
         // In such a case that parent con be replace with a live parent
         if (refExist.parent.isDead) {
-          // debugger;
           refExist.parent = parent;
         }
 

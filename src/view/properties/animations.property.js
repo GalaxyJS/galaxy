@@ -79,11 +79,15 @@
             return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
-          // debugger
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       } else {
-        viewNode.populateLeaveSequence = Galaxy.View.ViewNode.REMOVE_SELF;
+        viewNode.populateLeaveSequence = function (flag) {
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
+            sequence: 'DESTROY',
+            duration: .000001
+          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(this, flag));
+        };
       }
 
       const classAnimationsHandler = function () {
