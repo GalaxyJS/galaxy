@@ -26,7 +26,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
   };
 
   const cachedModules = {};
-
+  Core.cm = cachedModules;
   /**
    *
    * @constructor
@@ -307,7 +307,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           Reflect.deleteProperty(module, 'addOnProviders');
 
           const libId = module.url;
-          // if the module export hast _temp then do not cache the module
+          // if the module export has _temp then do not cache the module
           if (module.scope.exports._temp) {
             module.scope.parentScope.inject(libId, module.scope.exports);
           } else if (!cachedModules[libId]) {
