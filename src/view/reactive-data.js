@@ -283,13 +283,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const _this = this;
 
       if (arr.hasOwnProperty('changes')) {
-        return arr.changes;
+        return arr.changes.init;
       }
       // _this.makeReactiveObject(value, 'changes', true);
 
       const initialChanges = new Galaxy.View.ArrayChange();
       initialChanges.original = arr;
-      initialChanges.snapshot = arr.slice(0);
+      // initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
       initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
@@ -302,7 +302,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       initialChanges.init = initialChanges;
       arr.changes = initialChanges;
       // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      _this.makeReactiveObject(arr, 'changes');
+      // _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -318,7 +318,6 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             const returnValue = originalMethod.apply(this, args);
             const changes = new Galaxy.View.ArrayChange();
             changes.original = arr;
-            changes.snapshot = arr.slice(0);
             changes.type = method;
             changes.params = args;
             changes.returnValue = returnValue;
@@ -342,12 +341,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               });
             }
 
-            // const cacheOldValue = value.changes;
-            // _this.oldValue['changes'] = cacheOldValue;
+            arr.changes = changes;
             // For arrays we have to sync length manually
             // if we use notify here we will get
             _this.notifyDown('length');
-            arr.changes = changes;
+            _this.notifyDown('changes');
+            _this.notify(_this.keyInParent);
 
             return returnValue;
           },
@@ -556,6 +555,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         map.nodes.push(node);
 
         let initValue = this.data[dataKey];
+        // if the value is a instance of Array, then we should set its change property to its initial state
+        if (initValue instanceof Array && initValue.changes) {
+          initValue.changes = initValue.changes.init;
+        }
         // We need initValue for cases where ui is bound to a property of an null object
         // TODO: This line seem obsolete
         // if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {

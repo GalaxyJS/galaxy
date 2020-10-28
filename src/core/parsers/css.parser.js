@@ -29,6 +29,16 @@
     return styleElement;
   }
 
+  function applyContentAttr(children, ids) {
+    children.forEach((child) => {
+      child[ids.content] = '';
+
+      if (child.children) {
+        applyContentAttr(child.children, ids);
+      }
+    });
+  }
+
   function parser(content) {
     return {
       imports: [],
@@ -36,7 +46,7 @@
         const ids = getHostId(Scope.systemId);
         const cssRules = rulesForCssText(content);
         const hostSuffix = '[' + ids.host + ']';
-        const contentSuffix = '[' + ids.content + ']';
+        // const contentSuffix = '[' + ids.content + ']';
         const parsedCSSRules = [];
         const host = /(:host)/g;
         const selector = /([^\s+>~,]+)/g;
@@ -45,7 +55,7 @@
             return item;
           }
 
-          return item + contentSuffix;
+          return item /*+ contentSuffix*/;
         };
 
         Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
@@ -65,10 +75,7 @@
           _apply() {
             this.parent.node.setAttribute(ids.host, '');
             const children = this.parent.schema.children || [];
-            children.forEach((child) => {
-              child[ids.content] = '';
-            });
-            // console.log(children)
+            applyContentAttr(children, ids);
           }
         };
       }

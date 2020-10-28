@@ -13,6 +13,7 @@
       this.virtualize();
 
       return {
+        changeId: null,
         throttleId: null,
         nodes: [],
         options: options,
@@ -47,6 +48,7 @@
 
       if (config.options) {
         const bindings = View.getBindings(config.options.data);
+
         config.watch = bindings.propertyKeysPaths;
         node.localPropertyNames.add(config.options.as);
         if (config.options.indexAs) {
@@ -67,7 +69,8 @@
           const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
           value.params = config.options.data;
-          setter(value);
+          config.options.data.changes = value;
+          setter(config.options.data);
         }
       }
 
@@ -78,22 +81,47 @@
      *
      * @this {Galaxy.View.ViewNode}
      * @param config The return of prepare
-     * @param changes
+     * @param array
      * @param oldChanges
      * @param {Function} expression
      */
-    apply: function (config, changes, oldChanges, expression) {
-      // The idea is that when the
+    apply: function (config, array, oldChanges, expression) {
+      let changes = null;
       if (expression) {
-        changes = expression();
-        if (changes === null || changes === undefined) {
+        array = expression();
+        if (array === null || array === undefined) {
           return;
         }
 
-        if (!(changes instanceof Galaxy.View.ArrayChange)) {
-          throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        if (array instanceof Galaxy.View.ArrayChange) {
+          changes = array;
+        } else if (array instanceof Array) {
+          const initialChanges = new Galaxy.View.ArrayChange();
+          initialChanges.original = array;
+          initialChanges.type = 'reset';
+          initialChanges.params = array;
+          changes = array.changes = initialChanges;
+        } else {
+          changes = {
+            type: 'reset',
+            params: []
+          };
         }
+
+        // if (!(changes instanceof Galaxy.View.ArrayChange)) {
+        //   debugger;
+        //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        // }
+      } else {
+        changes = array.changes;
       }
+
+      const node = this;
+      if (changes.id === config.changeId) {
+        return;
+      }
+
+      config.changeId = changes.id;
 
       if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
         return console.warn('%c$for %cdata is not a type of ArrayChange' +
@@ -113,7 +141,6 @@
       }
 
       /** @type {Galaxy.View.ViewNode} */
-      const node = this;
       config.oldChanges = changes;
       config.throttleId = window.requestAnimationFrame(() => {
         afterInserted(node, config, changes);

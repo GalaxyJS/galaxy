@@ -1,10 +1,16 @@
 /* global Galaxy */
 
 Galaxy.View.ArrayChange = /** @class */ (function () {
+  let lastId = 0;
+
   function ArrayChange() {
+    this.id = lastId++;
+    if (lastId > 100000000) {
+      lastId = 0;
+    }
     this.init = null;
     this.original = null;
-    this.snapshot = [];
+    // this.snapshot = [];
     this.returnValue = null;
     this.params = [];
     this.type = 'reset';

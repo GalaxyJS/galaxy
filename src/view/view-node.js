@@ -212,6 +212,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      * @type {RenderConfig}
      */
     this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
+    this.schema.animations = this.schema.animations || {};
 
     __node__.value = this.node;
     defProp(this.schema, 'node', __node__);
