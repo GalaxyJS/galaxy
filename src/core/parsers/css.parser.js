@@ -42,7 +42,7 @@
   function parser(content) {
     return {
       imports: [],
-      source: function (Scope) {
+      source: async function (Scope) {
         const ids = getHostId(Scope.systemId);
         const cssRules = rulesForCssText(content);
         const hostSuffix = '[' + ids.host + ']';

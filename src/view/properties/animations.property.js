@@ -70,6 +70,7 @@
           }
 
           const rect = viewNode.node.getBoundingClientRect();
+
           // in the case which the viewNode is not visible, then ignore its animation
           if (rect.width === 0 ||
             rect.height === 0 ||
@@ -326,16 +327,35 @@
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parent = animationMeta.timeline;
+        console.log(parent)
         while (parent.parent !== gsap.globalTimeline) {
           parent = parent.parent;
         }
 
+        // We don't want the animation wait for the(await) of this `viewNode` if it's destroyed, before it gets a chance
+        // to resolve its await.
+        // Therefore, we need to remove await that is added by this view node upon its destruction.
+        console.log(viewNode.populateLeaveSequence)
+        viewNode.destroyed.then(() => {
+          debugger;
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            parent.resume();
+          }
+        });
+
         parent.add(() => {
           parent.pause();
           newConfig.await.then(() => {
+            const index = animationMeta.awaits.indexOf(newConfig.await);
+            if (index !== -1) {
+              animationMeta.awaits.splice(index, 1);
+            }
             parent.resume();
           });
         });
+
 
         animationMeta.awaits.push(newConfig.await);
       }

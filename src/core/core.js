@@ -27,6 +27,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
   const cachedModules = {};
   Core.cm = cachedModules;
+
   /**
    *
    * @constructor
@@ -296,31 +297,32 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(module.scope, module.scope);
+          moduleSource.call(module.scope, module.scope).then(() => {
 
-          Reflect.deleteProperty(module, 'source');
+            Reflect.deleteProperty(module, 'source');
 
-          module.addOnProviders.forEach(function (item) {
-            item.finalize();
+            module.addOnProviders.forEach(function (item) {
+              item.finalize();
+            });
+
+            Reflect.deleteProperty(module, 'addOnProviders');
+
+            const libId = module.url;
+            // if the module export has _temp then do not cache the module
+            if (module.scope.exports._temp) {
+              module.scope.parentScope.inject(libId, module.scope.exports);
+            } else if (!cachedModules[libId]) {
+              cachedModules[libId] = {
+                libId: libId,
+                module: module.scope.exports
+              };
+            }
+
+            const currentModule = module;
+
+            currentModule.init();
+            return resolve(currentModule);
           });
-
-          Reflect.deleteProperty(module, 'addOnProviders');
-
-          const libId = module.url;
-          // if the module export has _temp then do not cache the module
-          if (module.scope.exports._temp) {
-            module.scope.parentScope.inject(libId, module.scope.exports);
-          } else if (!cachedModules[libId]) {
-            cachedModules[libId] = {
-              libId: libId,
-              module: module.scope.exports
-            };
-          }
-
-          const currentModule = module;
-
-          currentModule.init();
-          resolve(currentModule);
         } catch (error) {
           console.error(error.message + ': ' + module.url);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');

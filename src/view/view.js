@@ -770,9 +770,7 @@ Galaxy.View = /** @class */(function () {
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
           _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
-          viewNode.inserted.then(function () {
-            viewNode.callLifecycleEvent('postChildrenInsert');
-          });
+          viewNode.inserted.then(() => viewNode.callLifecycleEvent('postChildrenInsert'));
         }
 
         return viewNode;
