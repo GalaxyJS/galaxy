@@ -572,7 +572,9 @@ Galaxy.View = /** @class */(function () {
         bindings.propertyKeysPaths.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
-            viewNode.addDependedObject(rd, subjectsClone);
+            viewNode.finalize.push(() => {
+              rd.removeNode(subjectsClone);
+            });
           } catch (error) {
             console.error('Could not find: ' + path + '\n', error);
           }

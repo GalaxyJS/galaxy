@@ -38,8 +38,8 @@
      * @param config Return of prepare method
      */
     install: function (config) {
-      const node = this;
-      const parentNode = node.parent;
+      const viewNode = this;
+      const parentNode = viewNode.parent;
       /**
        *
        * @type {RenderJobManager}
@@ -50,23 +50,25 @@
         const bindings = View.getBindings(config.options.data);
 
         config.watch = bindings.propertyKeysPaths;
-        node.localPropertyNames.add(config.options.as);
+        viewNode.localPropertyNames.add(config.options.as);
         if (config.options.indexAs) {
-          node.localPropertyNames.add(config.options.indexAs);
+          viewNode.localPropertyNames.add(config.options.indexAs);
         }
 
         if (bindings.propertyKeysPaths) {
-          View.makeBinding(node, '$for', undefined, config.scope, bindings, node);
+          View.makeBinding(viewNode, '$for', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
-              node.addDependedObject(rd, node);
+              viewNode.finalize.push(() => {
+                rd.removeNode(viewNode);
+              });
             } catch (error) {
               console.error('Could not find: ' + path + '\n', error);
             }
           });
         } else if (config.options.data instanceof Array) {
-          const setter = node.setters['$for'] = View.createSetter(node, '$for', config.options.data, null, config.scope);
+          const setter = viewNode.setters['$for'] = View.createSetter(viewNode, '$for', config.options.data, null, config.scope);
           const value = new Galaxy.View.ArrayChange();
           value.params = config.options.data;
           config.options.data.changes = value;
@@ -148,11 +150,11 @@
     }
   };
 
-  function afterInserted(node, config, changes) {
+  function afterInserted(viewNode, config, changes) {
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {
-        return config.trackBy.call(node, item, i);
+        return config.trackBy.call(viewNode, item, i);
       });
       // list of nodes that should be removed
       const hasBeenRemoved = [];
@@ -191,33 +193,33 @@
         config.trackMap = newTrackMap;
       }
 
-      if (node.cache.$forProcessing) {
-        return node.cache.$forPushProcess = () => {
-          createPushProcess(node, config, newChanges, config.scope);
+      if (viewNode.cache.$forProcessing) {
+        return viewNode.cache.$forPushProcess = () => {
+          createPushProcess(viewNode, config, newChanges, config.scope);
         };
       }
 
-      View.destroyNodes(node, hasBeenRemoved.reverse());
+      View.destroyNodes(viewNode, hasBeenRemoved.reverse());
       changes = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(node, nodesToBeRemoved.reverse());
+      View.destroyNodes(viewNode, nodesToBeRemoved.reverse());
       changes = Object.assign({}, changes);
       changes.type = 'push';
     }
 
     // if $forProcessing is true, then there is no need for a new leave step
     // we just need to update the $forPushProcess
-    node.cache.$forProcessing = true;
+    viewNode.cache.$forProcessing = true;
 
-    node.cache.$forPushProcess = () => {
-      createPushProcess(node, config, changes, config.scope);
+    viewNode.cache.$forPushProcess = () => {
+      createPushProcess(viewNode, config, changes, config.scope);
     };
 
     // $forPushProcess can change on the fly therefore we need to register a function
     // that calls the latest $forPushProcess
-    node.cache.$forPushProcess.call();
+    viewNode.cache.$forPushProcess.call();
   }
 
   function createPushProcess(node, config, changes, nodeScopeData) {

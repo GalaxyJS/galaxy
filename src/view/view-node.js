@@ -162,7 +162,8 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
-    _this.dependedObjects = [];
+    // _this.dependedObjects = [];
+    _this.finalize = [];
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
@@ -286,7 +287,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       const _this = this;
       _this.inDOM = flag;
 
-      // We use domManipulationSequence to make sure dom manipulation activities happen in order and don't interfere
       if (flag && !_this.virtual) {
         _this.callLifecycleEvent('preInsert');
 
@@ -311,8 +311,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.origin = true;
         _this.transitory = true;
-        const flag = _this.hasAnimation();
-        _this.updateChildrenLeaveSequence(flag);
+        _this.updateChildrenLeaveSequence(_this.hasAnimation());
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(false);
           _this.origin = false;
@@ -377,10 +376,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         return true;
       }
 
-      // if (_this.leaveWithParent) {
-      //   return true;
-      // }
-
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
         if (node.leaveWithParent) {
@@ -421,13 +416,12 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         _this.updateChildrenLeaveSequence(flag);
         _this.clean();
       }
-      _this.properties.forEach(function (reactiveData) {
+
+      _this.properties.forEach((reactiveData) => {
         reactiveData.removeNode(_this);
       });
 
-      _this.dependedObjects.forEach(function (dependent) {
-        dependent.reactiveData.removeNode(dependent.item);
-      });
+      _this.finalize.forEach(act => act.call(_this));
 
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
@@ -438,20 +432,11 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
         _this.localPropertyNames.clear();
         _this.properties = [];
-        _this.dependedObjects = [];
+        _this.finalize = [];
         _this.inDOM = false;
         _this.schema.node = undefined;
         _this.inputs = {};
       });
-    },
-
-    /**
-     *
-     * @param {Galaxy.View.ReactiveData} reactiveData
-     * @param {Object} item
-     */
-    addDependedObject: function (reactiveData, item) {
-      this.dependedObjects.push({ reactiveData: reactiveData, item: item });
     },
 
     getChildNodes: function () {

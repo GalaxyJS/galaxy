@@ -77,6 +77,12 @@
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
             gsap.killTweensOf(viewNode.node);
+            // if (viewNode.schema.tag === 'li')
+            //   debugger;
+            // return AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
+            //   sequence: 'DESTROY',
+            //   duration: .000001
+            // }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
             return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
@@ -87,7 +93,7 @@
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
             sequence: 'DESTROY',
             duration: .000001
-          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(this, flag));
+          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       }
 
@@ -327,26 +333,31 @@
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parent = animationMeta.timeline;
-        console.log(parent)
+        console.log(parent, parent === gsap.globalTimeline, animationMeta);
+
         while (parent.parent !== gsap.globalTimeline) {
+          if (!parent.parent) return;
           parent = parent.parent;
         }
 
-        // We don't want the animation wait for the(await) of this `viewNode` if it's destroyed, before it gets a chance
-        // to resolve its await.
-        // Therefore, we need to remove await that is added by this view node upon its destruction.
-        console.log(viewNode.populateLeaveSequence)
-        viewNode.destroyed.then(() => {
-          debugger;
-          const index = animationMeta.awaits.indexOf(newConfig.await);
-          if (index !== -1) {
-            animationMeta.awaits.splice(index, 1);
-            parent.resume();
-          }
-        });
-
         parent.add(() => {
+          if (viewNode.destroyed.resolved) {
+            return;
+          }
+
           parent.pause();
+
+          const removeAwait = () => {
+            const index = animationMeta.awaits.indexOf(newConfig.await);
+            if (index !== -1) {
+              animationMeta.awaits.splice(index, 1);
+            }
+            parent.resume();
+          };
+          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance to resolve.
+          // Therefore, we need to remove await.
+          viewNode.finalize.push(removeAwait);
+
           newConfig.await.then(() => {
             const index = animationMeta.awaits.indexOf(newConfig.await);
             if (index !== -1) {
@@ -354,8 +365,7 @@
             }
             parent.resume();
           });
-        });
-
+        }, newConfig.position);
 
         animationMeta.awaits.push(newConfig.await);
       }
