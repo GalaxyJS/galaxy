@@ -16,7 +16,7 @@
      * @param scope
      */
     prepare: function (matches, scope) {
-      if (matches !== null && typeof  matches !== 'object') {
+      if (matches !== null && typeof matches !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
       }
 
@@ -36,9 +36,7 @@
         return;
       }
 
-      const reactive = GV.bindSubjectsToData(this, data.subjects, data.scope, true);
-
-      this.inputs = reactive;
+      this.inputs = GV.bindSubjectsToData(this, data.subjects, data.scope, true);
 
       return false;
     },

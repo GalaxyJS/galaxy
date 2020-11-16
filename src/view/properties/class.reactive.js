@@ -37,7 +37,7 @@
         value = expression();
       }
 
-      const oldClassList = _this.node.className.classList;
+      const oldClassList = _this.node.classList;
       if (typeof value === 'string') {
         _this.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
@@ -110,12 +110,10 @@
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
     const newClasses = getClasses(classes);
-    // debugger;
+
     _this.notifyObserver('class', newClasses, oldClasses);
-    // _this.sequences.classList.nextAction(function () {
     _this.node.setAttribute('class', newClasses.join(' '));
     _this.notifyObserver('classList', newClasses, oldClasses);
-    // });
   }
 })(Galaxy);
 

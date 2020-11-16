@@ -103,36 +103,28 @@
 
           try {
             classes.forEach(function (item) {
+              // Class has been added
               if (item && oldClasses.indexOf(item) === -1) {
-                if (item.indexOf('@') === 0) {
-                  const classEvent = value[item];
-                  if (classEvent) {
-                    viewNode.node.classList.remove(item);
-                    AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config);
-                  }
-
-                  return;
+                const classEvent = value['add:' + item];
+                if (classEvent) {
+                  viewNode.node.classList.remove(item);
+                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+                    viewNode.node.classList.add(item);
+                  });
                 }
-
-                const _config = value['+=' + item] || value['.' + item];
-                if (!_config) {
-                  return;
-                }
-
-                viewNode.node.classList.remove(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '+=' + item, _config, value.config);
               }
             });
 
             oldClasses.forEach(function (item) {
               if (item && classes.indexOf(item) === -1) {
-                const _config = value['-=' + item] || value['.' + item];
-                if (!_config) {
-                  return;
+                // Class has been removed
+                const classEvent = value['remove:' + item];
+                if (classEvent) {
+                  viewNode.node.classList.add(item);
+                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+                    viewNode.node.classList.remove(item);
+                  });
                 }
-
-                viewNode.node.classList.add(item);
-                AnimationMeta.installGSAPAnimation(viewNode, '-=' + item, _config, value.config);
               }
             });
           } catch (exception) {
@@ -150,7 +142,7 @@
   /**
    *
    * @typedef {Object} AnimationConfig
-   * @property {string} [parent]
+   * @property {string} [sequence]
    * @property {Promise} [await]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
@@ -309,7 +301,7 @@
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     } else if (classModification) {
       to = Object.assign(to || {}, { className: type, overwrite: 'none' });
-    } else if (type.indexOf('@') === 0) {
+    } else if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
       to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
@@ -327,13 +319,16 @@
 
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
-        animationMeta.addTo(newConfig.addTo, newConfig.positionInParent);
+        const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
+        const children = addToAnimationMeta.timeline.getChildren(false);
+        if (children.indexOf(animationMeta.timeline) === -1) {
+          addToAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
+        }
       }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parent = animationMeta.timeline;
-        console.log(parent, parent === gsap.globalTimeline, animationMeta);
 
         while (parent.parent !== gsap.globalTimeline) {
           if (!parent.parent) return;
@@ -354,8 +349,8 @@
             }
             parent.resume();
           };
-          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance to resolve.
-          // Therefore, we need to remove await.
+          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+          // to be resolved. Therefore, we need to remove await.
           viewNode.finalize.push(removeAwait);
 
           newConfig.await.then(() => {
@@ -375,6 +370,16 @@
         animationMeta.add(viewNode, newConfig, onComplete);
       } else {
         animationMeta.add(viewNode, newConfig, onComplete);
+      }
+
+      // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
+      // its only child and we have to resume it it's not playing
+      if (newConfig.addTo) {
+        const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
+        if (!addToAnimationMeta.started) {
+          addToAnimationMeta.started = true;
+          addToAnimationMeta.timeline.resume();
+        }
       }
     } else {
       AnimationMeta.createTween(viewNode, newConfig, onComplete);
@@ -431,17 +436,24 @@
       this.onCompletesActions.push(action);
     },
     addTo(sequenceName, pip) {
-      const animationMeta = new AnimationMeta(sequenceName);
-      const children = animationMeta.timeline.getChildren(false);
+      const parent = new AnimationMeta(sequenceName);
+      const children = parent.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
-        animationMeta.timeline.add(this.timeline, pip);
-        if (!animationMeta.started) {
-          animationMeta.started = true;
-          animationMeta.timeline.resume();
-        }
+        parent.timeline.add(this.timeline, pip);
+        // parent.timeline.pause();
+        // if (!parent.started) {
+        //   parent.started = true;
+        //   parent.timeline.resume();
+        // }
       }
     },
 
+    /**
+     *
+     * @param viewNode
+     * @param config {AnimationConfig}
+     * @param onComplete
+     */
     add: function (viewNode, config, onComplete) {
       const _this = this;
       const to = Object.assign({}, config.to || {});
@@ -482,6 +494,8 @@
       } else {
         _this.timeline.add(tween, config.position || '+=0');
       }
+
+      // if (config.sequence === 'todo-items') debugger;
 
       if (!_this.started) {
         _this.started = true;
