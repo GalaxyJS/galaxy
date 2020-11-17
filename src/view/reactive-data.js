@@ -221,7 +221,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      * @param shadow
      */
     makeReactiveObject: function (data, key, shadow) {
-      const _this = this;
+      // const _this = this;
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
       let value = data[key];
@@ -231,27 +231,27 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return getter ? getter.call(data) : value;
         },
         set: function (val) {
+          const thisRD = data.__rd__;
           if (value === val) {
             // If value is array, then sync should be called so nodes that are listening to array itself get updated
             if (val instanceof Array) {
-              _this.sync(key);
+              thisRD.sync(key);
             } else if (val instanceof Object) {
-              _this.notifyDown(key);
+              thisRD.notifyDown(key);
             }
             return;
           }
 
-          _this.oldValue[key] = value;
+          thisRD.oldValue[key] = value;
           value = val;
 
           // This means that the property suppose to be an object and there probably active binds to it
-          if (_this.shadow[key]) {
-            _this.makeKeyEnum(key);
+          if (thisRD.shadow[key]) {
+            thisRD.makeKeyEnum(key);
             // setData provide downward data flow
-            _this.shadow[key].setData(val);
+            thisRD.shadow[key].setData(val);
           }
-
-          _this.notify(key);
+          thisRD.notify(key, value);
         },
         enumerable: !shadow,
         configurable: true
@@ -267,7 +267,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
 
-      _this.oldValue[key] = value;
+      this.oldValue[key] = value;
     },
     /**
      *
@@ -301,14 +301,13 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       _this.sync('length');
       initialChanges.init = initialChanges;
       arr.changes = initialChanges;
-      // _this.oldValue['changes'] = Object.assign({}, initialChanges);
-      // _this.makeReactiveObject(arr, 'changes');
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
         const originalMethod = ARRAY_PROTO[method];
         defProp(arr, method, {
           value: function () {
+            const thisRD = this.__rd__;
             let i = arguments.length;
             const args = new Array(i);
             while (i--) {
@@ -326,7 +325,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             } else if (method === 'pop' || method === 'shift') {
@@ -336,17 +335,15 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             } else if (method === 'splice') {
               changes.params.slice(2).forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, _this);
+                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             }
 
             arr.changes = changes;
-            // For arrays we have to sync length manually
-            // if we use notify here we will get
-            _this.notifyDown('length');
-            _this.notifyDown('changes');
-            _this.notify(_this.keyInParent);
+            thisRD.notifyDown('length');
+            thisRD.notifyDown('changes');
+            thisRD.notify(thisRD.keyInParent);
 
             return returnValue;
           },
@@ -360,13 +357,14 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     /**
      *
      * @param {string} key
+     * @param {any} value
      * @param refs
      */
-    notify: function (key, refs) {
+    notify: function (key, value, refs) {
       const _this = this;
 
       if (this.refs === refs) {
-        _this.sync(key);
+        _this.sync(key, value);
         return;
       }
 
@@ -375,10 +373,10 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           return;
         }
 
-        ref.notify(key, _this.refs);
+        ref.notify(key, value, _this.refs);
       });
 
-      _this.sync(key);
+      _this.sync(key, value);
       // if (this.id === '{Scope}.data.p') debugger;
       // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
       // const seen = {};
@@ -389,7 +387,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // });
 
       allKeys.forEach((kip, i) => {
-        _this.refs[i].parent.notify(kip);
+        _this.refs[i].parent.notify(kip, null, value);
       });
       // } else {
       //   _this.parent.notify(_this.keyInParent);
@@ -413,7 +411,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      *
      * @param {string} propertyKey
      */
-    sync: function (propertyKey) {
+    sync: function (propertyKey, v) {
       const _this = this;
 
       const map = _this.nodesMap[propertyKey];
@@ -509,7 +507,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
           configurable: true,
           value: nextOwner
         });
-        nextOwner.walk(this.data);
+
         this.refs = [this];
       }
 

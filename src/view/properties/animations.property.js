@@ -102,31 +102,31 @@
           oldClasses = oldClasses || [];
 
           try {
-            classes.forEach(function (item) {
-              // Class has been added
-              if (item && oldClasses.indexOf(item) === -1) {
-                const classEvent = value['add:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.remove(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.add(item);
-                  });
-                }
-              }
-            });
-
-            oldClasses.forEach(function (item) {
-              if (item && classes.indexOf(item) === -1) {
-                // Class has been removed
-                const classEvent = value['remove:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.add(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.remove(item);
-                  });
-                }
-              }
-            });
+            // classes.forEach(function (item) {
+            //   // Class has been added
+            //   if (item && oldClasses.indexOf(item) === -1) {
+            //     const classEvent = value['add:' + item];
+            //     if (classEvent) {
+            //       viewNode.node.classList.remove(item);
+            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+            //         viewNode.node.classList.add(item);
+            //       });
+            //     }
+            //   }
+            // });
+            //
+            // oldClasses.forEach(function (item) {
+            //   if (item && classes.indexOf(item) === -1) {
+            //     // Class has been removed
+            //     const classEvent = value['remove:' + item];
+            //     if (classEvent) {
+            //       viewNode.node.classList.add(item);
+            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+            //         viewNode.node.classList.remove(item);
+            //       });
+            //     }
+            //   }
+            // });
           } catch (exception) {
             console.warn(exception);
           }

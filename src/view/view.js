@@ -433,12 +433,12 @@ Galaxy.View = /** @class */(function () {
    *
    * @param {Galaxy.View.ViewNode | Object} target
    * @param {String} targetKeyName
-   * @param {Galaxy.View.ReactiveData} parentReactiveData
+   * @param {Galaxy.View.ReactiveData} hostReactiveData
    * @param {Galaxy.View.ReactiveData} scopeData
    * @param {Object} bindings
    * @param {Galaxy.View.ViewNode | undefined} root
    */
-  View.makeBinding = function (target, targetKeyName, parentReactiveData, scopeData, bindings, root) {
+  View.makeBinding = function (target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
     const propertyKeysPaths = bindings.propertyKeysPaths;
     const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
 
@@ -457,18 +457,18 @@ Galaxy.View = /** @class */(function () {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      if (!parentReactiveData && !(scopeData instanceof Galaxy.Scope)) {
+      if (!hostReactiveData && !(scopeData instanceof Galaxy.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
-          parentReactiveData = scopeData.__rd__;
+          hostReactiveData = scopeData.__rd__;
         } else {
-          parentReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
+          hostReactiveData = new Galaxy.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
       // When the node belongs to a nested $for, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
       if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
         propertyKey === 'data') {
-        parentReactiveData = null;
+        hostReactiveData = null;
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
@@ -476,7 +476,7 @@ Galaxy.View = /** @class */(function () {
         propertyKey = propertyKeyPathItems[1];
         bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
-        parentReactiveData = new Galaxy.View.ReactiveData('data', root.data);
+        hostReactiveData = new Galaxy.View.ReactiveData('data', root.data);
         value = View.propertyLookup(root.data, propertyKey);
       } else if (value) {
         value = View.propertyLookup(value, propertyKey);
@@ -489,11 +489,11 @@ Galaxy.View = /** @class */(function () {
 
       let reactiveData;
       if (initValue instanceof Object) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, parentReactiveData);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, initValue, hostReactiveData);
       } else if (childPropertyKeyPath) {
-        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, parentReactiveData);
-      } else if (parentReactiveData) {
-        parentReactiveData.addKeyToShadow(propertyKey);
+        reactiveData = new Galaxy.View.ReactiveData(propertyKey, null, hostReactiveData);
+      } else if (hostReactiveData) {
+        hostReactiveData.addKeyToShadow(propertyKey);
       }
 
       if (childPropertyKeyPath === null) {
@@ -508,7 +508,7 @@ Galaxy.View = /** @class */(function () {
                 return expressionFn();
               }
 
-              return parentReactiveData.data[propertyKey];
+              return hostReactiveData.data[propertyKey];
             },
             enumerable: true,
             configurable: true
@@ -516,7 +516,7 @@ Galaxy.View = /** @class */(function () {
         }
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
-        if (!parentReactiveData && scopeData instanceof Galaxy.Scope) {
+        if (!hostReactiveData && scopeData instanceof Galaxy.Scope) {
           // If the propertyKey is referring to some local value then there is no error
           if (target instanceof Galaxy.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
@@ -527,7 +527,7 @@ Galaxy.View = /** @class */(function () {
             propertyKey + '`\n');
         }
 
-        parentReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
+        hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
 
       }
 
