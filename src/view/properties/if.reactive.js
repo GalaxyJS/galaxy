@@ -18,15 +18,16 @@
       /** @type {Galaxy.View.ViewNode} */
       const node = this;
 
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-      }
+      // if (config.throttleId) {
+      //   window.cancelAnimationFrame(config.throttleId);
+      // }
 
       if (expression) {
         value = expression();
       }
 
-      config.throttleId = window.requestAnimationFrame(() => {
+      /*config.throttleId = */
+      window.requestAnimationFrame(() => {
         node.rendered.then(() => {
           if (node.inDOM !== value) {
             node.setInDOM(value);

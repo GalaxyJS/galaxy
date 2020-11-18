@@ -11,7 +11,7 @@
       create: function () {
         return new Galaxy.View(scope);
       },
-      finalize: function () {
+      start: function () {
       }
     };
   });

@@ -300,7 +300,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
       _this.sync('length');
       initialChanges.init = initialChanges;
-      arr.changes = initialChanges;
+      // arr.changes = initialChanges;
+      defProp(arr, 'changes', {
+        enumerable: false,
+        configurable: true,
+        value: initialChanges
+      });
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
@@ -340,7 +345,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
               });
             }
 
-            arr.changes = changes;
+            // arr.changes = changes;
+            defProp(arr, 'changes', {
+              enumerable: false,
+              configurable: true,
+              value: changes
+            });
             thisRD.notifyDown('length');
             thisRD.notifyDown('changes');
             thisRD.notify(thisRD.keyInParent);
@@ -381,17 +391,18 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
       // const seen = {};
       // seen[_this.keyInParent] = true;
-      const allKeys = _this.refs.map((item) => item.keyInParent);
+      // const allKeys = _this.refs.map((item) => item.keyInParent);
       // const keys = allKeys.filter((item) => {
       //   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
       // });
 
-      allKeys.forEach((kip, i) => {
-        _this.refs[i].parent.notify(kip, null, value);
+      // allKeys.forEach((kip, i) => {
+      //   _this.refs[i].parent.notify(kip, null, value);
+      // });
+
+      _this.refs.forEach(function (ref) {
+        ref.parent.notify(ref.keyInParent, null, value);
       });
-      // } else {
-      //   _this.parent.notify(_this.keyInParent);
-      // }
     },
 
     notifyDown: function (key) {
@@ -555,7 +566,12 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
         let initValue = this.data[dataKey];
         // if the value is a instance of Array, then we should set its change property to its initial state
         if (initValue instanceof Array && initValue.changes) {
-          initValue.changes = initValue.changes.init;
+          // initValue.changes = initValue.changes.init;
+          defProp(initValue, 'changes', {
+            enumerable: false,
+            configurable: true,
+            value: initValue.changes.init
+          });
         }
         // We need initValue for cases where ui is bound to a property of an null object
         // TODO: This line seem obsolete

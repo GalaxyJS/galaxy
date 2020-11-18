@@ -157,7 +157,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
     _this.inputs = {};
     _this.virtual = false;
     _this.placeholder = createComment(schema.tag || 'div');
-    _this.properties = [];
+    _this.properties = new Set();
     _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
@@ -349,7 +349,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
      */
     installSetter: function (reactiveData, propertyName, expression) {
       const _this = this;
-      _this.registerProperty(reactiveData);
+      _this.properties.add(reactiveData);
 
       _this.setters[propertyName] = GV.createSetter(_this, propertyName, reactiveData, expression);
       if (!_this.setters[propertyName]) {
@@ -359,15 +359,6 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
       }
     },
 
-    /**
-     *
-     * @param {Galaxy.View.ReactiveData} reactiveData
-     */
-    registerProperty: function (reactiveData) {
-      if (this.properties.indexOf(reactiveData) === -1) {
-        this.properties.push(reactiveData);
-      }
-    },
     hasAnimation: function () {
       const _this = this;
       const children = _this.getChildNodes();
@@ -431,7 +422,7 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
         }
 
         _this.localPropertyNames.clear();
-        _this.properties = [];
+        _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
         _this.schema.node = undefined;

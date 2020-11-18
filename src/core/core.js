@@ -1,4 +1,4 @@
-/* global Galaxy, Promise */
+/* global Galaxy, Promise, AsyncFunction */
 'use strict';
 /*!
  * GalaxyJS
@@ -72,7 +72,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     clone: function (obj) {
       let clone = obj instanceof Array ? [] : {};
       clone.__proto__ = obj.__proto__;
+      // if(clone.hasOwnProperty('content'))debugger;
       for (let i in obj) {
+        // debugger;
         if (obj.hasOwnProperty(i)) {
           if (obj[i] instanceof Promise) {
             clone[i] = obj[i];
@@ -297,13 +299,11 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(module.scope, module.scope).then(() => {
+          moduleSource.call(null, module.scope).then(() => {
 
             Reflect.deleteProperty(module, 'source');
 
-            module.addOnProviders.forEach(function (item) {
-              item.finalize();
-            });
+            module.addOnProviders.forEach(item => item.start());
 
             Reflect.deleteProperty(module, 'addOnProviders');
 
@@ -319,7 +319,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
 
             const currentModule = module;
-
             currentModule.init();
             return resolve(currentModule);
           });

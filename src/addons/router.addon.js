@@ -213,25 +213,20 @@
 
     destroy: function () {
       window.removeEventListener('popstate', this.listener);
-      // window.removeEventListener('hashchange', this.listener);
     }
   };
 
   G.registerAddOnProvider('galaxy/router', function (scope, module) {
     return {
       create: function () {
-        if (module.systemId === 'system') {
-          return new SimpleRouter(module);
-        } else {
-          const router = new SimpleRouter(module);
-          scope.on('module.destroy', function () {
-            router.destroy();
-          });
-
-          return router;
+        const router = new SimpleRouter(module);
+        if (module.systemId !== 'system') {
+          scope.on('module.destroy', () => router.destroy());
         }
+
+        return router;
       },
-      finalize: function () { }
+      start: function () { }
     };
   });
 

@@ -8,13 +8,12 @@ Galaxy.View = /** @class */(function () {
 
   View.EMPTY_CALL = function () {
   };
-  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$');
-  View.BINDING_EXPRESSION_REGEX = new RegExp('(?:["\'][\w\s]*[\'"])|([^\d\s=+\-|&%{}()<>!/]+)', 'g');
+  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
    *
    * @typedef {Object} Galaxy.View.SchemaProperty
-   * @property {string} [type]
+   * @property {'attr'|'prop'|'reactive'} [type]
    * @property {Function} [setup]
    * @property {Function} [createSetter]
    * @property {Function} [value]
@@ -183,8 +182,8 @@ Galaxy.View = /** @class */(function () {
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
     viewNode.notifyObserver(name, value, oldValue);
-    if (value !== null && value !== undefined) {
-      viewNode.node.setAttribute(name, value);
+    if (value !== null && value !== undefined && value !== false) {
+      viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {
       viewNode.node.removeAttribute(name);
     }

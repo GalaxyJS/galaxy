@@ -115,7 +115,17 @@
         //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
-        changes = array.changes;
+        if (array instanceof Galaxy.View.ArrayChange) {
+          changes = array;
+        } else if (array instanceof Array) {
+          changes = array.changes;
+        }
+      }
+
+      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
+        return console.warn('%c$for %cdata is not a type of ArrayChange' +
+          '\ndata: ' + config.options.data +
+          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
       const node = this;
@@ -125,15 +135,9 @@
 
       config.changeId = changes.id;
 
-      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
-        return console.warn('%c$for %cdata is not a type of ArrayChange' +
-          '\ndata: ' + config.options.data +
-          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
-      }
-
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-      }
+      // if (config.throttleId) {
+      //   window.cancelAnimationFrame(config.throttleId);
+      // }
 
       if (!changes || typeof changes === 'string') {
         changes = {
@@ -144,7 +148,8 @@
 
       /** @type {Galaxy.View.ViewNode} */
       config.oldChanges = changes;
-      config.throttleId = window.requestAnimationFrame(() => {
+      /*config.throttleId = */
+      window.requestAnimationFrame(() => {
         afterInserted(node, config, changes);
       });
     }
