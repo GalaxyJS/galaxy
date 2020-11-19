@@ -1,14 +1,12 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  const PROPERTY_NAME = 'disabled';
+(function (G) {
   /**
    *
    * @type {Galaxy.View.SchemaProperty}
    */
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP[PROPERTY_NAME] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['disabled'] = {
     type: 'attr',
-    name: PROPERTY_NAME,
+    name: 'disabled',
     value: function (viewNode, value, oldValue, attr) {
       viewNode.rendered.then(() => {
         if (viewNode.schema.tag.toLowerCase() === 'form') {
@@ -22,7 +20,7 @@
         }
       });
 
-      Galaxy.View.setAttr(viewNode, value ? '' : null, oldValue, attr);
+      G.View.setAttr(viewNode, value ? '' : null, oldValue, attr);
     }
   };
 })(Galaxy);

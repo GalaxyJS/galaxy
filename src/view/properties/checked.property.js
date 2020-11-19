@@ -1,7 +1,6 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
     type: 'prop',
     name: 'checked',
     /**
@@ -18,7 +17,7 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = Galaxy.View.getBindings(viewNode.schema.checked);
+      const bindings = G.View.getBindings(viewNode.schema.checked);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {

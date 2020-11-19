@@ -1,6 +1,4 @@
 /* global Galaxy */
-'use strict';
-
 (function (G) {
   G.registerAddOnProvider('galaxy/view', function (scope) {
     return {

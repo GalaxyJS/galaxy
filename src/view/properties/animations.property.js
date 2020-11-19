@@ -1,12 +1,12 @@
 /* global Galaxy, gsap, TimelineLite */
 'use strict';
 
-(function (Galaxy) {
+(function (G) {
   if (!window.gsap || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
     /**
@@ -83,17 +83,17 @@
             //   sequence: 'DESTROY',
             //   duration: .000001
             // }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
-            return Galaxy.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
+            return G.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, G.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       } else {
         viewNode.populateLeaveSequence = function (flag) {
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
             sequence: 'DESTROY',
             duration: .000001
-          }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
+          }, {  }, G.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
         };
       }
 
@@ -102,31 +102,31 @@
           oldClasses = oldClasses || [];
 
           try {
-            // classes.forEach(function (item) {
-            //   // Class has been added
-            //   if (item && oldClasses.indexOf(item) === -1) {
-            //     const classEvent = value['add:' + item];
-            //     if (classEvent) {
-            //       viewNode.node.classList.remove(item);
-            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-            //         viewNode.node.classList.add(item);
-            //       });
-            //     }
-            //   }
-            // });
-            //
-            // oldClasses.forEach(function (item) {
-            //   if (item && classes.indexOf(item) === -1) {
-            //     // Class has been removed
-            //     const classEvent = value['remove:' + item];
-            //     if (classEvent) {
-            //       viewNode.node.classList.add(item);
-            //       AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-            //         viewNode.node.classList.remove(item);
-            //       });
-            //     }
-            //   }
-            // });
+            classes.forEach(function (item) {
+              // Class has been added
+              if (item && oldClasses.indexOf(item) === -1) {
+                const classEvent = value['add:' + item];
+                if (classEvent) {
+                  viewNode.node.classList.remove(item);
+                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+                    viewNode.node.classList.add(item);
+                  });
+                }
+              }
+            });
+
+            oldClasses.forEach(function (item) {
+              if (item && classes.indexOf(item) === -1) {
+                // Class has been removed
+                const classEvent = value['remove:' + item];
+                if (classEvent) {
+                  viewNode.node.classList.add(item);
+                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
+                    viewNode.node.classList.remove(item);
+                  });
+                }
+              }
+            });
           } catch (exception) {
             console.warn(exception);
           }
@@ -137,7 +137,7 @@
     }
   };
 
-  Galaxy.View.AnimationMeta = AnimationMeta;
+  G.View.AnimationMeta = AnimationMeta;
 
   /**
    *

@@ -1,12 +1,11 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
   };
 
-  Galaxy.View.REACTIVE_BEHAVIORS['module'] = {
+  G.View.REACTIVE_BEHAVIORS['module'] = {
     regex: null,
     prepare: function (matches, scope) {
       return {
@@ -53,15 +52,15 @@
         cache.module.destroy();
       }
       // Check for circular module loading
-      const tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
+      const tempURI = new G.GalaxyURI(moduleMeta.url);
       let moduleScope = cache.scope;
       let currentScope = cache.scope;
 
       while (moduleScope) {
         // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
         // but its __parent__ is
-        if (!(currentScope instanceof Galaxy.Scope)) {
-          currentScope = new Galaxy.Scope({
+        if (!(currentScope instanceof G.Scope)) {
+          currentScope = new G.Scope({
             systemId: '$for-item',
             url: cache.scope.__parent__.uri.parsedURL,
             parentScope: cache.scope.__parent__
@@ -75,7 +74,7 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      Galaxy.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
+      G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
         currentScope.load(moduleMeta, {
           element: viewNode
         }).then(function (module) {

@@ -1,11 +1,10 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['value.config'] = {
     type: 'none'
   };
 
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['value'] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['value'] = {
     type: 'prop',
     name: 'value',
     /**
@@ -22,7 +21,7 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = Galaxy.View.getBindings(viewNode.schema.value);
+      const bindings = G.View.getBindings(viewNode.schema.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       if (nativeNode.type === 'number') {

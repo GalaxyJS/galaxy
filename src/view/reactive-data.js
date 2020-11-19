@@ -1,40 +1,6 @@
 /* global Galaxy */
 
-// const data = {
-//   a: {
-//     b: {
-//       c: 'something',
-//       _c_path: ['a.b.c', 'x.y.a.b.c']
-//     },
-//     _b_path: ['a.b', 'x.y.a.b']
-//   },
-//   _a_path: ['a', 'x.y.a']
-// };
-//
-// const data2 = {
-//   x: {
-//     y: data,
-//     _y_path: ['x.y']
-//   },
-//   _x_path: ['x']
-// };
-//
-// const fromTemplate = {
-//   'a.b.c': {
-//     keys: ['text'],
-//     nodes: ['p']
-//   },
-//   'x.y.a.b.c': {
-//     keys: ['text'],
-//     nodes: ['h3']
-//   },
-//   'a.b': {
-//     keys: ['text'],
-//     nodes: ['pre']
-//   }
-// };
-
-Galaxy.View.ReactiveData = /** @class */ (function () {
+Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
     'push',
@@ -161,7 +127,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
         for (let key in this.shadow) {
           // Cascade changes down to all children reactive data
-          if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+          if (this.shadow[key] instanceof G.View.ReactiveData) {
 
             this.shadow[key].setData(data);
           } else {
@@ -287,14 +253,14 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       }
       // _this.makeReactiveObject(value, 'changes', true);
 
-      const initialChanges = new Galaxy.View.ArrayChange();
+      const initialChanges = new G.View.ArrayChange();
       initialChanges.original = arr;
       // initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
       initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
         if (item !== null && typeof item === 'object') {
-          new Galaxy.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+          new G.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
         }
       });
 
@@ -320,7 +286,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             }
 
             const returnValue = originalMethod.apply(this, args);
-            const changes = new Galaxy.View.ArrayChange();
+            const changes = new G.View.ArrayChange();
             changes.original = arr;
             changes.type = method;
             changes.params = args;
@@ -330,7 +296,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
+                  new G.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             } else if (method === 'pop' || method === 'shift') {
@@ -340,7 +306,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
             } else if (method === 'splice') {
               changes.params.slice(2).forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new Galaxy.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
+                  new G.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             }
@@ -430,7 +396,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       const value = _this.data[propertyKey];
 
       // notify the observers on the data
-      Galaxy.Observer.notify(_this.data, propertyKey, value, oldValue);
+      G.Observer.notify(_this.data, propertyKey, value, oldValue);
 
       if (map) {
         map.nodes.forEach(function (node, i) {
@@ -459,17 +425,17 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
      */
     syncNode: function (node, key, value, oldValue) {
       // Pass a copy of the ArrayChange to every bound
-      if (value instanceof Galaxy.View.ArrayChange) {
+      if (value instanceof G.View.ArrayChange) {
         value = value.getInstance();
       }
 
-      if (node instanceof Galaxy.View.ViewNode) {
+      if (node instanceof G.View.ViewNode) {
         node.setters[key](value, oldValue);
       } else {
         node[key] = value;
       }
 
-      Galaxy.Observer.notify(node, key, value, oldValue);
+      G.Observer.notify(node, key, value, oldValue);
     },
     /**
      *
@@ -556,7 +522,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
       // Insure that same node with different property bind can exist
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
-        if (node instanceof Galaxy.View.ViewNode && !node.setters[nodeKey]) {
+        if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {
           node.installSetter(this, nodeKey, expression);
         }
 
@@ -636,7 +602,7 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
     setupShadowProperties: function (keys) {
       for (let key in this.shadow) {
         // Only reactive properties should be added to data
-        if (this.shadow[key] instanceof Galaxy.View.ReactiveData) {
+        if (this.shadow[key] instanceof G.View.ReactiveData) {
           if (!this.data.hasOwnProperty(key)) {
             this.makeReactiveObject(this.data, key, true);
           }
@@ -663,4 +629,4 @@ Galaxy.View.ReactiveData = /** @class */ (function () {
 
   return ReactiveData;
 
-})();
+})(Galaxy);

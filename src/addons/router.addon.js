@@ -1,6 +1,4 @@
 (function (G) {
-  'use strict';
-
   SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
   // SimpleRouter.WILDCARD_REGEXP = /\*/g;
   SimpleRouter.REPLACE_VARIABLE_REGEXP = '([^\/]+)';

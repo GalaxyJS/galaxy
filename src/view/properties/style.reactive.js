@@ -1,18 +1,16 @@
 /* global Galaxy */
+(function (G) {
 
-(function (Galaxy) {
-  const NAME = 'style';
-
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP[NAME + '.config'] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['style.config'] = {
     type: 'none'
   };
 
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP[NAME] = {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['style'] = {
     type: 'reactive',
-    name: NAME
+    name: 'style'
   };
 
-  Galaxy.View.REACTIVE_BEHAVIORS[NAME] = {
+  G.View.REACTIVE_BEHAVIORS['style'] = {
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -61,9 +59,9 @@
         return node.removeAttribute('style');
       }
 
-      const reactiveStyle = Galaxy.View.bindSubjectsToData(_this, value, data.scope, true);
+      const reactiveStyle = G.View.bindSubjectsToData(_this, value, data.scope, true);
 
-      const observer = new Galaxy.Observer(reactiveStyle);
+      const observer = new G.Observer(reactiveStyle);
       observer.onAll(function (key, value, oldValue) {
         setStyle(node, reactiveStyle);
       });

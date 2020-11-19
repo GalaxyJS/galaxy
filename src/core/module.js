@@ -41,10 +41,9 @@ Galaxy.Module = /** @class */ (function () {
   };
 
   return Module;
-}());
+})();
 
 Galaxy.Module.Content = /** @class */ (function () {
-
   const parsers = {};
 
   /**
@@ -89,4 +88,4 @@ Galaxy.Module.Content = /** @class */ (function () {
   Content.prototype = {};
 
   return Content;
-}());
+})();

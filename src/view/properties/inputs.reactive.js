@@ -1,13 +1,11 @@
 /* global Galaxy */
-'use strict';
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
     name: 'inputs'
   };
 
-  GV.REACTIVE_BEHAVIORS['inputs'] = {
+  G.View.REACTIVE_BEHAVIORS['inputs'] = {
     regex: null,
     /**
      *
@@ -36,10 +34,10 @@
         return;
       }
 
-      this.inputs = GV.bindSubjectsToData(this, data.subjects, data.scope, true);
+      this.inputs = G.View.bindSubjectsToData(this, data.subjects, data.scope, true);
 
       return false;
     },
     apply: function (cache, value, oldValue, context) { }
   };
-})(Galaxy.View);
+})(Galaxy);

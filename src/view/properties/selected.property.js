@@ -1,7 +1,6 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['selected'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['selected'] = {
     type: 'prop',
     name: 'selected',
     /**
@@ -20,7 +19,7 @@
 
       // Don't do anything if the node is an option tag
       if (viewNode.schema.tag === 'select') {
-        const bindings = Galaxy.View.getBindings(viewNode.schema.selected);
+        const bindings = G.View.getBindings(viewNode.schema.selected);
         const id = bindings.propertyKeysPaths[0].split('.').pop();
         const nativeNode = viewNode.node;
 

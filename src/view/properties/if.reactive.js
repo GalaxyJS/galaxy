@@ -1,12 +1,11 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['$if'] = {
     type: 'reactive',
     name: '$if'
   };
 
-  Galaxy.View.REACTIVE_BEHAVIORS['$if'] = {
+  G.View.REACTIVE_BEHAVIORS['$if'] = {
     prepare: function () {
       return {
         throttleId: null,

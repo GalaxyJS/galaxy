@@ -47,7 +47,7 @@ const buildProduction = function (done) {
     gulp.src(sources.galaxy),
     babel(),
     concat('galaxy.min.js'),
-    uglify({compress: true}),
+    uglify({ compress: true }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),
     gulp.dest('../imerce-viewer/assets/'),

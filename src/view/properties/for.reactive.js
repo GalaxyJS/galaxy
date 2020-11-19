@@ -1,7 +1,6 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  const View = Galaxy.View;
+(function (G) {
+  const View = G.View;
   View.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
     type: 'reactive',
     name: '$for'
@@ -69,7 +68,7 @@
           });
         } else if (config.options.data instanceof Array) {
           const setter = viewNode.setters['$for'] = View.createSetter(viewNode, '$for', config.options.data, null, config.scope);
-          const value = new Galaxy.View.ArrayChange();
+          const value = new G.View.ArrayChange();
           value.params = config.options.data;
           config.options.data.changes = value;
           setter(config.options.data);
@@ -95,10 +94,10 @@
           return;
         }
 
-        if (array instanceof Galaxy.View.ArrayChange) {
+        if (array instanceof G.View.ArrayChange) {
           changes = array;
         } else if (array instanceof Array) {
-          const initialChanges = new Galaxy.View.ArrayChange();
+          const initialChanges = new G.View.ArrayChange();
           initialChanges.original = array;
           initialChanges.type = 'reset';
           initialChanges.params = array;
@@ -115,14 +114,14 @@
         //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
-        if (array instanceof Galaxy.View.ArrayChange) {
+        if (array instanceof G.View.ArrayChange) {
           changes = array;
         } else if (array instanceof Array) {
           changes = array.changes;
         }
       }
 
-      if (changes && !(changes instanceof Galaxy.View.ArrayChange)) {
+      if (changes && !(changes instanceof G.View.ArrayChange)) {
         return console.warn('%c$for %cdata is not a type of ArrayChange' +
           '\ndata: ' + config.options.data +
           '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
@@ -179,7 +178,7 @@
       });
       config.positions = positions;
 
-      const newChanges = new Galaxy.View.ArrayChange();
+      const newChanges = new G.View.ArrayChange();
       newChanges.init = changes.init;
       newChanges.type = changes.type;
       newChanges.original = changes.original;
@@ -300,7 +299,7 @@
     const templateSchema = node.cloneSchema();
     Reflect.deleteProperty(templateSchema, '$for');
 
-    const gClone = Galaxy.clone;
+    const gClone = G.clone;
     const view = node.view;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);

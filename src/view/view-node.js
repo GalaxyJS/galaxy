@@ -1,7 +1,8 @@
 /* global Galaxy, Promise */
 'use strict';
 
-Galaxy.View.ViewNode = /** @class */ (function (GV) {
+Galaxy.View.ViewNode = /** @class */ (function (G) {
+  const GV = G.View;
   const commentNode = document.createComment('');
   const defProp = Object.defineProperty;
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
@@ -506,4 +507,4 @@ Galaxy.View.ViewNode = /** @class */ (function (GV) {
 
   return ViewNode;
 
-})(Galaxy.View);
+})(Galaxy);

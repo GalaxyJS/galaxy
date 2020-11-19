@@ -1,12 +1,11 @@
 /* global Galaxy */
-
-(function (Galaxy) {
-  Galaxy.View.NODE_SCHEMA_PROPERTY_MAP['content'] = {
+(function (G) {
+  G.View.NODE_SCHEMA_PROPERTY_MAP['content'] = {
     type: 'reactive',
     name: 'content'
   };
 
-  Galaxy.View.REACTIVE_BEHAVIORS['content'] = {
+  G.View.REACTIVE_BEHAVIORS['content'] = {
     regex: null,
     prepare: function (matches, scope) {
       this.virtualize();
