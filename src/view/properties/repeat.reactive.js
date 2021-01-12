@@ -1,12 +1,12 @@
 /* global Galaxy */
 (function (G) {
   const View = G.View;
-  View.NODE_SCHEMA_PROPERTY_MAP['$for'] = {
+  View.NODE_SCHEMA_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    name: '$for'
+    name: 'repeat'
   };
 
-  View.REACTIVE_BEHAVIORS['$for'] = {
+  View.REACTIVE_BEHAVIORS['repeat'] = {
     regex: null,
     prepare: function (options, scope) {
       this.virtualize();
@@ -26,24 +26,10 @@
 
     /**
      *
-     * @typedef {Object} RenderJobManager
-     * @property {Array.<Function>} steps
-     * @property {Array.<Promise>} queue
-     * @property {Promise} mainPromise
-     */
-
-    /**
-     *
      * @param config Return of prepare method
      */
     install: function (config) {
       const viewNode = this;
-      const parentNode = viewNode.parent;
-      /**
-       *
-       * @type {RenderJobManager}
-       */
-      parentNode.cache.$for = parentNode.cache.$for || { steps: [], queue: [], mainPromise: null };
 
       if (config.options) {
         const bindings = View.getBindings(config.options.data);
@@ -55,7 +41,7 @@
         }
 
         if (bindings.propertyKeysPaths) {
-          View.makeBinding(viewNode, '$for', undefined, config.scope, bindings, viewNode);
+          View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
@@ -67,7 +53,7 @@
             }
           });
         } else if (config.options.data instanceof Array) {
-          const setter = viewNode.setters['$for'] = View.createSetter(viewNode, '$for', config.options.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.createSetter(viewNode, 'repeat', config.options.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.options.data;
           config.options.data.changes = value;
@@ -111,7 +97,7 @@
 
         // if (!(changes instanceof Galaxy.View.ArrayChange)) {
         //   debugger;
-        //   throw new Error('$for: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        //   throw new Error('repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
         if (array instanceof G.View.ArrayChange) {
@@ -122,7 +108,7 @@
       }
 
       if (changes && !(changes instanceof G.View.ArrayChange)) {
-        return console.warn('%c$for %cdata is not a type of ArrayChange' +
+        return console.warn('%crepeat %cdata is not a type of ArrayChange' +
           '\ndata: ' + config.options.data +
           '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
@@ -149,12 +135,15 @@
       config.oldChanges = changes;
       /*config.throttleId = */
       window.requestAnimationFrame(() => {
-        afterInserted(node, config, changes);
+        prepare(node, config, changes).then(finalChanges => {
+          process(node, config, finalChanges);
+        });
       });
     }
   };
 
-  function afterInserted(viewNode, config, changes) {
+  async function prepare(viewNode, config, changes) {
+    let finalChanges = changes;
     let newTrackMap = null;
     if (config.trackBy instanceof Function && changes.type === 'reset') {
       newTrackMap = changes.params.map(function (item, i) {
@@ -197,38 +186,31 @@
         config.trackMap = newTrackMap;
       }
 
-      if (viewNode.cache.$forProcessing) {
-        return viewNode.cache.$forPushProcess = () => {
-          createPushProcess(viewNode, config, newChanges, config.scope);
-        };
-      }
-
       View.destroyNodes(viewNode, hasBeenRemoved.reverse());
-      changes = newChanges;
+      finalChanges = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
       View.destroyNodes(viewNode, nodesToBeRemoved.reverse());
-      changes = Object.assign({}, changes);
-      changes.type = 'push';
+      finalChanges = Object.assign({}, changes);
+      finalChanges.type = 'push';
     }
 
-    // if $forProcessing is true, then there is no need for a new leave step
-    // we just need to update the $forPushProcess
-    viewNode.cache.$forProcessing = true;
+    // viewNode.cache.repeatPushProcess = () => {
+    //   createPushProcess(viewNode, config, changes, config.scope);
+    // };
 
-    viewNode.cache.$forPushProcess = () => {
-      createPushProcess(viewNode, config, changes, config.scope);
-    };
+    // repeatPushProcess can change on the fly therefore we need to register a function
+    // that calls the latest repeatPushProcess
+    // viewNode.cache.repeatPushProcess.call();
+    return finalChanges;
 
-    // $forPushProcess can change on the fly therefore we need to register a function
-    // that calls the latest $forPushProcess
-    viewNode.cache.$forPushProcess.call();
   }
 
-  function createPushProcess(node, config, changes, nodeScopeData) {
+  function process(node, config, changes) {
     const parentNode = node.parent;
     const positions = config.positions;
+    const nodeScopeData = config.scope;
     const placeholdersPositions = [];
     let defaultPosition = null;
     let newItems = [];
@@ -297,7 +279,7 @@
     const indexAs = config.options.indexAs;
     const nodes = config.nodes;
     const templateSchema = node.cloneSchema();
-    Reflect.deleteProperty(templateSchema, '$for');
+    Reflect.deleteProperty(templateSchema, 'repeat');
 
     const gClone = G.clone;
     const view = node.view;
@@ -328,8 +310,6 @@
         }
       }
     }
-
-    node.cache.$forProcessing = false;
   }
 })(Galaxy);
 

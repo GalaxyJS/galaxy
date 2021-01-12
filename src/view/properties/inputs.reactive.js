@@ -31,7 +31,7 @@
      */
     install: function (data) {
       if (this.virtual) {
-        return;
+        return false;
       }
 
       this.inputs = G.View.bindSubjectsToData(this, data.subjects, data.scope, true);

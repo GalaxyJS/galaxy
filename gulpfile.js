@@ -14,10 +14,18 @@ let sources = {
     'src/polyfills/*.js',
     // Core
     'src/core/core.js',
+    'src/core/module.js',
+    'src/core/parsers/*.js',
+    'src/core/scope.js',
+    'src/core/uri.js',
     'src/core/**/*.js',
     // View
     'src/view/view.js',
-    'src/view/**/*.js',
+    'src/view/reactive-data.js',
+    'src/view/array-change.js',
+    'src/view/view-node.js',
+    'src/view/setters/*.js',
+    'src/view/properties/*.js',
     // Module addons
     'src/addons/*.js'
   ]
@@ -45,8 +53,8 @@ const build = function (done) {
 const buildProduction = function (done) {
   pump([
     gulp.src(sources.galaxy),
-    babel(),
     concat('galaxy.min.js'),
+    babel(),
     uglify({ compress: true }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),

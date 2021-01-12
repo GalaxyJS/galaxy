@@ -1,5 +1,5 @@
-(function () {
-  Galaxy.Module.Content.registerParser('function', parser);
+(function (GMC) {
+  GMC.registerParser('function', parser);
 
   function parser(content, metaData) {
     const unique = [];
@@ -18,4 +18,4 @@
       source: content
     };
   }
-})();
+})(Galaxy.Module.Content);

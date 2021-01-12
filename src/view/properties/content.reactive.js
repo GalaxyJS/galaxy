@@ -14,7 +14,7 @@
       };
     },
     install: function (data) {
-
+      return false;
     },
     apply: function (cache, selector, oldSelector, expression) {
       // if (scope.element.schema.children && scope.element.schema.hasOwnProperty('module')) {

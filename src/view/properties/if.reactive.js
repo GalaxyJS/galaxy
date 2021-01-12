@@ -12,6 +12,7 @@
       };
     },
     install: function (config) {
+      return true;
     },
     apply: function (config, value, oldValue, expression) {
       /** @type {Galaxy.View.ViewNode} */

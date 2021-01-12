@@ -1,4 +1,4 @@
-/* global Galaxy, Promise, AsyncFunction */
+/* global Galaxy, Promise */
 'use strict';
 /*!
  * GalaxyJS
@@ -6,12 +6,12 @@
  * Released under the MIT License.
  */
 
-window.AsyncFunction = Object.getPrototypeOf(async function () {
-}).constructor;
 /**
  * @exports Galaxy
  */
 window.Galaxy = window.Galaxy || /** @class */(function () {
+  const AsyncFunction = Object.getPrototypeOf(async function () {
+  }).constructor;
   Array.prototype.unique = function () {
     const a = this.concat();
     for (let i = 0, lenI = a.length; i < lenI; ++i) {
@@ -33,7 +33,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
    * @constructor
    */
   function Core() {
-    // this.modules = {};
     this.moduleContents = {};
     this.addOnProviders = [];
     this.rootElement = null;
@@ -104,9 +103,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         throw new Error('element property is mandatory');
       }
 
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         _this.load(bootModule).then(function (module) {
-          // Replace galaxy temporary  bootModule with user specified bootModule
+          // Replace galaxy temporary bootModule with user specified bootModule
           _this.bootModule = module;
           resolve(module);
         }).catch(function (error) {
@@ -114,8 +113,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           reject();
         });
       });
-
-      return promise;
     },
 
     convertToURIString: function (obj, prefix) {
@@ -142,7 +139,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       }
 
       const _this = this;
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
           module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
           module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
@@ -182,22 +179,12 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }).catch(reject);
         }
 
-        // const compilationStep = function (moduleContent) {
-        //   return _this.compileModuleContent(module, moduleContent, invokers);
-        // };
-
-        // const executionStep = function (compiledModule) {
-        //   return _this.executeCompiledModule(compiledModule);
-        // };
-
         contentFetcher
           .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
           .then(compiledModule => _this.executeCompiledModule(compiledModule))
           .then(resolve)
           .catch(reject);
       });
-
-      return promise;
     },
 
     /**
@@ -209,7 +196,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
-      const compilationStep = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
           imports.splice(imports.indexOf(module.url) - 1, 1);
 
@@ -270,8 +257,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
         resolve(module);
       });
-
-      return compilationStep;
     },
 
     /**
@@ -280,7 +265,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         try {
           for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
@@ -290,7 +275,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             if (cachedModules.hasOwnProperty(item)) {
               const asset = cachedModules[item];
               if (asset.module) {
-                module.scope.inject(asset.libId, asset.module);
+                module.scope.inject(asset.id, asset.module);
               }
             }
           }
@@ -300,20 +285,19 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
           moduleSource.call(null, module.scope).then(() => {
-
             Reflect.deleteProperty(module, 'source');
 
             module.addOnProviders.forEach(item => item.start());
 
             Reflect.deleteProperty(module, 'addOnProviders');
 
-            const libId = module.url;
+            const id = module.url;
             // if the module export has _temp then do not cache the module
             if (module.scope.exports._temp) {
-              module.scope.parentScope.inject(libId, module.scope.exports);
-            } else if (!cachedModules[libId]) {
-              cachedModules[libId] = {
-                libId: libId,
+              module.scope.parentScope.inject(id, module.scope.exports);
+            } else if (!cachedModules[id]) {
+              cachedModules[id] = {
+                id: id,
                 module: module.scope.exports
               };
             }
@@ -330,12 +314,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           throw new Error(error);
         }
       });
-
-      return promise;
     },
 
     getModuleAddOnProvider: function (name) {
-      return this.addOnProviders.filter(function (service) {
+      return this.addOnProviders.filter((service) => {
         return service.name === name;
       })[0];
     },

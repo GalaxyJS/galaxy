@@ -1,5 +1,5 @@
-(function () {
-  Galaxy.Module.Content.registerParser('application/javascript', parser);
+(function (GMC) {
+  GMC.registerParser('application/javascript', parser);
 
   function parser(content) {
     const imports = [];
@@ -25,4 +25,4 @@
       source: parsedContent
     };
   }
-})();
+})(Galaxy.Module.Content);

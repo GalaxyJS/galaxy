@@ -1,6 +1,5 @@
 /* global Galaxy */
 (function (G) {
-
   G.View.NODE_SCHEMA_PROPERTY_MAP['style.config'] = {
     type: 'none'
   };

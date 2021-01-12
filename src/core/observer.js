@@ -1,6 +1,4 @@
 /* global Galaxy */
-'use strict';
-
 Galaxy.Observer = /** @class */ (function () {
   const defProp = Object.defineProperty;
 

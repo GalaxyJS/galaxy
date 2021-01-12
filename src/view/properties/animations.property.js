@@ -1,6 +1,4 @@
 /* global Galaxy, gsap, TimelineLite */
-'use strict';
-
 (function (G) {
   if (!window.gsap || !window.TimelineLite) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');

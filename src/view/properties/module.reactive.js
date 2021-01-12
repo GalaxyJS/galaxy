@@ -57,11 +57,11 @@
       let currentScope = cache.scope;
 
       while (moduleScope) {
-        // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
+        // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
         // but its __parent__ is
         if (!(currentScope instanceof G.Scope)) {
           currentScope = new G.Scope({
-            systemId: '$for-item',
+            systemId: 'repeat-item',
             url: cache.scope.__parent__.uri.parsedURL,
             parentScope: cache.scope.__parent__
           });

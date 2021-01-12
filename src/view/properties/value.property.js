@@ -33,10 +33,8 @@
     value: function (viewNode, value) {
       // input field parse the value which has been passed to it into a string
       // that's why we need to parse undefined and null into an empty string
-      // if (document.activeElement !== viewNode.node || !viewNode.node.value) {
       if (value !== viewNode.node.value || !viewNode.node.value) {
         viewNode.node.value = value === undefined || value === null ? '' : value;
-        // viewNode.node.dispatchEvent(new KeyboardEvent('keyup'));
       }
     }
   };

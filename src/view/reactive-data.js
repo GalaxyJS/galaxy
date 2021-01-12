@@ -1,5 +1,4 @@
 /* global Galaxy */
-
 Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [

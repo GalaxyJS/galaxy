@@ -1,6 +1,4 @@
 /* global Galaxy */
-'use strict';
-
 Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
 

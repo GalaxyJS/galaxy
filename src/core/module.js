@@ -1,6 +1,4 @@
 /* global Galaxy */
-'use strict';
-
 Galaxy.Module = /** @class */ (function () {
 
   /**

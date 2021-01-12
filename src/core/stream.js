@@ -1,6 +1,4 @@
 /* global Galaxy */
-'use strict';
-
 Galaxy.Stream = /** @class */ (function () {
   function Stream(source) {
     this.handlers = [];

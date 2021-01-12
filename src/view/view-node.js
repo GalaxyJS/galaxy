@@ -1,6 +1,4 @@
 /* global Galaxy, Promise */
-'use strict';
-
 Galaxy.View.ViewNode = /** @class */ (function (G) {
   const GV = G.View;
   const commentNode = document.createComment('');
@@ -220,9 +218,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     defProp(this.schema, 'node', __node__);
 
     referenceToThis.value = this;
-    defProp(this.node, '_gvn', referenceToThis);
-    defProp(this.placeholder, '_gvn', referenceToThis);
-
+    if(!this.node._gvn) {
+      defProp(this.node, '_gvn', referenceToThis);
+      defProp(this.placeholder, '_gvn', referenceToThis);
+    }
     _this.callLifecycleEvent('postCreate');
   }
 

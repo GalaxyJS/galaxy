@@ -461,7 +461,7 @@ Galaxy.View = /** @class */(function (G) {
           hostReactiveData = new G.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
-      // When the node belongs to a nested $for, the scopeData would refer to the for item data
+      // When the node belongs to a nested repeat, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
       if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
         propertyKey === 'data') {
@@ -703,7 +703,7 @@ Galaxy.View = /** @class */(function (G) {
         _this.container.node.innerHTML = '';
       }
 
-      _this.createNode(schema, _this.container, _this.scope, null);
+      return _this.createNode(schema, _this.container, _this.scope, null);
     },
     broadcast: function (event) {
       this.container.broadcast(event);
@@ -745,12 +745,12 @@ Galaxy.View = /** @class */(function (G) {
           const behavior = View.REACTIVE_BEHAVIORS[attributeName];
           if (behavior) {
             const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
-            if (needValueAssign !== false) {
-              needInitKeys.push(attributeName);
+            if (!needValueAssign) {
+              continue;
             }
-          } else {
-            needInitKeys.push(attributeName);
           }
+
+          needInitKeys.push(attributeName);
         }
 
         // Value assignment stage
