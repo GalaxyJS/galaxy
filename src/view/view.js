@@ -454,7 +454,7 @@ Galaxy.View = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      if (!hostReactiveData && !(scopeData instanceof G.Scope)) {
+      if (!hostReactiveData && scopeData && !(scopeData instanceof G.Scope)) {
         if (scopeData.hasOwnProperty('__rd__')) {
           hostReactiveData = scopeData.__rd__;
         } else {
@@ -525,7 +525,6 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
-
       }
 
       if (childPropertyKeyPath !== null) {
