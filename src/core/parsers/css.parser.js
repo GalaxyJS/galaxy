@@ -66,7 +66,7 @@
         });
         const parsedCSSText = parsedCSSRules.join('\n');
 
-        Scope.exports = {
+        Scope.export = {
           _temp: true,
           tag: 'style',
           type: 'text/css',

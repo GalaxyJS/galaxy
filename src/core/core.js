@@ -163,21 +163,26 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         }
 
         let url = module.url + '?' + _this.convertToURIString(module.params || {});
-        // contentFetcher makes sure that any module gets loaded from network only once unless fresh property is present
+        // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
-          contentFetcher = Galaxy.moduleContents[url] = fetch(url).then(function (response) {
+          Galaxy.moduleContents[url] = contentFetcher = fetch(url).then((response) => {
             if (!response.ok) {
               console.error(response.statusText, url);
               return reject(response.statusText);
             }
 
-            const contentType = response.headers.get('content-type');
-            return response.text().then(function (content) {
-              return new Galaxy.Module.Content(contentType, content, module);
-            });
+            return response;
           }).catch(reject);
         }
+
+
+        contentFetcher = contentFetcher.then(response => {
+          const contentType = module.contentType || response.headers.get('content-type');
+          return response.clone().text().then(content => {
+            return new Galaxy.Module.Content(contentType, content, module);
+          });
+        });
 
         contentFetcher
           .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
@@ -244,6 +249,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 name: item.name,
                 url: item.url,
                 fresh: item.fresh,
+                contentType: item.contentType,
                 parentScope: scope,
                 invokers: invokers
               }).then(function () {
@@ -293,12 +299,12 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
             const id = module.url;
             // if the module export has _temp then do not cache the module
-            if (module.scope.exports._temp) {
-              module.scope.parentScope.inject(id, module.scope.exports);
+            if (module.scope.export._temp) {
+              module.scope.parentScope.inject(id, module.scope.export);
             } else if (!cachedModules[id]) {
               cachedModules[id] = {
                 id: id,
-                module: module.scope.exports
+                module: module.scope.export
               };
             }
 
