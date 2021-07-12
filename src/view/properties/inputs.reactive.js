@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['inputs'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
     name: 'inputs'
   };
@@ -15,7 +15,7 @@
      */
     prepare: function (matches, scope) {
       if (matches !== null && typeof matches !== 'object') {
-        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.schema, null, '  '));
+        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
 
       return {

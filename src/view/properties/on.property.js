@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['on'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['on'] = {
     type: 'prop',
     name: 'on',
     /**

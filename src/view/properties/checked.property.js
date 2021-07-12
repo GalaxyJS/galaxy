@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['checked'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['checked'] = {
     type: 'prop',
     name: 'checked',
     /**
@@ -11,13 +11,13 @@
      * @param {Function} expression
      */
     setup: function (viewNode, scopeReactiveData, prop, expression) {
-      if (expression && viewNode.schema.tag === 'input') {
+      if (expression && viewNode.blueprint.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = G.View.getBindings(viewNode.schema.checked);
+      const bindings = G.View.getBindings(viewNode.blueprint.checked);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {

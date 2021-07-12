@@ -30,6 +30,10 @@
   }
 
   function applyContentAttr(children, ids) {
+    if (!(children instanceof Array) && children !== null && children !== undefined) {
+      children = [children];
+    }
+
     children.forEach((child) => {
       child[ids.content] = '';
 
@@ -74,7 +78,7 @@
           text: parsedCSSText,
           _apply() {
             this.parent.node.setAttribute(ids.host, '');
-            const children = this.parent.schema.children || [];
+            const children = this.parent.blueprint.children || [];
             applyContentAttr(children, ids);
           }
         };

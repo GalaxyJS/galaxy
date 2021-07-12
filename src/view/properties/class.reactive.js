@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['class'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
     name: 'class'
   };
@@ -53,7 +53,7 @@
       const clone = G.View.bindSubjectsToData(_this, value, data.scope, true);
       const observer = new G.Observer(clone);
 
-      if (_this.schema.renderConfig && _this.schema.renderConfig.applyClassListAfterRender) {
+      if (_this.blueprint.renderConfig && _this.blueprint.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -113,8 +113,6 @@
     _this.notifyObserver('class', newClasses, oldClasses);
     _this.node.setAttribute('class', newClasses.join(' '));
     _this.notifyObserver('classList', newClasses, oldClasses);
-    // if (_this.schema.tag === 'li')
-    //   debugger
   }
 })(Galaxy);
 

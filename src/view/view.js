@@ -10,14 +10,14 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @typedef {Object} Galaxy.View.SchemaProperty
+   * @typedef {Object} Galaxy.View.BlueprintProperty
    * @property {'attr'|'prop'|'reactive'} [type]
    * @property {Function} [setup]
    * @property {Function} [createSetter]
    * @property {Function} [value]
    */
 
-  View.NODE_SCHEMA_PROPERTY_MAP = {
+  View.NODE_BLUEPRINT_PROPERTY_MAP = {
     tag: {
       type: 'none'
       // setup: function(viewNode, scopeReactiveData, property, expression) {}
@@ -88,6 +88,16 @@ Galaxy.View = /** @class */(function (G) {
     'none': function () {
       return View.EMPTY_CALL;
     }
+  };
+
+  View.createHold = function () {
+    let proceed;
+    const hold = new Promise(function (resolve) {
+      proceed = resolve;
+    });
+    hold.proceed = proceed;
+
+    return hold;
   };
 
   /**
@@ -592,7 +602,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param scopeData
    */
   View.installReactiveBehavior = function (behavior, node, key, scopeData) {
-    const bindTo = node.schema[key];
+    const bindTo = node.blueprint[key];
     const matches = behavior.regex ? (typeof (bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
     const data = behavior.prepare.call(node, matches, scopeData);
     if (data !== undefined) {
@@ -606,9 +616,9 @@ Galaxy.View = /** @class */(function (G) {
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
     /**
      *
-     * @type {Galaxy.View.SchemaProperty}
+     * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -635,7 +645,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_SCHEMA_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -695,47 +705,50 @@ Galaxy.View = /** @class */(function (G) {
     nextFrame: function (callback) {
       return window.requestAnimationFrame(callback);
     },
-    init: function (schema) {
+    init: function (blueprint) {
       const _this = this;
 
       if (_this.config.cleanContainer) {
         _this.container.node.innerHTML = '';
       }
 
-      return _this.createNode(schema, _this.container, _this.scope, null);
+      return _this.createNode(blueprint, _this.container, _this.scope, null);
     },
     broadcast: function (event) {
       this.container.broadcast(event);
     },
+    createHold: View.createHold,
+    createTask: View.createTask,
     /**
      *
-     * @param {Object} nodeSchema
+     * @param {Object} blueprint
      * @param {Galaxy.View.ViewNode} parent
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
+     * @param {any} nodeData
      * @return {Galaxy.View.ViewNode}
      */
-    createNode: function (nodeSchema, parent, scopeData, position, refNode) {
+    createNode: function (blueprint, parent, scopeData, position, refNode, nodeData) {
       const _this = this;
       let i = 0, len = 0;
-      if (typeof nodeSchema === 'string') {
+      if (typeof blueprint === 'string') {
         const content = document.createElement('div');
-        content.innerHTML = nodeSchema;
+        content.innerHTML = blueprint;
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
           parent.node.appendChild(node);
         });
-      } else if (nodeSchema instanceof Array) {
-        for (i = 0, len = nodeSchema.length; i < len; i++) {
-          _this.createNode(nodeSchema[i], parent, scopeData, null, refNode);
+      } else if (blueprint instanceof Array) {
+        for (i = 0, len = blueprint.length; i < len; i++) {
+          _this.createNode(blueprint[i], parent, scopeData, null, refNode, nodeData);
         }
-      } else if (nodeSchema instanceof Object) {
+      } else if (blueprint instanceof Object) {
         let attributeValue, attributeName;
-        const keys = Object.keys(nodeSchema);
+        const keys = Object.keys(blueprint);
         const needInitKeys = [];
 
-        const viewNode = new G.View.ViewNode(parent, nodeSchema, null, refNode, _this);
+        const viewNode = new G.View.ViewNode(parent, blueprint, null, refNode, _this, nodeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
@@ -755,7 +768,7 @@ Galaxy.View = /** @class */(function (G) {
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
           attributeName = needInitKeys[i];
-          attributeValue = nodeSchema[attributeName];
+          attributeValue = blueprint[attributeName];
           const bindings = View.getBindings(attributeValue);
           if (bindings.propertyKeysPaths) {
             View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
@@ -767,7 +780,7 @@ Galaxy.View = /** @class */(function (G) {
         viewNode.callLifecycleEvent('postInit');
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          _this.createNode(nodeSchema.children, viewNode, scopeData, null, refNode);
+          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode, nodeData);
           viewNode.inserted.then(() => viewNode.callLifecycleEvent('postChildrenInsert'));
         }
 

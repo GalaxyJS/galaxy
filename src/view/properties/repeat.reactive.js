@@ -1,7 +1,9 @@
 /* global Galaxy */
 (function (G) {
   const View = G.View;
-  View.NODE_SCHEMA_PROPERTY_MAP['repeat'] = {
+  const gClone = G.clone;
+
+  View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
     name: 'repeat'
   };
@@ -32,6 +34,10 @@
       const viewNode = this;
 
       if (config.options) {
+        if (config.options.as === 'data') {
+          throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
+        }
+
         const bindings = View.getBindings(config.options.data);
 
         config.watch = bindings.propertyKeysPaths;
@@ -113,6 +119,14 @@
           '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
+      if (!changes || typeof changes === 'string') {
+        changes = {
+          id: 0,
+          type: 'reset',
+          params: []
+        };
+      }
+
       const node = this;
       if (changes.id === config.changeId) {
         return;
@@ -120,21 +134,13 @@
 
       config.changeId = changes.id;
 
-      // if (config.throttleId) {
-      //   window.cancelAnimationFrame(config.throttleId);
-      // }
-
-      if (!changes || typeof changes === 'string') {
-        changes = {
-          type: 'reset',
-          params: []
-        };
-      }
-
       /** @type {Galaxy.View.ViewNode} */
       config.oldChanges = changes;
-      /*config.throttleId = */
-      window.requestAnimationFrame(() => {
+      if (config.throttleId) {
+        window.cancelAnimationFrame(config.throttleId);
+        config.throttleId = 0;
+      }
+      config.throttleId = window.requestAnimationFrame(() => {
         prepare(node, config, changes).then(finalChanges => {
           process(node, config, finalChanges);
         });
@@ -278,10 +284,9 @@
     const as = config.options.as;
     const indexAs = config.options.indexAs;
     const nodes = config.nodes;
-    const templateSchema = node.cloneSchema();
-    Reflect.deleteProperty(templateSchema, 'repeat');
+    const templateBlueprint = node.cloneBlueprint();
+    Reflect.deleteProperty(templateBlueprint, 'repeat');
 
-    const gClone = G.clone;
     const view = node.view;
     if (newItems instanceof Array) {
       const c = newItems.slice(0);
@@ -292,9 +297,12 @@
           itemDataScope['__rootScopeData__'] = config.scope;
           itemDataScope[as] = c[i];
           itemDataScope[indexAs] = i;
-          let cns = gClone(templateSchema);
+          let cns = gClone(templateBlueprint);
+          const nodeData = {};
+          nodeData[as] = c[i];
+          nodeData[as] = c[indexAs] = i;
 
-          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          const vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
           onEachAction.call(nodes, vn, positions[i]);
         }
       } else {
@@ -304,8 +312,11 @@
           itemDataScope = View.createMirror(nodeScopeData);
           itemDataScope['__rootScopeData__'] = config.scope;
           itemDataScope[as] = c[i];
-          let cns = gClone(templateSchema);
-          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
+          let cns = gClone(templateBlueprint);
+          const nodeData = {};
+          nodeData[as] = c[i];
+
+          vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
           onEachAction.call(nodes, vn, positions[i]);
         }
       }

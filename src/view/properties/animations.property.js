@@ -4,7 +4,7 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
-  G.View.NODE_SCHEMA_PROPERTY_MAP['animations'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
     /**
@@ -34,21 +34,21 @@
             gsap.killTweensOf(viewNode.node);
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config);
+          AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config, enter.onComplete);
         };
       }
 
       const leave = value.leave;
       if (leave) {
         // We need an empty enter animation in order to have a proper behavior for $if
-        if (!enter && viewNode.schema.$if) {
+        if (!enter && viewNode.blueprint.$if) {
           console.warn('The following node has `$if` and a `leave` animation but does NOT have a `enter` animation.' +
             '\nThis can result in unexpected UI behavior.\nTry to define a `enter` animation that negates the leave animation to prevent unexpected behavior\n\n');
           console.warn(viewNode.node);
         }
 
         viewNode.leaveWithParent = leave.withParent === true;
-        viewNode.populateLeaveSequence = function (flag) {
+        viewNode.populateLeaveSequence = function (onComplete) {
           value.config = value.config || {};
 
           // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
@@ -59,7 +59,10 @@
               if (gsap.getTweensOf(viewNode.node).length) {
                 gsap.killTweensOf(viewNode.node);
               }
-              return;
+
+              // We dump this viewNode so it gets removed when the leave animation origin node is detached.
+              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a $if
+              return viewNode.dump();
             }
           }
 
@@ -75,23 +78,33 @@
             viewNode.node.style.opacity === '0' ||
             viewNode.node.style.visibility === 'hidden') {
             gsap.killTweensOf(viewNode.node);
-            // if (viewNode.schema.tag === 'li')
-            //   debugger;
-            // return AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
-            //   sequence: 'DESTROY',
-            //   duration: .000001
-            // }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
-            return G.View.ViewNode.REMOVE_SELF.call(viewNode, flag);
+            return onComplete();
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, G.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
+          if (leave.onComplete) {
+            const userDefinedOnComplete = leave.onComplete;
+            leave.onComplete = function () {
+              userDefinedOnComplete();
+              onComplete();
+            };
+          } else {
+            leave.onComplete = onComplete;
+          }
+
+          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, leave.onComplete);
         };
+
+        // Hide sequence is the same as leave sequence.
+        // The only difference is that hide sequence will add `display: 'none'` to the node at the end
+        viewNode.populateHideSequence = viewNode.populateLeaveSequence.bind(viewNode, () => {
+          viewNode.node.style.display = 'none';
+        });
       } else {
-        viewNode.populateLeaveSequence = function (flag) {
+        viewNode.populateLeaveSequence = function (onComplete) {
           AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
             sequence: 'DESTROY',
             duration: .000001
-          }, {  }, G.View.ViewNode.REMOVE_SELF.bind(viewNode, flag));
+          }, {}, onComplete);
         };
       }
 
@@ -231,6 +244,18 @@
     return step;
   };
 
+  AnimationMeta.setupOnComplete = function (step, onComplete) {
+    if (step.onComplete) {
+      const userDefinedOnComplete = step.onComplete;
+      step.onComplete = function () {
+        userDefinedOnComplete();
+        onComplete();
+      };
+    } else {
+      step.onComplete = onComplete;
+    }
+  };
+
   /**
    *
    * @param {galaxy.View.ViewNode} viewNode
@@ -293,13 +318,11 @@
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
-    const classModification = type.indexOf('+=') === 0 || type.indexOf('-=') === 0;
-
-    if (type !== 'leave' && !classModification && to) {
+    if (type !== 'leave' && to) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
-    } else if (classModification) {
-      to = Object.assign(to || {}, { className: type, overwrite: 'none' });
-    } else if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
+    }
+
+    if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
       to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
@@ -438,11 +461,6 @@
       const children = parent.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
         parent.timeline.add(this.timeline, pip);
-        // parent.timeline.pause();
-        // if (!parent.started) {
-        //   parent.started = true;
-        //   parent.timeline.resume();
-        // }
       }
     },
 
@@ -455,12 +473,14 @@
     add: function (viewNode, config, onComplete) {
       const _this = this;
       const to = Object.assign({}, config.to || {});
-      to.onComplete = onComplete;
-      to.onStartParams = [viewNode];
-      to.callbackScope = viewNode;
 
       let onStart = config.onStart;
+
+      to.callbackScope = viewNode;
+      // to.onStartParams = [viewNode];
+      // to.onUpdateParams = [viewNode]
       to.onStart = onStart;
+      to.onComplete = onComplete;
 
       let tween = null;
       let duration = config.duration;
@@ -475,9 +495,11 @@
           to);
       } else if (config.from) {
         let from = Object.assign({}, config.from || {});
-        from.onComplete = onComplete;
+
+        from.callbackScope = viewNode;
         from.onStartParams = [viewNode];
         from.onStart = onStart;
+        from.onComplete = onComplete;
         tween = gsap.from(viewNode.node,
           duration || 0,
           from || {});
@@ -492,8 +514,6 @@
       } else {
         _this.timeline.add(tween, config.position || '+=0');
       }
-
-      // if (config.sequence === 'todo-items') debugger;
 
       if (!_this.started) {
         _this.started = true;

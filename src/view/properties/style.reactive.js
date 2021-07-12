@@ -1,10 +1,10 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['style.config'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style.config'] = {
     type: 'none'
   };
 
-  G.View.NODE_SCHEMA_PROPERTY_MAP['style'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style'] = {
     type: 'reactive',
     name: 'style'
   };
@@ -48,7 +48,7 @@
       if (typeof value === 'string') {
         return node.setAttribute('style', value);
       } else if (value instanceof Array) {
-        return node.setAttribute('style', value.join(' '));
+        return node.setAttribute('style', value.join(';'));
       }
       if (value instanceof Promise) {
         value.then(function (_value) {
@@ -72,15 +72,15 @@
   function setStyle(node, value) {
     if (value instanceof Object) {
       for (let key in value) {
-        const valueObj = value[key];
-        if (valueObj instanceof Promise) {
-          valueObj.then((v) => {
+        const val = value[key];
+        if (val instanceof Promise) {
+          val.then((v) => {
             node.style[key] = v;
           });
-        } else if (typeof valueObj === 'function') {
-          node.style[key] = valueObj.call(node);
+        } else if (typeof val === 'function') {
+          node.style[key] = val.call(node);
         } else {
-          node.style[key] = valueObj;
+          node.style[key] = val;
         }
       }
     } else {

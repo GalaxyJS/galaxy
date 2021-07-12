@@ -1,11 +1,11 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['$if'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['visible'] = {
     type: 'reactive',
-    name: '$if'
+    name: 'visible'
   };
 
-  G.View.REACTIVE_BEHAVIORS['$if'] = {
+  G.View.REACTIVE_BEHAVIORS['visible'] = {
     prepare: function () {
       return {
         throttleId: null,
@@ -27,8 +27,8 @@
 
       config.throttleId = window.requestAnimationFrame(() => {
         _this.rendered.then(() => {
-          if (_this.inDOM !== value) {
-            _this.setInDOM(value);
+          if (_this.visible !== value) {
+            _this.setVisibility(value);
           }
         });
       });

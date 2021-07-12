@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_SCHEMA_PROPERTY_MAP['text'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['text'] = {
     type: 'prop',
     name: 'text',
     /**
@@ -10,7 +10,11 @@
      */
     value: function (viewNode, value) {
       const textNode = viewNode.node['<>text'];
-      const textValue = typeof value === 'undefined' || value === null ? '' : value;
+      let textValue = typeof value === 'undefined' || value === null ? '' : value;
+
+      if (textValue instanceof Object) {
+        textValue = JSON.stringify(textValue);
+      }
 
       if (textNode) {
         textNode.textContent = textValue;

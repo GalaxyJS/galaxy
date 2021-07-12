@@ -16,12 +16,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @returns {HTMLElement|Comment}
    */
   function createElem(tagName, parentViewNode) {
-    if (tagName === 'svg' || (parentViewNode && parentViewNode.schema.tag === 'svg')) {
+    if (tagName === 'svg' || (parentViewNode && parentViewNode.blueprint.tag === 'svg')) {
       return document.createElementNS('http://www.w3.org/2000/svg', tagName);
     }
 
     if (tagName === 'comment') {
       return document.createComment('ViewNode');
+    }
+
+    if (tagName === 'keyframe') {
+      return document.createComment('keyframe');
     }
 
     return document.createElement(tagName);
@@ -51,16 +55,16 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   //------------------------------
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['node'] = {
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
     type: 'attr'
   };
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['lifecycle'] = {
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['lifecycle'] = {
     type: 'prop',
     name: 'lifecycle'
   };
 
-  GV.NODE_SCHEMA_PROPERTY_MAP['renderConfig'] = {
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
     type: 'prop',
     name: 'renderConfig'
   };
@@ -83,19 +87,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   /**
    *
-   * @param schemas
+   * @param blueprints
    * @memberOf Galaxy.View.ViewNode
    * @static
    */
-  ViewNode.cleanReferenceNode = function (schemas) {
-    if (schemas instanceof Array) {
-      schemas.forEach(function (node) {
+  ViewNode.cleanReferenceNode = function (blueprints) {
+    if (blueprints instanceof Array) {
+      blueprints.forEach(function (node) {
         ViewNode.cleanReferenceNode(node);
       });
-    } else if (schemas instanceof Object) {
+    } else if (blueprints instanceof Object) {
       __node__.value = null;
-      defProp(schemas, 'node', __node__);
-      ViewNode.cleanReferenceNode(schemas.children);
+      defProp(blueprints, 'node', __node__);
+      ViewNode.cleanReferenceNode(blueprints.children);
     }
   };
 
@@ -129,43 +133,49 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (viewNode.node.parentNode) {
         removeChild(viewNode.node.parentNode, viewNode.node);
       }
+
+      viewNode.garbage.forEach(function (node) {
+        ViewNode.REMOVE_SELF.call(node, true);
+      });
+      viewNode.garbage = [];
     }
   };
 
   /**
    *
-   * @param schema
+   * @param blueprint
    * @param {Galaxy.View.ViewNode} parent
    * @param {Node|Element|null} node
    * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
+   * @param {any} nodeData
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(parent, schema, node, refNode, view) {
+  function ViewNode(parent, blueprint, node, refNode, view, nodeData) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
-    _this.node = node || createElem(schema.tag || 'div', parent);
-    _this.node.style.setProperty('display', 'none');
+    _this.node = node || createElem(blueprint.tag || 'div', parent);
 
     _this.refNode = refNode || _this.node;
-    _this.schema = schema;
-    _this.data = {};
+    _this.blueprint = blueprint;
+    _this.data = nodeData || {};
     _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
-    _this.placeholder = createComment(schema.tag || 'div');
+    _this.visible = true;
+    _this.placeholder = createComment(blueprint.tag || 'div');
     _this.properties = new Set();
-    _this.inDOM = typeof schema.inDOM === 'undefined' ? true : schema.inDOM;
+    _this.inDOM = typeof blueprint.inDOM === 'undefined' ? true : blueprint.inDOM;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
-    // _this.dependedObjects = [];
     _this.finalize = [];
     _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
+    _this.garbage = [];
     _this.leaveWithParent = false;
 
     const cache = {};
@@ -175,7 +185,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       value: cache
     });
 
-    _this.hasBeenRendered = null;
     _this.rendered = new Promise(function (done) {
       _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
@@ -184,8 +193,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.callLifecycleEvent('rendered');
       };
     });
-    _this.rendered.then(() => _this.node.style.removeProperty('display'));
     _this.rendered.resolved = false;
+
+    // We need this check because a comment element has no style
+    if (_this.node.style) {
+      _this.node.style.setProperty('display', 'none');
+      _this.rendered.then(() => _this.node.style.removeProperty('display'));
+    }
 
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
@@ -211,11 +225,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      * @type {RenderConfig}
      */
-    _this.schema.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, schema.renderConfig || {});
-    // _this.schema.animations = this.schema.animations || {};
+    _this.blueprint.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, blueprint.renderConfig || {});
 
     __node__.value = this.node;
-    defProp(_this.schema, 'node', __node__);
+    defProp(_this.blueprint, 'node', __node__);
 
     referenceToThis.value = this;
     if (!_this.node._gvn) {
@@ -226,6 +239,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 
   ViewNode.prototype = {
+    dump: function () {
+      this.parent.garbage = this.parent.garbage.concat(this.garbage);
+      this.parent.garbage.push(this);
+      this.garbage = [];
+    },
     query: function (selectors) {
       return this.node.querySelector(selectors);
     },
@@ -234,7 +252,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param {string} id event id
      */
     callLifecycleEvent: function (id) {
-      const lifecycle = this.schema.lifecycle;
+      const lifecycle = this.blueprint.lifecycle;
       if (lifecycle && typeof lifecycle[id] === 'function') {
         lifecycle[id].apply(this, Array.prototype.slice.call(arguments, 1));
       }
@@ -244,32 +262,35 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.node.dispatchEvent(event);
     },
 
-    cloneSchema: function () {
-      const schemaClone = Object.assign({}, this.schema);
-      ViewNode.cleanReferenceNode(schemaClone);
+    cloneBlueprint: function () {
+      const blueprintClone = Object.assign({}, this.blueprint);
+      ViewNode.cleanReferenceNode(blueprintClone);
 
-      defProp(schemaClone, 'mother', {
-        value: this.schema,
+      defProp(blueprintClone, 'mother', {
+        value: this.blueprint,
         writable: false,
         enumerable: false,
         configurable: false
       });
 
-      return schemaClone;
+      return blueprintClone;
     },
 
     virtualize: function () {
-      this.placeholder.nodeValue = JSON.stringify(this.schema, null, 2);
+      this.placeholder.nodeValue = JSON.stringify(this.blueprint, null, 2);
       this.virtual = true;
       this.setInDOM(false);
     },
 
-    populateEnterSequence: EMPTY_CALL,
+    populateEnterSequence: function () {
+      this.node.style.display = null;
+    },
+
+    populateHideSequence: function () {
+      this.node.style.display = 'none';
+    },
 
     populateLeaveSequence: null,
-    // function (flag) {
-    //   Galaxy.View.AnimationMeta.installGSAPAnimation(this, 'leave', { sequence: 'DESTROY' }, {}, Galaxy.View.ViewNode.REMOVE_SELF.bind(this, flag));
-    // }
 
     detach: function () {
       const _this = this;
@@ -302,7 +323,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.hasBeenInserted();
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
-          // _this.node.style.display = '';
           _this.hasBeenRendered();
           _this.populateEnterSequence();
         });
@@ -313,12 +333,33 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.transitory = true;
         _this.updateChildrenLeaveSequence(_this.hasAnimation());
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
-          _this.populateLeaveSequence(false);
+          _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.node.style.cssText = '';
           _this.callLifecycleEvent('postAnimations');
           _this.stream.pour('removed', 'dom');
+        });
+      }
+    },
+
+    setVisibility: function (flag) {
+      const _this = this;
+      _this.visible = flag;
+
+      if (flag && !_this.virtual) {
+        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+          _this.node.style.display = null;
+          _this.populateEnterSequence();
+        });
+      } else if (!flag && _this.node.parentNode) {
+        _this.origin = true;
+        _this.transitory = true;
+        GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+          _this.populateHideSequence();
+          _this.origin = false;
+          _this.transitory = false;
+          _this.callLifecycleEvent('postAnimations');
         });
       }
     },
@@ -338,8 +379,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
     },
 
-    createNode: function (schema, localScope) {
-      this.view.createNode(schema, this, localScope);
+    createNode: function (blueprint, localScope) {
+      this.view.createNode(blueprint, this, localScope);
     },
 
     /**
@@ -419,7 +460,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
-          _this.populateLeaveSequence(true);
+          _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, true));
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
         }
@@ -428,7 +469,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
-        _this.schema.node = undefined;
+        _this.blueprint.node = undefined;
         _this.inputs = {};
       });
     },

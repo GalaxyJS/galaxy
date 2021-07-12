@@ -155,7 +155,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         let invokers = [module.url];
         if (module.invokers) {
           if (module.invokers.indexOf(module.url) !== -1) {
-            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
+            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwant to load: ' + module.url);
           }
 
           invokers = module.invokers;
@@ -175,7 +175,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             return response;
           }).catch(reject);
         }
-
 
         contentFetcher = contentFetcher.then(response => {
           const contentType = module.contentType || response.headers.get('content-type');

@@ -189,6 +189,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // const _this = this;
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
+      const setter = property && property.set;
       let value = data[key];
 
       defProp(data, key, {
@@ -197,6 +198,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         },
         set: function (val) {
           const thisRD = data.__rd__;
+          setter && setter.call(data, val);
           if (value === val) {
             // If value is array, then sync should be called so nodes that are listening to array itself get updated
             if (val instanceof Array) {
@@ -387,7 +389,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      *
      * @param {string} propertyKey
      */
-    sync: function (propertyKey, v) {
+    sync: function (propertyKey) {
       const _this = this;
 
       const map = _this.nodesMap[propertyKey];
@@ -518,7 +520,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
       const index = map.nodes.indexOf(node);
       // Check if the node with the same property already exist
-      // Insure that same node with different property bind can exist
+      // Ensure that same node with different property bind can exist
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
         if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {

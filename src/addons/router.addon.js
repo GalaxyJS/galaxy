@@ -14,10 +14,9 @@
     this.module = module;
     this.root = module.id === 'system' ? '/' : module.systemId.replace('system/', '/');
     this.oldURL = '';
-    this.oldResolveId = {};
+    this.oldResolveId = null;
     this.routes = [];
     this.routesMap = null;
-    this.dirty = false;
 
     Object.defineProperty(this, 'urlParts', {
       get: function () {
@@ -33,10 +32,14 @@
       this.routes = this.parseRoutes(routes);
 
       this.listener = this.detect.bind(this);
+
       window.addEventListener('popstate', this.listener);
-      // window.addEventListener('hashchange', this.listener);
 
       this.detect();
+    },
+
+    assign: function (routes, overrides) {
+      this.init(Object.assign({}, routes, overrides));
     },
 
     parseRoutes: function (routesMap) {
@@ -60,21 +63,25 @@
     },
 
     navigate: function (path) {
-      path = this.config.baseURL + path.replace(/^#\//, '/');
       if (path.indexOf('/') !== 0) {
-        path = '/' + path;
+        throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
+      }
+
+      if (path.indexOf(this.config.baseURL) !== 0) {
+        path = this.config.baseURL + path;
       }
 
       history.pushState({}, '', path);
-      this.detect();
+      const popStateEvent = new PopStateEvent('popstate', { state: {} });
+      dispatchEvent(popStateEvent);
     },
 
     navigateFromHere: function (path) {
-      if (path.indexOf('/') !== 0) {
-        path = '/' + path;
+      if (path.indexOf(this.root) !== 0) {
+        path = this.root + path;
       }
 
-      this.navigate(this.root + path);
+      this.navigate(path);
     },
 
     notFound: function () {
@@ -95,7 +102,8 @@
         }
       }
 
-      return normalizedHash.replace(this.config.baseURL, '/').replace(this.root, '/') || '/';
+      normalizedHash = normalizedHash.replace(this.config.baseURL, '/');
+      return normalizedHash.replace(this.root, '/') || '/';
     },
 
     callMatchRoute: function (routes, hash, parentParams) {
@@ -109,14 +117,19 @@
       // Hard match
       const routeIndex = routesPath.indexOf(path);
       if (routeIndex !== -1) {
+        const act = routes[routeIndex].act;
         // delete all old resolved ids
-        _this.oldResolveId = {};
-        return routes[routeIndex].act.call(null, {}, parentParams);
+        if (typeof act === 'string') {
+          return this.navigateFromHere(act);
+        }
+
+        _this.oldResolveId = null;
+        return act.call(null, {}, parentParams);
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
       let matchCount = 0;
-      // debugger;
+
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
         const match = dynamicRoute.paramFinderExpression.exec(path);
@@ -130,9 +143,10 @@
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
         // Create a unique id for the combination of the route and its parameters
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
-        if (_this.oldResolveId[dynamicRoute.id] !== resolveId) {
-          _this.oldResolveId = {};
-          _this.oldResolveId[dynamicRoute.id] = resolveId;
+
+        if (_this.oldResolveId !== resolveId) {
+          // _this.oldResolveId = null;
+          _this.oldResolveId = resolveId;
 
           const routeIndex = routesPath.indexOf(dynamicRoute.id);
           const parts = hash.split('/').slice(2);
@@ -143,7 +157,7 @@
       }
 
       if (matchCount === 0) {
-        console.warn('No associated route has been found');
+        console.warn('No associated route has been found', hash);
       }
     },
 
@@ -196,7 +210,7 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      // debugger
+
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
