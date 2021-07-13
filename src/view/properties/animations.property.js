@@ -161,6 +161,7 @@
    * @property {object} [from]
    * @property {object} [to]
    * @property {string} [addTo]
+   * @property {Function} [onStart]
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -230,6 +231,14 @@
     return ((duration * 10) + (Number(po) * 10)) / 10;
   };
 
+  AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
+    const step = Object.assign({}, stepDescription);
+    step.callbackScope = viewNode;
+    step.onStart = onStart;
+    step.onComplete = onComplete;
+
+    return step;
+  };
   /**
    *
    * @param {Galaxy.View.ViewNode} node
@@ -472,15 +481,6 @@
      */
     add: function (viewNode, config, onComplete) {
       const _this = this;
-      const to = Object.assign({}, config.to || {});
-
-      let onStart = config.onStart;
-
-      to.callbackScope = viewNode;
-      // to.onStartParams = [viewNode];
-      // to.onUpdateParams = [viewNode]
-      to.onStart = onStart;
-      to.onComplete = onComplete;
 
       let tween = null;
       let duration = config.duration;
@@ -489,24 +489,14 @@
       }
 
       if (config.from && config.to) {
-        tween = gsap.fromTo(viewNode.node,
-          duration || 0,
-          config.from || {},
-          to);
+        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        tween = gsap.fromTo(viewNode.node, duration || 0, config.from, to);
       } else if (config.from) {
-        let from = Object.assign({}, config.from || {});
-
-        from.callbackScope = viewNode;
-        from.onStartParams = [viewNode];
-        from.onStart = onStart;
-        from.onComplete = onComplete;
-        tween = gsap.from(viewNode.node,
-          duration || 0,
-          from || {});
+        const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
+        tween = gsap.from(viewNode.node, duration || 0, from);
       } else {
-        tween = gsap.to(viewNode.node,
-          duration || 0,
-          to || {});
+        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        tween = gsap.to(viewNode.node, duration || 0, to);
       }
 
       if (_this.timeline.getChildren(false).length === 0) {
@@ -521,5 +511,4 @@
       }
     }
   };
-  window.AM = AnimationMeta;
 })(Galaxy);

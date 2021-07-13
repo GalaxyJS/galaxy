@@ -24,10 +24,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return document.createComment('ViewNode');
     }
 
-    if (tagName === 'keyframe') {
-      return document.createComment('keyframe');
-    }
-
     return document.createElement(tagName);
   }
 

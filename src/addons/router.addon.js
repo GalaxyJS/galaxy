@@ -6,6 +6,16 @@
   // SimpleRouter.FOLLOWED_BY_SLASH_REGEXP = '(?:\/$|$)';
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
+  SimpleRouter.onChange = function () {
+
+  };
+
+  SimpleRouter.mainListener = function (e) {
+    SimpleRouter.onChange(location.pathname, e);
+  };
+
+  window.addEventListener('popstate', SimpleRouter.mainListener);
+
   function SimpleRouter(module) {
     const _this = this;
     this.config = {
@@ -106,6 +116,10 @@
       return normalizedHash.replace(this.root, '/') || '/';
     },
 
+    onProceed: function () {
+
+    },
+
     callMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       const path = _this.normalizeHash(hash);
@@ -145,7 +159,6 @@
         const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
 
         if (_this.oldResolveId !== resolveId) {
-          // _this.oldResolveId = null;
           _this.oldResolveId = resolveId;
 
           const routeIndex = routesPath.indexOf(dynamicRoute.id);
@@ -241,5 +254,7 @@
       start: function () { }
     };
   });
+
+  G.Router = SimpleRouter;
 
 })(Galaxy);
