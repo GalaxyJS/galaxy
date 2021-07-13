@@ -4,6 +4,12 @@ Galaxy.View = /** @class */(function (G) {
 
   //------------------------------
 
+  Array.prototype.compute = function (f) {
+    const reactive = this.slice();
+    reactive.push(f);
+    return reactive;
+  };
+
   View.EMPTY_CALL = function () {
   };
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');

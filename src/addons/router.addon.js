@@ -6,27 +6,44 @@
   // SimpleRouter.FOLLOWED_BY_SLASH_REGEXP = '(?:\/$|$)';
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
-  SimpleRouter.onChange = function () {
-
+  SimpleRouter.currentPath = {
+    handlers: [],
+    subscribe: function (handler) {
+      this.handlers.push(handler);
+      handler(location.pathname);
+    },
+    update: function () {
+      this.handlers.forEach((h) => {
+        h(location.pathname);
+      });
+    }
   };
 
   SimpleRouter.mainListener = function (e) {
-    SimpleRouter.onChange(location.pathname, e);
+    SimpleRouter.currentPath.update();
   };
 
   window.addEventListener('popstate', SimpleRouter.mainListener);
 
   function SimpleRouter(module) {
     const _this = this;
-    this.config = {
+    _this.config = {
       baseURL: '/'
     };
-    this.module = module;
-    this.root = module.id === 'system' ? '/' : module.systemId.replace('system/', '/');
-    this.oldURL = '';
-    this.oldResolveId = null;
-    this.routes = [];
-    this.routesMap = null;
+    _this.module = module;
+    _this.root = module.id === 'system' ? '/' : module.systemId.replace('system/', '/');
+    _this.oldURL = '';
+    _this.oldResolveId = null;
+    _this.routes = [];
+    _this.routesMap = null;
+    _this.data = {
+      activeRoute: null,
+      activeRouteModule: null
+    };
+    _this.viewport = {
+      tag: 'main',
+      module: '<>data.state.activeRouteModule'
+    };
 
     Object.defineProperty(this, 'urlParts', {
       get: function () {
@@ -34,6 +51,10 @@
       },
       enumerable: true
     });
+
+    if (module.id === 'system') {
+      SimpleRouter.currentPath.update();
+    }
   }
 
   SimpleRouter.prototype = {
@@ -165,6 +186,8 @@
           const parts = hash.split('/').slice(2);
 
           _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+          _this.data.activeRouteModule = routes[routeIndex];
+          _this.data.activeRoute = hash;
           break;
         }
       }
@@ -248,6 +271,8 @@
         if (module.systemId !== 'system') {
           scope.on('module.destroy', () => router.destroy());
         }
+
+        scope.data.router = router.data;
 
         return router;
       },
