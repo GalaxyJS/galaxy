@@ -25,24 +25,27 @@
 
   window.addEventListener('popstate', SimpleRouter.mainListener);
 
-  function SimpleRouter(module) {
+  function SimpleRouter(scope, module) {
     const _this = this;
     _this.config = {
       baseURL: '/'
     };
+    _this.scope = scope;
     _this.module = module;
-    _this.root = module.id === 'system' ? '/' : module.systemId.replace('system/', '/');
+    _this.root = module.id === 'system' ? '/' : location.pathname;
     _this.oldURL = '';
     _this.oldResolveId = null;
-    _this.routes = [];
+
     _this.routesMap = null;
     _this.data = {
+      routes: [],
+      activeLink: null,
       activeRoute: null,
       activeModule: null
     };
     _this.viewport = {
       tag: 'main',
-      module: '<>data.state.activeModule'
+      module: '<>data.router.activeModule'
     };
 
     Object.defineProperty(this, 'urlParts', {
@@ -59,39 +62,30 @@
 
   SimpleRouter.prototype = {
     init: function (routes) {
-      // this.routesMap = routes;
-      // this.routes = this.parseRoutes(routes);
-      this.routes = routes;
+      this.routes = routes.map(route => {
+        return {
+          ...route,
+          module: route.module || null,
+          hidden: route.hidden || false,
+          children: route.children || []
+        };
+      });
+      this.data.routes = this.routes.filter(r => !r.hidden);
+
+      if (this.scope.parentScope && this.scope.parentScope.data.router.activeLink) {
+        this.scope.parentScope.data.router.activeLink.children = this.routes;
+      }
 
       this.listener = this.detect.bind(this);
-
       window.addEventListener('popstate', this.listener);
 
+      return this;
+    },
+
+    start: function () {
+      debugger;
       this.detect();
     },
-
-    assign: function (routes, overrides) {
-      this.init(Object.assign({}, routes, overrides));
-    },
-
-    // parseRoutes: function (routesMap) {
-    //   const routes = [];
-    //   const routePaths = Object.keys(routesMap);
-    //
-    //   for (let i = 0, len = routePaths.length; i < len; i++) {
-    //     if (routePaths[i].indexOf('/') !== 0 && routePaths[i].indexOf('_') !== 0) {
-    //       throw new Error('The route `' + routePaths[i] + '` is not valid because it does not begin with `/`.\n' +
-    //         'Please change it to `/' + routePaths[i] + '` and make sure that all of your routes start with `/`.\n');
-    //     }
-    //
-    //     routes.push({
-    //       path: routePaths[i],
-    //       act: routesMap[routePaths[i]]
-    //     });
-    //   }
-    //
-    //   return routes;
-    // },
 
     navigate: function (path) {
       if (path.indexOf('/') !== 0) {
@@ -152,9 +146,9 @@
       // Hard match
       const routeIndex = routesPath.indexOf(path);
       if (routeIndex !== -1) {
+        debugger
         const route = routes[routeIndex];
-
-        if(route.redirectTo) {
+        if (route.redirectTo) {
           return this.navigateFromHere(route.redirectTo);
         }
         // const act = routes[routeIndex].act;
@@ -194,8 +188,6 @@
           // const parts = hash.split('/').slice(2);
 
           _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-          _this.data.activeModule = routes[routeIndex];
-          _this.data.activeRoute = hash;
           break;
         }
       }
@@ -206,11 +198,13 @@
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      if(typeof route.handle === 'function') {
+      if (typeof route.handle === 'function') {
         this.data.activeModule = route.handle.call(null, params, parentParams);
       } else {
         this.data.activeModule = route.module;
       }
+      this.data.activeRoute = hash;
+      this.data.activeLink = route;
       // if (route.act instanceof Function) {
       //   route.act.call(null, params, parentParams);
       // } else if (route.act instanceof Object) {
@@ -259,7 +253,7 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-
+debugger
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
@@ -280,7 +274,7 @@
   G.registerAddOnProvider('galaxy/router', function (scope, module) {
     return {
       create: function () {
-        const router = new SimpleRouter(module);
+        const router = new SimpleRouter(scope, module);
         if (module.systemId !== 'system') {
           scope.on('module.destroy', () => router.destroy());
         }
