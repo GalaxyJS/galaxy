@@ -38,11 +38,11 @@
     _this.routesMap = null;
     _this.data = {
       activeRoute: null,
-      activeRouteModule: null
+      activeModule: null
     };
     _this.viewport = {
       tag: 'main',
-      module: '<>data.state.activeRouteModule'
+      module: '<>data.state.activeModule'
     };
 
     Object.defineProperty(this, 'urlParts', {
@@ -59,8 +59,9 @@
 
   SimpleRouter.prototype = {
     init: function (routes) {
-      this.routesMap = routes;
-      this.routes = this.parseRoutes(routes);
+      // this.routesMap = routes;
+      // this.routes = this.parseRoutes(routes);
+      this.routes = routes;
 
       this.listener = this.detect.bind(this);
 
@@ -73,25 +74,24 @@
       this.init(Object.assign({}, routes, overrides));
     },
 
-    parseRoutes: function (routesMap) {
-      const routes = [];
-
-      const routePaths = Object.keys(routesMap);
-
-      for (let i = 0, len = routePaths.length; i < len; i++) {
-        if (routePaths[i].indexOf('/') !== 0 && routePaths[i].indexOf('_') !== 0) {
-          throw new Error('The route `' + routePaths[i] + '` is not valid because it does not begin with `/`.\n' +
-            'Please change it to `/' + routePaths[i] + '` and make sure that all of your routes start with `/`.\n');
-        }
-
-        routes.push({
-          path: routePaths[i],
-          act: routesMap[routePaths[i]]
-        });
-      }
-
-      return routes;
-    },
+    // parseRoutes: function (routesMap) {
+    //   const routes = [];
+    //   const routePaths = Object.keys(routesMap);
+    //
+    //   for (let i = 0, len = routePaths.length; i < len; i++) {
+    //     if (routePaths[i].indexOf('/') !== 0 && routePaths[i].indexOf('_') !== 0) {
+    //       throw new Error('The route `' + routePaths[i] + '` is not valid because it does not begin with `/`.\n' +
+    //         'Please change it to `/' + routePaths[i] + '` and make sure that all of your routes start with `/`.\n');
+    //     }
+    //
+    //     routes.push({
+    //       path: routePaths[i],
+    //       act: routesMap[routePaths[i]]
+    //     });
+    //   }
+    //
+    //   return routes;
+    // },
 
     navigate: function (path) {
       if (path.indexOf('/') !== 0) {
@@ -146,20 +146,26 @@
       const path = _this.normalizeHash(hash);
 
       const routesPath = routes.map(function (item) {
-        return item.path;
+        return item.route;
       });
 
       // Hard match
       const routeIndex = routesPath.indexOf(path);
       if (routeIndex !== -1) {
-        const act = routes[routeIndex].act;
-        // delete all old resolved ids
-        if (typeof act === 'string') {
-          return this.navigateFromHere(act);
+        const route = routes[routeIndex];
+
+        if(route.redirectTo) {
+          return this.navigateFromHere(route.redirectTo);
         }
+        // const act = routes[routeIndex].act;
+        // // delete all old resolved ids
+        // if (typeof act === 'string') {
+        //   return this.navigateFromHere(act);
+        // }
 
         _this.oldResolveId = null;
-        return act.call(null, {}, parentParams);
+        // return act.call(null, {}, parentParams);
+        return _this.callRoute(route, path, {}, parentParams);
       }
 
       const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
@@ -183,10 +189,12 @@
           _this.oldResolveId = resolveId;
 
           const routeIndex = routesPath.indexOf(dynamicRoute.id);
-          const parts = hash.split('/').slice(2);
+          const pp = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
+          const parts = hash.replace(pp, '').split('/');
+          // const parts = hash.split('/').slice(2);
 
           _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-          _this.data.activeRouteModule = routes[routeIndex];
+          _this.data.activeModule = routes[routeIndex];
           _this.data.activeRoute = hash;
           break;
         }
@@ -198,18 +206,23 @@
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      if (route.act instanceof Function) {
-        route.act.call(null, params, parentParams);
-      } else if (route.act instanceof Object) {
-        const routes = this.parseRoutes(route.act);
-        if (route.act._canActivate instanceof Function) {
-          if (!route.act._canActivate.call(null, params, parentParams)) {
-            return;
-          }
-        }
-
-        this.callMatchRoute(routes, hash, params);
+      if(typeof route.handle === 'function') {
+        this.data.activeModule = route.handle.call(null, params, parentParams);
+      } else {
+        this.data.activeModule = route.module;
       }
+      // if (route.act instanceof Function) {
+      //   route.act.call(null, params, parentParams);
+      // } else if (route.act instanceof Object) {
+      //   const routes = this.parseRoutes(route.act);
+      //   if (route.act._canActivate instanceof Function) {
+      //     if (!route.act._canActivate.call(null, params, parentParams)) {
+      //       return;
+      //     }
+      //   }
+      //
+      //   this.callMatchRoute(routes, hash, params);
+      // }
     },
 
     extractDynamicRoutes: function (routesPath) {
