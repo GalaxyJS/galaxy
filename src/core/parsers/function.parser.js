@@ -10,7 +10,7 @@
       }
 
       unique.push(item);
-      return { url: item };
+      return { path: item };
     }).filter(Boolean);
 
     return {

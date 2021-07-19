@@ -32,7 +32,7 @@
         return console.error('module property only accept objects as value', moduleMeta);
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
+      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
           _this.clean();
 
@@ -52,7 +52,7 @@
         cache.module.destroy();
       }
       // Check for circular module loading
-      const tempURI = new G.GalaxyURI(moduleMeta.url);
+      const tempURI = new G.GalaxyURI(moduleMeta.path);
       let moduleScope = cache.scope;
       let currentScope = cache.scope;
 
@@ -62,7 +62,7 @@
         if (!(currentScope instanceof G.Scope)) {
           currentScope = new G.Scope({
             systemId: 'repeat-item',
-            url: cache.scope.__parent__.uri.parsedURL,
+            path: cache.scope.__parent__.uri.parsedURL,
             parentScope: cache.scope.__parent__
           });
         }

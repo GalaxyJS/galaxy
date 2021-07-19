@@ -6,36 +6,36 @@
     const unique = [];
     let parsedContent = content.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
-      let url = query[query.length - 1];
-      if (unique.indexOf(url) !== -1) {
-        return 'Scope.import(\'' + url + '\')';
+      let pathURL = query[query.length - 1];
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
       }
 
-      unique.push(url);
+      unique.push(pathURL);
       imports.push({
-        url: url,
+        path: pathURL,
         fresh: query.indexOf('new') === 0,
         contentType: null
       });
 
-      return 'Scope.import(\'' + url + '\')';
+      return 'Scope.import(\'' + pathURL + '\')';
     });
 
     parsedContent = parsedContent.replace(/Scope\.importAsText\(['|"](.*)['|"]\);/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
-      let url = query[query.length - 1];
-      if (unique.indexOf(url) !== -1) {
-        return 'Scope.import(\'' + url + '\')';
+      let pathURL = query[query.length - 1];
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
       }
 
-      unique.push(url);
+      unique.push(pathURL);
       imports.push({
-        url: url,
+        path: pathURL,
         fresh: true,
         contentType: 'text/plain'
       });
 
-      return 'Scope.import(\'' + url + '\')';
+      return 'Scope.import(\'' + pathURL + '\')';
     });
 
     return {

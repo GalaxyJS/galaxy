@@ -225,22 +225,27 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param {string|Array} value
-   * @return {{modifiers: *, propertyKeysPaths: *[], isExpression: boolean, expressionFn: null}}
+   * @return {{propertyKeysPaths: *[], isExpression: boolean, expressionFn: null}}
    */
   View.getBindings = function (value) {
     let propertyKeysPaths = null;
     let isExpression = false;
     const type = typeof (value);
-    let modifiers = null;
     let handler = null;
 
     if (type === 'string') {
       const props = value.match(View.BINDING_SYNTAX_REGEX);
       if (props) {
-        modifiers = props[1] || null;
         propertyKeysPaths = [props[2]];
+
+        if (props[2].indexOf('!') === 0) {
+          propertyKeysPaths = [props[2].slice(1)];
+          isExpression = true;
+          handler = (a) => {
+            return !a;
+          };
+        }
       } else {
-        modifiers = null;
         propertyKeysPaths = null;
       }
     } else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
@@ -256,7 +261,6 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     return {
-      modifiers: modifiers,
       propertyKeysPaths: propertyKeysPaths ? propertyKeysPaths.map(function (name) {
         return name.replace(/<>/g, '');
       }) : null,

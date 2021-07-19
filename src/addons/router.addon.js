@@ -23,6 +23,19 @@
     SimpleRouter.currentPath.update();
   };
 
+  SimpleRouter.prepareRoute = function (routeConfig) {
+    if (routeConfig instanceof Array) {
+      return routeConfig.map(SimpleRouter.prepareRoute);
+    }
+
+    return {
+      ...routeConfig,
+      hidden: routeConfig.hidden || Boolean(routeConfig.handle) || false,
+      module: routeConfig.module || null,
+      children: routeConfig.children || []
+    };
+  };
+
   window.addEventListener('popstate', SimpleRouter.mainListener);
 
   function SimpleRouter(scope, module) {
@@ -32,20 +45,21 @@
     };
     _this.scope = scope;
     _this.module = module;
-    _this.root = module.id === 'system' ? '/' : location.pathname;
+    _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+
     _this.oldURL = '';
     _this.oldResolveId = null;
 
     _this.routesMap = null;
+    _this.resolvedRouteHash = {};
     _this.data = {
       routes: [],
-      activeLink: null,
       activeRoute: null,
       activeModule: null
     };
     _this.viewport = {
       tag: 'main',
-      module: '<>data.router.activeModule'
+      module: '<>router.activeModule'
     };
 
     Object.defineProperty(this, 'urlParts', {
@@ -61,19 +75,12 @@
   }
 
   SimpleRouter.prototype = {
-    init: function (routes) {
-      this.routes = routes.map(route => {
-        return {
-          ...route,
-          module: route.module || null,
-          hidden: route.hidden || false,
-          children: route.children || []
-        };
-      });
-      this.data.routes = this.routes.filter(r => !r.hidden);
+    init: function (routeConfigs) {
+      this.routes = SimpleRouter.prepareRoute(routeConfigs);
+      this.data.routes = this.routes;
 
-      if (this.scope.parentScope && this.scope.parentScope.data.router.activeLink) {
-        this.scope.parentScope.data.router.activeLink.children = this.routes;
+      if (this.scope.parentScope && this.scope.parentScope.router) {
+        this.scope.parentScope.router.activeRoute.children = this.routes;
       }
 
       this.listener = this.detect.bind(this);
@@ -83,11 +90,10 @@
     },
 
     start: function () {
-      debugger;
       this.detect();
     },
 
-    navigate: function (path) {
+    navigateToPath: function (path) {
       if (path.indexOf('/') !== 0) {
         throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
       }
@@ -101,12 +107,12 @@
       dispatchEvent(popStateEvent);
     },
 
-    navigateFromHere: function (path) {
+    navigate: function (path) {
       if (path.indexOf(this.root) !== 0) {
         path = this.root + path;
       }
 
-      this.navigate(path);
+      this.navigateToPath(path);
     },
 
     notFound: function () {
@@ -128,7 +134,7 @@
       }
 
       normalizedHash = normalizedHash.replace(this.config.baseURL, '/');
-      return normalizedHash.replace(this.root, '/') || '/';
+      return normalizedHash.replace(this.root, '/').replace('//', '/') || '/';
     },
 
     onProceed: function () {
@@ -137,37 +143,14 @@
 
     callMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
-      const path = _this.normalizeHash(hash);
-
-      const routesPath = routes.map(function (item) {
-        return item.route;
-      });
-
-      // Hard match
-      const routeIndex = routesPath.indexOf(path);
-      if (routeIndex !== -1) {
-        debugger
-        const route = routes[routeIndex];
-        if (route.redirectTo) {
-          return this.navigateFromHere(route.redirectTo);
-        }
-        // const act = routes[routeIndex].act;
-        // // delete all old resolved ids
-        // if (typeof act === 'string') {
-        //   return this.navigateFromHere(act);
-        // }
-
-        _this.oldResolveId = null;
-        // return act.call(null, {}, parentParams);
-        return _this.callRoute(route, path, {}, parentParams);
-      }
-
-      const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
       let matchCount = 0;
+      const normalizedHash = _this.normalizeHash(hash);
 
+      const routesPath = routes.map(item => item.path);
+      const dynamicRoutes = _this.extractDynamicRoutes(routesPath);
       for (let i = 0, len = dynamicRoutes.length; i < len; i++) {
         const dynamicRoute = dynamicRoutes[i];
-        const match = dynamicRoute.paramFinderExpression.exec(path);
+        const match = dynamicRoute.paramFinderExpression.exec(normalizedHash);
 
         if (!match) {
           continue;
@@ -176,20 +159,31 @@
         matchCount++;
 
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
-        // Create a unique id for the combination of the route and its parameters
-        const resolveId = dynamicRoute.id + ' ' + JSON.stringify(params);
-
-        if (_this.oldResolveId !== resolveId) {
-          _this.oldResolveId = resolveId;
-
-          const routeIndex = routesPath.indexOf(dynamicRoute.id);
-          const pp = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
-          const parts = hash.replace(pp, '').split('/');
-          // const parts = hash.split('/').slice(2);
-
-          _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-          break;
+        if (_this.resolvedRouteHash[dynamicRoute.id] === normalizedHash) {
+          return;
         }
+        _this.resolvedRouteHash[dynamicRoute.id] = normalizedHash;
+
+        const routeIndex = routesPath.indexOf(dynamicRoute.id);
+        const pathParameterPlaceholder = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
+        const parts = hash.replace(pathParameterPlaceholder, '').split('/');
+
+        return _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+      }
+
+      const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
+      if (staticRoutes) {
+        if (_this.resolvedRouteHash[staticRoutes.path] === hash) {
+          return;
+        }
+        _this.resolvedRouteHash[staticRoutes.path] = hash;
+
+        if (staticRoutes.redirectTo) {
+          return this.navigate(staticRoutes.redirectTo);
+        }
+
+        matchCount++;
+        return _this.callRoute(staticRoutes, normalizedHash, {}, parentParams);
       }
 
       if (matchCount === 0) {
@@ -203,20 +197,16 @@
       } else {
         this.data.activeModule = route.module;
       }
-      this.data.activeRoute = hash;
-      this.data.activeLink = route;
-      // if (route.act instanceof Function) {
-      //   route.act.call(null, params, parentParams);
-      // } else if (route.act instanceof Object) {
-      //   const routes = this.parseRoutes(route.act);
-      //   if (route.act._canActivate instanceof Function) {
-      //     if (!route.act._canActivate.call(null, params, parentParams)) {
-      //       return;
-      //     }
-      //   }
-      //
-      //   this.callMatchRoute(routes, hash, params);
-      // }
+
+      if (!route.redirectTo) {
+        if (this.data.activeRoute) {
+          this.data.activeRoute.isActive = false;
+        }
+
+        route.isActive = true;
+      }
+
+      this.data.activeRoute = route;
     },
 
     extractDynamicRoutes: function (routesPath) {
@@ -253,7 +243,7 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-debugger
+
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
@@ -279,7 +269,7 @@ debugger
           scope.on('module.destroy', () => router.destroy());
         }
 
-        scope.data.router = router.data;
+        scope.router = router.data;
 
         return router;
       },

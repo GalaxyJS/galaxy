@@ -141,7 +141,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       return new Promise(function (resolve, reject) {
         if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
-          module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+          module.path = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
           module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
           return _this.compileModuleContent(module, module.constructor, []).then(function (compiledModule) {
@@ -152,17 +152,17 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
-        let invokers = [module.url];
+        let invokers = [module.path];
         if (module.invokers) {
-          if (module.invokers.indexOf(module.url) !== -1) {
-            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwant to load: ' + module.url);
+          if (module.invokers.indexOf(module.path) !== -1) {
+            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwant to load: ' + module.path);
           }
 
           invokers = module.invokers;
-          invokers.push(module.url);
+          invokers.push(module.path);
         }
 
-        let url = module.url + '?' + _this.convertToURIString(module.params || {});
+        let url = module.path + '?' + _this.convertToURIString(module.params || {});
         // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
@@ -202,7 +202,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       return new Promise(function (resolve, reject) {
         const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(module.url) - 1, 1);
+          imports.splice(imports.indexOf(module.path) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -224,29 +224,29 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         if (imports.length) {
           const importsCopy = imports.slice(0);
           imports.forEach(function (item) {
-            const moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+            const moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.path);
             // Module is an addon
             if (moduleAddOnProvider) {
               const providerStages = moduleAddOnProvider.handler.call(null, scope, module);
               const addOnInstance = providerStages.create();
-              module.registerAddOn(item.url, addOnInstance);
+              module.registerAddOn(item.path, addOnInstance);
               module.addOnProviders.push(providerStages);
 
               doneImporting(module, importsCopy);
             }
             // Module is already loaded and we don't need a new instance of it (Singleton)
-            else if (cachedModules[item.url] && !item.fresh) {
+            else if (cachedModules[item.path] && !item.fresh) {
               doneImporting(module, importsCopy);
             }
             // Module is not loaded
             else {
-              if (item.url.indexOf('./') === 0) {
-                item.url = scope.uri.path + item.url.substr(2);
+              if (item.path.indexOf('./') === 0) {
+                item.path = scope.uri.path + item.path.substr(2);
               }
 
               Galaxy.load({
                 name: item.name,
-                url: item.url,
+                path: item.path,
                 fresh: item.fresh,
                 contentType: item.contentType,
                 parentScope: scope,
@@ -288,7 +288,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
-            new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
+            new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.path, source].join('\n'));
           moduleSource.call(null, module.scope).then(() => {
             Reflect.deleteProperty(module, 'source');
 
@@ -296,7 +296,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
             Reflect.deleteProperty(module, 'addOnProviders');
 
-            const id = module.url;
+            const id = module.path;
             // if the module export has _temp then do not cache the module
             if (module.scope.export._temp) {
               module.scope.parentScope.inject(id, module.scope.export);
@@ -312,7 +312,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             return resolve(currentModule);
           });
         } catch (error) {
-          console.error(error.message + ': ' + module.url);
+          console.error(error.message + ': ' + module.path);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
           console.error(error);
           reject();

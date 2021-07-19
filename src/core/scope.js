@@ -15,7 +15,7 @@ Galaxy.Scope = /** @class */ (function () {
     _this.parentScope = module.parentScope || null;
     _this.element = element || null;
     _this.export = {};
-    _this.uri = new Galaxy.GalaxyURI(module.url);
+    _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
     _this.data = {};
@@ -35,7 +35,7 @@ Galaxy.Scope = /** @class */ (function () {
       }
     });
 
-    this.on('module.destroy', this.destroy.bind(this));
+    _this.on('module.destroy', this.destroy.bind(this));
   }
 
   Scope.prototype = {
@@ -78,8 +78,8 @@ Galaxy.Scope = /** @class */ (function () {
     load: function (moduleMeta, config) {
       const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
 
-      if (newModuleMetaData.url.indexOf('./') === 0) {
-        newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
+      if (newModuleMetaData.path.indexOf('./') === 0) {
+        newModuleMetaData.path = this.uri.path + moduleMeta.path.substr(2);
       }
 
       newModuleMetaData.parentScope = this;
