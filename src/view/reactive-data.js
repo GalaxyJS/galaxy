@@ -212,12 +212,23 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           thisRD.oldValue[key] = value;
           value = val;
 
-          // This means that the property suppose to be an object and there probably active binds to it
-          if (thisRD.shadow[key]) {
-            thisRD.makeKeyEnum(key);
-            // setData provide downward data flow
-            thisRD.shadow[key].setData(val);
-          }
+
+          // if (thisRD.shadow[key]) {
+          //   thisRD.makeKeyEnum(key);
+          //   // setData provide downward data flow
+          //   thisRD.shadow[key].setData(val);
+          // }
+
+          // This means that the property suppose to be an object and there is probably an active binds to it
+          // the active bind could be in one of the ref so we have to check all the ref shadows
+          thisRD.refs.forEach(function (ref) {
+            if (ref.shadow[key]) {
+              ref.makeKeyEnum(key);
+              // setData provide downward data flow
+              ref.shadow[key].setData(val);
+            }
+          });
+
           thisRD.notify(key, value);
         },
         enumerable: !shadow,
@@ -354,19 +365,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       });
 
       _this.sync(key, value);
-      // if (this.id === '{Scope}.data.p') debugger;
-      // if (_this.refs.length > 1/* && _this.data instanceof Array*/) {
-      // const seen = {};
-      // seen[_this.keyInParent] = true;
-      // const allKeys = _this.refs.map((item) => item.keyInParent);
-      // const keys = allKeys.filter((item) => {
-      //   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
-      // });
-
-      // allKeys.forEach((kip, i) => {
-      //   _this.refs[i].parent.notify(kip, null, value);
-      // });
-
       _this.refs.forEach(function (ref) {
         ref.parent.notify(ref.keyInParent, null, value);
       });
