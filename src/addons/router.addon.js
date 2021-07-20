@@ -50,6 +50,7 @@
 
     _this.oldURL = '';
     _this.resolvedRouteValue = null;
+    _this.resolvedDynamicRouteValue = null;
 
     _this.routesMap = null;
     _this.resolvedRouteHash = {};
@@ -162,17 +163,17 @@
         //   return;
         // }
         // _this.resolvedRouteHash[dynamicRoute.id] = normalizedHash;
-        if (_this.resolvedRouteValue === hash) {
+        if (_this.resolvedDynamicRouteValue === hash) {
           return;
         }
-        _this.resolvedRouteValue = hash;
+        _this.resolvedDynamicRouteValue = hash;
 
         const routeIndex = routesPath.indexOf(dynamicRoute.id);
         const pathParameterPlaceholder = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
         const parts = hash.replace(pathParameterPlaceholder, '').split('/');
 
         const shouldContinue = _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
-        if(!shouldContinue) {
+        if (!shouldContinue) {
           return;
         }
       }
@@ -180,11 +181,12 @@
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
-        // debugger
-        if (_this.resolvedRouteValue === routeValue) {
+        console.log(staticRoutes.path === '/' , staticRoutes.redirectTo, normalizedHash.length > 1)
+        debugger
+        if (_this.resolvedRouteValue === routeValue || (staticRoutes.path === '/' && staticRoutes.redirectTo && normalizedHash.length > 1)) {
           return;
         }
-
+        // debugger;
         _this.resolvedRouteValue = routeValue;
         // if (_this.resolvedRouteHash[staticRoutes.path] === normalizedHash) {
         //   return;
@@ -194,9 +196,8 @@
         if (staticRoutes.redirectTo) {
           return this.navigate(staticRoutes.redirectTo);
         }
-
         matchCount++;
-        debugger
+
         return _this.callRoute(staticRoutes, normalizedHash, {}, parentParams);
       }
 
