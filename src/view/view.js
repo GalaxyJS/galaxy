@@ -33,9 +33,6 @@ Galaxy.View = /** @class */(function (G) {
     children: {
       type: 'none'
     },
-    content: {
-      type: 'none'
-    },
     id: {
       type: 'attr'
     },
@@ -94,7 +91,6 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.PROPERTY_SETTERS = {
-
     'none': function () {
       return View.EMPTY_CALL;
     }
@@ -702,8 +698,8 @@ Galaxy.View = /** @class */(function (G) {
       _this.container = scope.element;
     } else {
       _this.container = new G.View.ViewNode(null, {
-        tag: scope.element.tagName
-      }, scope.element, _this);
+        tag: scope.element
+      }, _this);
 
       _this.container.hasBeenRendered();
     }
@@ -810,7 +806,7 @@ Galaxy.View = /** @class */(function (G) {
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
 
-        const viewNode = new G.View.ViewNode(parent, blueprint, null, refNode, _this, nodeData);
+        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, nodeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage

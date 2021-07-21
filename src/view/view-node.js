@@ -141,18 +141,21 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    *
    * @param blueprint
    * @param {Galaxy.View.ViewNode} parent
-   * @param {Node|Element|null} node
    * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
    * @param {any} nodeData
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(parent, blueprint, node, refNode, view, nodeData) {
+  function ViewNode(parent, blueprint, refNode, view, nodeData) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
-    _this.node = node || createElem(blueprint.tag || 'div', parent);
+    if (blueprint.tag instanceof Node) {
+      _this.node = blueprint.tag;
+    } else {
+      _this.node = createElem(blueprint.tag || 'div', parent);
+    }
 
     _this.refNode = refNode || _this.node;
     _this.blueprint = blueprint;

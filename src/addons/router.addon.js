@@ -23,9 +23,14 @@
     SimpleRouter.currentPath.update();
   };
 
-  SimpleRouter.prepareRoute = function (routeConfig) {
+  SimpleRouter.prepareRoute = function (routeConfig, parentScope) {
     if (routeConfig instanceof Array) {
-      return routeConfig.map(SimpleRouter.prepareRoute);
+      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScope));
+      if (parentScope && parentScope.router) {
+        parentScope.router.activeRoute.children = routes;
+      }
+
+      return routes;
     }
 
     return {
@@ -33,6 +38,7 @@
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       module: routeConfig.module || null,
+      parent: parentScope ? parentScope.router.activeRoute : null,
       children: routeConfig.children || []
     };
   };
@@ -78,12 +84,12 @@
 
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
-      this.routes = SimpleRouter.prepareRoute(routeConfigs);
+      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
       this.data.routes = this.routes;
 
-      if (this.scope.parentScope && this.scope.parentScope.router) {
-        this.scope.parentScope.router.activeRoute.children = this.routes;
-      }
+      // if (this.scope.parentScope && this.scope.parentScope.router) {
+      //   this.scope.parentScope.router.activeRoute.children = this.routes;
+      // }
 
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
@@ -115,6 +121,15 @@
       }
 
       this.navigateToPath(path);
+    },
+
+    navigateToRoute: function (route) {
+      let path = route.path;
+      if(route.parent) {
+        path = route.parent.path + route.path;
+      }
+
+      this.navigate(path);
     },
 
     notFound: function () {
@@ -181,9 +196,9 @@
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
-        console.log(staticRoutes.path === '/' , staticRoutes.redirectTo, normalizedHash.length > 1)
-        debugger
-        if (_this.resolvedRouteValue === routeValue || (staticRoutes.path === '/' && staticRoutes.redirectTo && normalizedHash.length > 1)) {
+        console.log(staticRoutes.path === '/', staticRoutes.redirectTo, normalizedHash.length > 1);
+        // debugger
+        if (_this.resolvedRouteValue === routeValue) {
           return;
         }
         // debugger;
