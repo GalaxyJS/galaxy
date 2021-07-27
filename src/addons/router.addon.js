@@ -174,10 +174,6 @@
         matchCount++;
 
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
-        // if (_this.resolvedRouteHash[dynamicRoute.id] === normalizedHash) {
-        //   return;
-        // }
-        // _this.resolvedRouteHash[dynamicRoute.id] = normalizedHash;
         if (_this.resolvedDynamicRouteValue === hash) {
           return;
         }
@@ -196,17 +192,10 @@
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
-        console.log(staticRoutes.path === '/', staticRoutes.redirectTo, normalizedHash.length > 1);
-        // debugger
         if (_this.resolvedRouteValue === routeValue) {
           return;
         }
-        // debugger;
         _this.resolvedRouteValue = routeValue;
-        // if (_this.resolvedRouteHash[staticRoutes.path] === normalizedHash) {
-        //   return;
-        // }
-        // _this.resolvedRouteHash[staticRoutes.path] = normalizedHash;
 
         if (staticRoutes.redirectTo) {
           return this.navigate(staticRoutes.redirectTo);
