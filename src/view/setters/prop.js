@@ -15,6 +15,10 @@
           viewNode.notifyObserver(property.name, value, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
+      } else if (value instanceof Function) {
+        const result = value.call(viewNode, viewNode.data);
+        valueFn(viewNode, result, oldValue, property.name);
+        value.oldResult = value;
       } else {
         valueFn(viewNode, value, oldValue, property.name);
         viewNode.notifyObserver(property.name, value, oldValue);

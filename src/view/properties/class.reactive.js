@@ -29,31 +29,31 @@
       }
 
       /** @type Galaxy.View.ViewNode */
-      const _this = this;
-      const node = _this.node;
+      const viewNode = this;
+      const node = viewNode.node;
 
       if (expression) {
         value = expression();
       }
 
-      const oldClassList = _this.node.classList;
+      const oldClassList = viewNode.node.classList;
       if (typeof value === 'string') {
-        _this.notifyObserver('classList', value.split(' '), oldClassList);
+        viewNode.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
-        _this.notifyObserver('classList', value, oldClassList);
+        viewNode.notifyObserver('classList', value, oldClassList);
         return node.setAttribute('class', value.join(' '));
       } else if (value === null || value === undefined) {
-        _this.notifyObserver('classList', [], oldClassList);
+        viewNode.notifyObserver('classList', [], oldClassList);
         return node.removeAttribute('class');
       }
 
       node.setAttribute('class', []);
       // when value is an object
-      const clone = G.View.bindSubjectsToData(_this, value, data.scope, true);
+      const clone = G.View.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new G.Observer(clone);
 
-      if (_this.blueprint.renderConfig && _this.blueprint.renderConfig.applyClassListAfterRender) {
+      if (viewNode.blueprint.renderConfig && viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -63,21 +63,21 @@
           }
         }
 
-        applyClasses.call(_this, '*', true, false, staticClasses);
+        applyClasses.call(viewNode, '*', true, false, staticClasses);
 
-        _this.rendered.then(function () {
-          applyClasses.call(_this, '*', true, false, clone);
+        viewNode.rendered.then(function () {
+          applyClasses.call(viewNode, '*', true, false, clone);
 
           observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(_this, key, value, oldValue, clone);
+            applyClasses.call(viewNode, key, value, oldValue, clone);
           });
         });
       } else {
         observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(_this, key, value, oldValue, clone);
+          applyClasses.call(viewNode, key, value, oldValue, clone);
         });
 
-        applyClasses.call(_this, '*', true, false, clone);
+        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -104,15 +104,15 @@
     if (oldValue === value) {
       return;
     }
-    const _this = this;
+    const viewNode = this;
 
     let oldClasses = this.node.getAttribute('class');
     oldClasses = oldClasses ? oldClasses.split(' ') : [];
     const newClasses = getClasses(classes);
 
-    _this.notifyObserver('class', newClasses, oldClasses);
-    _this.node.setAttribute('class', newClasses.join(' '));
-    _this.notifyObserver('classList', newClasses, oldClasses);
+    viewNode.notifyObserver('class', newClasses, oldClasses);
+    viewNode.node.setAttribute('class', newClasses.join(' '));
+    viewNode.notifyObserver('classList', newClasses, oldClasses);
   }
 })(Galaxy);
 

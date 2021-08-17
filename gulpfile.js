@@ -39,7 +39,8 @@ const build = function (done) {
     gulp.dest('site/galaxyjs/'),
     // gulp.dest('../imerce-viewer/assets/'),
     // gulp.dest('C:/xampp/htdocs/TeamScreen/public/assets/galaxyjs')
-    gulp.dest('C:/xampp/htdocs/MyBI/app/assets')
+    // gulp.dest('C:/xampp/htdocs/MyBI/app/assets')
+    gulp.dest('C:/Git/Portal4Sales/assets/galaxyjs')
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);

@@ -55,14 +55,6 @@ Galaxy.View = /** @class */(function (G) {
       type: 'prop',
       name: 'innerHTML'
     },
-    checked: {
-      type: 'prop',
-      name: 'checked'
-    },
-    value: {
-      type: 'prop',
-      name: 'value'
-    },
     nodeValue: {
       type: 'prop',
       name: 'nodeValue'

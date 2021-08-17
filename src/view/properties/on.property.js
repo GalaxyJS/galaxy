@@ -12,7 +12,9 @@
       if (events !== null && typeof events === 'object') {
         for (let name in events) {
           if (events.hasOwnProperty(name)) {
-            const handler = events[name].bind(viewNode);
+            const handler = function (event) {
+              return events[name].call(viewNode, event, viewNode.data);
+            };
             viewNode.node.addEventListener(name, handler, false);
             viewNode.finalize.push(() => {
               viewNode.node.removeEventListener(name, handler, false);

@@ -34,6 +34,11 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
+          // const children = _this.getChildNodes();
+          // children.forEach(c => {
+          //   console.log(c.node, c.populateLeaveSequence);
+          //   c.ha= true;
+          // });
           _this.clean();
 
           moduleLoaderGenerator(_this, data, moduleMeta)();

@@ -171,11 +171,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
     _this.finalize = [];
-    _this.observer = new Galaxy.Observer(_this);
+    // _this.observer = new Galaxy.Observer(_this);
     _this.origin = false;
     _this.transitory = false;
     _this.garbage = [];
     _this.leaveWithParent = false;
+    _this.onLeaveComplete = ViewNode.REMOVE_SELF.bind(_this, true);
 
     const cache = {};
     defProp(_this, 'cache', {
@@ -289,6 +290,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.node.style.display = 'none';
     },
 
+    // contentRef: null,
+    onLeaveComplete: null,
     populateLeaveSequence: null,
 
     detach: function () {
@@ -371,11 +374,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     registerChild: function (childNode, position) {
       const _this = this;
 
-      if (_this.contentRef) {
-        _this.contentRef.insertBefore(childNode.placeholder, position);
-      } else {
-        _this.node.insertBefore(childNode.placeholder, position);
-      }
+      // if (_this.contentRef) {
+      //   _this.contentRef.insertBefore(childNode.placeholder, position);
+      // } else {
+      _this.node.insertBefore(childNode.placeholder, position);
+      // }
     },
 
     createNode: function (blueprint, localScope) {
@@ -427,11 +430,25 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (!_this.populateLeaveSequence) {
           _this.populateLeaveSequence = EMPTY_CALL;
+          // if (_this.blueprint.class === 'catalog-page') {
+          //   console.log(_this.node);
+          // }
+          if(_this.ha) {
+            console.log(_this.node);
+            _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
+          }
           if (_this.origin) {
             _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
           }
+        } else if (_this.populateLeaveSequence !== EMPTY_CALL) {
+          // Children with leave animation should not get removed from dom for visual purposes.
+          // Since their parent already has a leave animation and eventually will be removed from dom.
+          for (let i = 0, len = children.length; i < len; i++) {
+            children[i].onLeaveComplete = EMPTY_CALL;
+          }
         }
       } else {
+        // _this.onLeaveComplete = true;
         _this.populateLeaveSequence = ViewNode.REMOVE_SELF;
         return;
       }
@@ -459,7 +476,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
-          _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, true));
+          _this.populateLeaveSequence(_this.onLeaveComplete);
           _this.callLifecycleEvent('postRemove');
           _this.callLifecycleEvent('postDestroy');
         }
@@ -543,7 +560,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param oldValue
      */
     notifyObserver: function (name, value, oldValue) {
-      this.observer.notify(name, value, oldValue);
+      // console.log(name, value, oldValue);
+      // this.observer.notify(name, value, oldValue);
     }
   };
 

@@ -144,7 +144,7 @@
         });
       };
 
-      viewNode.rendered.then(classAnimationsHandler);
+      // viewNode.rendered.then(classAnimationsHandler);
     }
   };
 

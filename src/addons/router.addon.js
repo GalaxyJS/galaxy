@@ -6,6 +6,8 @@
   // SimpleRouter.FOLLOWED_BY_SLASH_REGEXP = '(?:\/$|$)';
   // SimpleRouter.MATCH_REGEXP_FLAGS = '';
 
+  SimpleRouter.BASE_URL = '/';
+
   SimpleRouter.currentPath = {
     handlers: [],
     subscribe: function (handler) {
@@ -48,7 +50,7 @@
   function SimpleRouter(scope, module) {
     const _this = this;
     _this.config = {
-      baseURL: '/'
+      baseURL: SimpleRouter.BASE_URL
     };
     _this.scope = scope;
     _this.module = module;
@@ -63,12 +65,19 @@
     _this.data = {
       routes: [],
       activeRoute: null,
-      activeModule: null
+      activeModule: null,
+      parameters: this.scope.parentScope && this.scope.parentScope.router ? this.scope.parentScope.router.parameters : {}
     };
     _this.viewport = {
       tag: 'main',
       module: '<>router.activeModule'
     };
+
+    // debugger
+    // if (this.scope.parentScope && this.scope.parentScope.router) {
+    //   console.log(this.scope.parentScope.router)
+    //   // this.scope.parentScope.router.activeRoute.children = this.routes;
+    // }
 
     Object.defineProperty(this, 'urlParts', {
       get: function () {
@@ -86,10 +95,6 @@
     init: function (routeConfigs) {
       this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
       this.data.routes = this.routes;
-
-      // if (this.scope.parentScope && this.scope.parentScope.router) {
-      //   this.scope.parentScope.router.activeRoute.children = this.routes;
-      // }
 
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
@@ -125,7 +130,7 @@
 
     navigateToRoute: function (route) {
       let path = route.path;
-      if(route.parent) {
+      if (route.parent) {
         path = route.parent.path + route.path;
       }
 
@@ -215,6 +220,7 @@
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
+        this.data.parameters = params;
       }
 
       if (!route.redirectTo) {

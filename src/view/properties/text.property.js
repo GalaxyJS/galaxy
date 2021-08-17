@@ -12,7 +12,9 @@
       const textNode = viewNode.node['<>text'];
       let textValue = typeof value === 'undefined' || value === null ? '' : value;
 
-      if (textValue instanceof Object) {
+      if (textValue instanceof Function) {
+        textValue = textValue.call(viewNode, viewNode.data);
+      } else if (textValue instanceof Object) {
         textValue = JSON.stringify(textValue);
       }
 

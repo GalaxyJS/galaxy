@@ -9,7 +9,7 @@
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
-        const result = value.call(viewNode);
+        const result = value.call(viewNode, viewNode.data);
         valueFn(viewNode, result, value.oldResult, attrName);
         value.oldResult = value;
       } else {
