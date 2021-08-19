@@ -162,7 +162,7 @@
           hasBeenRemoved.push(config.nodes[i]);
         }
       });
-
+      // debugger
       const newParams = [];
       const positions = [];
       newTrackMap.forEach(function (id, i) {
@@ -187,6 +187,8 @@
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
+      if (config.options.as === 'selectedFilter')
+        debugger;
       // Map should be updated asap if the newChanges.type is reset
       if (newChanges.type === 'reset' && newChanges.params.length === 0) {
         config.trackMap = newTrackMap;
@@ -235,7 +237,7 @@
             placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
           });
 
-          onEachAction = function (vn, i) {
+          onEachAction = function (vn, i, item) {
             this.splice(i, 0, vn);
           };
         }
@@ -317,7 +319,7 @@
           nodeData[as] = c[i];
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
-          onEachAction.call(nodes, vn, positions[i]);
+          onEachAction.call(nodes, vn, positions[i], nodeData[as]);
         }
       }
     }

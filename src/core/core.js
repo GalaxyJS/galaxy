@@ -71,16 +71,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     clone: function (obj) {
       let clone = obj instanceof Array ? [] : {};
       clone.__proto__ = obj.__proto__;
-      // if(clone.hasOwnProperty('content'))debugger;
       for (let i in obj) {
-        // debugger;
         if (obj.hasOwnProperty(i)) {
           if (obj[i] instanceof Promise) {
             clone[i] = obj[i];
           } else if (typeof (obj[i]) === 'object' && obj[i] !== null) {
             clone[i] = Galaxy.clone(obj[i]);
           } else {
-            // console.info(Object.getOwnPropertyDescriptor(obj, i).enumerable, i);
             clone[i] = obj[i];
           }
         }

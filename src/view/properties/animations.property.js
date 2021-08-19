@@ -4,6 +4,17 @@
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
+  function hasParentEnterAnimation(viewNode) {
+    if (!viewNode.parent) return false;
+
+    const parent = viewNode.parent;
+    if (parent.blueprint.animations && parent.blueprint.animations.enter && gsap.getTweensOf(parent.node).length) {
+      return true;
+    }
+
+    return hasParentEnterAnimation(viewNode.parent);
+  }
+
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
     name: 'animations',
@@ -21,13 +32,18 @@
       if (enter) {
         viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
-
-          // if enterWithParent flag is there, then only apply animation only to the nodes are rendered
-          if (value.config.withParent) {
-            const parent = viewNode.parent;
-            if (!parent.rendered.resolved) {
+          if (value.enter.withParent) {
+            // if parent has a enter animation, then ignore this node's animation
+            // so this node enters with its parent
+            if (hasParentEnterAnimation(viewNode)) {
               return;
             }
+
+            // const parent = viewNode.parent;
+            // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
+            // if (!parent.rendered.resolved) {
+            //   return;
+            // }
           }
 
           if (gsap.getTweensOf(viewNode.node).length) {

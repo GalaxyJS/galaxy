@@ -83,8 +83,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         if (this.parent.shadow[id]) {
           return this.parent.shadow[id];
         }
+
         this.data = {};
-        this.parent.makeReactiveObject(this.parent.data, id, true);
+        // TODO: Don't know if this is a proper fix
+        if (this.parent.data[id]) {
+          new ReactiveData(id, this.parent.data[id], this.parent);
+        } else {
+          this.parent.makeReactiveObject(this.parent.data, id, true);
+        }
       }
 
       if (!Object.isExtensible(this.data)) {
@@ -211,7 +217,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           thisRD.oldValue[key] = value;
           value = val;
-
 
           // if (thisRD.shadow[key]) {
           //   thisRD.makeKeyEnum(key);
