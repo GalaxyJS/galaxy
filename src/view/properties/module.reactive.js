@@ -1,5 +1,24 @@
 /* global Galaxy */
 (function (G) {
+  function cleanModuleContent(viewNode) {
+
+      const children = viewNode.getChildNodes();
+      children.forEach(vn => {
+        if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
+          vn.populateLeaveSequence = function (onComplete) {
+            G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+              sequence: 'DESTROY',
+              duration: .000001
+            }, {}, onComplete);
+          };
+        }
+      });
+
+    G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+      viewNode.clean(true);
+    });
+  }
+
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
     name: 'module'
@@ -34,17 +53,11 @@
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
         _this.rendered.then(function () {
-          // const children = _this.getChildNodes();
-          // children.forEach(c => {
-          //   console.log(c.node, c.populateLeaveSequence);
-          //   c.ha= true;
-          // });
-          _this.clean();
-
+          cleanModuleContent(_this);
           moduleLoaderGenerator(_this, data, moduleMeta)();
         });
       } else if (!moduleMeta) {
-        _this.clean();
+        cleanModuleContent(_this);
       }
 
       data.moduleMeta = moduleMeta;

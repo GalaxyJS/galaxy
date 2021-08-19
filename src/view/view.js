@@ -100,17 +100,16 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} node
    * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (node, toBeRemoved) {
+  View.destroyNodes = function (toBeRemoved, hasAnimation) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
       remove = toBeRemoved[i];
-      remove.destroy();
+      remove.destroy(hasAnimation);
     }
   };
 
@@ -620,7 +619,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -647,7 +646,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -829,11 +828,9 @@ Galaxy.View = /** @class */(function (G) {
           }
         }
 
-        viewNode.callLifecycleEvent('postInit');
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
           _this.createNode(blueprint.children, viewNode, scopeData, null, refNode, nodeData);
-          viewNode.inserted.then(() => viewNode.callLifecycleEvent('postChildrenInsert'));
         }
 
         return viewNode;

@@ -216,13 +216,6 @@
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      if (typeof route.handle === 'function') {
-        return route.handle.call(this, params, parentParams);
-      } else {
-        this.data.activeModule = route.module;
-        this.data.parameters = params;
-      }
-
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;
@@ -232,6 +225,13 @@
       }
 
       this.data.activeRoute = route;
+
+      if (typeof route.handle === 'function') {
+        return route.handle.call(this, params, parentParams);
+      } else {
+        this.data.activeModule = route.module;
+        this.data.parameters = params;
+      }
 
       return false;
     },

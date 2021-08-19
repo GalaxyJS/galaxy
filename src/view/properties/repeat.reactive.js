@@ -192,12 +192,12 @@
         config.trackMap = newTrackMap;
       }
 
-      View.destroyNodes(viewNode, hasBeenRemoved.reverse());
+      View.destroyNodes(hasBeenRemoved.reverse());
       finalChanges = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(viewNode, nodesToBeRemoved.reverse());
+      View.destroyNodes(nodesToBeRemoved.reverse());
       finalChanges = Object.assign({}, changes);
       finalChanges.type = 'push';
     }
