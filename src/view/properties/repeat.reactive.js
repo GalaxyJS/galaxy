@@ -237,7 +237,7 @@
             placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
           });
 
-          onEachAction = function (vn, i, item) {
+          onEachAction = function (vn, i) {
             this.splice(i, 0, vn);
           };
         }
@@ -319,7 +319,7 @@
           nodeData[as] = c[i];
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node, nodeData);
-          onEachAction.call(nodes, vn, positions[i], nodeData[as]);
+          onEachAction.call(nodes, vn, positions[i]);
         }
       }
     }

@@ -518,6 +518,7 @@
       if (_this.timeline.getChildren(false).length === 0) {
         _this.timeline.add(tween);
       } else {
+        // console.log(config.position,viewNode.node)
         _this.timeline.add(tween, config.position || '+=0');
       }
 

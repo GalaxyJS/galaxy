@@ -226,14 +226,14 @@ Galaxy.View = /** @class */(function (G) {
       const props = value.match(View.BINDING_SYNTAX_REGEX);
       if (props) {
         allProperties = ['<>' + props[2]];
-
         if (props[2].indexOf('!') === 0) {
           allProperties = ['<>' + props[2].slice(1)];
           propertyVariables = allProperties;
-          isExpression = true;
           handler = (a) => {
             return !a;
           };
+          propertyVariables.push(handler);
+          isExpression = true;
         }
       } else {
         allProperties = null;
@@ -386,11 +386,9 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     let functionContent = 'return [';
-
     let middle = '';
-    for (let i = 0, len = variables.length; i < len-1; i++) {
+    for (let i = 0, len = variables.length; i < len - 1; i++) {
       const variable = variables[i];
-
       if (typeof variable === 'string' && variable.indexOf('<>') === 0) {
         middle += 'lookUpFn(scope, "' + variable.replace(/<>/g, '') + '"),';
       } else {
@@ -639,7 +637,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -666,7 +664,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
