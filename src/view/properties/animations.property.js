@@ -39,11 +39,11 @@
               return;
             }
 
-            // const parent = viewNode.parent;
+            const parent = viewNode.parent;
             // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
-            // if (!parent.rendered.resolved) {
-            //   return;
-            // }
+            if (!parent.rendered.resolved) {
+              return;
+            }
           }
 
           if (gsap.getTweensOf(viewNode.node).length) {
@@ -419,7 +419,7 @@
       }
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
-      // its only child and we have to resume it it's not playing
+      // its only child and we have to resume it if it's not playing
       if (newConfig.addTo) {
         const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
         if (!addToAnimationMeta.started) {

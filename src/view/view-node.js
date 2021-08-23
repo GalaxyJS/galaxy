@@ -6,7 +6,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
 
   function createComment(t) {
-    return commentNode.cloneNode(t);
+    const n = commentNode.cloneNode();
+    n.textContent = t;
+    return n;
   }
 
   /**
@@ -159,7 +161,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     _this.refNode = refNode || _this.node;
     _this.blueprint = blueprint;
-    _this.data = nodeData || {};
+    _this.data = nodeData instanceof Galaxy.Scope ? {} : nodeData;
     _this.localPropertyNames = new Set();
     _this.inputs = {};
     _this.virtual = false;
@@ -194,10 +196,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.rendered.resolved = false;
 
     // We need this check because a comment element has no style
-    if (_this.node.style) {
-      _this.node.style.setProperty('display', 'none');
-      _this.rendered.then(() => _this.node.style.removeProperty('display'));
-    }
+    // if (_this.node.style) {
+    //   _this.rendered.then(() => _this.node.style.removeProperty('display'));
+    // }
 
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
@@ -297,6 +298,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.inDOM = flag;
 
       if (flag && !_this.virtual) {
+        if (_this.node.style) {
+          _this.node.style.setProperty('display', 'none');
+        }
+
         if (!_this.node.parentNode) {
           insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
@@ -309,6 +314,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
+          if (_this.node.style) {
+            _this.node.style.removeProperty('display');
+          }
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
@@ -320,7 +328,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
-          _this.node.style.cssText = '';
+          // _this.node.style.cssText = '';
         });
       }
     },
@@ -416,7 +424,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       } else {
         _this.populateLeaveSequence = function () {
-          ViewNode.REMOVE_SELF.call(_this, true);
+          ViewNode.REMOVE_SELF.call(_this, !_this.origin);
         };
       }
     },

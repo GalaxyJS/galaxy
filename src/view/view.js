@@ -198,12 +198,17 @@ Galaxy.View = /** @class */(function (G) {
     viewNode.node[name] = value;
   };
 
-  View.createMirror = function (obj, forObj) {
-    let result = forObj || {};
+  View.createChildScope = function (parent) {
+    let result = {};
 
     defProp(result, '__parent__', {
       enumerable: false,
-      value: obj
+      value: parent
+    });
+
+    defProp(result, '__scope__', {
+      enumerable: false,
+      value: parent.__scope__ || parent
     });
 
     return result;
@@ -488,7 +493,7 @@ Galaxy.View = /** @class */(function (G) {
       }
       // When the node belongs to a nested repeat, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
-      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__rootScopeData__') &&
+      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__scope__') &&
         propertyKey === 'data') {
         hostReactiveData = null;
       }
@@ -789,10 +794,9 @@ Galaxy.View = /** @class */(function (G) {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
-     * @param {any} nodeData
      * @return {Galaxy.View.ViewNode}
      */
-    createNode: function (blueprint, parent, scopeData, position, refNode, nodeData) {
+    createNode: function (blueprint, parent, scopeData, position, refNode) {
       const _this = this;
       let i = 0, len = 0;
       if (typeof blueprint === 'string') {
@@ -806,13 +810,13 @@ Galaxy.View = /** @class */(function (G) {
         blueprint();
       } else if (blueprint instanceof Array) {
         for (i = 0, len = blueprint.length; i < len; i++) {
-          _this.createNode(blueprint[i], parent, scopeData, null, refNode, nodeData);
+          _this.createNode(blueprint[i], parent, scopeData, null, refNode);
         }
       } else if (blueprint instanceof Object) {
         let attributeValue, attributeName;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, nodeData);
+        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
         parent.registerChild(viewNode, position);
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
@@ -844,7 +848,7 @@ Galaxy.View = /** @class */(function (G) {
 
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode, nodeData);
+          _this.createNode(blueprint.children, viewNode, scopeData, null, refNode);
         }
 
         return viewNode;

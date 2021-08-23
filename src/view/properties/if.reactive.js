@@ -20,15 +20,29 @@
         config.throttleId = 0;
       }
       /** @type {Galaxy.View.ViewNode} */
-      const _this = this;
+      const viewNode = this;
       if (expression) {
         value = expression();
       }
 
+      let pes = null;
+      if (!viewNode.rendered.resolved && !value) {
+        // pes = viewNode.populateLeaveSequence;
+        // viewNode.populateLeaveSequence = (r) => {
+        // debugger;
+        // r();
+        // };
+      }
+
       config.throttleId = window.requestAnimationFrame(() => {
-        _this.rendered.then(() => {
-          if (_this.inDOM !== value) {
-            _this.setInDOM(value);
+        viewNode.rendered.then(() => {
+          if (viewNode.inDOM !== value) {
+            viewNode.setInDOM(value);
+          }
+
+          if (pes) {
+            // viewNode.populateLeaveSequence = pes;
+            // pes = null;
           }
         });
       });
