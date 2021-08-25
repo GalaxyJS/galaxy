@@ -12,10 +12,9 @@
         };
       }
     });
-
-    G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
-      viewNode.clean(true);
-    });
+    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+    viewNode.clean(true);
+    // });
   }
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
@@ -51,14 +50,15 @@
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
+        // G.View.CREATE_IN_NEXT_FRAME(_this.index, () => {
         _this.rendered.then(function () {
           cleanModuleContent(_this);
           moduleLoaderGenerator(_this, data, moduleMeta)();
         });
+        // });
       } else if (!moduleMeta) {
         cleanModuleContent(_this);
       }
-
       data.moduleMeta = moduleMeta;
     }
   };

@@ -132,8 +132,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
         for (let key in this.shadow) {
           // Cascade changes down to all children reactive data
-          if (this.shadow[key] instanceof G.View.ReactiveData) {
-
+          if (this.shadow[key] instanceof ReactiveData) {
             this.shadow[key].setData(data);
           } else {
             // changes should only propagate downward
@@ -277,7 +276,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       initialChanges.params = arr;
       initialChanges.params.forEach(function (item) {
         if (item !== null && typeof item === 'object') {
-          new G.View.ReactiveData(initialChanges.original.indexOf(item), item, _this);
+          new ReactiveData(initialChanges.original.indexOf(item), item, _this);
         }
       });
 
@@ -313,7 +312,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             if (method === 'push' || method === 'reset' || method === 'unshift') {
               changes.params.forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new G.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
+                  new ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             } else if (method === 'pop' || method === 'shift') {
@@ -323,7 +322,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             } else if (method === 'splice') {
               changes.params.slice(2).forEach(function (item) {
                 if (item !== null && typeof item === 'object') {
-                  new G.View.ReactiveData(changes.original.indexOf(item), item, thisRD);
+                  new ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
               });
             }
@@ -590,10 +589,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      *
      * @param {string} key
      */
-    addKeyToShadow: function (key) {
+    addKeyToShadow: function (key, isArray) {
       // Don't empty the shadow object if it exist
       if (!this.shadow[key]) {
-        this.shadow[key] = null;
+        if (isArray) {
+          this.shadow[key] = new ReactiveData(key, [], this);
+        } else {
+          this.shadow[key] = null;
+        }
       }
 
       if (!this.data.hasOwnProperty(key)) {
@@ -606,7 +609,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     setupShadowProperties: function (keys) {
       for (let key in this.shadow) {
         // Only reactive properties should be added to data
-        if (this.shadow[key] instanceof G.View.ReactiveData) {
+        if (this.shadow[key] instanceof ReactiveData) {
           if (!this.data.hasOwnProperty(key)) {
             this.makeReactiveObject(this.data, key, true);
           }

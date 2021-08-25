@@ -128,11 +128,14 @@ Galaxy.View = /** @class */(function (G) {
       View.LAST_FRAME_ID = null;
     }
 
-    if (View.TO_BE_DESTROYED[index]) {
-      View.TO_BE_DESTROYED[index].push(action);
-    } else {
-      View.TO_BE_DESTROYED[index] = [action];
-    }
+    // if (View.TO_BE_DESTROYED[index]) {
+    //   View.TO_BE_DESTROYED[index].push(action);
+    // } else {
+    //   View.TO_BE_DESTROYED[index] = [action];
+    // }
+    const target = View.TO_BE_DESTROYED[index] || [];
+    target.push(action);
+    View.TO_BE_DESTROYED[index] = target;
 
     View.LAST_FRAME_ID = requestAnimationFrame(() => {
       const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
@@ -520,7 +523,8 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
-        hostReactiveData.addKeyToShadow(propertyKey);
+        // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
+        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
       }
 
       if (childPropertyKeyPath === null) {
@@ -642,7 +646,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
 
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
@@ -669,7 +673,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':

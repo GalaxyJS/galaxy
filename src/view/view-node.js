@@ -70,9 +70,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   /**
    *
    * @typedef {Object} RenderConfig
-   * @property {boolean} [alternateDOMFlow] - By default is undefined which is considered to be true. Entering is top down and leaving is
-   * bottom up.
    * @property {boolean} [applyClassListAfterRender] - Indicates whether classlist applies after the render.
+   * @property {boolean} [renderDetached] - Make the node to be rendered in a detached mode.
+   */
+
+  /**
+   * @typedef {Object} Blueprint
+   * @property {RenderConfig} renderConfig
+   * @property {string} tag
    */
 
   /**
@@ -80,7 +85,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @type {RenderConfig}
    */
   ViewNode.GLOBAL_RENDER_CONFIG = {
-    applyClassListAfterRender: false
+    applyClassListAfterRender: false,
+    renderDetached: false
   };
 
   /**
@@ -136,6 +142,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         ViewNode.REMOVE_SELF.call(node, true);
       });
       viewNode.garbage = [];
+      // viewNode.populateLeaveSequence = EMPTY_CALL;
     }
   };
 
@@ -160,6 +167,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
 
     _this.refNode = refNode || _this.node;
+    /**
+     *
+     * @type {Blueprint}
+     */
     _this.blueprint = blueprint;
     _this.data = nodeData instanceof Galaxy.Scope ? {} : nodeData;
     _this.localPropertyNames = new Set();
@@ -168,7 +179,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.visible = true;
     _this.placeholder = createComment(blueprint.tag || 'div');
     _this.properties = new Set();
-    _this.inDOM = typeof blueprint.inDOM === 'undefined' ? true : blueprint.inDOM;
+    // _this.inDOM = typeof blueprint.inDOM === 'undefined' ? true : blueprint.inDOM;
+    _this.inDOM = false;
     _this.setters = {};
     /** @type {galaxy.View.ViewNode} */
     _this.parent = parent;
@@ -194,11 +206,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       };
     });
     _this.rendered.resolved = false;
-
-    // We need this check because a comment element has no style
-    // if (_this.node.style) {
-    //   _this.rendered.then(() => _this.node.style.removeProperty('display'));
-    // }
 
     _this.inserted = new Promise(function (done) {
       _this.hasBeenInserted = function () {
@@ -295,8 +302,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     setInDOM: function (flag) {
       const _this = this;
-      _this.inDOM = flag;
+      if (_this.blueprint.renderConfig.renderDetached) {
+        _this.blueprint.renderConfig.renderDetached = false;
+        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+          _this.hasBeenRendered();
+        });
+        return;
+      }
 
+      _this.inDOM = flag;
       if (flag && !_this.virtual) {
         if (_this.node.style) {
           _this.node.style.setProperty('display', 'none');
@@ -322,13 +336,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
+        const defPLS = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-
         GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
-          // _this.node.style.cssText = '';
+          _this.populateLeaveSequence = defPLS;
         });
       }
     },

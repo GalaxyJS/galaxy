@@ -14,35 +14,34 @@
     install: function (config) {
       return true;
     },
+    /**
+     *
+     * @this Galaxy.View.ViewNode
+     * @param config
+     * @param value
+     * @param oldValue
+     * @param expression
+     */
     apply: function (config, value, oldValue, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;
       }
-      /** @type {Galaxy.View.ViewNode} */
+
       const viewNode = this;
       if (expression) {
         value = expression();
       }
 
-      let pes = null;
       if (!viewNode.rendered.resolved && !value) {
-        // pes = viewNode.populateLeaveSequence;
-        // viewNode.populateLeaveSequence = (r) => {
-        // debugger;
-        // r();
-        // };
+        viewNode.blueprint.renderConfig.renderDetached = true;
       }
 
       config.throttleId = window.requestAnimationFrame(() => {
         viewNode.rendered.then(() => {
           if (viewNode.inDOM !== value) {
+            // debugger
             viewNode.setInDOM(value);
-          }
-
-          if (pes) {
-            // viewNode.populateLeaveSequence = pes;
-            // pes = null;
           }
         });
       });
