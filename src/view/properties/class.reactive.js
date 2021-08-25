@@ -36,24 +36,19 @@
         value = expression();
       }
 
-      const oldClassList = viewNode.node.classList;
       if (typeof value === 'string') {
-        viewNode.notifyObserver('classList', value.split(' '), oldClassList);
         return node.setAttribute('class', value);
       } else if (value instanceof Array) {
-        viewNode.notifyObserver('classList', value, oldClassList);
         return node.setAttribute('class', value.join(' '));
       } else if (value === null || value === undefined) {
-        viewNode.notifyObserver('classList', [], oldClassList);
         return node.removeAttribute('class');
       }
 
-      node.setAttribute('class', []);
+      node.setAttribute('class', '');
       // when value is an object
       const clone = G.View.bindSubjectsToData(viewNode, value, data.scope, true);
       const observer = new G.Observer(clone);
-
-      if (viewNode.blueprint.renderConfig && viewNode.blueprint.renderConfig.applyClassListAfterRender) {
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         const items = Object.getOwnPropertyDescriptors(clone);
         const staticClasses = {};
         for (let key in items) {
@@ -63,21 +58,18 @@
           }
         }
 
-        applyClasses.call(viewNode, '*', true, false, staticClasses);
-
+        applyClasses(viewNode, staticClasses);
         viewNode.rendered.then(function () {
-          applyClasses.call(viewNode, '*', true, false, clone);
-
-          observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(viewNode, key, value, oldValue, clone);
+          applyClasses(viewNode, clone);
+          observer.onAll((key, value, oldValue) => {
+            applyClasses(viewNode, clone);
           });
         });
       } else {
-        observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(viewNode, key, value, oldValue, clone);
+        applyClasses(viewNode, clone);
+        observer.onAll((key, value, oldValue) => {
+          applyClasses(viewNode, clone);
         });
-
-        applyClasses.call(viewNode, '*', true, false, clone);
       }
     }
   };
@@ -100,19 +92,14 @@
     }
   }
 
-  function applyClasses(key, value, oldValue, classes) {
-    if (oldValue === value) {
+  function applyClasses(viewNode, classes) {
+    const currentClasses = viewNode.node.getAttribute('class');
+    const newClasses = getClasses(classes);
+    if (JSON.stringify(currentClasses) === JSON.stringify(newClasses)) {
       return;
     }
-    const viewNode = this;
 
-    let oldClasses = this.node.getAttribute('class');
-    oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    const newClasses = getClasses(classes);
-
-    viewNode.notifyObserver('class', newClasses, oldClasses);
     viewNode.node.setAttribute('class', newClasses.join(' '));
-    viewNode.notifyObserver('classList', newClasses, oldClasses);
   }
 })(Galaxy);
 

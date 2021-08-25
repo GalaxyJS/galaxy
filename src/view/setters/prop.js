@@ -7,12 +7,10 @@
     }
 
     const valueFn = property.value || G.View.setProp;
-
     const setter = function (value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           valueFn(viewNode, asyncValue, oldValue, property.name);
-          viewNode.notifyObserver(property.name, value, oldValue);
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
@@ -21,7 +19,6 @@
         value.oldResult = value;
       } else {
         valueFn(viewNode, value, oldValue, property.name);
-        viewNode.notifyObserver(property.name, value, oldValue);
       }
     };
 

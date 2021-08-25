@@ -17,11 +17,16 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       id: '{Scope}',
       shadow: {},
       data: {},
-      notify: function () { },
-      notifyDown: function () {},
-      sync: function () { },
-      makeReactiveObject: function () { },
-      addKeyToShadow: function () { }
+      notify: function () {
+      },
+      notifyDown: function () {
+      },
+      sync: function () {
+      },
+      makeReactiveObject: function () {
+      },
+      addKeyToShadow: function () {
+      }
     };
   };
 
@@ -217,21 +222,16 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           thisRD.oldValue[key] = value;
           value = val;
 
-          // if (thisRD.shadow[key]) {
-          //   thisRD.makeKeyEnum(key);
-          //   // setData provide downward data flow
-          //   thisRD.shadow[key].setData(val);
-          // }
-
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
-          thisRD.refs.forEach(function (ref) {
+          for (let i = 0, len = thisRD.refs.length; i < len; i++) {
+            const ref = thisRD.refs[i];
             if (ref.shadow[key]) {
               ref.makeKeyEnum(key);
               // setData provide downward data flow
               ref.shadow[key].setData(val);
             }
-          });
+          }
 
           thisRD.notify(key, value);
         },
@@ -248,7 +248,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key);
-
       this.oldValue[key] = value;
     },
     /**
@@ -267,22 +266,20 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       if (arr.hasOwnProperty('changes')) {
         return arr.changes.init;
       }
-      // _this.makeReactiveObject(value, 'changes', true);
 
       const initialChanges = new G.View.ArrayChange();
       initialChanges.original = arr;
-      // initialChanges.snapshot = arr.slice(0);
       initialChanges.type = 'reset';
       initialChanges.params = arr;
-      initialChanges.params.forEach(function (item) {
+      for (let i = 0, len = initialChanges.params.length; i < len; i++) {
+        const item = initialChanges.params[i];
         if (item !== null && typeof item === 'object') {
           new ReactiveData(initialChanges.original.indexOf(item), item, _this);
         }
-      });
+      }
 
       _this.sync('length');
       initialChanges.init = initialChanges;
-      // arr.changes = initialChanges;
       defProp(arr, 'changes', {
         enumerable: false,
         configurable: true,
@@ -310,11 +307,12 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             changes.init = initialChanges;
 
             if (method === 'push' || method === 'reset' || method === 'unshift') {
-              changes.params.forEach(function (item) {
+              for (let i = 0, len = changes.params.length; i < len; i++) {
+                const item = changes.params[i];
                 if (item !== null && typeof item === 'object') {
                   new ReactiveData(changes.original.indexOf(item), item, thisRD);
                 }
-              });
+              }
             } else if (method === 'pop' || method === 'shift') {
               if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
                 returnValue.__rd__.removeMyRef();
@@ -327,7 +325,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
               });
             }
 
-            // arr.changes = changes;
             defProp(arr, 'changes', {
               enumerable: false,
               configurable: true,
@@ -360,30 +357,34 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         return;
       }
 
-      _this.refs.forEach(function (ref) {
+      const len = _this.refs.length;
+      for (let i = 0; i < len; i++) {
+        const ref = _this.refs[i];
         if (_this === ref) {
-          return;
+          continue;
         }
 
         ref.notify(key, value, _this.refs);
-      });
+      }
 
       _this.sync(key, value);
-      _this.refs.forEach(function (ref) {
+      for (let i = 0; i < len; i++) {
+        const ref = _this.refs[i];
         ref.parent.notify(ref.keyInParent, null, value);
-      });
+      }
     },
 
     notifyDown: function (key) {
       const _this = this;
 
-      _this.refs.forEach(function (ref) {
+      for (let i = 0, len = _this.refs.length; i < len; i++) {
+        const ref = _this.refs[i];
         if (_this === ref) {
-          return;
+          continue;
         }
 
         ref.notify(key, _this.refs);
-      });
+      }
 
       _this.sync(key);
     },
@@ -402,10 +403,11 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       G.Observer.notify(_this.data, propertyKey, value, oldValue);
 
       if (map) {
-        map.nodes.forEach(function (node, i) {
+        for (let i = 0, len = map.nodes.length; i < len; i++) {
+          const node = map.nodes[i];
           const key = map.keys[i];
           _this.syncNode(node, key, value, oldValue);
-        });
+        }
       }
     },
     /**
@@ -414,10 +416,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     syncAll: function () {
       const _this = this;
       const keys = objKeys(_this.data);
-
-      keys.forEach(function (key) {
-        _this.sync(key);
-      });
+      for (let i = 0, len = keys.length; i < len; i++) {
+        _this.sync(keys[i]);
+      }
     },
     /**
      *
@@ -562,10 +563,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param node
      */
     removeNode: function (node) {
-      const _this = this;
-      this.refs.forEach(function (ref) {
-        _this.removeNodeFromRef(ref, node);
-      });
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        this.removeNodeFromRef(this.refs[i], node);
+      }
     },
     /**
      *
@@ -588,6 +588,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     /**
      *
      * @param {string} key
+     * @param {boolean} isArray
      */
     addKeyToShadow: function (key, isArray) {
       // Don't empty the shadow object if it exist

@@ -1,13 +1,7 @@
 (function (G) {
   SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
-  // SimpleRouter.WILDCARD_REGEXP = /\*/g;
   SimpleRouter.REPLACE_VARIABLE_REGEXP = '([^\/]+)';
-  // SimpleRouter.REPLACE_WILDCARD = '(?:.*)';
-  // SimpleRouter.FOLLOWED_BY_SLASH_REGEXP = '(?:\/$|$)';
-  // SimpleRouter.MATCH_REGEXP_FLAGS = '';
-
   SimpleRouter.BASE_URL = '/';
-
   SimpleRouter.currentPath = {
     handlers: [],
     subscribe: function (handler) {
@@ -72,12 +66,6 @@
       tag: 'main',
       module: '<>router.activeModule'
     };
-
-    // debugger
-    // if (this.scope.parentScope && this.scope.parentScope.router) {
-    //   console.log(this.scope.parentScope.router)
-    //   // this.scope.parentScope.router.activeRoute.children = this.routes;
-    // }
 
     Object.defineProperty(this, 'urlParts', {
       get: function () {

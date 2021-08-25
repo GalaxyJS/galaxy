@@ -189,7 +189,7 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
-    viewNode.notifyObserver(name, value, oldValue);
+    // viewNode.notifyObserver(name, value, oldValue);
     if (value !== null && value !== undefined && value !== false) {
       viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {

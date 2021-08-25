@@ -246,11 +246,11 @@
       let length = config.nodes.length;
 
       if (length) {
-        defaultPosition = config.nodes[length - 1].getPlaceholder().nextSibling;
+        defaultPosition = config.nodes[length - 1].anchor.nextSibling;
         if (positions.length) {
           positions.forEach(function (pos) {
             const target = config.nodes[pos];
-            placeholdersPositions.push(target ? target.getPlaceholder() : defaultPosition);
+            placeholdersPositions.push(target ? target.anchor : defaultPosition);
           });
 
           onEachAction = function (vn, p, d) {
@@ -264,7 +264,7 @@
 
       newItems = changes.params;
     } else if (changes.type === 'unshift') {
-      defaultPosition = config.nodes[0] ? config.nodes[0].getPlaceholder() : null;
+      defaultPosition = config.nodes[0] ? config.nodes[0].anchor : null;
       newItems = changes.params;
       onEachAction = function (vn, p, d) {
         trackMap.unshift(d[config.trackBy]);
@@ -311,8 +311,6 @@
 
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
           const cns = gClone(templateBlueprint);
-          // const nodeData = {};
-          // nodeData[as] = newItemCopy;
           itemDataScope[indexAs] = trackMap.length;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
@@ -322,8 +320,6 @@
         for (let i = 0, len = newItems.length; i < len; i++) {
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
           let cns = gClone(templateBlueprint);
-          // const nodeData = {};
-          // nodeData[as] = newItemsCopy[i];
           itemDataScope[indexAs] = i;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
