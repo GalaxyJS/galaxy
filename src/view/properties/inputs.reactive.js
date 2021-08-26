@@ -6,35 +6,34 @@
   };
 
   G.View.REACTIVE_BEHAVIORS['inputs'] = {
-    regex: null,
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param matches
+     * @param value
      * @param scope
      */
-    prepare: function (matches, scope) {
-      if (matches !== null && typeof matches !== 'object') {
+    prepare: function (scope, value) {
+      if (value !== null && typeof value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
 
       return {
-        subjects: matches,
+        subjects: value,
         scope: scope
       };
     },
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param data
+     * @param config
      * @return {boolean}
      */
-    install: function (data) {
+    install: function (config) {
       if (this.virtual) {
         return false;
       }
 
-      this.inputs = G.View.bindSubjectsToData(this, data.subjects, data.scope, true);
+      this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
 
       return false;
     },

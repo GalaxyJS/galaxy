@@ -6,8 +6,7 @@
   };
 
   G.View.REACTIVE_BEHAVIORS['content'] = {
-    regex: null,
-    prepare: function (matches, scope) {
+    prepare: function () {
       this.virtualize();
       return {
         module: null

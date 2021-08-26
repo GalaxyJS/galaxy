@@ -23,18 +23,17 @@
   };
 
   G.View.REACTIVE_BEHAVIORS['module'] = {
-    regex: null,
-    prepare: function (matches, scope) {
+    prepare: function (scope) {
       return {
         module: null,
         moduleMeta: null,
         scope: scope
       };
     },
-    install: function (data) {
+    install: function () {
       return true;
     },
-    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression) {
+    apply: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
@@ -49,17 +48,17 @@
         return console.error('module property only accept objects as value', moduleMeta);
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== data.moduleMeta) {
+      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
         // G.View.CREATE_IN_NEXT_FRAME(_this.index, () => {
         _this.rendered.then(function () {
           cleanModuleContent(_this);
-          moduleLoaderGenerator(_this, data, moduleMeta)();
+          moduleLoaderGenerator(_this, config, moduleMeta)();
         });
         // });
       } else if (!moduleMeta) {
         cleanModuleContent(_this);
       }
-      data.moduleMeta = moduleMeta;
+      config.moduleMeta = moduleMeta;
     }
   };
 

@@ -85,7 +85,6 @@ Galaxy.View = /** @class */(function (G) {
 
   View.REACTIVE_BEHAVIORS = {
     // example: {
-    //   regex: null,
     //   prepare: function (matches, scope) {},
     //   install: function (config) {},
     //   apply: function (config, value, oldValue, expressionFn) {}
@@ -603,9 +602,6 @@ Galaxy.View = /** @class */(function (G) {
         bindings.propertyKeysPaths.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
-            // if (path === 'filterOption.UniqueId') {
-            //   console.log(rd,data, path);
-            // }
             viewNode.finalize.push(() => {
               rd.removeNode(subjectsClone);
             });
@@ -625,20 +621,18 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
+   * @param {any} behavior
    * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
    */
   View.installReactiveBehavior = function (behavior, node, key, scopeData) {
-    const bindTo = node.blueprint[key];
-    const matches = behavior.regex ? (typeof (bindTo) === 'string' ? bindTo.match(behavior.regex) : bindTo) : bindTo;
-    const data = behavior.prepare.call(node, matches, scopeData);
+    const data = behavior.prepare.call(node, scopeData, node.blueprint[key]);
     if (data !== undefined) {
       node.cache[key] = data;
     }
 
-    const needValueAssignment = behavior.install.call(node, data);
-    return needValueAssignment === undefined || needValueAssignment === null ? true : needValueAssignment;
+    return behavior.install.call(node, data);
   };
 
   View.createSetter = function (viewNode, key, scopeProperty, expression) {
@@ -647,7 +641,6 @@ Galaxy.View = /** @class */(function (G) {
      * @type {Galaxy.View.BlueprintProperty}
      */
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
-
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
     }

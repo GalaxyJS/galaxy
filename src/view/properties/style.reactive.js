@@ -10,30 +10,35 @@
   };
 
   G.View.REACTIVE_BEHAVIORS['style'] = {
-    /**
-     *
-     * @param {Galaxy.View.ViewNode} viewNode
-     * @param {string} attr
-     * @param value
-     */
-    regex: null,
-    prepare: function (m, s) {
+    prepare: function (scope, value) {
       return {
-        scope: s
+        scope: scope,
+        subjects: value
       };
     },
-    install: function (data) {
+    install: function (config) {
+      if (this.virtual || config.subjects === null || config.subjects instanceof Array || typeof config.subjects !== 'object') {
+        return true;
+      }
+
+      const node = this.node;
+      const reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      const observer = new G.Observer(reactiveStyle);
+      observer.onAll(() => {
+        setStyle(node, reactiveStyle);
+      });
+
       return true;
     },
     /**
      *
-     * @param data
+     * @param config
      * @param value
      * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (data, value, oldValue, expression) {
+    apply: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -58,14 +63,11 @@
         return node.removeAttribute('style');
       }
 
-      const reactiveStyle = G.View.bindSubjectsToData(_this, value, data.scope, true);
+      if (config.subjects === value) {
+        return;
+      }
 
-      const observer = new G.Observer(reactiveStyle);
-      observer.onAll(function (key, value, oldValue) {
-        setStyle(node, reactiveStyle);
-      });
-
-      setStyle(node, reactiveStyle);
+      setStyle(node, value);
     }
   };
 

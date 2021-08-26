@@ -59,7 +59,6 @@ const buildProduction = function (done) {
     uglify({ compress: true }),
     gulp.dest('dist/'),
     gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);

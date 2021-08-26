@@ -19,17 +19,17 @@
 
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
-        const bindings = G.View.getBindings(viewNode.blueprint.selected);
-        const id = bindings.propertyKeysPaths[0].split('.').pop();
-        const nativeNode = viewNode.node;
+        // const bindings = G.View.getBindings(viewNode.blueprint.selected);
+        // const id = bindings.propertyKeysPaths[0].split('.').pop();
+        // const nativeNode = viewNode.node;
 
-        const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
-          if (scopeReactiveData.data[id] && !nativeNode.value) {
-            nativeNode.value = scopeReactiveData.data[id];
-          }
-        });
-
-        viewNode.destroyed.then(unsubscribe);
+        // const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
+        //   if (scopeReactiveData.data[id] && !nativeNode.value) {
+        //     nativeNode.value = scopeReactiveData.data[id];
+        //   }
+        // });
+        //
+        // viewNode.destroyed.then(unsubscribe);
       }
     },
     value: function (viewNode, value) {

@@ -60,12 +60,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
-    name: '_create'
+    name: '_create',
+    createSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
-    name: '_finalize'
+    name: '_finalize',
+    createSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
@@ -506,7 +508,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       return '0';
     },
-
 
     get anchor() {
       if (this.inDOM) {

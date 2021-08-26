@@ -357,8 +357,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         return;
       }
 
-      const len = _this.refs.length;
-      for (let i = 0; i < len; i++) {
+      for (let i = 0, len = _this.refs.length; i < len; i++) {
         const ref = _this.refs[i];
         if (_this === ref) {
           continue;
@@ -368,7 +367,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       _this.sync(key, value);
-      for (let i = 0; i < len; i++) {
+      for (let i = 0, len = _this.refs.length; i < len; i++) {
         const ref = _this.refs[i];
         ref.parent.notify(ref.keyInParent, null, value);
       }

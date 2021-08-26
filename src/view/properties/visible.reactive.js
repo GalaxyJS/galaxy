@@ -11,7 +11,7 @@
         throttleId: null,
       };
     },
-    install: function (config) {
+    install: function () {
       return true;
     },
     apply: function (config, value, oldValue, expression) {

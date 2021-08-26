@@ -9,20 +9,19 @@
   };
 
   View.REACTIVE_BEHAVIORS['repeat'] = {
-    regex: null,
-    prepare: function (options, scope) {
+    prepare: function (scope, value) {
       this.virtualize();
 
       return {
         changeId: null,
         throttleId: null,
         nodes: [],
-        options: options,
+        options: value,
         oldChanges: {},
         positions: [],
         trackMap: [],
         scope: scope,
-        trackBy: options.trackBy
+        trackBy: value.trackBy
       };
     },
 
@@ -44,10 +43,6 @@
         config.watch = bindings.propertyKeysPaths;
         viewNode.localPropertyNames.add(config.options.as);
         viewNode.localPropertyNames.add(config.options.indexAs);
-        // if (config.options.indexAs) {
-        //   viewNode.localPropertyNames.add(config.options.indexAs);
-        // }
-
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
@@ -201,23 +196,16 @@
       //   config.trackMap = [];
       // }
 
-      View.destroyNodes(hasBeenRemoved.reverse());
+      View.destroyNodes(hasBeenRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       finalChanges = newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse());
+      View.destroyNodes(nodesToBeRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       finalChanges = Object.assign({}, changes);
       finalChanges.type = 'push';
     }
 
-    // viewNode.cache.repeatPushProcess = () => {
-    //   createPushProcess(viewNode, config, changes, config.scope);
-    // };
-
-    // repeatPushProcess can change on the fly therefore we need to register a function
-    // that calls the latest repeatPushProcess
-    // viewNode.cache.repeatPushProcess.call();
     return finalChanges;
 
   }

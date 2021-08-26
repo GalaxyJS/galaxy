@@ -23,9 +23,9 @@
     };
 
     if (expression) {
-      return function (none, oldValue) {
-        const expressionValue = expression(none);
-        setter(expressionValue, oldValue);
+      return function () {
+        const expressionValue = expression();
+        setter(expressionValue);
       };
     }
 

@@ -6,24 +6,56 @@
   };
 
   G.View.REACTIVE_BEHAVIORS['class'] = {
-    regex: G.View.BINDING_SYNTAX_REGEX,
-    prepare: function (m, s) {
+    prepare: function (scope, value) {
       return {
-        scope: s
+        scope,
+        subjects: value
       };
     },
-    install: function (data) {
+    install: function (config) {
+      if (this.virtual || config.subjects === null || config.subjects instanceof Array || typeof config.subjects !== 'object') {
+        return true;
+      }
+
+      const viewNode = this;
+      // when value is an object
+      const reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
+      const observer = new G.Observer(reactiveClasses);
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
+        const items = Object.getOwnPropertyDescriptors(reactiveClasses);
+        const staticClasses = {};
+        for (let key in items) {
+          const item = items[key];
+          if (item.enumerable && !item.hasOwnProperty('get')) {
+            staticClasses[key] = reactiveClasses[key];
+          }
+        }
+
+        applyClasses(viewNode, staticClasses);
+        viewNode.rendered.then(function () {
+          applyClasses(viewNode, reactiveClasses);
+          observer.onAll((key, value, oldValue) => {
+            applyClasses(viewNode, reactiveClasses);
+          });
+        });
+      } else {
+        applyClasses(viewNode, reactiveClasses);
+        observer.onAll((key, value, oldValue) => {
+          applyClasses(viewNode, reactiveClasses);
+        });
+      }
+
       return true;
     },
     /**
      *
-     * @param data
+     * @param config
      * @param value
      * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (data, value, oldValue, expression) {
+    apply: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }
@@ -44,32 +76,17 @@
         return node.removeAttribute('class');
       }
 
-      node.setAttribute('class', '');
-      // when value is an object
-      const clone = G.View.bindSubjectsToData(viewNode, value, data.scope, true);
-      const observer = new G.Observer(clone);
-      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        const items = Object.getOwnPropertyDescriptors(clone);
-        const staticClasses = {};
-        for (let key in items) {
-          const item = items[key];
-          if (item.enumerable && !item.hasOwnProperty('get')) {
-            staticClasses[key] = clone[key];
-          }
-        }
+      if (config.subjects === value) {
+        return;
+      }
 
-        applyClasses(viewNode, staticClasses);
+      // when value is an object
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
-          applyClasses(viewNode, clone);
-          observer.onAll((key, value, oldValue) => {
-            applyClasses(viewNode, clone);
-          });
+          applyClasses(viewNode, value);
         });
       } else {
-        applyClasses(viewNode, clone);
-        observer.onAll((key, value, oldValue) => {
-          applyClasses(viewNode, clone);
-        });
+        applyClasses(viewNode, value);
       }
     }
   };
@@ -93,7 +110,7 @@
   }
 
   function applyClasses(viewNode, classes) {
-    const currentClasses = viewNode.node.getAttribute('class');
+    const currentClasses = viewNode.node.getAttribute('class') || [];
     const newClasses = getClasses(classes);
     if (JSON.stringify(currentClasses) === JSON.stringify(newClasses)) {
       return;
