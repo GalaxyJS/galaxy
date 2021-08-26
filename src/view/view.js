@@ -640,7 +640,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
     if (property.setup && scopeProperty) {
       property.setup(viewNode, scopeProperty, key, expression);
     }
@@ -666,7 +666,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
 
     switch (property.type) {
       case 'attr':
@@ -700,7 +700,6 @@ Galaxy.View = /** @class */(function (G) {
   function View(scope) {
     const _this = this;
     _this.scope = scope;
-    _this.dataRepos = {};
     _this.config = {
       cleanContainer: false
     };
@@ -717,15 +716,6 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
-    setupRepos: function (repos) {
-      this.dataRepos = repos;
-    },
-    getAnimation: function (id) {
-      return new G.View.AnimationMeta(id);
-    },
-    nextFrame: function (callback) {
-      return window.requestAnimationFrame(callback);
-    },
     keyframe: {
       /**
        *
@@ -770,6 +760,13 @@ Galaxy.View = /** @class */(function (G) {
             }
           }
         };
+      },
+      action: function (action, sequence) {
+        if (!sequence) {
+          throw Error('keyframe.action need a sequence name');
+        }
+
+        (new G.View.AnimationMeta(sequence)).addOnComplete(action);
       }
     },
     init: function (blueprint) {

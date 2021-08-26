@@ -49,6 +49,7 @@
     _this.scope = scope;
     _this.module = module;
     _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.parentRoute = null;
 
     _this.oldURL = '';
     _this.resolvedRouteValue = null;
@@ -82,6 +83,9 @@
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
       this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
+      if (this.scope.parentScope && this.scope.parentScope.router) {
+        this.parentRoute = this.scope.parentScope.router.activeRoute;
+      }
       this.data.routes = this.routes;
 
       this.listener = this.detect.bind(this);
@@ -272,6 +276,7 @@
     },
 
     destroy: function () {
+      this.parentRoute.children = [];
       window.removeEventListener('popstate', this.listener);
     }
   };

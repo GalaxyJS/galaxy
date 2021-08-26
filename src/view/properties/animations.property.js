@@ -1,6 +1,6 @@
-/* global Galaxy, gsap, TimelineLite */
+/* global Galaxy, gsap */
 (function (G) {
-  if (!window.gsap || !window.TimelineLite) {
+  if (!window.gsap /*|| !window.Timeline*/) {
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
@@ -194,7 +194,7 @@
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({}, to);
+      to = Object.assign({duration: duration}, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -211,10 +211,7 @@
 
     let tween = null;
     if (from && to) {
-      tween = gsap.fromTo(node,
-        duration,
-        from,
-        to);
+      tween = gsap.fromTo(node, from, to);
     } else if (from) {
       from = Object.assign({}, from || {});
 
@@ -228,13 +225,10 @@
         from.onComplete = onComplete;
       }
 
-      tween = gsap.from(node,
-        duration,
-        from);
+      from.duration = duration;
+      tween = gsap.from(node, from);
     } else if (to) {
-      tween = gsap.to(node,
-        duration,
-        to);
+      tween = gsap.to(node, duration, to);
     } else {
       onComplete();
     }
@@ -348,7 +342,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -444,7 +438,7 @@
 
     const _this = this;
     _this.name = name;
-    _this.timeline = new TimelineLite({
+    _this.timeline = gsap.timeline({
       autoRemoveChildren: true,
       smoothChildTiming: false,
       paused: true,
@@ -506,19 +500,21 @@
 
       if (config.from && config.to) {
         const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
-        tween = gsap.fromTo(viewNode.node, duration || 0, config.from, to);
+        to.duration = duration || 0;
+        tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
         const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
-        tween = gsap.from(viewNode.node, duration || 0, from);
+        from.duration = duration || 0;
+        tween = gsap.from(viewNode.node, from);
       } else {
         const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
-        tween = gsap.to(viewNode.node, duration || 0, to);
+        to.duration = duration || 0;
+        tween = gsap.to(viewNode.node, to);
       }
 
       if (_this.timeline.getChildren(false).length === 0) {
         _this.timeline.add(tween);
       } else {
-        // console.log(config.position,viewNode.node)
         _this.timeline.add(tween, config.position || '+=0');
       }
 

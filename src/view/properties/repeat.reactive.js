@@ -138,23 +138,19 @@
         config.throttleId = 0;
       }
       config.throttleId = window.requestAnimationFrame(() => {
-        prepare(node, config, changes).then(finalChanges => {
-          process(node, config, finalChanges);
+        prepareChanges(node, config, changes).then(finalChanges => {
+          processChages(node, config, finalChanges);
         });
       });
     }
   };
 
-  async function prepare(viewNode, config, changes) {
-    let finalChanges = changes;
-    let newTrackMap = null;
-    // if (config.trackBy instanceof Function && changes.type === 'reset') {
+  async function prepareChanges(viewNode, config, changes) {
+    const hasAnimation = viewNode.blueprint.animations && viewNode.blueprint.animations.leave;
+
     if (typeof config.trackBy === 'string' && changes.type === 'reset') {
-      // newTrackMap = changes.params.map(function (item, i) {
-      //   return config.trackBy.call(viewNode, item, i);
-      // });
       const trackByKey = config.trackBy;
-      newTrackMap = changes.params.map(item => {
+      const newTrackMap = changes.params.map(item => {
         return item[trackByKey];
       });
       // list of nodes that should be removed
@@ -166,16 +162,6 @@
         }
         return true;
       });
-
-      // const newParams = [];
-      // const positions = [];
-      // newTrackMap.forEach(function (id, i) {
-      //   if (config.trackMap.indexOf(id) === -1) {
-      //     newParams.push(changes.params[i]);
-      //     positions.push(i);
-      //   }
-      // });
-      // config.positions = positions;
 
       const newChanges = new G.View.ArrayChange();
       newChanges.init = changes.init;
@@ -191,26 +177,21 @@
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      // Map should be updated asap if the newChanges.type is reset
-      // if (changes.type === 'reset' && newChanges.params.length === 0) {
-      //   config.trackMap = [];
-      // }
-
-      View.destroyNodes(hasBeenRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
-      finalChanges = newChanges;
+      View.destroyNodes(hasBeenRemoved.reverse(), hasAnimation);
+      return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
-      finalChanges = Object.assign({}, changes);
-      finalChanges.type = 'push';
+      View.destroyNodes(nodesToBeRemoved.reverse(), hasAnimation);
+      const newChanges = Object.assign({}, changes);
+      newChanges.type = 'push';
+      return newChanges;
     }
 
-    return finalChanges;
-
+    return changes;
   }
 
-  function process(node, config, changes) {
+  function processChages(node, config, changes) {
     const parentNode = node.parent;
     const positions = config.positions;
     const nodeScopeData = config.scope;
