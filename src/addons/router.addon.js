@@ -61,7 +61,7 @@
       routes: [],
       activeRoute: null,
       activeModule: null,
-      parameters: this.scope.parentScope && this.scope.parentScope.router ? this.scope.parentScope.router.parameters : {}
+      parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
     _this.viewport = {
       tag: 'main',
@@ -107,9 +107,13 @@
         path = this.config.baseURL + path;
       }
 
+      const currentPath = window.location.pathname;
+      if (currentPath === path) {
+        return;
+      }
+
       history.pushState({}, '', path);
-      const popStateEvent = new PopStateEvent('popstate', { state: {} });
-      dispatchEvent(popStateEvent);
+      dispatchEvent(new PopStateEvent('popstate', { state: {} }));
     },
 
     navigate: function (path) {
@@ -172,7 +176,7 @@
 
         const params = _this.createParamValueMap(dynamicRoute.paramNames, match.slice(1));
         if (_this.resolvedDynamicRouteValue === hash) {
-          return;
+          return Object.assign(_this.data.parameters, params);
         }
         _this.resolvedDynamicRouteValue = hash;
 
@@ -190,7 +194,7 @@
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
         if (_this.resolvedRouteValue === routeValue) {
-          return;
+          return _this.clearParams();
         }
         _this.resolvedRouteValue = routeValue;
 
@@ -222,10 +226,18 @@
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        this.data.parameters = params;
+        // this.data.parameters = params;
+        Object.assign(this.data.parameters, params);
       }
 
       return false;
+    },
+
+    clearParams: function () {
+      const newParams = {};
+      const keys = Object.keys(this.data.parameters);
+      keys.forEach(k => newParams[k] = undefined);
+      Object.assign(this.data.parameters, newParams);
     },
 
     extractDynamicRoutes: function (routesPath) {
@@ -262,7 +274,6 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-
       if (hash.indexOf(this.root) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
@@ -276,7 +287,9 @@
     },
 
     destroy: function () {
-      this.parentRoute.children = [];
+      if (this.parentRoute) {
+        this.parentRoute.children = [];
+      }
       window.removeEventListener('popstate', this.listener);
     }
   };

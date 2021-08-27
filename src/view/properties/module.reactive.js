@@ -48,6 +48,10 @@
         return console.error('module property only accept objects as value', moduleMeta);
       }
 
+      if (moduleMeta && oldModuleMeta && moduleMeta.path === oldModuleMeta.path) {
+        return;
+      }
+
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
         // G.View.CREATE_IN_NEXT_FRAME(_this.index, () => {
         _this.rendered.then(function () {
