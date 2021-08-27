@@ -1,6 +1,11 @@
 /* global Galaxy, gsap */
 (function (G) {
-  if (!window.gsap /*|| !window.Timeline*/) {
+  if (!window.gsap) {
+    G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
+      type: 'prop',
+      name: 'animations',
+    };
+
     return console.warn('please load GSAP - GreenSock in order to activate animations');
   }
 
