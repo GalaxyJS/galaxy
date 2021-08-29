@@ -37,12 +37,10 @@
           throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
         config.options.indexAs = config.options.indexAs || '__index__';
-
-        const bindings = View.getBindings(config.options.data);
-
-        config.watch = bindings.propertyKeysPaths;
         viewNode.localPropertyNames.add(config.options.as);
         viewNode.localPropertyNames.add(config.options.indexAs);
+
+        const bindings = View.getBindings(config.options.data);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {

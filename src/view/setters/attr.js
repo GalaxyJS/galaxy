@@ -2,7 +2,7 @@
 (function (G) {
   G.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
     const valueFn = property.value || G.View.setAttr;
-    const setter = function (value, oldValue) {
+    const setter = function A(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           valueFn(viewNode, asyncValue, oldValue, attrName);

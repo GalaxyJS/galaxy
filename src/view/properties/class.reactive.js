@@ -9,7 +9,8 @@
     prepare: function (scope, value) {
       return {
         scope,
-        subjects: value
+        subjects: value,
+        reactiveClasses: null
       };
     },
     install: function (config) {
@@ -19,19 +20,9 @@
 
       const viewNode = this;
       // when value is an object
-      const reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
+      const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
       const observer = new G.Observer(reactiveClasses);
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        const items = Object.getOwnPropertyDescriptors(reactiveClasses);
-        const staticClasses = {};
-        for (let key in items) {
-          const item = items[key];
-          if (item.enumerable && !item.hasOwnProperty('get')) {
-            staticClasses[key] = reactiveClasses[key];
-          }
-        }
-
-        applyClasses(viewNode, staticClasses);
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
           observer.onAll((key, value, oldValue) => {
@@ -39,7 +30,6 @@
           });
         });
       } else {
-        applyClasses(viewNode, reactiveClasses);
         observer.onAll((key, value, oldValue) => {
           applyClasses(viewNode, reactiveClasses);
         });
@@ -77,7 +67,7 @@
       }
 
       if (config.subjects === value) {
-        return;
+        value = config.reactiveClasses;
       }
 
       // when value is an object

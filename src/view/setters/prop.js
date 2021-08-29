@@ -7,7 +7,7 @@
     }
 
     const valueFn = property.value || G.View.setProp;
-    const setter = function (value, oldValue) {
+    const setter = function P(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           valueFn(viewNode, asyncValue, oldValue, property.name);

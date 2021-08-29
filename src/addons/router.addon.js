@@ -194,7 +194,8 @@
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
         if (_this.resolvedRouteValue === routeValue) {
-          return _this.clearParams();
+          // static routes don't have parameters
+          return Object.assign(_this.data.parameters, _this.createClearParameters());
         }
         _this.resolvedRouteValue = routeValue;
 
@@ -203,7 +204,7 @@
         }
         matchCount++;
 
-        return _this.callRoute(staticRoutes, normalizedHash, {}, parentParams);
+        return _this.callRoute(staticRoutes, normalizedHash, _this.createClearParameters(), parentParams);
       }
 
       if (matchCount === 0) {
@@ -226,18 +227,17 @@
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        // this.data.parameters = params;
         Object.assign(this.data.parameters, params);
       }
 
       return false;
     },
 
-    clearParams: function () {
-      const newParams = {};
+    createClearParameters: function() {
+      const clearParams = {};
       const keys = Object.keys(this.data.parameters);
-      keys.forEach(k => newParams[k] = undefined);
-      Object.assign(this.data.parameters, newParams);
+      keys.forEach(k => clearParams[k] = undefined);
+      return clearParams;
     },
 
     extractDynamicRoutes: function (routesPath) {

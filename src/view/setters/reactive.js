@@ -8,7 +8,7 @@
   };
 
   function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
+    return function R(value, oldValue) {
       return behavior.apply.call(vn, data, value, oldValue, expression, scope);
     };
   }

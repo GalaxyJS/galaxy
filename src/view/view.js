@@ -28,7 +28,7 @@ Galaxy.View = /** @class */(function (G) {
    *
    * @typedef {Object} Galaxy.View.BlueprintProperty
    * @property {'attr'|'prop'|'reactive'} [type]
-   * @property {Function} [setup]
+   * @property {Function} [install]
    * @property {Function} [createSetter]
    * @property {Function} [value]
    */
@@ -36,7 +36,7 @@ Galaxy.View = /** @class */(function (G) {
   View.NODE_BLUEPRINT_PROPERTY_MAP = {
     tag: {
       type: 'none'
-      // setup: function(viewNode, scopeReactiveData, property, expression) {}
+      // install: function(viewNode, scopeReactiveData, property, expression) {}
       // createSetter: function(viewNode, attrName, property, expression, scope) {}
       // value: function(viewNode, attr, value, oldValue) {}
     },
@@ -641,8 +641,8 @@ Galaxy.View = /** @class */(function (G) {
      * @type {Galaxy.View.BlueprintProperty}
      */
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
-    if (property.setup && scopeProperty) {
-      property.setup(viewNode, scopeProperty, key, expression);
+    if (property.install && scopeProperty) {
+      property.install(viewNode, scopeProperty, key, expression);
     }
 
     // if viewNode is virtual, then the expression should be ignored
@@ -818,7 +818,7 @@ Galaxy.View = /** @class */(function (G) {
           const behavior = View.REACTIVE_BEHAVIORS[attributeName];
           if (behavior) {
             const needValueAssign = View.installReactiveBehavior(behavior, viewNode, attributeName, scopeData);
-            if (!needValueAssign) {
+            if (needValueAssign === false) {
               continue;
             }
           }

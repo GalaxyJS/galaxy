@@ -13,7 +13,8 @@
     prepare: function (scope, value) {
       return {
         scope: scope,
-        subjects: value
+        subjects: value,
+        reactiveStyle: null
       };
     },
     install: function (config) {
@@ -22,7 +23,7 @@
       }
 
       const node = this.node;
-      const reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      const reactiveStyle = config.reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
       const observer = new G.Observer(reactiveStyle);
       observer.onAll(() => {
         setStyle(node, reactiveStyle);
@@ -55,6 +56,7 @@
       } else if (value instanceof Array) {
         return node.setAttribute('style', value.join(';'));
       }
+
       if (value instanceof Promise) {
         value.then(function (_value) {
           setStyle(node, _value);
@@ -64,7 +66,8 @@
       }
 
       if (config.subjects === value) {
-        return;
+        // return setStyle(node, config.reactiveStyle);
+        value = config.reactiveStyle;
       }
 
       setStyle(node, value);
