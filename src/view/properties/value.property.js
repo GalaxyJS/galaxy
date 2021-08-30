@@ -14,7 +14,7 @@
      * @param prop
      * @param {Function} expression
      */
-    install: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +

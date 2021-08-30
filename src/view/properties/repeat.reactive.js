@@ -3,7 +3,6 @@
   const View = G.View;
   const CLONE = G.clone;
   const DESTROY_NODES = G.View.destroyNodes;
-  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
 
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
@@ -285,7 +284,7 @@
       } else {
         for (let i = 0, len = newItems.length; i < len; i++) {
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
-          let cns = CLONE(templateBlueprint);
+          const cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = i;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
