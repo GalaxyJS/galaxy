@@ -1,7 +1,8 @@
 /* global Galaxy */
 (function (G) {
+  const NODE_BLUEPRINT_PROPERTY_MAP = G.View.NODE_BLUEPRINT_PROPERTY_MAP;
   G.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = G.View.REACTIVE_BEHAVIORS[property.name];
+    const behavior = NODE_BLUEPRINT_PROPERTY_MAP[property.name];
     const cache = viewNode.cache[attrName];
 
     return createReactiveFunction(behavior, viewNode, cache, expression, scope);

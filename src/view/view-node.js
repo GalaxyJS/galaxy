@@ -4,6 +4,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const commentNode = document.createComment('');
   const defProp = Object.defineProperty;
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
+  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
+  const DESTROY_IN_NEXT_FRAME = G.View.DESTROY_IN_NEXT_FRAME;
 
   function createComment(t) {
     const n = commentNode.cloneNode();
@@ -61,13 +63,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
     name: '_create',
-    createSetter: () => EMPTY_CALL
+    setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
     name: '_finalize',
-    createSetter: () => EMPTY_CALL
+    setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
@@ -207,10 +209,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
 
     _this.rendered = new Promise(function (done) {
-      _this.hasBeenRendered = function () {
-        _this.rendered.resolved = true;
-        done();
-      };
+      if (_this.node.style) {
+        _this.hasBeenRendered = function () {
+          _this.rendered.resolved = true;
+          _this.node.style.removeProperty('display');
+          done();
+        };
+      } else {
+        _this.hasBeenRendered = function () {
+          _this.rendered.resolved = true;
+          done();
+        };
+      }
     });
     _this.rendered.resolved = false;
 
@@ -309,7 +319,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
         _this.blueprint.renderConfig.renderDetached = false;
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
         });
         return;
@@ -330,24 +340,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         _this.hasBeenInserted();
-
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.hasBeenRendered();
-          if (_this.node.style) {
-            _this.node.style.removeProperty('display');
-          }
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        const defPLS = _this.populateLeaveSequence;
+        const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-        GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
-          _this.populateLeaveSequence = defPLS;
+          _this.populateLeaveSequence = defaultPopulateLeaveSequence;
         });
       }
     },
@@ -357,14 +363,14 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.visible = flag;
 
       if (flag && !_this.virtual) {
-        GV.CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, () => {
           _this.node.style.display = null;
           _this.populateEnterSequence();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, () => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
@@ -394,7 +400,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       _this.properties.add(reactiveData);
 
-      _this.setters[propertyName] = GV.createSetter(_this, propertyName, reactiveData, expression);
+      _this.setters[propertyName] = GV.assignSetter(_this, propertyName, reactiveData, expression);
       if (!_this.setters[propertyName]) {
         _this.setters[propertyName] = function () {
           console.error('No setter for property :', propertyName, '\nNode:', _this);
@@ -461,7 +467,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       _this.finalize.forEach(act => act.call(_this));
 
-      GV.DESTROY_IN_NEXT_FRAME(_this.index, () => {
+      DESTROY_IN_NEXT_FRAME(_this.index, () => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
         }
@@ -499,9 +505,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     get index() {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
-        let i = arrIndexOf.call(childNodes, this.placeholder);
+        let i = -1;
+        for (let counter = 0, len = childNodes.length; counter < len; counter++) {
+          if (childNodes[counter] === this.node) {
+            i = counter;
+            break;
+          }
+        }
         if (i === -1) {
-          i = arrIndexOf.call(childNodes, this.node);
+          i = arrIndexOf.call(childNodes, this.placeholder);
         }
         return this.parent.index + '.' + ViewNode.createIndex(i);
       }

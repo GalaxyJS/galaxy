@@ -1,11 +1,9 @@
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['content'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['content'] = {
     type: 'reactive',
-    name: 'content'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['content'] = {
+    name: 'content',
     prepare: function () {
       this.virtualize();
       return {

@@ -1,22 +1,24 @@
 /* global Galaxy */
 (function (G) {
   const View = G.View;
-  const gClone = G.clone;
+  const CLONE = G.clone;
+  const DESTROY_NODES = G.View.destroyNodes;
+  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
 
+  View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    name: 'repeat'
-  };
-
-  View.REACTIVE_BEHAVIORS['repeat'] = {
+    name: 'repeat',
     prepare: function (scope, value) {
       this.virtualize();
 
       return {
         changeId: null,
-        throttleId: null,
+        previousActionId: null,
         nodes: [],
-        options: value,
+        data: value.data,
+        as: value.as,
+        indexAs: value.indexAs || '_index',
         oldChanges: {},
         positions: [],
         trackMap: [],
@@ -32,15 +34,14 @@
     install: function (config) {
       const viewNode = this;
 
-      if (config.options) {
-        if (config.options.as === 'data') {
+      if (config.data) {
+        if (config.as === 'data') {
           throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
-        config.options.indexAs = config.options.indexAs || '__index__';
-        viewNode.localPropertyNames.add(config.options.as);
-        viewNode.localPropertyNames.add(config.options.indexAs);
+        viewNode.localPropertyNames.add(config.as);
+        viewNode.localPropertyNames.add(config.indexAs);
 
-        const bindings = View.getBindings(config.options.data);
+        const bindings = View.getBindings(config.data);
         if (bindings.propertyKeysPaths) {
           View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeysPaths.forEach((path) => {
@@ -53,12 +54,12 @@
               console.error('Could not find: ' + path + '\n', error);
             }
           });
-        } else if (config.options.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.createSetter(viewNode, 'repeat', config.options.data, null, config.scope);
+        } else if (config.data instanceof Array) {
+          const setter = viewNode.setters['repeat'] = View.assignSetter(viewNode, 'repeat', config.data, null, config.scope);
           const value = new G.View.ArrayChange();
-          value.params = config.options.data;
-          config.options.data.changes = value;
-          setter(config.options.data);
+          value.params = config.data;
+          config.data.changes = value;
+          setter(config.data);
         }
       }
 
@@ -110,8 +111,8 @@
 
       if (changes && !(changes instanceof G.View.ArrayChange)) {
         return console.warn('%crepeat %cdata is not a type of ArrayChange' +
-          '\ndata: ' + config.options.data +
-          '\n%ctry \'' + config.options.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
+          '\ndata: ' + config.data +
+          '\n%ctry \'' + config.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
 
       if (!changes || typeof changes === 'string') {
@@ -127,15 +128,14 @@
         return;
       }
 
-      config.changeId = changes.id;
-
-      /** @type {Galaxy.View.ViewNode} */
-      config.oldChanges = changes;
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
-        config.throttleId = 0;
+      // Only cancel previous action if the type of new and old changes is reset
+      if (changes.type === 'reset' && changes.type === config.oldChanges.type && config.previousActionId) {
+        cancelAnimationFrame(config.previousActionId);
       }
-      config.throttleId = window.requestAnimationFrame(() => {
+
+      config.changeId = changes.id;
+      config.oldChanges = changes;
+      config.previousActionId = requestAnimationFrame(() => {
         prepareChanges(node, config, changes).then(finalChanges => {
           processChages(node, config, finalChanges);
         });
@@ -175,12 +175,12 @@
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      View.destroyNodes(hasBeenRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(hasBeenRemoved.reverse(), hasAnimation);
       return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      View.destroyNodes(nodesToBeRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(nodesToBeRemoved.reverse(), hasAnimation);
       const newChanges = Object.assign({}, changes);
       newChanges.type = 'push';
       return newChanges;
@@ -195,8 +195,8 @@
     const nodeScopeData = config.scope;
     const trackMap = config.trackMap;
     const placeholdersPositions = [];
-    const as = config.options.as;
-    const indexAs = config.options.indexAs;
+    const as = config.as;
+    const indexAs = config.indexAs;
     const nodes = config.nodes;
     const trackByKey = config.trackBy;
     const templateBlueprint = node.cloneBlueprint();
@@ -271,13 +271,12 @@
           const newItemCopy = newItemsCopy[i];
           const index = trackMap.indexOf(newItemCopy[trackByKey]);
           if (index !== -1) {
-            // console.log(as, config.nodes[index], index);
-            config.nodes[index].data.__index__ = index;
+            config.nodes[index].data._index = index;
             continue;
           }
 
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
-          const cns = gClone(templateBlueprint);
+          const cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = trackMap.length;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);
@@ -286,7 +285,7 @@
       } else {
         for (let i = 0, len = newItems.length; i < len; i++) {
           const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
-          let cns = gClone(templateBlueprint);
+          let cns = CLONE(templateBlueprint);
           itemDataScope[indexAs] = i;
 
           vn = view.createNode(cns, parentNode, itemDataScope, placeholdersPositions[i] || defaultPosition, node);

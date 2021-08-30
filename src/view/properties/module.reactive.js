@@ -1,28 +1,9 @@
 /* global Galaxy */
 (function (G) {
-  function cleanModuleContent(viewNode) {
-    const children = viewNode.getChildNodes();
-    children.forEach(vn => {
-      if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
-        vn.populateLeaveSequence = function (onComplete) {
-          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            sequence: 'DESTROY',
-            duration: .000001
-          }, {}, onComplete);
-        };
-      }
-    });
-    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
-    viewNode.clean(true);
-    // });
-  }
-
+  G.View.REACTIVE_BEHAVIORS['module'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    name: 'module'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['module'] = {
+    name: 'module',
     prepare: function (scope) {
       return {
         module: null,
@@ -65,6 +46,23 @@
       config.moduleMeta = moduleMeta;
     }
   };
+
+  function cleanModuleContent(viewNode) {
+    const children = viewNode.getChildNodes();
+    children.forEach(vn => {
+      if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
+        vn.populateLeaveSequence = function (onComplete) {
+          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+            sequence: 'DESTROY',
+            duration: .000001
+          }, {}, onComplete);
+        };
+      }
+    });
+    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+    viewNode.clean(true);
+    // });
+  }
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
     return function () {

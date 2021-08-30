@@ -1,11 +1,9 @@
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['inputs'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
-    name: 'inputs'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['inputs'] = {
+    name: 'inputs',
     /**
      *
      * @this {Galaxy.View.ViewNode}

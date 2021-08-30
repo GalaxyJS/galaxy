@@ -1,11 +1,9 @@
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['$if'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['$if'] = {
     type: 'reactive',
-    name: '$if'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['$if'] = {
+    name: '$if',
     prepare: function () {
       return {
         throttleId: null,
@@ -40,12 +38,12 @@
       config.throttleId = window.requestAnimationFrame(() => {
         viewNode.rendered.then(() => {
           if (viewNode.inDOM !== value) {
-            // debugger
             viewNode.setInDOM(value);
           }
         });
       });
     }
   };
+
 })(Galaxy);
 

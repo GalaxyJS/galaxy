@@ -1,11 +1,9 @@
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['visible'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['visible'] = {
     type: 'reactive',
-    name: 'visible'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['visible'] = {
+    name: 'visible',
     prepare: function () {
       return {
         throttleId: null,

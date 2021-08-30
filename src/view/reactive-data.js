@@ -268,6 +268,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const initialChanges = new G.View.ArrayChange();
+
       initialChanges.original = arr;
       initialChanges.type = 'reset';
       initialChanges.params = arr;

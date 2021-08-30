@@ -1,11 +1,9 @@
 /* global Galaxy */
 (function (G) {
+  G.View.REACTIVE_BEHAVIORS['class'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
-    name: 'class'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['class'] = {
+    name: 'class',
     prepare: function (scope, value) {
       return {
         scope,

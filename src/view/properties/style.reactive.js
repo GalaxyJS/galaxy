@@ -1,15 +1,9 @@
 /* global Galaxy */
 (function (G) {
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style.config'] = {
-    type: 'none'
-  };
-
+  G.View.REACTIVE_BEHAVIORS['style'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['style'] = {
     type: 'reactive',
-    name: 'style'
-  };
-
-  G.View.REACTIVE_BEHAVIORS['style'] = {
+    name: 'style',
     prepare: function (scope, value) {
       return {
         scope: scope,
