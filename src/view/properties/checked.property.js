@@ -11,6 +11,10 @@
      * @param {Function} expression
      */
     beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression && viewNode.blueprint.tag === 'input') {
         throw new Error('input.checked property does not support binding expressions ' +
           'because it must be able to change its data.\n' +

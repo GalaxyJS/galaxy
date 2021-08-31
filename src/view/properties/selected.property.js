@@ -11,6 +11,10 @@
      * @param {Function} expression
      */
     beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression && viewNode.blueprint.tag === 'select') {
         throw new Error('select.selected property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -19,6 +23,14 @@
 
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
+        const bindings = G.View.getBindings(viewNode.blueprint.selected);
+        const id = bindings.propertyKeysPaths[0].split('.').pop();
+        const nativeNode = viewNode.node;
+        nativeNode.addEventListener('change', (event) => {
+          // if (scopeReactiveData.data[id] && !nativeNode.value) {
+          //   nativeNode.value = scopeReactiveData.data[id];
+          // }
+        });
         // const bindings = G.View.getBindings(viewNode.blueprint.selected);
         // const id = bindings.propertyKeysPaths[0].split('.').pop();
         // const nativeNode = viewNode.node;

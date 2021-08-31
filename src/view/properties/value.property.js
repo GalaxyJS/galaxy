@@ -15,6 +15,11 @@
      * @param {Function} expression
      */
     beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+      const nativeNode = viewNode.node;
+      if (!scopeReactiveData) {
+        return;
+      }
+
       if (expression) {
         throw new Error('input.value property does not support binding expressions ' +
           'because it must be able to change its data.\n' +
@@ -23,8 +28,22 @@
 
       const bindings = G.View.getBindings(viewNode.blueprint.value);
       const id = bindings.propertyKeysPaths[0].split('.').pop();
-      const nativeNode = viewNode.node;
-      if (nativeNode.type === 'number') {
+      if (nativeNode.tagName === 'SELECT') {
+        const observer = new MutationObserver((data) => {
+          viewNode.rendered.then(() => {
+            // if (!scopeReactiveData.data[id]) {
+            //   scopeReactiveData.data[id] = nativeNode.value;
+            // } else {
+            nativeNode.value = scopeReactiveData.data[id];
+            // }
+          });
+        });
+        observer.observe(nativeNode, { childList: true });
+        viewNode.finalize.push(() => {
+          observer.disconnect();
+        });
+        nativeNode.addEventListener('change', createHandler(scopeReactiveData, id));
+      } else if (nativeNode.type === 'number') {
         nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
       } else {
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));

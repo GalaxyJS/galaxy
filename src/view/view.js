@@ -166,7 +166,7 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const target = View.TO_BE_CREATED[index] || [];
-    const c = {a: action};
+    const c = { a: action };
     target.push(c);
     View.TO_BE_CREATED[index] = target;
 
@@ -643,8 +643,8 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || {type: 'attr'};
-    if (property.beforeAssign && scopeProperty) {
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
+    if (property.beforeAssign) {
       property.beforeAssign(viewNode, scopeProperty, key, expression);
     }
 
@@ -669,7 +669,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
 
     switch (property.type) {
       case 'attr':
@@ -730,7 +730,7 @@ Galaxy.View = /** @class */(function (G) {
     return this;
   };
 
-  Keyframe.prototype.asBlueprint = function (type) {
+  Keyframe.prototype.asNode = function (type) {
     const _keyframe = this;
     const animations = {};
     animations[type] = {
@@ -746,16 +746,12 @@ Galaxy.View = /** @class */(function (G) {
     };
   };
 
-  Keyframe.prototype.asEnterBlueprint = function () {
-    return this.asBlueprint('enter');
+  Keyframe.prototype.asEnterNode = function () {
+    return this.asNode('enter');
   };
 
-  Keyframe.prototype.asLeaveBlueprint = function () {
-    return this.asBlueprint('leave');
-  };
-
-  Keyframe.prototype.play = function () {
-    (new G.View.AnimationMeta(this.sequence)).addOnComplete(this.action);
+  Keyframe.prototype.asLeaveNode = function () {
+    return this.asNode('leave');
   };
 
   View.prototype = {
@@ -803,13 +799,6 @@ Galaxy.View = /** @class */(function (G) {
             }
           }
         };
-      },
-      action: function (action, sequence) {
-        if (!sequence) {
-          throw Error('keyframe.action need a sequence name');
-        }
-
-        (new G.View.AnimationMeta(sequence)).addOnComplete(action);
       }
     },
     init: function (blueprint) {

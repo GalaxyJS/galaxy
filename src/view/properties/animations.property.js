@@ -128,44 +128,6 @@
           }, {}, onComplete);
         };
       }
-
-      const classAnimationsHandler = function () {
-        viewNode.observer.on('classList', function (classes, oldClasses) {
-          oldClasses = oldClasses || [];
-
-          try {
-            classes.forEach(function (item) {
-              // Class has been added
-              if (item && oldClasses.indexOf(item) === -1) {
-                const classEvent = value['add:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.remove(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.add(item);
-                  });
-                }
-              }
-            });
-
-            oldClasses.forEach(function (item) {
-              if (item && classes.indexOf(item) === -1) {
-                // Class has been removed
-                const classEvent = value['remove:' + item];
-                if (classEvent) {
-                  viewNode.node.classList.add(item);
-                  AnimationMeta.installGSAPAnimation(viewNode, item, classEvent, value.config, () => {
-                    viewNode.node.classList.remove(item);
-                  });
-                }
-              }
-            });
-          } catch (exception) {
-            console.warn(exception);
-          }
-        });
-      };
-
-      // viewNode.rendered.then(classAnimationsHandler);
     }
   };
 
@@ -199,7 +161,7 @@
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({duration: duration}, to);
+      to = Object.assign({ duration: duration }, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -336,7 +298,7 @@
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
    * @param config
-   * @param {callback} onComplete
+   * @param {Function} onComplete
    */
   AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
@@ -347,7 +309,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -410,12 +372,7 @@
         animationMeta.awaits.push(newConfig.await);
       }
 
-      // add node with it's animation to the 'animationMeta.timeline'
-      if (type === 'leave' && config.batchLeaveDOMManipulation !== false) {
-        animationMeta.add(viewNode, newConfig, onComplete);
-      } else {
-        animationMeta.add(viewNode, newConfig, onComplete);
-      }
+      animationMeta.add(viewNode, newConfig, onComplete);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
@@ -496,7 +453,6 @@
      */
     add: function (viewNode, config, onComplete) {
       const _this = this;
-
       let tween = null;
       let duration = config.duration;
       if (duration instanceof Function) {
