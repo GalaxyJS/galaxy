@@ -36,6 +36,7 @@ Galaxy.View = /** @class */(function (G) {
 
   View.REACTIVE_BEHAVIORS = {};
 
+  View.COMPONENTS = {};
   /**
    *
    * @type {{[property: string]: Galaxy.View.BlueprintProperty}}
@@ -696,6 +697,23 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
+   * @param {string} id
+   * @param blueprint
+   * @param {Galaxy.Scope|Object} scopeData
+   * @param {Galaxy.View} view
+   * @param {Node|Element|null} refNode
+   * @returns {*}
+   */
+  View.getComponent = function (id, blueprint, scopeData, view, refNode) {
+    if (id && View.COMPONENTS.hasOwnProperty(id)) {
+      return View.COMPONENTS[id](blueprint);
+    }
+
+    return blueprint;
+  };
+
+  /**
+   *
    * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
@@ -718,43 +736,33 @@ Galaxy.View = /** @class */(function (G) {
     }
   }
 
-  function Keyframe(action) {
-    this.sequence = null;
-    this.duration = 0;
-    this.action = action;
-  }
-
-  Keyframe.prototype.addTo = function (sequence, duration) {
-    this.sequence = sequence;
-    this.duration = duration || 0;
-    return this;
-  };
-
-  Keyframe.prototype.asNode = function (type) {
-    const _keyframe = this;
-    const animations = {};
-    animations[type] = {
-      sequence: _keyframe.sequence,
-      duration: _keyframe.duration,
-      onComplete: _keyframe.action
-    };
-
-    return {
-      tag: 'comment',
-      nodeValue: 'keyframe:' + type,
-      animations: animations
-    };
-  };
-
-  Keyframe.prototype.asEnterNode = function () {
-    return this.asNode('enter');
-  };
-
-  Keyframe.prototype.asLeaveNode = function () {
-    return this.asNode('leave');
-  };
-
   View.prototype = {
+    enterKeyframe: function (onComplete, sequence, duration) {
+      return {
+        tag: 'comment',
+        nodeValue: 'keyframe:enter',
+        animations: {
+          enter: {
+            duration: duration || .01,
+            sequence,
+            onComplete
+          }
+        }
+      };
+    },
+    leaveKeyframe: function (onComplete, sequence, duration) {
+      return {
+        tag: 'comment',
+        nodeValue: 'keyframe:leave',
+        animations: {
+          enter: {
+            duration: duration || .01,
+            sequence,
+            onComplete
+          }
+        }
+      };
+    },
     keyframe: {
       /**
        *
@@ -820,7 +828,7 @@ Galaxy.View = /** @class */(function (G) {
      * @param {Object} scopeData
      * @param {Node|Element|null} position
      * @param {Node|Element|null} refNode
-     * @return {Galaxy.View.ViewNode|Array<any>}
+     * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
      */
     createNode: function (blueprint, parent, scopeData, position, refNode) {
       const _this = this;
@@ -844,11 +852,13 @@ Galaxy.View = /** @class */(function (G) {
 
         return result;
       } else if (blueprint instanceof Object) {
+        // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this, refNode);
         let attributeValue, attributeName;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
         parent.registerChild(viewNode, position);
+
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
           attributeName = keys[i];
