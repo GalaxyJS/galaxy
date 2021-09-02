@@ -3,8 +3,8 @@
   G.View.REACTIVE_BEHAVIORS['$if'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['$if'] = {
     type: 'reactive',
-    name: '$if',
-    prepare: function () {
+    key: '$if',
+    getConfig: function () {
       return {
         throttleId: null,
       };
@@ -20,7 +20,7 @@
      * @param oldValue
      * @param expression
      */
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;

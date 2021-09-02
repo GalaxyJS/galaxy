@@ -2,7 +2,7 @@
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['selected'] = {
     type: 'prop',
-    name: 'selected',
+    key: 'selected',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -10,7 +10,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -44,7 +44,7 @@
         // viewNode.destroyed.then(unsubscribe);
       }
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       const nativeNode = viewNode.node;
 
       viewNode.rendered.then(function () {

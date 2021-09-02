@@ -1,16 +1,17 @@
 /* global Galaxy */
 (function (G) {
-  const NODE_BLUEPRINT_PROPERTY_MAP = G.View.NODE_BLUEPRINT_PROPERTY_MAP;
-  G.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = NODE_BLUEPRINT_PROPERTY_MAP[property.name];
-    const cache = viewNode.cache[attrName];
+  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
+    const propertyName = property.key;
+    const updateFn = property.update;
+    const config = viewNode.cache[propertyName];
 
-    return createReactiveFunction(behavior, viewNode, cache, expression, scope);
+    return createReactiveFunction(updateFn, viewNode, config, expression, scope);
   };
 
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
+  function createReactiveFunction(updateFn, vn, config, expression, scope) {
+    const nodeUpdateFn = updateFn.bind(vn);
     return function R(value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+      return nodeUpdateFn(config, value, oldValue, expression, scope);
     };
   }
 })(Galaxy);

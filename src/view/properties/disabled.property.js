@@ -6,8 +6,8 @@
    */
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = {
     type: 'attr',
-    name: 'disabled',
-    value: function (viewNode, value, oldValue, attr) {
+    key: 'disabled',
+    update: function (viewNode, value, oldValue, attr) {
       viewNode.rendered.then(() => {
         if (viewNode.blueprint.tag.toLowerCase() === 'form') {
           const children = viewNode.node.querySelectorAll('input, textarea, select, button');

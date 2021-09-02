@@ -3,8 +3,8 @@
   G.View.REACTIVE_BEHAVIORS['module'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    name: 'module',
-    prepare: function (scope) {
+    key: 'module',
+    getConfig: function (scope) {
       return {
         module: null,
         moduleMeta: null,
@@ -14,7 +14,7 @@
     install: function () {
       return true;
     },
-    apply: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
+    update: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
       const _this = this;
 
       if (expression) {

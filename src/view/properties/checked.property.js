@@ -2,7 +2,7 @@
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['checked'] = {
     type: 'prop',
-    name: 'checked',
+    key: 'checked',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -10,7 +10,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -50,7 +50,7 @@
         }
       });
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       const nativeNode = viewNode.node;
       viewNode.rendered.then(function () {
         if (/\[\]$/.test(nativeNode.name)) {

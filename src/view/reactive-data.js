@@ -527,7 +527,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
         if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {
-          node.installSetter(this, nodeKey, expression);
+          node.registerActiveProperty(nodeKey, this, expression);
         }
 
         map.keys.push(nodeKey);

@@ -7,8 +7,8 @@
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    name: 'repeat',
-    prepare: function (scope, value) {
+    key: 'repeat',
+    getConfig: function (scope, value) {
       this.virtualize();
 
       return {
@@ -28,7 +28,7 @@
 
     /**
      *
-     * @param config Return of prepare method
+     * @param config Value return by getConfig
      */
     install: function (config) {
       const viewNode = this;
@@ -54,7 +54,7 @@
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.assignSetter(viewNode, 'repeat', config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(viewNode, 'repeat', config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;
@@ -68,12 +68,12 @@
     /**
      *
      * @this {Galaxy.View.ViewNode}
-     * @param config The return of prepare
+     * @param config The value returned by getConfig
      * @param array
      * @param oldChanges
      * @param {Function} expression
      */
-    apply: function (config, array, oldChanges, expression) {
+    update: function (config, array, oldChanges, expression) {
       let changes = null;
       if (expression) {
         array = expression();

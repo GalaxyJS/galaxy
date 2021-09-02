@@ -6,7 +6,7 @@
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['value'] = {
     type: 'prop',
-    name: 'value',
+    key: 'value',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -14,7 +14,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeAssign: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate : function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       const nativeNode = viewNode.node;
       if (!scopeReactiveData) {
         return;
@@ -49,7 +49,7 @@
         nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
       }
     },
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       // input field parse the value which has been passed to it into a string
       // that's why we need to parse undefined and null into an empty string
       if (value !== viewNode.node.value || !viewNode.node.value) {

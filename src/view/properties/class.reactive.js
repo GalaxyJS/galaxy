@@ -3,8 +3,8 @@
   G.View.REACTIVE_BEHAVIORS['class'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
-    name: 'class',
-    prepare: function (scope, value) {
+    key: 'class',
+    getConfig: function (scope, value) {
       return {
         scope,
         subjects: value,
@@ -43,7 +43,7 @@
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (this.virtual) {
         return;
       }

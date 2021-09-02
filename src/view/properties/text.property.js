@@ -2,14 +2,15 @@
 (function (G) {
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['text'] = {
     type: 'prop',
-    name: 'text',
+    key: 'text',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param value
      */
-    value: function (viewNode, value) {
-      const textNode = viewNode.node['<>text'];
+    update: function (viewNode, value) {
+      const nativeNode = viewNode.node;
+      const textNode = nativeNode['<>text'];
       let textValue = typeof value === 'undefined' || value === null ? '' : value;
 
       if (textValue instanceof Function) {
@@ -21,8 +22,8 @@
       if (textNode) {
         textNode.textContent = textValue;
       } else {
-        viewNode.node['<>text'] = document.createTextNode(textValue);
-        viewNode.node.insertBefore(viewNode.node['<>text'], viewNode.node.firstChild);
+        nativeNode['<>text'] = document.createTextNode(textValue);
+        nativeNode.insertBefore(nativeNode['<>text'], nativeNode.firstChild);
       }
     }
   };

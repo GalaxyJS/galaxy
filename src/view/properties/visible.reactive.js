@@ -3,8 +3,8 @@
   G.View.REACTIVE_BEHAVIORS['visible'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['visible'] = {
     type: 'reactive',
-    name: 'visible',
-    prepare: function () {
+    key: 'visible',
+    getConfig: function () {
       return {
         throttleId: null,
       };
@@ -12,7 +12,7 @@
     install: function () {
       return true;
     },
-    apply: function (config, value, oldValue, expression) {
+    update: function (config, value, oldValue, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;

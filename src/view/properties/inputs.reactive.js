@@ -3,14 +3,14 @@
   G.View.REACTIVE_BEHAVIORS['inputs'] = true;
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
     type: 'reactive',
-    name: 'inputs',
+    key: 'inputs',
     /**
      *
      * @this {Galaxy.View.ViewNode}
      * @param value
      * @param scope
      */
-    prepare: function (scope, value) {
+    getConfig: function (scope, value) {
       if (value !== null && typeof value !== 'object') {
         throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
@@ -35,6 +35,6 @@
 
       return false;
     },
-    apply: function (cache, value, oldValue, context) { }
+    update: function (cache, value, oldValue, context) { }
   };
 })(Galaxy);

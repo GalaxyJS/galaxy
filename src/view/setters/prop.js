@@ -1,24 +1,25 @@
 /* global Galaxy */
 (function (G) {
-  G.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-    if (!property.name) {
+  G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
+    const propName = property.key;
+    if (!propName) {
       console.error(property);
       throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
     }
 
-    const valueFn = property.value || G.View.setProp;
+    const updateFn = property.update || G.View.setProp;
     const setter = function P(value, oldValue) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          valueFn(viewNode, asyncValue, oldValue, property.name);
+          updateFn(viewNode, asyncValue, oldValue, propName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
         const result = value.call(viewNode, viewNode.data);
-        valueFn(viewNode, result, oldValue, property.name);
+        updateFn(viewNode, result, oldValue, propName);
         value.oldResult = value;
       } else {
-        valueFn(viewNode, value, oldValue, property.name);
+        updateFn(viewNode, value, oldValue, propName);
       }
     };
 

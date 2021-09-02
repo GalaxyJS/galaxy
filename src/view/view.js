@@ -27,11 +27,13 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @typedef {Object} Galaxy.View.BlueprintProperty
+   * @property {string} [key]
    * @property {'attr'|'prop'|'reactive'} [type]
+   * @property {Function} [getConfig]
    * @property {Function} [install]
-   * @property {Function} [beforeAssign]
+   * @property {Function} [beforeActivate]
    * @property {Function} [setter]
-   * @property {Function} [value]
+   * @property {Function} [update]
    */
 
   View.REACTIVE_BEHAVIORS = {};
@@ -68,23 +70,19 @@ Galaxy.View = /** @class */(function (G) {
     },
     html: {
       type: 'prop',
-      name: 'innerHTML'
+      key: 'innerHTML'
     },
     nodeValue: {
       type: 'prop',
-      name: 'nodeValue'
     },
     scrollTop: {
       type: 'prop',
-      name: 'scrollTop'
     },
     scrollLeft: {
       type: 'prop',
-      name: 'scrollLeft'
     },
     disabled: {
       type: 'attr',
-      name: 'disabled'
     }
   };
 
@@ -190,8 +188,14 @@ Galaxy.View = /** @class */(function (G) {
     };
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param value
+   * @param oldValue
+   * @param name
+   */
   View.setAttr = function setAttr(viewNode, value, oldValue, name) {
-    // viewNode.notifyObserver(name, value, oldValue);
     if (value !== null && value !== undefined && value !== false) {
       viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {
@@ -629,68 +633,83 @@ Galaxy.View = /** @class */(function (G) {
    * @param {string} key
    * @param scopeData
    */
-  View.installReactiveBehavior = function (blueprintKey, node, key, scopeData) {
-    const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
-    const data = reactiveProperty.prepare.call(node, scopeData, node.blueprint[key]);
-    if (data !== undefined) {
-      node.cache[key] = data;
+  View.installPropertyForNode = function (blueprintKey, node, key, scopeData) {
+    if (blueprintKey in View.REACTIVE_BEHAVIORS) {
+      const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
+      const data = reactiveProperty.getConfig.call(node, scopeData, node.blueprint[key]);
+      if (data !== undefined) {
+        node.cache[key] = data;
+      }
+
+      return reactiveProperty.install.call(node, data);
     }
 
-    return reactiveProperty.install.call(node, data);
+    return true;
   };
 
-  View.assignSetter = function (viewNode, key, scopeProperty, expression) {
+  /**
+   *
+   * @param viewNode
+   * @param {string} propertyKey
+   * @param {Galaxy.View.ReactiveData} scopeProperty
+   * @param expression
+   */
+  View.activatePropertyForNode = function (viewNode, propertyKey, scopeProperty, expression) {
     /**
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[key] || { type: 'attr' };
-    if (property.beforeAssign) {
-      property.beforeAssign(viewNode, scopeProperty, key, expression);
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    property.key = property.key || propertyKey;
+    if (property.beforeActivate) {
+      property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
     }
 
+    viewNode.setters[propertyKey] = View.getPropertySetterForNode(property, viewNode, scopeProperty, expression);
+  };
+
+  /**
+   *
+   * @param {Galaxy.View.BlueprintProperty} blueprintProperty
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param [scopeProperty]
+   * @param [expression]
+   * @returns {Galaxy.View.EMPTY_CALL|(function())|*}
+   */
+  View.getPropertySetterForNode = function (blueprintProperty, viewNode, scopeProperty, expression) {
     // if viewNode is virtual, then the expression should be ignored
-    if (property.type !== 'reactive' && viewNode.virtual) {
+    if (blueprintProperty.type !== 'reactive' && viewNode.virtual) {
       return View.EMPTY_CALL;
     }
 
     // This is the lowest level where the developer can modify the property setter behavior
     // By defining 'createSetter' for the property you can implement your custom functionality for setter
-    if (property.setter) {
-      return property.setter(viewNode, key, property, expression);
+    if (blueprintProperty.setter) {
+      return blueprintProperty.setter(viewNode, blueprintProperty, blueprintProperty, expression);
     }
 
-    return View.PROPERTY_SETTERS[property.type](viewNode, key, property, expression);
+    return View.PROPERTY_SETTERS[blueprintProperty.type](viewNode, blueprintProperty, expression);
   };
 
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {string} attributeName
+   * @param {string} propertyKey
    * @param {*} value
    */
-  View.setPropertyForNode = function (viewNode, attributeName, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[attributeName] || { type: 'attr' };
+  View.setPropertyForNode = function (viewNode, propertyKey, value) {
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    property.key = property.key || propertyKey;
 
     switch (property.type) {
       case 'attr':
       case 'prop':
-        View.assignSetter(viewNode, attributeName, null, null)(value, null);
+      case 'reactive':
+        View.getPropertySetterForNode(property, viewNode)(value, null);
         break;
-
-      case 'reactive': {
-        if (viewNode.setters[property.name]) {
-          return;
-        }
-        const reactiveApply = View.assignSetter(viewNode, attributeName, null, null);
-        viewNode.setters[property.name] = reactiveApply;
-
-        reactiveApply(value, null);
-        break;
-      }
 
       case 'event':
-        viewNode.node.addEventListener(attributeName, value.bind(viewNode), false);
+        viewNode.node.addEventListener(propertyKey, value.bind(viewNode), false);
         break;
     }
   };
@@ -853,7 +872,7 @@ Galaxy.View = /** @class */(function (G) {
         return result;
       } else if (blueprint instanceof Object) {
         // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this, refNode);
-        let attributeValue, attributeName;
+        let propertyValue, propertyKey;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
@@ -861,28 +880,26 @@ Galaxy.View = /** @class */(function (G) {
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
-          attributeName = keys[i];
-          if (attributeName in View.REACTIVE_BEHAVIORS) {
-            const needValueAssign = View.installReactiveBehavior(attributeName, viewNode, attributeName, scopeData);
-            if (needValueAssign === false) {
-              continue;
-            }
+          propertyKey = keys[i];
+          const needValueAssign = View.installPropertyForNode(propertyKey, viewNode, propertyKey, scopeData);
+          if (needValueAssign === false) {
+            continue;
           }
 
-          needInitKeys.push(attributeName);
+          needInitKeys.push(propertyKey);
         }
 
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {
-          attributeName = needInitKeys[i];
-          if (attributeName === 'children') continue;
+          propertyKey = needInitKeys[i];
+          if (propertyKey === 'children') continue;
 
-          attributeValue = blueprint[attributeName];
-          const bindings = View.getBindings(attributeValue);
+          propertyValue = blueprint[propertyKey];
+          const bindings = View.getBindings(propertyValue);
           if (bindings.propertyKeysPaths) {
-            View.makeBinding(viewNode, attributeName, null, scopeData, bindings, viewNode);
+            View.makeBinding(viewNode, propertyKey, null, scopeData, bindings, viewNode);
           } else {
-            View.setPropertyForNode(viewNode, attributeName, attributeValue);
+            View.setPropertyForNode(viewNode, propertyKey, propertyValue);
           }
         }
 

@@ -3,7 +3,7 @@
   if (!window.gsap) {
     G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
-      name: 'animations',
+      key: 'animations',
     };
 
     return console.warn('please load GSAP - GreenSock in order to activate animations');
@@ -22,13 +22,13 @@
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
-    name: 'animations',
+    key: 'animations',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
      * @param value
      */
-    value: function (viewNode, value) {
+    update: function (viewNode, value) {
       if (viewNode.virtual || !value) {
         return;
       }

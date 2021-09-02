@@ -62,19 +62,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
-    name: '_create',
+    key: '_create',
     setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
-    name: '_finalize',
+    key: '_finalize',
     setter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
     type: 'prop',
-    name: 'renderConfig'
+    key: 'renderConfig'
   };
 
   /**
@@ -392,20 +392,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     /**
+     * @param {string} propertyKey
      * @param {Galaxy.View.ReactiveData} reactiveData
-     * @param {string} propertyName
      * @param {Function} expression
      */
-    installSetter: function (reactiveData, propertyName, expression) {
-      const _this = this;
-      _this.properties.add(reactiveData);
-
-      _this.setters[propertyName] = GV.assignSetter(_this, propertyName, reactiveData, expression);
-      if (!_this.setters[propertyName]) {
-        _this.setters[propertyName] = function () {
-          console.error('No setter for property :', propertyName, '\nNode:', _this);
-        };
-      }
+    registerActiveProperty: function (propertyKey, reactiveData, expression) {
+      this.properties.add(reactiveData);
+      GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
     hasAnimation: function () {
@@ -506,8 +499,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
         let i = -1;
+        const node = this.node;
         for (let counter = 0, len = childNodes.length; counter < len; counter++) {
-          if (childNodes[counter] === this.node) {
+          if (childNodes[counter] === node) {
             i = counter;
             break;
           }
