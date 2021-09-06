@@ -32,7 +32,7 @@ Galaxy.View = /** @class */(function (G) {
    * @property {Function} [getConfig]
    * @property {Function} [install]
    * @property {Function} [beforeActivate]
-   * @property {Function} [setter]
+   * @property {Function} [getSetter]
    * @property {Function} [update]
    */
 
@@ -83,7 +83,58 @@ Galaxy.View = /** @class */(function (G) {
     },
     disabled: {
       type: 'attr',
-    }
+    },
+    onchange: {
+      type: 'event'
+    },
+    onclick: {
+      type: 'event'
+    },
+    ondblclick: {
+      type: 'event'
+    },
+    onmouseover: {
+      type: 'event'
+    },
+    onmouseout: {
+      type: 'event'
+    },
+    onkeydown: {
+      type: 'event'
+    },
+    onkeypress: {
+      type: 'event'
+    },
+    onkeyup: {
+      type: 'event'
+    },
+    onmousedown: {
+      type: 'event'
+    },
+    onmouseup: {
+      type: 'event'
+    },
+    onload: {
+      type: 'event'
+    },
+    onabort: {
+      type: 'event'
+    },
+    onerror: {
+      type: 'event'
+    },
+    onfocus: {
+      type: 'event'
+    },
+    onblur: {
+      type: 'event'
+    },
+    onreset: {
+      type: 'event'
+    },
+    onsubmit: {
+      type: 'event'
+    },
   };
 
   View.PROPERTY_SETTERS = {
@@ -123,11 +174,6 @@ Galaxy.View = /** @class */(function (G) {
       View.LAST_FRAME_ID = null;
     }
 
-    // if (View.TO_BE_DESTROYED[index]) {
-    //   View.TO_BE_DESTROYED[index].push(action);
-    // } else {
-    //   View.TO_BE_DESTROYED[index] = [action];
-    // }
     const target = View.TO_BE_DESTROYED[index] || [];
     target.push(action);
     View.TO_BE_DESTROYED[index] = target;
@@ -632,6 +678,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Galaxy.View.ViewNode} node
    * @param {string} key
    * @param scopeData
+   * @return boolean
    */
   View.installPropertyForNode = function (blueprintKey, node, key, scopeData) {
     if (blueprintKey in View.REACTIVE_BEHAVIORS) {
@@ -661,7 +708,7 @@ Galaxy.View = /** @class */(function (G) {
      */
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
-    if (property.beforeActivate) {
+    if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
     }
 
@@ -673,8 +720,8 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Galaxy.View.BlueprintProperty} blueprintProperty
    * @param {Galaxy.View.ViewNode} viewNode
    * @param [scopeProperty]
-   * @param [expression]
-   * @returns {Galaxy.View.EMPTY_CALL|(function())|*}
+   * @param {Function} [expression]
+   * @returns {Galaxy.View.EMPTY_CALL|(function())}
    */
   View.getPropertySetterForNode = function (blueprintProperty, viewNode, scopeProperty, expression) {
     // if viewNode is virtual, then the expression should be ignored
@@ -684,8 +731,8 @@ Galaxy.View = /** @class */(function (G) {
 
     // This is the lowest level where the developer can modify the property setter behavior
     // By defining 'createSetter' for the property you can implement your custom functionality for setter
-    if (blueprintProperty.setter) {
-      return blueprintProperty.setter(viewNode, blueprintProperty, blueprintProperty, expression);
+    if (typeof blueprintProperty.getSetter !== 'undefined') {
+      return blueprintProperty.getSetter(viewNode, blueprintProperty, blueprintProperty, expression);
     }
 
     return View.PROPERTY_SETTERS[blueprintProperty.type](viewNode, blueprintProperty, expression);
@@ -700,6 +747,7 @@ Galaxy.View = /** @class */(function (G) {
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
     const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
+    // View.getPropertySetterForNode(property, viewNode)(value, null);
 
     switch (property.type) {
       case 'attr':
@@ -709,23 +757,23 @@ Galaxy.View = /** @class */(function (G) {
         break;
 
       case 'event':
-        viewNode.node.addEventListener(propertyKey, value.bind(viewNode), false);
+        viewNode.node[propertyKey] = value.bind(viewNode);
         break;
     }
   };
 
   /**
    *
-   * @param {string} id
+   * @param {string} key
    * @param blueprint
    * @param {Galaxy.Scope|Object} scopeData
    * @param {Galaxy.View} view
    * @param {Node|Element|null} refNode
    * @returns {*}
    */
-  View.getComponent = function (id, blueprint, scopeData, view, refNode) {
-    if (id && View.COMPONENTS.hasOwnProperty(id)) {
-      return View.COMPONENTS[id](blueprint);
+  View.getComponent = function (key, blueprint, scopeData, view, refNode) {
+    if (key && key in View.COMPONENTS) {
+      return View.COMPONENTS[key](blueprint, scopeData, view, refNode);
     }
 
     return blueprint;
@@ -782,52 +830,6 @@ Galaxy.View = /** @class */(function (G) {
         }
       };
     },
-    keyframe: {
-      /**
-       *
-       * @param {Function} onComplete
-       * @param {string} [sequence]
-       * @param {number} [duration=.01]
-       * @returns {{animations: {enter: {duration: number, sequence, onComplete}}, tag: string}}
-       */
-      enter: function (onComplete, sequence, duration) {
-        duration = duration || .01;
-
-        return {
-          tag: 'comment',
-          nodeValue: 'keyframe:enter',
-          animations: {
-            enter: {
-              duration,
-              sequence,
-              onComplete
-            }
-          }
-        };
-      },
-      /**
-       *
-       * @param {Function} onComplete
-       * @param {string} [sequence]
-       * @param {number} [duration=.01]
-       * @returns {{animations: {enter: {duration: number, sequence, onComplete}}, tag: string}}
-       */
-      leave: function (onComplete, sequence, duration) {
-        duration = duration || .01;
-
-        return {
-          tag: 'comment',
-          nodeValue: 'keyframe:leave',
-          animations: {
-            leave: {
-              duration,
-              sequence,
-              onComplete
-            }
-          }
-        };
-      }
-    },
     init: function (blueprint) {
       const _this = this;
 
@@ -837,8 +839,8 @@ Galaxy.View = /** @class */(function (G) {
 
       return this.createNode(blueprint, _this.container, _this.scope, null, null);
     },
-    broadcast: function (event) {
-      this.container.broadcast(event);
+    dispatchEvent: function (event) {
+      this.container.dispatchEvent(event);
     },
     /**
      *

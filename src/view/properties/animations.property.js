@@ -40,22 +40,23 @@
           if (value.enter.withParent) {
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
-            if (hasParentEnterAnimation(viewNode)) {
+            if (hasParentEnterAnimation(this)) {
               return;
             }
 
-            const parent = viewNode.parent;
+            const parent = this.parent;
             // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
             if (!parent.rendered.resolved) {
               return;
             }
           }
 
-          if (gsap.getTweensOf(viewNode.node).length) {
-            gsap.killTweensOf(viewNode.node);
+          const _node = this.node;
+          if (gsap.getTweensOf(_node).length) {
+            gsap.killTweensOf(_node);
           }
 
-          AnimationMeta.installGSAPAnimation(viewNode, 'enter', enter, value.config, enter.onComplete);
+          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config, enter.onComplete);
         };
       }
 
@@ -70,49 +71,40 @@
 
         viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (onComplete) {
-          value.config = value.config || {};
+          const _node = this.node;
 
-          // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
+          value.config = value.config || {};
           if (value.leave.withParent) {
-            const parent = viewNode.parent;
+            // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
+            const parent = this.parent;
 
             if (parent.transitory) {
-              if (gsap.getTweensOf(viewNode.node).length) {
-                gsap.killTweensOf(viewNode.node);
+              if (gsap.getTweensOf(_node).length) {
+                gsap.killTweensOf(_node);
               }
 
-              // We dump this viewNode so it gets removed when the leave animation origin node is detached.
+              // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a $if
-              return viewNode.dump();
+              return this.dump();
             }
           }
 
-          if (gsap.getTweensOf(viewNode.node).length) {
-            gsap.killTweensOf(viewNode.node);
+          if (gsap.getTweensOf(_node).length) {
+            gsap.killTweensOf(_node);
           }
 
-          const rect = viewNode.node.getBoundingClientRect();
-
-          // in the case which the viewNode is not visible, then ignore its animation
+          // in the case which the _viewNode is not visible, then ignore its animation
+          const rect = _node.getBoundingClientRect();
           if (rect.width === 0 ||
             rect.height === 0 ||
-            viewNode.node.style.opacity === '0' ||
-            viewNode.node.style.visibility === 'hidden') {
-            gsap.killTweensOf(viewNode.node);
+            _node.style.opacity === '0' ||
+            _node.style.visibility === 'hidden') {
+            gsap.killTweensOf(_node);
             return onComplete();
           }
 
-          if (leave.onComplete) {
-            const userDefinedOnComplete = leave.onComplete;
-            leave.onComplete = function () {
-              userDefinedOnComplete();
-              onComplete();
-            };
-          } else {
-            leave.onComplete = onComplete;
-          }
-
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', leave, value.config, leave.onComplete);
+          AnimationMeta.setupOnComplete(leave, onComplete);
+          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, leave.onComplete);
         };
 
         // Hide sequence is the same as leave sequence.
@@ -122,7 +114,7 @@
         });
       } else {
         viewNode.populateLeaveSequence = function (onComplete) {
-          AnimationMeta.installGSAPAnimation(viewNode, 'leave', {
+          AnimationMeta.installGSAPAnimation(this, 'leave', {
             sequence: 'DESTROY',
             duration: .000001
           }, {}, onComplete);

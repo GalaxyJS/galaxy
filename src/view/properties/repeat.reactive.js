@@ -54,7 +54,7 @@
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(viewNode, 'repeat', config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;

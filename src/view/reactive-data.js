@@ -177,15 +177,13 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param data
      */
     walk: function (data) {
-      const _this = this;
-
       if (data instanceof Node) return;
 
       if (data instanceof Array) {
-        _this.makeReactiveArray(data);
+        this.makeReactiveArray(data);
       } else if (data instanceof Object) {
         for (let key in data) {
-          _this.makeReactiveObject(data, key);
+          this.makeReactiveObject(data, key);
         }
       }
     },
@@ -196,7 +194,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param shadow
      */
     makeReactiveObject: function (data, key, shadow) {
-      // const _this = this;
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
       const setter = property && property.set;
@@ -301,30 +298,58 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
             const returnValue = originalMethod.apply(this, args);
             const changes = new G.View.ArrayChange();
-            changes.original = arr;
+            const _original = changes.original = arr;
             changes.type = method;
             changes.params = args;
             changes.returnValue = returnValue;
             changes.init = initialChanges;
 
-            if (method === 'push' || method === 'reset' || method === 'unshift') {
-              for (let i = 0, len = changes.params.length; i < len; i++) {
-                const item = changes.params[i];
-                if (item !== null && typeof item === 'object') {
-                  new ReactiveData(changes.original.indexOf(item), item, thisRD);
+            switch (method) {
+              case 'push':
+              case 'reset':
+              case 'unshift':
+                for (let i = 0, len = changes.params.length; i < len; i++) {
+                  const item = changes.params[i];
+                  if (item !== null && typeof item === 'object') {
+                    new ReactiveData(_original.indexOf(item), item, thisRD);
+                  }
                 }
-              }
-            } else if (method === 'pop' || method === 'shift') {
-              if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
-                returnValue.__rd__.removeMyRef();
-              }
-            } else if (method === 'splice') {
-              changes.params.slice(2).forEach(function (item) {
-                if (item !== null && typeof item === 'object') {
-                  new ReactiveData(changes.original.indexOf(item), item, thisRD);
+                break;
+
+              case 'pop':
+              case 'shift':
+                if (returnValue !== null && typeof returnValue === 'object' && '__rd__' in returnValue) {
+                  returnValue.__rd__.removeMyRef();
                 }
-              });
+                break;
+
+              case 'splice':
+                changes.params.slice(2).forEach(function (item) {
+                  if (item !== null && typeof item === 'object') {
+                    new ReactiveData(_original.indexOf(item), item, thisRD);
+                  }
+                });
+                break;
             }
+
+            // if (method === 'push' || method === 'reset' || method === 'unshift') {
+            //   for (let i = 0, len = changes.params.length; i < len; i++) {
+            //     const item = changes.params[i];
+            //     if (item !== null && typeof item === 'object') {
+            //       new ReactiveData(changes.original.indexOf(item), item, thisRD);
+            //     }
+            //   }
+            // } else if (method === 'pop' || method === 'shift') {
+            //   if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
+            //     returnValue.__rd__.removeMyRef();
+            //   }
+            // } else if (method === 'splice') {
+            //   changes.params.slice(2).forEach(function (item) {
+            //     if (item !== null && typeof item === 'object') {
+            //       new ReactiveData(changes.original.indexOf(item), item, thisRD);
+            //     }
+            //   });
+            // }
 
             defProp(arr, 'changes', {
               enumerable: false,

@@ -63,13 +63,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
     key: '_create',
-    setter: () => EMPTY_CALL
+    getSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
     type: 'prop',
     key: '_finalize',
-    setter: () => EMPTY_CALL
+    getSetter: () => EMPTY_CALL
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
@@ -262,7 +262,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   ViewNode.prototype = {
     onLeaveComplete: null,
-    populateLeaveSequence: EMPTY_CALL,
 
     dump: function () {
       this.parent.garbage = this.parent.garbage.concat(this.garbage);
@@ -273,7 +272,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return this.node.querySelector(selectors);
     },
 
-    broadcast: function (event) {
+    dispatchEvent: function (event) {
       this.node.dispatchEvent(event);
     },
 
@@ -300,6 +299,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     populateEnterSequence: function () {
       this.node.style.display = null;
     },
+
+    populateLeaveSequence: EMPTY_CALL,
 
     populateHideSequence: function () {
       this.node.style.display = 'none';
