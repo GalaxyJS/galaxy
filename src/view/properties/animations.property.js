@@ -157,7 +157,7 @@
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({ duration: duration }, to);
+      to = Object.assign({duration: duration}, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -250,7 +250,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -357,7 +357,7 @@
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = { name };
+    _this.timeline.data = {name};
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
@@ -410,11 +410,12 @@
       }
 
       const tChildren = _this.timeline.getChildren(false);
+      const firstChild = tChildren[0];
       if (tChildren.length === 0) {
         _this.timeline.add(tween);
       }
       // This fix a bug where if the enter animation has addTo, then the leave animation is ignored
-      else if (tChildren.length === 1 && !tChildren[0].hasOwnProperty('timeline')) {
+      else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         _this.timeline.clear();
         _this.timeline.add(tween, config.position || '+=0');
       } else {
