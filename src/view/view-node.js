@@ -250,9 +250,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     defProp(_this.blueprint, 'node', __node__);
 
     referenceToThis.value = this;
-    if (!_this.node._gvn) {
-      defProp(_this.node, '_gvn', referenceToThis);
-      defProp(_this.placeholder, '_gvn', referenceToThis);
+    if (!_this.node.__vn__) {
+      defProp(_this.node, '__vn__', referenceToThis);
+      defProp(_this.placeholder, '__vn__', referenceToThis);
     }
 
     if (_this.blueprint._create) {
@@ -481,8 +481,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = cn.length - 1; i >= 0; i--) {
         // All the nodes that are ViewNode
         const node = cn[i];
-        if ('_gvn' in cn[i]) {
-          nodes.push(node['_gvn']);
+        if ('__vn__' in node) {
+          nodes.push(node['__vn__']);
         }
       }
 

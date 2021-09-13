@@ -77,9 +77,10 @@
           type: 'text/css',
           id: Scope.systemId,
           text: parsedCSSText,
-          _apply() {
-            this.parent.node.setAttribute(ids.host, '');
-            const children = this.parent.blueprint.children || [];
+          _create() {
+            const parent = this.parent;
+            parent.node.setAttribute(ids.host, '');
+            const children = parent.blueprint.children || [];
             applyContentAttr(children, ids);
           }
         };

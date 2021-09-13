@@ -37,7 +37,7 @@
       if (enter) {
         viewNode.populateEnterSequence = function () {
           value.config = value.config || {};
-          if (value.enter.withParent) {
+          if (enter.withParent) {
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
             if (hasParentEnterAnimation(this)) {
@@ -74,13 +74,27 @@
           const _node = this.node;
 
           value.config = value.config || {};
-          if (value.leave.withParent) {
+          if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
 
             if (parent.transitory) {
               if (gsap.getTweensOf(_node).length) {
                 gsap.killTweensOf(_node);
+              }
+
+              if (leave.addTo) {
+                // debugger
+
+                const addToAnimation = AnimationMeta.ANIMATIONS[leave.addTo];
+                if (addToAnimation && !addToAnimation.ha) {
+                  addToAnimation.ha = true;
+                  console.log(addToAnimation.ha)
+                  // addToAnimation.timeline.add(() => {
+                  // });
+                  // addToAnimation.addOnComplete()
+                  // addToAnimation.timeline.invalidate()
+                }
               }
 
               // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
@@ -153,7 +167,7 @@
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({ duration: duration }, to);
+      to = Object.assign({duration: duration}, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
@@ -301,7 +315,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -407,6 +421,7 @@
         _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
+        _this.timeline.invalidate();
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
