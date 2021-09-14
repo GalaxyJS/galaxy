@@ -161,13 +161,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    *
    * @param blueprint
    * @param {Galaxy.View.ViewNode} parent
-   * @param {Node|Element|null} refNode
    * @param {Galaxy.View} view
    * @param {any} nodeData
    * @constructor
    * @memberOf Galaxy.View
    */
-  function ViewNode(parent, blueprint, refNode, view, nodeData) {
+  function ViewNode(blueprint, parent, view, nodeData) {
     const _this = this;
     _this.view = view;
     /** @type {Node|Element|*} */
@@ -177,7 +176,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.node = createElem(blueprint.tag || 'div', parent);
     }
 
-    _this.refNode = refNode || _this.node;
     /**
      *
      * @type {Blueprint}
@@ -389,7 +387,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     createNode: function (blueprint, localScope) {
-      this.view.createNode(blueprint, this, localScope);
+      this.view.createNode(blueprint, localScope, this);
     },
 
     /**

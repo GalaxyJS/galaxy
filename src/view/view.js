@@ -211,7 +211,7 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     const target = View.TO_BE_CREATED[index] || [];
-    const c = { a: action };
+    const c = {a: action};
     target.push(c);
     View.TO_BE_CREATED[index] = target;
 
@@ -706,7 +706,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -745,7 +745,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -768,12 +768,11 @@ Galaxy.View = /** @class */(function (G) {
    * @param blueprint
    * @param {Galaxy.Scope|Object} scopeData
    * @param {Galaxy.View} view
-   * @param {Node|Element|null} refNode
    * @returns {*}
    */
-  View.getComponent = function (key, blueprint, scopeData, view, refNode) {
+  View.getComponent = function (key, blueprint, scopeData, view) {
     if (key && key in View.COMPONENTS) {
-      return View.COMPONENTS[key](blueprint, scopeData, view, refNode);
+      return View.COMPONENTS[key](blueprint, scopeData, view);
     }
 
     return blueprint;
@@ -795,9 +794,9 @@ Galaxy.View = /** @class */(function (G) {
     if (scope.element instanceof G.View.ViewNode) {
       _this.container = scope.element;
     } else {
-      _this.container = new G.View.ViewNode(null, {
+      _this.container = new G.View.ViewNode({
         tag: scope.element
-      }, _this);
+      }, null, _this);
 
       _this.container.hasBeenRendered();
     }
@@ -837,7 +836,7 @@ Galaxy.View = /** @class */(function (G) {
         _this.container.node.innerHTML = '';
       }
 
-      return this.createNode(blueprint, _this.container, _this.scope, null, null);
+      return this.createNode(blueprint, _this.scope, _this.container, null);
     },
     dispatchEvent: function (event) {
       this.container.dispatchEvent(event);
@@ -845,13 +844,12 @@ Galaxy.View = /** @class */(function (G) {
     /**
      *
      * @param {Object} blueprint
-     * @param {Galaxy.View.ViewNode} parent
      * @param {Object} scopeData
+     * @param {Galaxy.View.ViewNode} parent
      * @param {Node|Element|null} position
-     * @param {Node|Element|null} refNode
      * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
      */
-    createNode: function (blueprint, parent, scopeData, position, refNode) {
+    createNode: function (blueprint, scopeData, parent, position) {
       const _this = this;
       let i = 0, len = 0;
       if (typeof blueprint === 'string') {
@@ -868,16 +866,16 @@ Galaxy.View = /** @class */(function (G) {
       } else if (blueprint instanceof Array) {
         const result = [];
         for (i = 0, len = blueprint.length; i < len; i++) {
-          result.push(_this.createNode(blueprint[i], parent, scopeData, null, refNode));
+          result.push(_this.createNode(blueprint[i], scopeData, parent, null));
         }
 
         return result;
       } else if (blueprint instanceof Object) {
-        // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this, refNode);
+        // blueprint = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
         let propertyValue, propertyKey;
         const keys = Object.keys(blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(parent, blueprint, refNode, _this, scopeData);
+        const viewNode = new G.View.ViewNode(blueprint, parent, _this, scopeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
@@ -908,7 +906,7 @@ Galaxy.View = /** @class */(function (G) {
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
           if (blueprint.children) {
-            _this.createNode(blueprint.children, viewNode, scopeData, null, refNode);
+            _this.createNode(blueprint.children, scopeData, viewNode, null);
           }
         }
 
