@@ -282,11 +282,14 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
+
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
             new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.path, source].join('\n'));
-          moduleSource.call(null, module.scope).then(() => {
+          const output = moduleSource.call(null, module.scope);
+
+          const proceed = () => {
             Reflect.deleteProperty(module, 'source');
 
             module.addOnProviders.forEach(item => item.start());
@@ -307,7 +310,14 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             const currentModule = module;
             currentModule.init();
             return resolve(currentModule);
-          });
+          };
+
+          // if the function is not async, output would be undefined
+          if(output) {
+            output.then(proceed);
+          } else {
+            proceed();
+          }
         } catch (error) {
           console.error(error.message + ': ' + module.path);
           console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');

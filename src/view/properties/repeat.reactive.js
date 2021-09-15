@@ -198,10 +198,11 @@
 
   function processChages(viewNode, config, changes) {
     const parentNode = viewNode.parent;
-    const positions = config.positions;
+    // const positions = config.positions;
+    const positions = [];
+    const placeholders = [];
     const nodeScopeData = config.scope;
     const trackMap = config.trackMap;
-    const placeholdersPositions = [];
     const as = config.as;
     const indexAs = config.indexAs;
     const nodes = config.nodes;
@@ -216,16 +217,15 @@
       onEachAction = function (vn, p, d) {
         trackMap.push(d);
         this.push(vn);
-        positions.push(vn.anchor.nextSibling);
+        // positions.push(vn.anchor.nextSibling);
       };
     } else {
       onEachAction = function (vn, p, d) {
         trackMap.push(d[config.trackBy]);
         this.push(vn);
-        positions.push(vn.anchor.nextSibling);
+        // positions.push(vn.anchor.nextSibling);
       };
     }
-
 
     if (changes.type === 'push') {
       newItems = changes.params;
@@ -237,34 +237,38 @@
         onEachAction = function (vn, p, d) {
           trackMap.unshift(d);
           this.unshift(vn);
-          positions.unshift(vn.anchor.nextSibling);
         };
       } else {
         onEachAction = function (vn, p, d) {
           trackMap.unshift(d[trackByKey]);
           this.unshift(vn);
-          positions.unshift(vn.anchor.nextSibling);
         };
       }
     } else if (changes.type === 'splice') {
-      const removedItems = Array.prototype.splice.apply(nodes, changes.params.slice(0, 2));
+      const changeParams = changes.params.slice(0, 2);
+      const removedItems = Array.prototype.splice.apply(nodes, changeParams);
       DESTROY_NODES(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
+      Array.prototype.splice.apply(trackMap, changeParams);
+
+      const startingIndex = changes.params[0];
       newItems = changes.params.slice(2);
+      for (let i = 0, len = newItems.length; i < len; i++) {
+        const index = i + startingIndex;
+        positions.push(index);
+        placeholders.push(nodes[index] ? nodes[index].anchor : defaultPosition);
+      }
+
       if (trackByKey === true) {
         onEachAction = function (vn, p, d) {
           trackMap.splice(p, 0, d);
           this.splice(p, 0, vn);
-          positions.splice(vn.anchor.nextSibling);
         };
       } else {
         onEachAction = function (vn, p, d) {
           trackMap.splice(p, 0, d[trackByKey]);
           this.splice(p, 0, vn);
-          positions.splice(vn.anchor.nextSibling);
         };
       }
-      debugger
-      // trackMap.splice(changes.params[0], changes.params[1]);
     } else if (changes.type === 'pop') {
       const lastItem = nodes.pop();
       lastItem && lastItem.destroy();
@@ -304,7 +308,7 @@
             // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
             // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
 
-            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         } else {
           for (let i = 0, len = newItems.length; i < len; i++) {
@@ -321,7 +325,7 @@
             //
             // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
             // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
-            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+            createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         }
       } else {
@@ -332,7 +336,7 @@
           //
           // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
           // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
-          createNode(view, templateBlueprint, nodeScopeData, as, newItemsCopy[i], indexAs, i, parentNode, placeholdersPositions[i] || defaultPosition, onEachAction, nodes, positions);
+          createNode(view, templateBlueprint, nodeScopeData, as, newItemsCopy[i], indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
         }
       }
 

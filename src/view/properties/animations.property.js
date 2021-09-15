@@ -4,6 +4,17 @@
     G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
       key: 'animations',
+      /**
+       *
+       * @param {Galaxy.View.ViewNode} viewNode
+       * @param value
+       */
+      update: function (viewNode, value) {
+        if (value.enter && value.enter.onComplete) {
+          viewNode.populateEnterSequence = value.enter.onComplete;
+        }
+        viewNode.populateLeaveSequence = (onComplete) => { onComplete();};
+      }
     };
 
     return console.warn('please load GSAP - GreenSock in order to activate animations');
@@ -56,7 +67,7 @@
             gsap.killTweensOf(_node);
           }
 
-          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config, enter.onComplete);
+          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config);
         };
       }
 
@@ -70,7 +81,7 @@
         }
 
         viewNode.leaveWithParent = leave.withParent === true;
-        viewNode.populateLeaveSequence = function (onComplete) {
+        viewNode.populateLeaveSequence = function (finilize) {
           const _node = this.node;
 
           value.config = value.config || {};
@@ -100,11 +111,11 @@
             _node.style.opacity === '0' ||
             _node.style.visibility === 'hidden') {
             gsap.killTweensOf(_node);
-            return onComplete();
+            return finilize();
           }
 
-          AnimationMeta.setupOnComplete(leave, onComplete);
-          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, leave.onComplete);
+          // const onComplete = AnimationMeta.createOnComplete(leave, finilize);
+          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, finilize);
         };
 
         // Hide sequence is the same as leave sequence.
@@ -141,6 +152,7 @@
    * @property {object} [to]
    * @property {string} [addTo]
    * @property {Function} [onStart]
+   * @property {Function} [onComplete]
    */
 
   AnimationMeta.ANIMATIONS = {};
@@ -150,25 +162,25 @@
     return sequence.split('/').filter(Boolean);
   };
 
-  AnimationMeta.createTween = function (viewNode, config, onComplete) {
+  AnimationMeta.createTween = function (viewNode, config, finalize) {
     const node = viewNode.node;
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({duration: duration}, to);
+      to = Object.assign({ duration: duration }, to);
 
       if (to.onComplete) {
         const userDefinedOnComplete = to.onComplete;
         to.onComplete = function () {
           userDefinedOnComplete();
-          if (onComplete) {
-            onComplete();
+          if (finalize) {
+            finalize();
           }
         };
       } else {
-        to.onComplete = onComplete;
+        to.onComplete = finalize;
       }
     }
 
@@ -182,23 +194,31 @@
         const userDefinedOnComplete = from.onComplete;
         from.onComplete = function () {
           userDefinedOnComplete();
-          onComplete();
+          finalize();
         };
       } else {
-        from.onComplete = onComplete;
+        from.onComplete = finalize;
       }
 
       from.duration = duration;
       tween = gsap.from(node, from);
     } else if (to) {
       tween = gsap.to(node, duration, to);
-    } else {
-      onComplete();
+    } else if(finalize) {
+      finalize();
     }
 
     return tween;
   };
 
+  /**
+   *
+   * @param stepDescription
+   * @param onStart
+   * @param onComplete
+   * @param viewNode
+   * @return {*}
+   */
   AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
     const step = Object.assign({}, stepDescription);
     step.callbackScope = viewNode;
@@ -221,15 +241,15 @@
     return step;
   };
 
-  AnimationMeta.setupOnComplete = function (step, onComplete) {
+  AnimationMeta.createOnComplete = function (step, onComplete) {
     if (step.onComplete) {
       const userDefinedOnComplete = step.onComplete;
-      step.onComplete = function () {
-        userDefinedOnComplete();
+      return function () {
+        userDefinedOnComplete.apply(this, arguments);
         onComplete();
       };
     } else {
-      step.onComplete = onComplete;
+      return onComplete;
     }
   };
 
@@ -239,9 +259,9 @@
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
    * @param config
-   * @param {Function} onComplete
+   * @param {Function} [finalize]
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, onComplete) {
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, finalize) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
@@ -250,7 +270,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -314,7 +334,7 @@
         animationMeta.awaits.push(newConfig.await);
       }
 
-      animationMeta.add(viewNode, newConfig, onComplete);
+      animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
@@ -326,7 +346,7 @@
         }
       }
     } else {
-      AnimationMeta.createTween(viewNode, newConfig, onComplete);
+      AnimationMeta.createTween(viewNode, newConfig, finalize);
     }
   };
 
@@ -357,7 +377,7 @@
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = {name};
+    _this.timeline.data = { name };
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
@@ -385,9 +405,9 @@
      *
      * @param viewNode
      * @param config {AnimationConfig}
-     * @param onComplete
+     * @param finalize
      */
-    add: function (viewNode, config, onComplete) {
+    add: function (viewNode, config, finalize) {
       const _this = this;
       let tween = null;
       let duration = config.duration;
@@ -396,17 +416,29 @@
       }
 
       if (config.from && config.to) {
-        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
         to.duration = duration || 0;
         tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
-        const from = AnimationMeta.createStep(config.from, config.onStart, onComplete, viewNode);
+        const from = AnimationMeta.createStep(config.from, config.onStart, config.onComplete, viewNode);
         from.duration = duration || 0;
         tween = gsap.from(viewNode.node, from);
       } else {
-        const to = AnimationMeta.createStep(config.to, config.onStart, onComplete, viewNode);
+        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
         to.duration = duration || 0;
         tween = gsap.to(viewNode.node, to);
+      }
+
+      if(finalize) {
+        if (tween.vars.onComplete) {
+          const userDefinedOnComplete = tween.vars.onComplete;
+          return function () {
+            userDefinedOnComplete.apply(this, arguments);
+            finalize();
+          };
+        } else {
+          tween.vars.onComplete = finalize;
+        }
       }
 
       const tChildren = _this.timeline.getChildren(false);

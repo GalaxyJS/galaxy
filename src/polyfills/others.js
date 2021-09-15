@@ -25,8 +25,8 @@
   }
 })();
 
-(function (root) {
-  if (typeof root.CustomEvent === 'function') {
+(function (self) {
+  if (typeof self.CustomEvent === 'function') {
     return false;
   }
 
@@ -37,15 +37,15 @@
     return evt;
   }
 
-  CustomEvent.prototype = root.Event.prototype;
+  CustomEvent.prototype = self.Event.prototype;
 
-  root.CustomEvent = CustomEvent;
-})(this);
+  self.CustomEvent = CustomEvent;
+})(typeof self !== 'undefined' ? self : this);
 
-(function (root) {
-  root.Reflect = root.Reflect || {
+(function (self) {
+  self.Reflect = self.Reflect || {
     deleteProperty: function (target, propertyKey) {
       delete target[propertyKey];
     }
   };
-})(this);
+})(typeof self !== 'undefined' ? self : this);
