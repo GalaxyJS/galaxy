@@ -124,16 +124,17 @@
           viewNode.node.style.display = 'none';
         });
       } else {
-        viewNode.populateLeaveSequence = function (onComplete) {
-          if (gsap.getTweensOf(this.node).length) {
-            gsap.killTweensOf(this.node);
-          }
-
-          AnimationMeta.installGSAPAnimation(this, 'leave', {
-            sequence: 'DESTROY',
-            duration: 0
-          }, {}, onComplete);
-        };
+        // it works and I don't know why
+        // viewNode.populateLeaveSequence = function (onComplete) {
+        //   if (gsap.getTweensOf(this.node).length) {
+        //     gsap.killTweensOf(this.node);
+        //   }
+        //
+        //   AnimationMeta.installGSAPAnimation(this, 'leave', {
+        //     // sequence: 'DESTROY',
+        //     duration: 0
+        //   }, {}, onComplete);
+        // };
       }
     }
   };
@@ -207,7 +208,7 @@
     } else if(finalize) {
       finalize();
     }
-
+// debugger
     return tween;
   };
 

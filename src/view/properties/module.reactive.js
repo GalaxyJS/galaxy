@@ -53,15 +53,14 @@
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (onComplete) {
           G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            sequence: 'DESTROY',
-            duration: .000001
+            // sequence: 'DESTROY',
+            duration: .0001
           }, {}, onComplete);
         };
       }
     });
-    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, () => {
+
     viewNode.clean(true);
-    // });
   }
 
   const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
