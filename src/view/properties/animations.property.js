@@ -44,10 +44,10 @@
         return;
       }
 
+      const config = value.config || {};
       const enter = value.enter;
       if (enter) {
         viewNode.populateEnterSequence = function () {
-          value.config = value.config || {};
           if (enter.withParent) {
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
@@ -67,7 +67,7 @@
             gsap.killTweensOf(_node);
           }
 
-          AnimationMeta.installGSAPAnimation(this, 'enter', enter, value.config);
+          AnimationMeta.installGSAPAnimation(this, 'enter', enter);
         };
       }
 
@@ -81,10 +81,8 @@
         }
 
         viewNode.leaveWithParent = leave.withParent === true;
-        viewNode.populateLeaveSequence = function (finilize) {
+        viewNode.populateLeaveSequence = function (finalize) {
           const _node = this.node;
-
-          value.config = value.config || {};
           if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
@@ -111,11 +109,10 @@
             _node.style.opacity === '0' ||
             _node.style.visibility === 'hidden') {
             gsap.killTweensOf(_node);
-            return finilize();
+            return finalize();
           }
 
-          // const onComplete = AnimationMeta.createOnComplete(leave, finilize);
-          AnimationMeta.installGSAPAnimation(this, 'leave', leave, value.config, finilize);
+          AnimationMeta.installGSAPAnimation(this, 'leave', leave, finalize);
         };
 
         // Hide sequence is the same as leave sequence.
@@ -135,6 +132,14 @@
         //     duration: 0
         //   }, {}, onComplete);
         // };
+      }
+
+      if (viewNode.cache.class && viewNode.cache.class.observer) {
+        viewNode.rendered.then(function () {
+          viewNode.cache.class.observer.onAll((key) => {
+
+          });
+        });
       }
     }
   };
@@ -159,56 +164,64 @@
   AnimationMeta.ANIMATIONS = {};
   AnimationMeta.TIMELINES = {};
 
-  AnimationMeta.parseSequence = function (sequence) {
-    return sequence.split('/').filter(Boolean);
-  };
-
-  AnimationMeta.createTween = function (viewNode, config, finalize) {
+  AnimationMeta.createSimpleAnimation = function (viewNode, config, finalize) {
+    finalize = finalize || G.View.EMPTY_CALL;
     const node = viewNode.node;
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
     const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
-      to = Object.assign({ duration: duration }, to);
+      to = Object.assign({}, to);
+      to.duration = duration;
+      to.onComplete = finalize;
 
-      if (to.onComplete) {
-        const userDefinedOnComplete = to.onComplete;
+      if (config.onComplete) {
+        const userDefinedOnComplete = config.onComplete;
         to.onComplete = function () {
           userDefinedOnComplete();
-          if (finalize) {
-            finalize();
-          }
+          finalize();
         };
-      } else {
-        to.onComplete = finalize;
       }
     }
 
-    let tween = null;
+    let tween;
     if (from && to) {
       tween = gsap.fromTo(node, from, to);
     } else if (from) {
-      from = Object.assign({}, from || {});
+      from = Object.assign({}, from);
+      from.duration = duration;
+      from.onComplete = finalize;
 
-      if (from.onComplete) {
-        const userDefinedOnComplete = from.onComplete;
+      if (config.onComplete) {
+        const userDefinedOnComplete = config.onComplete;
         from.onComplete = function () {
           userDefinedOnComplete();
           finalize();
         };
-      } else {
-        from.onComplete = finalize;
       }
 
-      from.duration = duration;
       tween = gsap.from(node, from);
     } else if (to) {
-      tween = gsap.to(node, duration, to);
-    } else if(finalize) {
-      finalize();
+      tween = gsap.to(node, to);
+    } else if (config.onComplete) {
+      const userDefinedOnComplete = config.onComplete;
+      const onComplete = function () {
+        userDefinedOnComplete();
+        finalize();
+      };
+
+      tween = gsap.to(node, {
+        duration: duration,
+        onComplete: onComplete
+      });
+    } else {
+      tween = gsap.to(node, {
+        duration: duration,
+        onComplete: finalize
+      });
     }
-// debugger
+
     return tween;
   };
 
@@ -242,27 +255,14 @@
     return step;
   };
 
-  AnimationMeta.createOnComplete = function (step, onComplete) {
-    if (step.onComplete) {
-      const userDefinedOnComplete = step.onComplete;
-      return function () {
-        userDefinedOnComplete.apply(this, arguments);
-        onComplete();
-      };
-    } else {
-      return onComplete;
-    }
-  };
-
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param {'enter'|'leave'|'class-add'|'class-remove'} type
    * @param {AnimationConfig} descriptions
-   * @param config
    * @param {Function} [finalize]
    */
-  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, config, finalize) {
+  AnimationMeta.installGSAPAnimation = function (viewNode, type, descriptions, finalize) {
     const from = AnimationMeta.parseStep(viewNode, descriptions.from);
     let to = AnimationMeta.parseStep(viewNode, descriptions.to);
 
@@ -347,7 +347,7 @@
         }
       }
     } else {
-      AnimationMeta.createTween(viewNode, newConfig, finalize);
+      AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
     }
   };
 
@@ -430,7 +430,7 @@
         tween = gsap.to(viewNode.node, to);
       }
 
-      if(finalize) {
+      if (finalize) {
         if (tween.vars.onComplete) {
           const userDefinedOnComplete = tween.vars.onComplete;
           return function () {

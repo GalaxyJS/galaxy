@@ -809,7 +809,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:enter',
         animations: {
           enter: {
-            duration: duration || .01,
+            duration: duration || 0,
             sequence,
             onComplete
           }
@@ -822,7 +822,7 @@ Galaxy.View = /** @class */(function (G) {
         nodeValue: 'keyframe:leave',
         animations: {
           enter: {
-            duration: duration || .01,
+            duration: duration || 0,
             sequence,
             onComplete
           }

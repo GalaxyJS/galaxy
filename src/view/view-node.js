@@ -66,9 +66,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_finalize'] = {
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
     type: 'prop',
-    key: '_finalize',
+    key: '_destroy',
     getSetter: () => EMPTY_CALL
   };
 
@@ -89,7 +89,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @property {RenderConfig} [renderConfig]
    * @property {string} [tag]
    * @property {function} [_create]
-   * @property {function} [_finalize]
+   * @property {function} [_destroy]
    */
 
   /**
@@ -192,7 +192,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.setters = {};
     /** @type {Galaxy.View.ViewNode} */
     _this.parent = parent;
-    _this.finalize = _this.blueprint._finalize ? [_this.blueprint._finalize] : [];
+    _this.finalize = _this.blueprint._destroy ? [_this.blueprint._destroy] : [];
     _this.origin = false;
     _this.transitory = false;
     _this.garbage = [];

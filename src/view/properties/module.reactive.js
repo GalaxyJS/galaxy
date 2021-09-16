@@ -51,11 +51,13 @@
     const children = viewNode.getChildNodes();
     children.forEach(vn => {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
-        vn.populateLeaveSequence = function (onComplete) {
-          G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-            // sequence: 'DESTROY',
-            duration: .0001
-          }, {}, onComplete);
+        vn.populateLeaveSequence = function (finalize) {
+          // G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
+          //   // sequence: 'DESTROY',
+          //   onComplete: finalize,
+          //   duration: 0
+          // }, finalize);
+          finalize();
         };
       }
     });

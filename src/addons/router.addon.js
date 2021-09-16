@@ -60,6 +60,7 @@
     _this.data = {
       routes: [],
       activeRoute: null,
+      activePath: null,
       activeModule: null,
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
@@ -222,11 +223,13 @@
       }
 
       this.data.activeRoute = route;
+      this.data.activePath = route.path;
 
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
+        this.data.activePath = route.path;
         Object.assign(this.data.parameters, params);
       }
 

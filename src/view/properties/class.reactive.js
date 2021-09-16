@@ -8,7 +8,8 @@
       return {
         scope,
         subjects: value,
-        reactiveClasses: null
+        reactiveClasses: null,
+        observer: null,
       };
     },
     install: function (config) {
@@ -19,7 +20,7 @@
       const viewNode = this;
       // when value is an object
       const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
-      const observer = new G.Observer(reactiveClasses);
+      const observer = config.observer = new G.Observer(reactiveClasses);
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
