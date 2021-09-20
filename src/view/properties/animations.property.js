@@ -359,7 +359,9 @@
         }
 
         // parent.add(() => {-
+        // debugger
         parentTimeline.addPause(newConfig.position, () => {
+          // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
@@ -371,6 +373,8 @@
             if (index !== -1) {
               animationMeta.awaits.splice(index, 1);
             }
+            // debugger
+            // parentTimeline.removePause()
             parentTimeline.resume();
           };
           // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance

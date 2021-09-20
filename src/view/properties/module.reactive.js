@@ -34,6 +34,7 @@
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
+        // debugger;
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           // _this.rendered.then(function () {
           cleanModuleContent(_this);

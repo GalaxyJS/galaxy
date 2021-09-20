@@ -499,6 +499,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.destroyNodes(this.getChildNodes(), hasAnimation);
     },
 
+    createNext: function (act) {
+      CREATE_IN_NEXT_FRAME(this.index, act);
+    },
+
     get index() {
       if (this.parent) {
         const childNodes = this.parent.node.childNodes;
