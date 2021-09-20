@@ -34,12 +34,12 @@
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
-        // G.View.CREATE_IN_NEXT_FRAME(_this.index, () => {
-        _this.rendered.then(function () {
+        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+          // _this.rendered.then(function () {
           cleanModuleContent(_this);
-          moduleLoaderGenerator(_this, config, moduleMeta)();
+          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          // });
         });
-        // });
       } else if (!moduleMeta) {
         cleanModuleContent(_this);
       }
@@ -52,6 +52,7 @@
     children.forEach(vn => {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
+          // G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
           // G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
           //   // sequence: 'DESTROY',
           //   onComplete: finalize,
@@ -65,7 +66,7 @@
     viewNode.clean(true);
   }
 
-  const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
+  const moduleLoaderGenerator = function (viewNode, cache, moduleMeta, _next) {
     return function () {
       if (cache.module) {
         cache.module.destroy();
@@ -93,17 +94,19 @@
         moduleScope = moduleScope.parentScope;
       }
 
-      G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
-        currentScope.load(moduleMeta, {
-          element: viewNode
-        }).then(function (module) {
-          cache.module = module;
-          viewNode.node.setAttribute('module', module.systemId);
-          module.start();
-        }).catch(function (response) {
-          console.error(response);
-        });
+      // G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
+      currentScope.load(moduleMeta, {
+        element: viewNode
+      }).then(function (module) {
+        cache.module = module;
+        viewNode.node.setAttribute('module', module.systemId);
+        module.start();
+        _next();
+      }).catch(function (response) {
+        console.error(response);
+        _next();
       });
+      // });
     };
   };
 })(Galaxy);

@@ -318,8 +318,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
         _this.blueprint.renderConfig.renderDetached = false;
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
+          _next();
         });
         return;
       }
@@ -341,9 +342,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         _this.hasBeenInserted();
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.populateEnterSequence();
+          _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
@@ -364,9 +366,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.visible = flag;
 
       if (flag && !_this.virtual) {
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.node.style.display = null;
           _this.populateEnterSequence();
+          _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
@@ -510,7 +513,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         if (i === -1) {
           i = arrIndexOf.call(childNodes, this.placeholder);
         }
-        return this.parent.index + '.' + ViewNode.createIndex(i);
+        return this.parent.index + ',' + ViewNode.createIndex(i);
       }
 
       return '0';

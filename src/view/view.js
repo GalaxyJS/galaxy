@@ -197,6 +197,77 @@ Galaxy.View = /** @class */(function (G) {
 
   View.TO_BE_CREATED = {};
   View.LAST_CREATE_FRAME_ID = null;
+
+  let to_be_created_dirty = false;
+  const _next = function (_jump) {
+    if (this.length) {
+      this.shift().$(_next.bind(this, _jump));
+    } else {
+      _jump.call();
+    }
+  };
+
+  let NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
+  let done = true;
+  const _jump = function () {
+    if (this.length) {
+      if (to_be_created_dirty) {
+        to_be_created_dirty = false;
+        // console.log('dirty', NEW_KEYS);
+        return _jump.call(NEW_KEYS);
+      }
+      // const batch = View.TO_BE_CREATED[key];
+
+      let key = this.shift();
+      // console.log(key);
+      let batch = View.TO_BE_CREATED[key];
+      if (!batch || !batch.length) {
+        return _jump.call(this);
+      }
+
+      _next.call(batch, _jump.bind(this));
+    } else {
+      done = true;
+      // console.log('done!');
+      // requestAnimationFrame(() => {
+      //   _jump.call(NEW_KEYS);
+      // });
+    }
+  };
+
+  // requestAnimationFrame(() => {
+  //   _jump.call(NEW_KEYS);
+  // });
+
+  View.CREATE_IN_NEXT_FRAME = function (index, action) {
+    // if (View.LAST_CREATE_FRAME_ID) {
+    //   cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+    //   View.LAST_CREATE_FRAME_ID = null;
+    // }
+
+    const target = View.TO_BE_CREATED[index] || [];
+    const c = { $: action };
+    target.push(c);
+    View.TO_BE_CREATED[index] = target;
+    NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
+    to_be_created_dirty = true;
+
+    // if (done) {
+    //   done = false;
+    //   _jump.call(NEW_KEYS);
+    // }
+
+    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+      if (done) {
+        done = false;
+        _jump.call(NEW_KEYS);
+      }
+    });
+    //
+    // return () => {
+    //   c.$ = View.EMPTY_CALL;
+    // };
+  };
   /**
    *
    * @param {string} index
@@ -204,35 +275,36 @@ Galaxy.View = /** @class */(function (G) {
    * @memberOf Galaxy.View
    * @static
    */
-  View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_CREATE_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-      View.LAST_CREATE_FRAME_ID = null;
-    }
-
-    const target = View.TO_BE_CREATED[index] || [];
-    const c = {a: action};
-    target.push(c);
-    View.TO_BE_CREATED[index] = target;
-
-    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      const keys = Object.keys(View.TO_BE_CREATED).sort();
-      keys.forEach((key) => {
-        const batch = View.TO_BE_CREATED[key];
-        if (!batch) {
-          return;
-        }
-        while (batch.length) {
-          const c = batch.shift();
-          c.a();
-        }
-      });
-    });
-
-    return () => {
-      c.a = View.EMPTY_CALL;
-    };
-  };
+  // View.CREATE_IN_NEXT_FRAME = function (index, action) {
+  //   if (View.LAST_CREATE_FRAME_ID) {
+  //     cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
+  //     View.LAST_CREATE_FRAME_ID = null;
+  //   }
+  //
+  //   const target = View.TO_BE_CREATED[index] || [];
+  //   const c = { $: action };
+  //   target.push(c);
+  //   View.TO_BE_CREATED[index] = target;
+  //
+  //   View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
+  //     const keys = Object.keys(View.TO_BE_CREATED).sort();
+  //     keys.forEach((key) => {
+  //       const batch = View.TO_BE_CREATED[key];
+  //       if (!batch || !batch.length) {
+  //         return;
+  //       }
+  //       // _next.call(batch);
+  //
+  //       while (batch.length) {
+  //         batch.shift().$();
+  //       }
+  //     });
+  //   });
+  //
+  //   return () => {
+  //     c.$ = View.EMPTY_CALL;
+  //   };
+  // };
 
   /**
    *
@@ -706,7 +778,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -745,7 +817,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
