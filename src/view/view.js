@@ -150,7 +150,7 @@ Galaxy.View = /** @class */(function (G) {
    * @memberOf Galaxy.View
    * @static
    */
-  View.destroyNodes = function (toBeRemoved, hasAnimation) {
+  View.DESTROY_NODES = function (toBeRemoved, hasAnimation) {
     let remove = null;
 
     for (let i = 0, len = toBeRemoved.length; i < len; i++) {
@@ -159,8 +159,49 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.TO_BE_DESTROYED = {};
   View.LAST_FRAME_ID = null;
+  View.TO_BE_DESTROYED = {};
+  View.TO_BE_CREATED = {};
+  View.DOM_MANIPULATION_TABLE = {};
+
+  const _next = function (_jump, dirty) {
+    if (dirty) {
+      return _jump();
+    }
+
+    if (this.length) {
+      this.shift()(_next.bind(this, _jump));
+    } else {
+      _jump();
+    }
+  };
+
+  let DOM_MANIPULATIONS = [];
+  let manipulation_done = true;
+  let dom_manipulations_dirty = false;
+  const _jump = function () {
+    if (dom_manipulations_dirty) {
+      dom_manipulations_dirty = false;
+      return _jump.call(DOM_MANIPULATIONS);
+    }
+
+    if (this.length) {
+      let key = this.shift();
+      let batch = View.TO_BE_CREATED[key];
+      if (key.indexOf('!') === 0) {
+        batch = View.TO_BE_DESTROYED[key];
+      }
+
+      if (!batch || !batch.length) {
+        return _jump.call(this);
+      }
+
+      _next.call(batch, _jump.bind(this), dom_manipulations_dirty);
+    } else {
+      manipulation_done = true;
+    }
+  };
+
   /**
    *
    * @param {string} index
@@ -169,116 +210,12 @@ Galaxy.View = /** @class */(function (G) {
    * @static
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_FRAME_ID);
-      View.LAST_FRAME_ID = null;
-    }
-
-    const target = View.TO_BE_DESTROYED[index] || [];
+    const target = View.TO_BE_DESTROYED['!' + index] || [];
     target.push(action);
-    View.TO_BE_DESTROYED[index] = target;
-
-    View.LAST_FRAME_ID = requestAnimationFrame(() => {
-      const keys = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
-      keys.forEach((key) => {
-        const batch = View.TO_BE_DESTROYED[key];
-        if (!batch) {
-          return;
-        }
-
-        let action;
-        while (batch.length) {
-          action = batch.shift();
-          action();
-        }
-      });
-    });
+    View.TO_BE_DESTROYED['!' + index] = target;
+    UPDATE_DOM_MANIPULATION_SEQUENCE();
   };
 
-  View.TO_BE_CREATED = {};
-  View.LAST_CREATE_FRAME_ID = null;
-
-  let NEW_KEYS = [];
-  let done = true;
-  let to_be_created_dirty = false;
-  const _next = function (_jump) {
-    if (to_be_created_dirty) {
-      return _jump();
-    }
-
-    if (this.length) {
-      this.shift().$(_next.bind(this, _jump));
-    } else {
-      _jump();
-    }
-  };
-
-
-  const _jump = function (prevKey) {
-    if (to_be_created_dirty) {
-      // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-      let index = NEW_KEYS.indexOf(prevKey || this[0]);
-      to_be_created_dirty = false;
-      // if (index > 0)
-      //   index--;
-      // console.log('dirty');
-      console.log('dirty', index, prevKey);
-      // Start the new sequence from where we left
-      // steps that are added before this index will be executed in the next cycle;
-      // return requestAnimationFrame(() => {
-      //   _jump.call(newKeys);
-      // });
-
-      // debugger
-      return _jump.call(NEW_KEYS.slice(index));
-    }
-
-    if (this.length) {
-      let key = this.shift();
-      let batch = View.TO_BE_CREATED[key];
-      if (!batch || !batch.length) {
-        return _jump.call(this,key);
-      }
-      console.log(key);
-      _next.call(batch, _jump.bind(this,key));
-    } else {
-      done = true;
-      // console.log('done!');
-      // requestAnimationFrame(() => {
-      //   _jump.call(NEW_KEYS);
-      // });
-    }
-  };
-
-  // requestAnimationFrame(() => {
-  //   _jump.call(NEW_KEYS);
-  // });
-
-  View.CREATE_IN_NEXT_FRAME = function (index, action) {
-    if (View.LAST_CREATE_FRAME_ID) {
-      cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-      View.LAST_CREATE_FRAME_ID = null;
-    }
-
-    // if(index === '0,2,0')debugger;
-    const target = View.TO_BE_CREATED[index] || [];
-    const c = { $: action };
-    target.push(c);
-    View.TO_BE_CREATED[index] = target;
-    NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-
-    // View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-    to_be_created_dirty = true;
-    View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-      if (done) {
-        done = false;
-        // debugger
-        // to_be_created_dirty = false;
-        // NEW_KEYS = Object.keys(View.TO_BE_CREATED).sort();
-        _jump.call(Object.keys(View.TO_BE_CREATED).sort());
-      }
-    });
-  };
   /**
    *
    * @param {string} index
@@ -286,36 +223,31 @@ Galaxy.View = /** @class */(function (G) {
    * @memberOf Galaxy.View
    * @static
    */
-  // View.CREATE_IN_NEXT_FRAME = function (index, action) {
-  //   if (View.LAST_CREATE_FRAME_ID) {
-  //     cancelAnimationFrame(View.LAST_CREATE_FRAME_ID);
-  //     View.LAST_CREATE_FRAME_ID = null;
-  //   }
-  //
-  //   const target = View.TO_BE_CREATED[index] || [];
-  //   const c = { $: action };
-  //   target.push(c);
-  //   View.TO_BE_CREATED[index] = target;
-  //
-  //   View.LAST_CREATE_FRAME_ID = requestAnimationFrame(() => {
-  //     const keys = Object.keys(View.TO_BE_CREATED).sort();
-  //     keys.forEach((key) => {
-  //       const batch = View.TO_BE_CREATED[key];
-  //       if (!batch || !batch.length) {
-  //         return;
-  //       }
-  //       // _next.call(batch);
-  //
-  //       while (batch.length) {
-  //         batch.shift().$();
-  //       }
-  //     });
-  //   });
-  //
-  //   return () => {
-  //     c.$ = View.EMPTY_CALL;
-  //   };
-  // };
+  View.CREATE_IN_NEXT_FRAME = function (index, action) {
+    const target = View.TO_BE_CREATED[index] || [];
+    target.push(action);
+    View.TO_BE_CREATED[index] = target;
+    UPDATE_DOM_MANIPULATION_SEQUENCE();
+  };
+
+  const UPDATE_DOM_MANIPULATION_SEQUENCE = function () {
+    dom_manipulations_dirty = true;
+    if (View.LAST_FRAME_ID) {
+      cancelAnimationFrame(View.LAST_FRAME_ID);
+      View.LAST_FRAME_ID = null;
+    }
+
+    const destroy = Object.keys(View.TO_BE_DESTROYED).sort().reverse();
+    const create = Object.keys(View.TO_BE_CREATED).sort();
+    DOM_MANIPULATIONS = destroy.concat(create);
+    View.LAST_FRAME_ID = requestAnimationFrame(() => {
+      if (manipulation_done) {
+        manipulation_done = false;
+        _jump.call(DOM_MANIPULATIONS);
+      }
+    });
+  };
+
 
   /**
    *
@@ -789,7 +721,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -828,7 +760,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 

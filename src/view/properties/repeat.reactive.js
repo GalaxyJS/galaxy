@@ -2,7 +2,7 @@
 (function (G) {
   const View = G.View;
   const CLONE = G.clone;
-  const DESTROY_NODES = G.View.destroyNodes;
+  const DESTROY_NODES = G.View.DESTROY_NODES;
 
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {

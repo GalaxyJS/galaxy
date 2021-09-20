@@ -352,11 +352,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.transitory = true;
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.populateLeaveSequence = defaultPopulateLeaveSequence;
+          _next();
         });
       }
     },
@@ -374,10 +375,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
+          _next();
         });
       }
     },
@@ -431,6 +433,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
+            // console.log('aaaaaaaa')
             ViewNode.REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
@@ -464,11 +467,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       _this.finalize.forEach(act => act.call(_this));
 
-      DESTROY_IN_NEXT_FRAME(_this.index, () => {
+      DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
         }
-
+        _next();
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
@@ -496,7 +499,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      */
     clean: function (hasAnimation) {
-      GV.destroyNodes(this.getChildNodes(), hasAnimation);
+      GV.DESTROY_NODES(this.getChildNodes(), hasAnimation);
     },
 
     createNext: function (act) {

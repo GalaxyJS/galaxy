@@ -33,16 +33,19 @@
         return;
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
-        // debugger;
-        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          // _this.rendered.then(function () {
+      if (!moduleMeta || moduleMeta !== config.moduleMeta) {
+        G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           cleanModuleContent(_this);
-          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
-          // });
+          _next();
         });
-      } else if (!moduleMeta) {
-        cleanModuleContent(_this);
+      }
+
+      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
+        // _this.rendered.then(() => {
+        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+        });
+        // })
       }
       config.moduleMeta = moduleMeta;
     }
@@ -53,12 +56,6 @@
     children.forEach(vn => {
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
-          // G.View.CREATE_IN_NEXT_FRAME(viewNode.index, () => {
-          // G.View.AnimationMeta.installGSAPAnimation(vn, 'leave', {
-          //   // sequence: 'DESTROY',
-          //   onComplete: finalize,
-          //   duration: 0
-          // }, finalize);
           finalize();
         };
       }
