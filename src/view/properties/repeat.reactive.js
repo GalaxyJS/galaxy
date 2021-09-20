@@ -128,21 +128,24 @@
       }
 
       // Only cancel previous action if the type of new and old changes is reset
-      if (changes.type === 'reset' && changes.type === config.oldChanges.type && config.previousActionId) {
-        cancelAnimationFrame(config.previousActionId);
-      }
+      // if (changes.type === 'reset' && changes.type === config.oldChanges.type && config.previousActionId) {
+      //   cancelAnimationFrame(config.previousActionId);
+      // }
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      config.previousActionId = requestAnimationFrame(() => {
-        prepareChanges(node, config, changes).then(finalChanges => {
-          processChages(node, config, finalChanges);
-        });
-      });
+      // if(node.blueprint.animations && node.blueprint.animations.enter && node.blueprint.animations.enter.sequence === 'dots')debugger;
+      // node.index;
+      //  config.previousActionId = requestAnimationFrame(() => {
+      //   prepareChanges(node, config, changes).then(finalChanges => {
+      //     processChanges(node, config, finalChanges);
+      //   });
+      // });
+      processChanges(node, config, prepareChanges(node, config, changes));
     }
   };
 
-  async function prepareChanges(viewNode, config, changes) {
+  function prepareChanges(viewNode, config, changes) {
     const hasAnimation = viewNode.blueprint.animations && viewNode.blueprint.animations.leave;
     const trackByKey = config.trackBy;
     if (trackByKey && changes.type === 'reset') {
@@ -196,7 +199,7 @@
     return changes;
   }
 
-  function processChages(viewNode, config, changes) {
+  function processChanges(viewNode, config, changes) {
     const parentNode = viewNode.parent;
     // const positions = config.positions;
     const positions = [];

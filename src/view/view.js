@@ -804,6 +804,12 @@ Galaxy.View = /** @class */(function (G) {
 
   View.prototype = {
     enterKeyframe: function (onComplete, sequence, duration) {
+      if (typeof onComplete === 'string') {
+        duration = sequence;
+        sequence = onComplete;
+        onComplete = View.EMPTY_CALL;
+      }
+
       return {
         tag: 'comment',
         nodeValue: 'keyframe:enter',

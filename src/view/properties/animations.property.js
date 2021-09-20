@@ -13,11 +13,58 @@
         if (value.enter && value.enter.onComplete) {
           viewNode.populateEnterSequence = value.enter.onComplete;
         }
-        viewNode.populateLeaveSequence = (onComplete) => { onComplete();};
+        viewNode.populateLeaveSequence = (onComplete) => {
+          onComplete();
+        };
       }
     };
 
-    return console.warn('please load GSAP - GreenSock in order to activate animations');
+    window.gsap = {
+      to: function (node, props) {
+        requestAnimationFrame(() => {
+          if (typeof node === 'string') {
+            node = document.querySelector(node);
+          }
+
+          const style = node.style;
+          if (style) {
+            const keys = Object.keys(props);
+            for (let i = 0, len = keys.length; i < len; i++) {
+              const key = keys[i];
+              const value = props[key];
+              switch (key) {
+                case 'duration':
+                case 'ease':
+                  break;
+
+                case 'opacity':
+                case 'z-index':
+                  style.setProperty(key, value);
+                  break;
+
+                case 'scrollTo':
+                  node.scrollTop = typeof value.y === 'string' ? document.querySelector(value.y).offsetTop : value.y;
+                  node.scrollLeft = typeof value.x === 'string' ? document.querySelector(value.x).offsetLeft : value.x;
+                  break;
+
+                default:
+                  style.setProperty(key, typeof value === 'number' && value !== 0 ? value + 'px' : value);
+              }
+            }
+          } else {
+            Object.assign(node, props);
+          }
+        });
+      },
+    };
+
+
+    console.info('%cPlease load GSAP - GreenSock in order to activate animations', 'color: yellowgreen; font-weight: bold;');
+    console.info('%cYou can implement most common animations by loading the following resources', 'color: yellowgreen;');
+    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
+    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollToPlugin.min.js');
+    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/EasePack.min.js\n\n');
+    return;
   }
 
   function hasParentEnterAnimation(viewNode) {
@@ -44,7 +91,6 @@
         return;
       }
 
-      const config = value.config || {};
       const enter = value.enter;
       if (enter) {
         viewNode.populateEnterSequence = function () {
@@ -122,16 +168,21 @@
         });
       } else {
         // it works and I don't know why
-        // viewNode.populateLeaveSequence = function (onComplete) {
-        //   if (gsap.getTweensOf(this.node).length) {
-        //     gsap.killTweensOf(this.node);
-        //   }
-        //
-        //   AnimationMeta.installGSAPAnimation(this, 'leave', {
-        //     // sequence: 'DESTROY',
-        //     duration: 0
-        //   }, {}, onComplete);
-        // };
+        viewNode.populateLeaveSequence = function (finalize) {
+          if (gsap.getTweensOf(this.node).length) {
+            gsap.killTweensOf(this.node);
+          }
+          // console.log(this.blueprint.$if,finalize)
+          if (this.blueprint.hasOwnProperty('$if')) {
+            finalize();
+          }
+
+
+          // AnimationMeta.installGSAPAnimation(this, 'leave', {
+          //   // sequence: 'DESTROY',
+          //   duration: 0
+          // }, onComplete);
+        };
       }
 
       if (viewNode.cache.class && viewNode.cache.class.observer) {
@@ -271,7 +322,7 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
+      to = Object.assign(to || {}, {overwrite: 'none'});
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
@@ -287,6 +338,8 @@
     if (sequenceName) {
       const animationMeta = new AnimationMeta(sequenceName);
 
+      // if(sequenceName === 'dots')debugger;
+      // viewNode.index;
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
@@ -298,41 +351,37 @@
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
-        let parent = animationMeta.timeline;
+        let parentTimeline = animationMeta.timeline;
 
-        while (parent.parent !== gsap.globalTimeline) {
-          if (!parent.parent) return;
-          parent = parent.parent;
+        while (parentTimeline.parent !== gsap.globalTimeline) {
+          if (!parentTimeline.parent) return;
+          parentTimeline = parentTimeline.parent;
         }
 
-        parent.add(() => {
-          if (viewNode.destroyed.resolved) {
-            return;
+        // parent.add(() => {-
+        parentTimeline.addPause(newConfig.position, () => {
+          if (viewNode.transitory || viewNode.destroyed.resolved) {
+            return parentTimeline.resume();
           }
 
-          parent.pause();
-
+          // parent.pause();
+          animationMeta.awaits.push(newConfig.await);
           const removeAwait = () => {
             const index = animationMeta.awaits.indexOf(newConfig.await);
             if (index !== -1) {
               animationMeta.awaits.splice(index, 1);
             }
-            parent.resume();
+            parentTimeline.resume();
           };
           // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
           // to be resolved. Therefore, we need to remove await.
           viewNode.finalize.push(removeAwait);
 
-          newConfig.await.then(() => {
-            const index = animationMeta.awaits.indexOf(newConfig.await);
-            if (index !== -1) {
-              animationMeta.awaits.splice(index, 1);
-            }
-            parent.resume();
-          });
-        }, newConfig.position);
+          newConfig.await.then(removeAwait);
+          // }, newConfig.position);
+        });
 
-        animationMeta.awaits.push(newConfig.await);
+
       }
 
       animationMeta.add(viewNode, newConfig, finalize);
@@ -378,7 +427,7 @@
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = { name };
+    _this.timeline.data = {name};
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};

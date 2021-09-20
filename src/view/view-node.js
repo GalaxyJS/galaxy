@@ -325,7 +325,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       _this.inDOM = flag;
-      if (flag && !_this.virtual) {
+      if (_this.virtual) return;
+
+      if (flag) {
         if (_this.node.style) {
           _this.node.style.setProperty('display', 'none');
         }
