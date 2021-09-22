@@ -344,30 +344,35 @@
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
+        console.log(parentTimeline.getChildren(false))
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
-
+        const awaitIndex = animationMeta.awaits.push(newConfig.await);
+        const label = newConfig.sequence + '_await' + awaitIndex;
+        const labelPos = label + newConfig.position;
         const removeAwait = () => {
           const index = animationMeta.awaits.indexOf(newConfig.await);
           if (index !== -1) {
             animationMeta.awaits.splice(index, 1);
+            parentTimeline.removePause(labelPos);
+            console.log(label, parentTimeline.labels[label])
+            debugger
             parentTimeline.resume();
           }
         };
         // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
         // to be resolved. Therefore, we need to remove await.
         viewNode.finalize.push(removeAwait);
-// debugger
-        parentTimeline.addPause(newConfig.position, () => {
-          // debugger
+        console.log('a', label, parentTimeline.currentLabel())
+        parentTimeline.addPause(labelPos, () => {
+          console.log(label, parentTimeline.getChildren(false))
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
-          animationMeta.awaits.push(newConfig.await);
           newConfig.await.then(removeAwait);
         });
       }

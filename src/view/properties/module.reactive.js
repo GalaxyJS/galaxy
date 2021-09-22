@@ -41,11 +41,11 @@
       }
 
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
-        // _this.rendered.then(() => {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
-          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          // setTimeout(() => {
+            moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          // }, 3000)
         });
-        // })
       }
       config.moduleMeta = moduleMeta;
     }
