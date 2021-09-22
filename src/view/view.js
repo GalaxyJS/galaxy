@@ -680,7 +680,7 @@ Galaxy.View = /** @class */(function (G) {
           hostReactiveData = new G.View.ReactiveData(targetKeyName, scopeData, null);
         }
       }
-      // When the node belongs to a nested repeat, the scopeData would refer to the for item data
+      // When the node belongs to a nested _repeat, the scopeData would refer to the for item data
       // But developer should still be able to access root scopeData
       if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__scope__') &&
         propertyKey === 'data') {
@@ -709,8 +709,8 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
-        // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
-        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
+        // if the propertyKey is used for a _repeat reactive property, then we assume its type is Array.
+        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === '_repeat');
       }
 
       if (childPropertyKeyPath === null) {
@@ -947,7 +947,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         nodeValue: 'keyframe:enter',
-        animations: {
+        _animations: {
           enter: {
             duration: duration || 0,
             sequence,
@@ -960,7 +960,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         nodeValue: 'keyframe:leave',
-        animations: {
+        _animations: {
           enter: {
             duration: duration || 0,
             sequence,

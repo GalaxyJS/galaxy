@@ -1,9 +1,9 @@
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['inputs'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['inputs'] = {
+  G.View.REACTIVE_BEHAVIORS['_inputs'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_inputs'] = {
     type: 'reactive',
-    key: 'inputs',
+    key: '_inputs',
     /**
      *
      * @this {Galaxy.View.ViewNode}
@@ -12,7 +12,7 @@
      */
     getConfig: function (scope, value) {
       if (value !== null && typeof value !== 'object') {
-        throw console.error('inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
+        throw console.error('_inputs property should be an object with explicits keys:\n', JSON.stringify(this.blueprint, null, '  '));
       }
 
       return {

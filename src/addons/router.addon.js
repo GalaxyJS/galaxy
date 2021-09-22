@@ -66,7 +66,7 @@
     };
     _this.viewport = {
       tag: 'main',
-      module: '<>router.activeModule'
+      _module: '<>router.activeModule'
     };
 
     Object.defineProperty(this, 'urlParts', {
