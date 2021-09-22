@@ -318,8 +318,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
         _this.blueprint.renderConfig.renderDetached = false;
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
+          _next();
         });
         return;
       }
@@ -341,20 +342,22 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         _this.hasBeenInserted();
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.populateEnterSequence();
+          _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         _this.prepareLeaveSequence(_this.hasAnimation());
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
           _this.populateLeaveSequence = defaultPopulateLeaveSequence;
+          _next();
         });
       }
     },
@@ -364,17 +367,19 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.visible = flag;
 
       if (flag && !_this.virtual) {
-        CREATE_IN_NEXT_FRAME(_this.index, () => {
+        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.node.style.display = null;
           _this.populateEnterSequence();
+          _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        DESTROY_IN_NEXT_FRAME(_this.index, () => {
+        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
+          _next();
         });
       }
     },
@@ -428,6 +433,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
+            // console.log('aaaaaaaa')
             ViewNode.REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
@@ -461,11 +467,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       _this.finalize.forEach(act => act.call(_this));
 
-      DESTROY_IN_NEXT_FRAME(_this.index, () => {
+      DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
         if (_this.inDOM) {
           _this.populateLeaveSequence(_this.onLeaveComplete);
         }
-
+        _next();
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
@@ -493,24 +499,23 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      *
      */
     clean: function (hasAnimation) {
-      GV.destroyNodes(this.getChildNodes(), hasAnimation);
+      GV.DESTROY_NODES(this.getChildNodes(), hasAnimation);
+    },
+
+    createNext: function (act) {
+      CREATE_IN_NEXT_FRAME(this.index, act);
     },
 
     get index() {
       if (this.parent) {
-        const childNodes = this.parent.node.childNodes;
-        let i = -1;
-        const node = this.node;
-        for (let counter = 0, len = childNodes.length; counter < len; counter++) {
-          if (childNodes[counter] === node) {
-            i = counter;
-            break;
-          }
+        let i = 0;
+        let node = this.node;
+        while ((node = node.previousSibling) !== null) ++i;
+
+        if (i === 0 && this.placeholder.parentNode) {
+          i = arrIndexOf.call(this.parent.node.childNodes, this.placeholder);
         }
-        if (i === -1) {
-          i = arrIndexOf.call(childNodes, this.placeholder);
-        }
-        return this.parent.index + '.' + ViewNode.createIndex(i);
+        return this.parent.index + ',' + ViewNode.createIndex(i);
       }
 
       return '0';

@@ -129,23 +129,18 @@
         viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (finalize) {
           const _node = this.node;
+          if (gsap.getTweensOf(_node).length) {
+            gsap.killTweensOf(_node);
+          }
+
           if (leave.withParent) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
-
             if (parent.transitory) {
-              if (gsap.getTweensOf(_node).length) {
-                gsap.killTweensOf(_node);
-              }
-
-              // We dump this _viewNode so it gets removed when the leave animation origin node is detached.
+              // We dump this _viewNode so it gets removed when the leave's animation's origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a $if
               return this.dump();
             }
-          }
-
-          if (gsap.getTweensOf(_node).length) {
-            gsap.killTweensOf(_node);
           }
 
           // in the case which the _viewNode is not visible, then ignore its animation
@@ -167,21 +162,17 @@
           viewNode.node.style.display = 'none';
         });
       } else {
-        // it works and I don't know why
+        // By default, imitate leave with parent behavior
         viewNode.populateLeaveSequence = function (finalize) {
           if (gsap.getTweensOf(this.node).length) {
             gsap.killTweensOf(this.node);
           }
-          // console.log(this.blueprint.$if,finalize)
-          if (this.blueprint.hasOwnProperty('$if')) {
+
+          if (this.parent.transitory) {
+            return this.dump();
+          } else {
             finalize();
           }
-
-
-          // AnimationMeta.installGSAPAnimation(this, 'leave', {
-          //   // sequence: 'DESTROY',
-          //   duration: 0
-          // }, onComplete);
         };
       }
 
@@ -343,6 +334,7 @@
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
+
         const children = parentAnimationMeta.timeline.getChildren(false);
         if (children.indexOf(animationMeta.timeline) === -1) {
           parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
@@ -352,36 +344,32 @@
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
-
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
-        // parent.add(() => {-
+
+        const removeAwait = () => {
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            parentTimeline.resume();
+          }
+        };
+        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // to be resolved. Therefore, we need to remove await.
+        viewNode.finalize.push(removeAwait);
+// debugger
         parentTimeline.addPause(newConfig.position, () => {
+          // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
-          // parent.pause();
           animationMeta.awaits.push(newConfig.await);
-          const removeAwait = () => {
-            const index = animationMeta.awaits.indexOf(newConfig.await);
-            if (index !== -1) {
-              animationMeta.awaits.splice(index, 1);
-            }
-            parentTimeline.resume();
-          };
-          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
-          // to be resolved. Therefore, we need to remove await.
-          viewNode.finalize.push(removeAwait);
-
           newConfig.await.then(removeAwait);
-          // }, newConfig.position);
         });
-
-
       }
 
       animationMeta.add(viewNode, newConfig, finalize);
@@ -406,8 +394,13 @@
    * @class
    */
   function AnimationMeta(name) {
-    if (AnimationMeta.ANIMATIONS[name]) {
-      return AnimationMeta.ANIMATIONS[name];
+    const exist = AnimationMeta.ANIMATIONS[name];
+    if (exist) {
+      if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
+        exist.timeline.clear();
+        exist.timeline.invalidate();
+      }
+      return exist;
     }
 
     const _this = this;
