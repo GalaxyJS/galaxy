@@ -508,17 +508,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     get index() {
       if (this.parent) {
-        const childNodes = this.parent.node.childNodes;
-        let i = -1;
-        const node = this.node;
-        for (let counter = 0, len = childNodes.length; counter < len; counter++) {
-          if (childNodes[counter] === node) {
-            i = counter;
-            break;
-          }
-        }
-        if (i === -1) {
-          i = arrIndexOf.call(childNodes, this.placeholder);
+        let i = 0;
+        let node = this.node;
+        while ((node = node.previousSibling) !== null) ++i;
+
+        if (i === 0 && this.placeholder.parentNode) {
+          i = arrIndexOf.call(this.parent.node.childNodes, this.placeholder);
         }
         return this.parent.index + ',' + ViewNode.createIndex(i);
       }

@@ -349,36 +349,27 @@
           parentTimeline = parentTimeline.parent;
         }
 
-        // parent.add(() => {-
 
+        const removeAwait = () => {
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            parentTimeline.resume();
+          }
+        };
+        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // to be resolved. Therefore, we need to remove await.
+        viewNode.finalize.push(removeAwait);
+// debugger
         parentTimeline.addPause(newConfig.position, () => {
           // debugger
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
-          // parent.pause();
           animationMeta.awaits.push(newConfig.await);
-          const removeAwait = () => {
-            const index = animationMeta.awaits.indexOf(newConfig.await);
-            if (index !== -1) {
-              animationMeta.awaits.splice(index, 1);
-            }
-            const c = parentTimeline.getChildren(false);
-            console.log(c)
-            // debugger
-            // parentTimeline.removePause()
-            parentTimeline.resume();
-          };
-          // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
-          // to be resolved. Therefore, we need to remove await.
-          viewNode.finalize.push(removeAwait);
-
           newConfig.await.then(removeAwait);
-          // }, newConfig.position);
         });
-
-
       }
 
       animationMeta.add(viewNode, newConfig, finalize);
