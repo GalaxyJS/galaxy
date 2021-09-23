@@ -310,7 +310,6 @@ Galaxy.View = /** @class */(function (G) {
   // View.TO_BE_DESTROYED = {};
   // View.TO_BE_CREATED = {};
 
-
   function add_dom_manipulation(index, act, order, search) {
     if (dom_manipulation_table.hasOwnProperty(index)) {
       dom_manipulation_table[index].push(act);
@@ -710,12 +709,18 @@ Galaxy.View = /** @class */(function (G) {
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof G.View.ViewNode)) {
+
           defProp(target, targetKeyName, {
-            // set: function (newValue) {
-            // console.warn('It is not allowed', parentReactiveData.id, targetKeyName);
-            // value[propertyKeyPath] = newValue;
-            // },
-            get: function ref() {
+            set: function ref_set(newValue) {
+              // console.warn('It is not allowed', hostReactiveData.id, targetKeyName);
+              // Not sure about this part
+              if (hostReactiveData.data[propertyKey] === newValue) {
+                return;
+              }
+
+              hostReactiveData.data[propertyKey] = newValue;
+            },
+            get: function ref_get() {
               if (expressionFn) {
                 return expressionFn();
               }
@@ -835,7 +840,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -874,7 +879,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -932,10 +937,10 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
-    enterKeyframe: function (onComplete, sequence, duration) {
+    enterKeyframe: function (onComplete, timeline, duration) {
       if (typeof onComplete === 'string') {
-        duration = sequence;
-        sequence = onComplete;
+        duration = timeline;
+        timeline = onComplete;
         onComplete = View.EMPTY_CALL;
       }
 
@@ -945,20 +950,20 @@ Galaxy.View = /** @class */(function (G) {
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
-            sequence,
+            timeline,
             onComplete
           }
         }
       };
     },
-    leaveKeyframe: function (onComplete, sequence, duration) {
+    leaveKeyframe: function (onComplete, timeline, duration) {
       return {
         tag: 'comment',
         nodeValue: 'keyframe:leave',
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
-            sequence,
+            timeline,
             onComplete
           }
         }

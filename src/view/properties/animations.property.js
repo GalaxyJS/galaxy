@@ -58,7 +58,6 @@
       },
     };
 
-
     console.info('%cPlease load GSAP - GreenSock in order to activate animations', 'color: yellowgreen; font-weight: bold;');
     console.info('%cYou can implement most common animations by loading the following resources', 'color: yellowgreen;');
     console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
@@ -156,8 +155,8 @@
           AnimationMeta.installGSAPAnimation(this, 'leave', leave, finalize);
         };
 
-        // Hide sequence is the same as leave sequence.
-        // The only difference is that hide sequence will add `display: 'none'` to the node at the end
+        // Hide timeline is the same as leave timeline.
+        // The only difference is that hide timeline will add `display: 'none'` to the node at the end
         viewNode.populateHideSequence = viewNode.populateLeaveSequence.bind(viewNode, () => {
           viewNode.node.style.display = 'none';
         });
@@ -191,7 +190,7 @@
   /**
    *
    * @typedef {Object} AnimationConfig
-   * @property {string} [sequence]
+   * @property {string} [timeline]
    * @property {Promise} [await]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
@@ -313,21 +312,21 @@
     }
 
     if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, {overwrite: 'none'});
+      to = Object.assign(to || {}, { overwrite: 'none' });
     }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
-    let sequenceName = newConfig.sequence;
+    let timelineName = newConfig.timeline;
 
-    if (newConfig.sequence instanceof Function) {
-      sequenceName = newConfig.sequence.call(viewNode);
+    if (newConfig.timeline instanceof Function) {
+      timelineName = newConfig.timeline.call(viewNode);
     }
 
     let parentAnimationMeta = null;
-    if (sequenceName) {
-      const animationMeta = new AnimationMeta(sequenceName);
+    if (timelineName) {
+      const animationMeta = new AnimationMeta(timelineName);
 
       // if(sequenceName === 'dots')debugger;
       // viewNode.index;
@@ -344,37 +343,41 @@
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
         let parentTimeline = animationMeta.timeline;
-        console.log(parentTimeline.getChildren(false))
+        // console.log(parentTimeline.getChildren(false));
         while (parentTimeline.parent !== gsap.globalTimeline) {
           if (!parentTimeline.parent) return;
           parentTimeline = parentTimeline.parent;
         }
 
-        const awaitIndex = animationMeta.awaits.push(newConfig.await);
-        const label = newConfig.sequence + '_await' + awaitIndex;
-        const labelPos = label + newConfig.position;
-        const removeAwait = () => {
-          const index = animationMeta.awaits.indexOf(newConfig.await);
-          if (index !== -1) {
-            animationMeta.awaits.splice(index, 1);
-            parentTimeline.removePause(labelPos);
-            console.log(label, parentTimeline.labels[label])
-            debugger
-            parentTimeline.resume();
-          }
-        };
-        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
-        // to be resolved. Therefore, we need to remove await.
-        viewNode.finalize.push(removeAwait);
-        console.log('a', label, parentTimeline.currentLabel())
-        parentTimeline.addPause(labelPos, () => {
-          console.log(label, parentTimeline.getChildren(false))
+        animationMeta.awaits.push(newConfig.await);
+
+        // The pauseTween will be removed from the parentTimeline by GSAP the moment the pause is hit
+        const pauseTween = parentTimeline.addPause(newConfig.position, () => {
           if (viewNode.transitory || viewNode.destroyed.resolved) {
             return parentTimeline.resume();
           }
 
           newConfig.await.then(removeAwait);
-        });
+        }).recent();
+
+        const removeAwait = ((_pause) => {
+          const index = animationMeta.awaits.indexOf(newConfig.await);
+          if (index !== -1) {
+            animationMeta.awaits.splice(index, 1);
+            // Do not remove the pause if it is already executed
+            if (_pause._initted) {
+              parentTimeline.resume();
+            } else {
+              const children = parentTimeline.getChildren(false);
+              if (children.indexOf(_pause) !== -1) {
+                parentTimeline.remove(_pause);
+              }
+            }
+          }
+        }).bind(null, pauseTween);
+        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // to be resolved. Therefore, we need to remove await.
+        viewNode.finalize.push(removeAwait);
       }
 
       animationMeta.add(viewNode, newConfig, finalize);
@@ -425,7 +428,7 @@
         AnimationMeta.ANIMATIONS[name] = null;
       }
     });
-    _this.timeline.data = {name};
+    _this.timeline.data = { name };
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};

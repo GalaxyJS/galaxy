@@ -390,7 +390,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      * @param position
      */
     registerChild: function (childNode, position) {
-      this.node.insertBefore(childNode.placeholder, position);
+      if (this.virtual) {
+        this.parent.node.insertBefore(childNode.placeholder, position);
+      } else {
+        this.node.insertBefore(childNode.placeholder, position);
+      }
     },
 
     createNode: function (blueprint, localScope) {

@@ -134,7 +134,7 @@
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.sequence === 'dots')debugger;
+      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.timeline === 'dots')debugger;
       // node.index;
       //  config.previousActionId = requestAnimationFrame(() => {
       //   prepareChanges(node, config, changes).then(finalChanges => {

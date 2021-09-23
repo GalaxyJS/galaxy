@@ -43,7 +43,7 @@
       if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           // setTimeout(() => {
-            moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
           // }, 3000)
         });
       }
