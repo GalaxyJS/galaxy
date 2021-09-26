@@ -24,12 +24,12 @@
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
-          observer.onAll((key, value, oldValue) => {
+          observer.onAll((key, value) => {
             applyClasses(viewNode, reactiveClasses);
           });
         });
       } else {
-        observer.onAll((key, value, oldValue) => {
+        observer.onAll((key, value) => {
           applyClasses(viewNode, reactiveClasses);
         });
       }
@@ -40,11 +40,10 @@
      *
      * @param config
      * @param value
-     * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    update: function (config, value, oldValue, expression) {
+    update: function (config, value, expression) {
       if (this.virtual) {
         return;
       }

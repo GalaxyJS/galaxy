@@ -13,9 +13,9 @@
       const textNode = nativeNode['<>text'];
       let textValue = typeof value === 'undefined' || value === null ? '' : value;
 
-      if (textValue instanceof Function) {
+      /*if (textValue instanceof Function) {
         textValue = textValue.call(viewNode, viewNode.data);
-      } else if (textValue instanceof Object) {
+      } else */if (textValue instanceof Object) {
         textValue = JSON.stringify(textValue);
       }
 

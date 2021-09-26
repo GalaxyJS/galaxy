@@ -7,7 +7,7 @@
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = {
     type: 'attr',
     key: 'disabled',
-    update: function (viewNode, value, oldValue, attr) {
+    update: function (viewNode, value, attr) {
       viewNode.rendered.then(() => {
         if (viewNode.blueprint.tag.toLowerCase() === 'form') {
           const children = viewNode.node.querySelectorAll('input, textarea, select, button');
@@ -20,7 +20,7 @@
         }
       });
 
-      G.View.setAttr(viewNode, value ? '' : null, oldValue, attr);
+      G.View.setAttr(viewNode, value ? '' : null, attr);
     }
   };
 })(Galaxy);

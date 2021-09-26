@@ -61,7 +61,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     this.parent = parent;
     this.refs = [];
     this.shadow = {};
-    this.oldValue = {};
     this.nodeCount = -1;
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
@@ -216,7 +215,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             return;
           }
 
-          thisRD.oldValue[key] = value;
           value = val;
 
           // This means that the property suppose to be an object and there is probably an active binds to it
@@ -245,7 +243,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // Update the ui for this key
       // This is for when the makeReactive method has been called by setData
       this.sync(key, value);
-      this.oldValue[key] = value;
     },
     /**
      *
@@ -424,17 +421,16 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const _this = this;
 
       const map = _this.nodesMap[propertyKey];
-      const oldValue = _this.oldValue[propertyKey];
       // const value = _this.data[propertyKey];
 
       // notify the observers on the data
-      G.Observer.notify(_this.data, propertyKey, value, oldValue);
+      G.Observer.notify(_this.data, propertyKey, value);
 
       if (map) {
         for (let i = 0, len = map.nodes.length; i < len; i++) {
           const node = map.nodes[i];
           const key = map.keys[i];
-          _this.syncNode(node, key, value, oldValue);
+          _this.syncNode(node, key, value);
         }
       }
     },
@@ -453,21 +449,20 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param node
      * @param {string} key
      * @param {*} value
-     * @param {*} oldValue
      */
-    syncNode: function (node, key, value, oldValue) {
+    syncNode: function (node, key, value) {
       // Pass a copy of the ArrayChange to every bound
       if (value instanceof G.View.ArrayChange) {
         value = value.getInstance();
       }
 
       if (node instanceof G.View.ViewNode) {
-        node.setters[key](value, oldValue);
+        node.setters[key](value);
       } else {
         node[key] = value;
       }
 
-      G.Observer.notify(node, key, value, oldValue);
+      G.Observer.notify(node, key, value);
     },
     /**
      *
@@ -571,11 +566,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             value: initValue.changes.init
           });
         }
-        // We need initValue for cases where ui is bound to a property of an null object
-        // TODO: This line seem obsolete
-        // if ((initValue === null || initValue === undefined) && this.shadow[dataKey]) {
-        //   initValue = {};
-        // }
 
         // if initValue is a change object, then we have to use its init for nodes that are newly being added
         // if the dataKey is length then ignore this line and use initValue which represent the length of array

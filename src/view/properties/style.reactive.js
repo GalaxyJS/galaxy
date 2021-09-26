@@ -29,11 +29,10 @@
      *
      * @param config
      * @param value
-     * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    update: function (config, value, oldValue, expression) {
+    update: function (config, value, expression) {
       if (this.virtual) {
         return;
       }

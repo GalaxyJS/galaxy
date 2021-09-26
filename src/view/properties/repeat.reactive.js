@@ -41,9 +41,9 @@
         viewNode.localPropertyNames.add(config.indexAs);
 
         const bindings = View.getBindings(config.data);
-        if (bindings.propertyKeysPaths) {
+        if (bindings.propertyKeys.length) {
           View.makeBinding(viewNode, '_repeat', undefined, config.scope, bindings, viewNode);
-          bindings.propertyKeysPaths.forEach((path) => {
+          bindings.propertyKeys.forEach((path) => {
             try {
               const rd = View.propertyScopeLookup(config.scope, path);
               viewNode.finalize.push(() => {
@@ -70,10 +70,9 @@
      * @this {Galaxy.View.ViewNode}
      * @param config The value returned by getConfig
      * @param array
-     * @param oldChanges
      * @param {Function} expression
      */
-    update: function (config, array, oldChanges, expression) {
+    update: function (config, array, expression) {
       let changes = null;
       if (expression) {
         array = expression();

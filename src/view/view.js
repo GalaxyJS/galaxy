@@ -6,11 +6,11 @@ Galaxy.View = /** @class */(function (G) {
 
   //------------------------------
 
-  Array.prototype.createComputable = function (f) {
-    const reactive = this.slice();
-    reactive.push(f);
-    return reactive;
-  };
+  // Array.prototype.createComputable = function (f) {
+  //   const reactive = this.slice();
+  //   reactive.push(f);
+  //   return reactive;
+  // };
 
   Array.prototype.createDataMap = function (keyPropertyName, valuePropertyName) {
     const map = {};
@@ -145,22 +145,6 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  /**
-   *
-   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
-   * @param {boolean} hasAnimation
-   * @memberOf Galaxy.View
-   * @static
-   */
-  View.DESTROY_NODES = function (toBeRemoved, hasAnimation) {
-    let remove = null;
-
-    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
-      remove = toBeRemoved[i];
-      remove.destroy(hasAnimation);
-    }
-  };
-
   // let opt_count = 0;
   // const _next_batch = function (_jump, dirty) {
   //   if (dirty) {
@@ -190,6 +174,52 @@ Galaxy.View = /** @class */(function (G) {
   //     _jump();
   //   }
   // };
+
+  /**
+   *
+   * @param data
+   * @param {string} properties
+   * @return {*}
+   */
+  function safe_property_lookup(data, properties) {
+    properties = properties.split('.');
+    let property = properties[0];
+    const original = data;
+    let target = data;
+    let temp = data;
+    // var nestingLevel = 0;
+    if (data[property] === undefined) {
+      while (temp.__parent__) {
+        if (temp.__parent__.hasOwnProperty(property)) {
+          target = temp.__parent__;
+          break;
+        }
+
+        temp = temp.__parent__;
+      }
+
+      // if the property is not found in the parents then return the original object as the context
+      if (target[property] === undefined) {
+        target = original;
+      }
+    }
+
+    target = target || {};
+    const lastIndex = properties.length - 1;
+    properties.forEach(function (key, i) {
+      target = target[key];
+
+      if (i !== lastIndex && !(target instanceof Object)) {
+        target = {};
+      }
+    });
+
+    if (target instanceof G.View.ArrayChange) {
+      return target.getInstance();
+    }
+
+    return target === undefined ? null : target;
+  }
 
   const dom_manipulation_table = View.DOM_MANIPLATION = {};
   const create_order = [], destroy_order = [];
@@ -307,9 +337,6 @@ Galaxy.View = /** @class */(function (G) {
     return binary_search(array, el, comp_desc);
   }
 
-  // View.TO_BE_DESTROYED = {};
-  // View.TO_BE_CREATED = {};
-
   function add_dom_manipulation(index, act, order, search) {
     if (dom_manipulation_table.hasOwnProperty(index)) {
       dom_manipulation_table[index].push(act);
@@ -317,6 +344,23 @@ Galaxy.View = /** @class */(function (G) {
       dom_manipulation_table[index] = [act];
       order.splice(search(order, index), 0, index);
     }
+  }
+
+  let last_dom_manipulation_id;
+
+  function update_dom_manipulation_order() {
+    if (last_dom_manipulation_id) {
+      clearTimeout(last_dom_manipulation_id);
+      last_dom_manipulation_id = null;
+    }
+
+    dom_manipulation_order = arrConcat(destroy_order, create_order);
+    last_dom_manipulation_id = setTimeout(() => {
+      if (manipulation_done) {
+        manipulation_done = false;
+        next_batch.call(dom_manipulation_order);
+      }
+    });
   }
 
   /**
@@ -345,31 +389,29 @@ Galaxy.View = /** @class */(function (G) {
     update_dom_manipulation_order();
   };
 
-  let last_dom_manipulation_id;
+  /**
+   *
+   * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+   * @param {boolean} hasAnimation
+   * @memberOf Galaxy.View
+   * @static
+   */
+  View.DESTROY_NODES = function (toBeRemoved, hasAnimation) {
+    let remove = null;
 
-  function update_dom_manipulation_order() {
-    if (last_dom_manipulation_id) {
-      clearTimeout(last_dom_manipulation_id);
-      last_dom_manipulation_id = null;
+    for (let i = 0, len = toBeRemoved.length; i < len; i++) {
+      remove = toBeRemoved[i];
+      remove.destroy(hasAnimation);
     }
-
-    dom_manipulation_order = arrConcat(destroy_order, create_order);
-    last_dom_manipulation_id = setTimeout(() => {
-      if (manipulation_done) {
-        manipulation_done = false;
-        next_batch.call(dom_manipulation_order);
-      }
-    });
-  }
+  };
 
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
    * @param value
-   * @param oldValue
    * @param name
    */
-  View.setAttr = function setAttr(viewNode, value, oldValue, name) {
+  View.setAttr = function setAttr(viewNode, value, name) {
     if (value !== null && value !== undefined && value !== false) {
       viewNode.node.setAttribute(name, value === true ? '' : value);
     } else {
@@ -377,7 +419,7 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  View.setProp = function setProp(viewNode, value, oldValue, name) {
+  View.setProp = function setProp(viewNode, value, name) {
     viewNode.node[name] = value;
   };
 
@@ -397,137 +439,94 @@ Galaxy.View = /** @class */(function (G) {
     return result;
   };
 
+  const arg_default_value = /=\s*'<>(.*)'|=\s*"<>(.*)"/m;
+  const function_head = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
   /**
    *
    * @param {string|Array} value
-   * @return {{propertyKeysPaths: *[], isExpression: boolean, expressionFn: null}}
+   * @return {{propertyKeys: *[], isExpression: boolean, expressionFn: null}}
    */
   View.getBindings = function (value) {
     let allProperties = null;
-    let propertyKeyPaths = null;
-    let propertyVariables = [];
+    let propertyKeys = [];
+    let propertyValues = [];
     let isExpression = false;
-    const type = typeof (value);
+    const valueType = typeof (value);
     let handler = null;
 
-    if (type === 'string') {
+    if (valueType === 'string') {
       const props = value.match(View.BINDING_SYNTAX_REGEX);
       if (props) {
-        allProperties = ['<>' + props[2]];
-        if (props[2].indexOf('!') === 0) {
-          allProperties = ['<>' + props[2].slice(1)];
-          propertyVariables = allProperties;
-          handler = (a) => {
-            return !a;
-          };
-          propertyVariables.push(handler);
-          isExpression = true;
-        }
-      } else {
-        allProperties = null;
+        allProperties = [value];
       }
-    } else if (value instanceof Array && typeof value[value.length - 1] === 'function') {
-      propertyVariables = value;
-      allProperties = value.slice(0);
-      handler = allProperties.pop();
-      isExpression = true;
-    } else if (value instanceof Function && value.watch) {
-      propertyVariables = value;
-      allProperties = value.watch.slice(0);
-      handler = value;
-      isExpression = true;
+    } else if (valueType === 'function') {
+      const matches = value.toString().match(function_head);
+      if (matches) {
+        const args = matches[1] || matches [2];
+        propertyValues = args.split(',').map(a => {
+          const argDef = a.match(arg_default_value);
+          return argDef ? '<>' + (argDef[1] || argDef[2]) : undefined;
+        });
+        allProperties = propertyValues.slice();
+        handler = value;
+        isExpression = true;
+      }
     } else {
       allProperties = null;
     }
 
     if (allProperties) {
-      propertyKeyPaths = allProperties.filter(pkp => {
+      propertyKeys = allProperties.filter(pkp => {
         return typeof pkp === 'string' && pkp.indexOf('<>') === 0;
       });
+
+      // allProperties.forEach(p => {
+      //   if(typeof p === 'string' && p.indexOf('<>') === 0) {
+      //     const key = p.replace(/<>/g, '')
+      //     propertyKeys.push(p);
+      //     propertyValues.push('_prop(scope, "' + key + '")');
+      //   } else {
+      //     propertyValues.push('_var["' + key + '"]');
+      //   }
+      // });
     }
 
     return {
-      propertyKeysPaths: propertyKeyPaths ? propertyKeyPaths.map(function (name) {
+      propertyKeys: propertyKeys ? propertyKeys.map(function (name) {
         return name.replace(/<>/g, '');
       }) : null,
-      propertyVariables: propertyVariables,
+      propertyValues: propertyValues,
       handler: handler,
       isExpression: isExpression,
       expressionFn: null
     };
   };
 
-  /**
-   *
-   * @param data
-   * @param {string} properties
-   * @return {*}
-   */
-  View.safePropertyLookup = function (data, properties) {
-    properties = properties.split('.');
-    let property = properties[0];
-    const original = data;
-    let target = data;
-    let temp = data;
-    // var nestingLevel = 0;
-    if (data[property] === undefined) {
-      while (temp.__parent__) {
-        if (temp.__parent__.hasOwnProperty(property)) {
-          target = temp.__parent__;
-          break;
-        }
-
-        temp = temp.__parent__;
-      }
-
-      // if the property is not found in the parents then return the original object as the context
-      if (target[property] === undefined) {
-        target = original;
-      }
-    }
-
-    target = target || {};
-    const lastIndex = properties.length - 1;
-    properties.forEach(function (key, i) {
-      target = target[key];
-
-      if (i !== lastIndex && !(target instanceof Object)) {
-        target = {};
-      }
-    });
-
-    if (target instanceof G.View.ArrayChange) {
-      return target.getInstance();
-    }
-
-    return target;
-  };
-
-  View.propertyLookup = function (data, properties) {
-    properties = properties.split('.');
-    let property = properties[0];
+  View.propertyLookup = function (data, key) {
+    key = key.split('.');
+    let firstKey = key[0];
     const original = data;
     let target = data;
     let temp = data;
     let nestingLevel = 0;
     let parent;
-    if (data[property] === undefined) {
+    if (data[firstKey] === undefined) {
       while (temp.__parent__) {
         parent = temp.__parent__;
-        if (parent.hasOwnProperty(property)) {
+        if (parent.hasOwnProperty(firstKey)) {
           target = parent;
           break;
         }
 
         if (nestingLevel++ >= 1000) {
-          throw console.error('Maximum nested property lookup has reached `' + property + '`', data);
+          throw Error('Maximum nested property lookup has reached `' + firstKey + '`\n' + data);
         }
 
         temp = parent;
       }
 
       // if the property is not found in the parents then return the original object as the context
-      if (target[property] === undefined) {
+      if (target[firstKey] === undefined) {
         return original;
       }
     }
@@ -538,23 +537,20 @@ Galaxy.View = /** @class */(function (G) {
   /**
    *
    * @param data
-   * @param property
+   * @param absoluteKey
    * @returns {Galaxy.View.ReactiveData}
    */
-  View.propertyScopeLookup = function (data, property) {
-    const properties = property.split('.');
-    const li = properties.length - 1;
+  View.propertyScopeLookup = function (data, absoluteKey) {
+    const keys = absoluteKey.split('.');
+    const li = keys.length - 1;
     let target = data;
-    properties.forEach(function (p, i) {
+    keys.forEach(function (p, i) {
       target = View.propertyLookup(target, p);
 
       if (i !== li) {
         if (!target[p]) {
-          const rd = target.__rd__.refs.filter(function (ref) {
-            return ref.shadow[p];
-          })[0];
+          const rd = target.__rd__.refs.filter(ref => ref.shadow[p])[0];
           target = rd.shadow[p].data;
-          // target = target.__rd__.shadow[p].data;
         } else {
           target = target[p];
         }
@@ -566,76 +562,73 @@ Galaxy.View = /** @class */(function (G) {
 
   View.EXPRESSION_ARGS_FUNC_CACHE = {};
 
-  View.createExpressionArgumentsProvider = function (properties, variables) {
-    const id = properties.join();
+  View.createArgumentsProviderFn = function (propertyValues) {
+    const id = propertyValues.join();
 
     if (View.EXPRESSION_ARGS_FUNC_CACHE[id]) {
       return View.EXPRESSION_ARGS_FUNC_CACHE[id];
     }
 
     let functionContent = 'return [';
-    let middle = '';
-    for (let i = 0, len = variables.length; i < len - 1; i++) {
-      const variable = variables[i];
-      if (typeof variable === 'string' && variable.indexOf('<>') === 0) {
-        middle += 'lookUpFn(scope, "' + variable.replace(/<>/g, '') + '"),';
+    let middle = [];
+    for (let i = 0, len = propertyValues.length; i < len; i++) {
+      const val = propertyValues[i];
+      if (typeof val === 'string' && val.indexOf('<>') === 0) {
+        middle.push('_prop(scope, "' + val.replace(/<>/g, '') + '")');
       } else {
-        middle += 'vars[' + i + '],';
+        middle.push('_var[' + i + ']');
       }
     }
-    // Take care of variables that contain square brackets like '[variable_name]'
-    // for the convenience of the programmer
-    functionContent += middle.substring(0, middle.length - 1) + ']';
+    functionContent += middle.join(',') + ']';
 
-    const func = new Function('lookUpFn, scope, vars', functionContent);
+    const func = new Function('scope, _prop , _var', functionContent);
     View.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
 
     return func;
   };
 
-  View.createExpressionFunction = function (host, handler, scope, properties, vairables) {
-    const getExpressionArguments = G.View.createExpressionArgumentsProvider(properties, vairables);
+  View.createExpressionFunction = function (host, scope, handler, keys, values) {
+    if (!values[0] && host instanceof G.View.ViewNode) {
+      values[0] = host.data;
+    }
 
-    const fn = function () {
+    const getExpressionArguments = G.View.createArgumentsProviderFn(values);
+
+    return function () {
       let args = [];
       try {
-        args = getExpressionArguments.call(host, G.View.safePropertyLookup, scope, vairables);
+        args = getExpressionArguments.call(host, scope, safe_property_lookup, values);
       } catch (ex) {
-        console.error('Can\'t find the property: \n' + properties.join('\n'), '\n\nIt is recommended to inject the parent object instead' +
+        console.error('Can\'t find the property: \n' + keys.join('\n'), '\n\nIt is recommended to inject the parent object instead' +
           ' of its property.\n\n', scope, '\n', ex);
       }
 
       return handler.apply(host, args);
     };
-
-    fn.getArgs = function () {
-      return getExpressionArguments.call(host, G.View.safePropertyLookup, scope, properties);
-    };
-
-    return fn;
   };
 
   /**
    *
-   * @param target
-   * @param targetKeyName
-   * @param scope
    * @param bindings
+   * @param target
+   * @param scope
    * @returns {Function|boolean}
    */
-  View.prepareExpression = function (target, targetKeyName, scope, bindings) {
+  View.getExpressionFn = function (bindings, target, scope) {
     if (!bindings.isExpression) {
       return false;
     }
 
-    const properties = bindings.propertyKeysPaths;
+    if (bindings.expressionFn) {
+      return bindings.expressionFn;
+    }
 
     // Generate expression arguments
     try {
-      bindings.expressionFn = G.View.createExpressionFunction(target, bindings.handler, scope, properties, bindings.propertyVariables);
+      bindings.expressionFn = G.View.createExpressionFunction(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
       return bindings.expressionFn;
     } catch (exception) {
-      throw console.error(exception.message + '\n', properties);
+      throw Error(exception.message + '\n', bindings.propertyKeys);
     }
   };
 
@@ -649,16 +642,16 @@ Galaxy.View = /** @class */(function (G) {
    * @param {Galaxy.View.ViewNode | undefined} root
    */
   View.makeBinding = function (target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
-    const propertyKeysPaths = bindings.propertyKeysPaths;
-    const expressionFn = bindings.expressionFn || View.prepareExpression(root, targetKeyName, scopeData, bindings);
+    const propertyKeys = bindings.propertyKeys;
+    const expressionFn = View.getExpressionFn(bindings, root, scopeData);
 
     let value = scopeData;
     let propertyKey = null;
     let childPropertyKeyPath = null;
     let initValue = null;
     let propertyKeyPathItems = [];
-    for (let i = 0, len = propertyKeysPaths.length; i < len; i++) {
-      propertyKey = propertyKeysPaths[i];
+    for (let i = 0, len = propertyKeys.length; i < len; i++) {
+      propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
 
       propertyKeyPathItems = propertyKey.split('.');
@@ -684,7 +677,7 @@ Galaxy.View = /** @class */(function (G) {
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
       if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof G.View.ViewNode) {
         propertyKey = propertyKeyPathItems[1];
-        bindings.propertyKeysPaths = propertyKeyPathItems.slice(2);
+        bindings.propertyKeys = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
         hostReactiveData = new G.View.ReactiveData('data', root.data);
         value = View.propertyLookup(root.data, propertyKey);
@@ -748,12 +741,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, {
-          propertyKeysPaths: [childPropertyKeyPath],
-          propertyVariables: bindings.propertyVariables,
-          isExpression: false,
-          expressionFn: expressionFn
-        }, root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
       }
     }
 
@@ -784,9 +772,9 @@ Galaxy.View = /** @class */(function (G) {
 
       const bindings = View.getBindings(attributeValue);
 
-      if (bindings.propertyKeysPaths) {
+      if (bindings.propertyKeys.length) {
         View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings, viewNode);
-        bindings.propertyKeysPaths.forEach(function (path) {
+        bindings.propertyKeys.forEach(function (path) {
           try {
             const rd = View.propertyScopeLookup(data, path);
             viewNode.finalize.push(() => {
@@ -840,7 +828,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -879,7 +867,7 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     // View.getPropertySetterForNode(property, viewNode)(value, null);
 
@@ -1036,7 +1024,7 @@ Galaxy.View = /** @class */(function (G) {
 
           propertyValue = blueprint[propertyKey];
           const bindings = View.getBindings(propertyValue);
-          if (bindings.propertyKeysPaths) {
+          if (bindings.propertyKeys.length) {
             View.makeBinding(viewNode, propertyKey, null, scopeData, bindings, viewNode);
           } else {
             View.setPropertyForNode(viewNode, propertyKey, propertyValue);

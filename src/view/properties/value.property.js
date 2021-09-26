@@ -27,7 +27,7 @@
       }
 
       const bindings = G.View.getBindings(viewNode.blueprint.value);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const id = bindings.propertyKeys[0].split('.').pop();
       if (nativeNode.tagName === 'SELECT') {
         const observer = new MutationObserver((data) => {
           viewNode.rendered.then(() => {

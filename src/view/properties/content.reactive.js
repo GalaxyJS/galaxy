@@ -13,7 +13,7 @@
     install: function (data) {
       return false;
     },
-    update: function (cache, selector, oldSelector, expression) {
+    update: function (cache, selector, expression) {
       // if (scope.element.blueprint.children && scope.element.blueprint.hasOwnProperty('module')) {
       //   // this.domManipulationSequence.next(function (done) {
       //   let allContent = scope.element.blueprint.children;

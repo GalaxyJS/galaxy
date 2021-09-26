@@ -10,8 +10,8 @@
 
   function createReactiveFunction(updateFn, vn, config, expression, scope) {
     const nodeUpdateFn = updateFn.bind(vn);
-    return function R(value, oldValue) {
-      return nodeUpdateFn(config, value, oldValue, expression, scope);
+    return function R(value) {
+      return nodeUpdateFn(config, value, expression, scope);
     };
   }
 })(Galaxy);

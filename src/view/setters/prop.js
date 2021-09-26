@@ -2,29 +2,23 @@
 (function (G) {
   G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
     const propName = property.key;
-    if (!propName) {
-      console.error(property);
-      throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
-    }
-
     const updateFn = property.update || G.View.setProp;
-    const setter = function P(value, oldValue) {
+    const setter = function P(value) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
-          updateFn(viewNode, asyncValue, oldValue, propName);
+          updateFn(viewNode, asyncValue, propName);
         };
         value.then(asyncCall).catch(asyncCall);
       } else if (value instanceof Function) {
         const result = value.call(viewNode, viewNode.data);
-        updateFn(viewNode, result, oldValue, propName);
-        value.oldResult = value;
+        updateFn(viewNode, result, propName);
       } else {
-        updateFn(viewNode, value, oldValue, propName);
+        updateFn(viewNode, value, propName);
       }
     };
 
     if (expression) {
-      return function () {
+      return function P_EXP() {
         const expressionValue = expression();
         setter(expressionValue);
       };

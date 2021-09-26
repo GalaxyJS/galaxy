@@ -12,7 +12,7 @@
     install: function () {
       return true;
     },
-    update: function (config, value, oldValue, expression) {
+    update: function (config, value, expression) {
       if (config.throttleId) {
         window.cancelAnimationFrame(config.throttleId);
         config.throttleId = 0;

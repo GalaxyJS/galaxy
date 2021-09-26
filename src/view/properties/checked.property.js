@@ -22,7 +22,7 @@
       }
 
       const bindings = G.View.getBindings(viewNode.blueprint.checked);
-      const id = bindings.propertyKeysPaths[0].split('.').pop();
+      const id = bindings.propertyKeys[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {
         if (/\[\]$/.test(nativeNode.name) && nativeNode.type !== 'radio') {

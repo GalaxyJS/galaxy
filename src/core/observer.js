@@ -2,12 +2,12 @@
 Galaxy.Observer = /** @class */ (function () {
   const defProp = Object.defineProperty;
 
-  Observer.notify = function (obj, key, value, oldValue) {
+  Observer.notify = function (obj, key, value) {
     const observers = obj.__observers__;
 
     if (observers !== undefined) {
       observers.forEach(function (observer) {
-        observer.notify(key, value, oldValue);
+        observer.notify(key, value);
       });
     }
   };
@@ -47,17 +47,16 @@ Galaxy.Observer = /** @class */ (function () {
      *
      * @param {string} key
      * @param value
-     * @param oldValue
      */
-    notify: function (key, value, oldValue) {
+    notify: function (key, value) {
       const _this = this;
 
       if (_this.subjectsActions.hasOwnProperty(key)) {
-        _this.subjectsActions[key].call(_this.context, value, oldValue);
+        _this.subjectsActions[key].call(_this.context, value);
       }
 
       _this.allSubjectAction.forEach(function (action) {
-        action.call(_this.context, key, value, oldValue);
+        action.call(_this.context, key, value);
       });
     },
     /**

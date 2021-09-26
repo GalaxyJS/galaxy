@@ -14,40 +14,40 @@
     install: function () {
       return true;
     },
-    update: function handleModule(config, moduleMeta, oldModuleMeta, expression) {
+    update: function handleModule(config, newModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
-        moduleMeta = expression();
+        newModuleMeta = expression();
       }
 
-      if (moduleMeta === undefined) {
+      if (newModuleMeta === undefined) {
         return;
       }
 
-      if (typeof moduleMeta !== 'object') {
-        return console.error('_module property only accept objects as value', moduleMeta);
+      if (typeof newModuleMeta !== 'object') {
+        return console.error('_module property only accept objects as value', newModuleMeta);
       }
 
-      if (moduleMeta && oldModuleMeta && moduleMeta.path === oldModuleMeta.path) {
+      if (newModuleMeta && config.moduleMeta && newModuleMeta.path === config.moduleMeta.path) {
         return;
       }
 
-      if (!moduleMeta || moduleMeta !== config.moduleMeta) {
+      if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
         G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           cleanModuleContent(_this);
           _next();
         });
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.path && moduleMeta !== config.moduleMeta) {
+      if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
         G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           // setTimeout(() => {
-          moduleLoaderGenerator(_this, config, moduleMeta, _next)();
+          moduleLoaderGenerator(_this, config, newModuleMeta, _next)();
           // }, 3000)
         });
       }
-      config.moduleMeta = moduleMeta;
+      config.moduleMeta = newModuleMeta;
     }
   };
 

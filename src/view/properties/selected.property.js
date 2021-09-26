@@ -24,7 +24,7 @@
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
         const bindings = G.View.getBindings(viewNode.blueprint.selected);
-        const id = bindings.propertyKeysPaths[0].split('.').pop();
+        const id = bindings.propertyKeys[0].split('.').pop();
         const nativeNode = viewNode.node;
         nativeNode.addEventListener('change', (event) => {
           // if (scopeReactiveData.data[id] && !nativeNode.value) {
@@ -32,7 +32,7 @@
           // }
         });
         // const bindings = G.View.getBindings(viewNode.blueprint.selected);
-        // const id = bindings.propertyKeysPaths[0].split('.').pop();
+        // const id = bindings.propertyKeys[0].split('.').pop();
         // const nativeNode = viewNode.node;
 
         // const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {

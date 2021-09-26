@@ -35,6 +35,6 @@
 
       return false;
     },
-    update: function (cache, value, oldValue, context) { }
+    update: function (cache, value, expression) { }
   };
 })(Galaxy);
