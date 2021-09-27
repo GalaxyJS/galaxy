@@ -135,6 +135,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   ViewNode.REMOVE_SELF = function (destroy) {
     const viewNode = this;
+
     if (destroy) {
       // Destroy
       viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
@@ -434,10 +435,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     prepareLeaveSequence: function (hasAnimation) {
       const _this = this;
+
       if (hasAnimation) {
         if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
           _this.populateLeaveSequence = function () {
-            // console.log('aaaaaaaa')
             ViewNode.REMOVE_SELF.call(_this, false);
           };
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {

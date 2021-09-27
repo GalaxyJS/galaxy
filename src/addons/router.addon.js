@@ -56,7 +56,6 @@
     _this.resolvedDynamicRouteValue = null;
 
     _this.routesMap = null;
-    _this.resolvedRouteHash = {};
     _this.data = {
       routes: [],
       activeRoute: null,
@@ -109,7 +108,7 @@
       }
 
       const currentPath = window.location.pathname;
-      if (currentPath === path) {
+      if (currentPath === path /*&& this.resolvedRouteValue === path*/) {
         return;
       }
 
@@ -152,7 +151,9 @@
         }
       }
 
-      normalizedHash = normalizedHash.replace(this.config.baseURL, '/');
+      if (this.config.baseURL !== '/') {
+        normalizedHash = normalizedHash.replace(this.config.baseURL, '');
+      }
       return normalizedHash.replace(this.root, '/').replace('//', '/') || '/';
     },
 
@@ -180,6 +181,7 @@
           return Object.assign(_this.data.parameters, params);
         }
         _this.resolvedDynamicRouteValue = hash;
+        _this.resolvedRouteValue = null;
 
         const routeIndex = routesPath.indexOf(dynamicRoute.id);
         const pathParameterPlaceholder = dynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
@@ -198,6 +200,7 @@
           // static routes don't have parameters
           return Object.assign(_this.data.parameters, _this.createClearParameters());
         }
+        _this.resolvedDynamicRouteValue = null;
         _this.resolvedRouteValue = routeValue;
 
         if (staticRoutes.redirectTo) {
@@ -236,7 +239,7 @@
       return false;
     },
 
-    createClearParameters: function() {
+    createClearParameters: function () {
       const clearParams = {};
       const keys = Object.keys(this.data.parameters);
       keys.forEach(k => clearParams[k] = undefined);
@@ -277,7 +280,9 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      if (hash.indexOf(this.root) === 0) {
+      const path = this.config.baseURL === '/' ? this.root : this.config.baseURL + this.root;
+
+      if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
           this.callMatchRoute(this.routes, hash, {});

@@ -373,25 +373,23 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param refs
      */
     notify: function (key, value, refs) {
-      const _this = this;
-
       if (this.refs === refs) {
-        _this.sync(key, value);
+        this.sync(key, value);
         return;
       }
 
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
-        if (_this === ref) {
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
+        if (this === ref) {
           continue;
         }
 
-        ref.notify(key, value, _this.refs);
+        ref.notify(key, value, this.refs);
       }
 
-      _this.sync(key, value);
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
+      this.sync(key, value);
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
         const keyInParent = ref.keyInParent;
         const refParent = ref.parent;
         ref.parent.notify(keyInParent, refParent.data[keyInParent], refParent.refs);
@@ -399,18 +397,18 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     },
 
     notifyDown: function (key) {
-      const _this = this;
+      const value = this.data[key];
 
-      for (let i = 0, len = _this.refs.length; i < len; i++) {
-        const ref = _this.refs[i];
-        if (_this === ref) {
+      for (let i = 0, len = this.refs.length; i < len; i++) {
+        const ref = this.refs[i];
+        if (this === ref) {
           continue;
         }
 
-        ref.notify(key, _this.refs);
+        ref.notify(key, value, this.refs);
       }
 
-      _this.sync(key, _this.data[key]);
+      this.sync(key, this.data[key]);
     },
     /**
      *
