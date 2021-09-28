@@ -38,6 +38,8 @@
       return 'Scope.import(\'' + pathURL + '\')';
     });
 
+    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
+
     return {
       imports: imports,
       source: parsedContent

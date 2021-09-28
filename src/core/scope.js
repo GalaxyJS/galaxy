@@ -69,6 +69,10 @@ Galaxy.Scope = /** @class */ (function () {
         observer.remove();
       });
     },
+
+    kill: function() {
+      throw Error('Scope.kill() should not be invoked at the runtime');
+    },
     /**
      *
      * @param {*} moduleMeta

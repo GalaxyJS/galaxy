@@ -24,6 +24,11 @@ Galaxy.View = /** @class */(function (G) {
 
   View.EMPTY_CALL = function () {
   };
+
+  View.GET_MAX_INDEX = function () {
+    return '@' + performance.now();
+  };
+
   View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]\<\>]*)>\\s*([^\\[\\]\<\>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
@@ -372,7 +377,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.DESTROY_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    add_dom_manipulation('!' + index, action, destroy_order, pos_desc);
+    add_dom_manipulation('<' + index, action, destroy_order, pos_desc);
     update_dom_manipulation_order();
   };
 
@@ -385,7 +390,7 @@ Galaxy.View = /** @class */(function (G) {
    */
   View.CREATE_IN_NEXT_FRAME = function (index, action) {
     dom_manipulations_dirty = true;
-    add_dom_manipulation(index, action, create_order, pos_asc);
+    add_dom_manipulation('>' + index, action, create_order, pos_asc);
     update_dom_manipulation_order();
   };
 

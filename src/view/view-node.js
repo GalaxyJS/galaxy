@@ -466,23 +466,23 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.clean(hasAnimation);
       }
 
-      _this.properties.forEach((reactiveData) => {
-        reactiveData.removeNode(_this);
-      });
+      _this.properties.forEach((reactiveData) => reactiveData.removeNode(_this));
 
-      _this.finalize.forEach(act => act.call(_this));
+      let len = _this.finalize.length;
+      for (let i = 0; i < len; i++) {
+        _this.finalize[i].call(_this);
+      }
+      // _this.finalize.forEach(act => act.call(_this));
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        if (_this.inDOM) {
-          _this.populateLeaveSequence(_this.onLeaveComplete);
-        }
-        _next();
+        _this.populateLeaveSequence(_this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
         _this.blueprint.node = undefined;
         _this.inputs = {};
+        _next();
       });
     },
 

@@ -48,7 +48,8 @@
     };
     _this.scope = scope;
     _this.module = module;
-    _this.root = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
     _this.oldURL = '';
@@ -98,7 +99,7 @@
       this.detect();
     },
 
-    navigateToPath: function (path) {
+    navigateToPath: function (path, replace) {
       if (path.indexOf('/') !== 0) {
         throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
       }
@@ -112,13 +113,20 @@
         return;
       }
 
-      history.pushState({}, '', path);
-      dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      setTimeout(() => {
+        if (replace) {
+          history.replaceState({}, '', path);
+        } else {
+          history.pushState({}, '', path);
+        }
+
+        dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+      });
     },
 
     navigate: function (path) {
-      if (path.indexOf(this.root) !== 0) {
-        path = this.root + path;
+      if (path.indexOf(this.path) !== 0) {
+        path = this.path + path;
       }
 
       this.navigateToPath(path);
@@ -151,10 +159,10 @@
         }
       }
 
-      if (this.config.baseURL !== '/') {
-        normalizedHash = normalizedHash.replace(this.config.baseURL, '');
-      }
-      return normalizedHash.replace(this.root, '/').replace('//', '/') || '/';
+      // if (this.config.baseURL !== '/') {
+      //   normalizedHash = normalizedHash.replace(this.config.baseURL, '');
+      // }
+      return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
     },
 
     onProceed: function () {
@@ -194,6 +202,7 @@
       }
 
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
+      // debugger
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
         if (_this.resolvedRouteValue === routeValue) {
@@ -232,8 +241,10 @@
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        this.data.activePath = route.path;
-        Object.assign(this.data.parameters, params);
+        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (next) => {
+          Object.assign(this.data.parameters, params);
+          next();
+        });
       }
 
       return false;
@@ -280,7 +291,7 @@
 
     detect: function () {
       const hash = window.location.pathname || '/';
-      const path = this.config.baseURL === '/' ? this.root : this.config.baseURL + this.root;
+      const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
 
       if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {
