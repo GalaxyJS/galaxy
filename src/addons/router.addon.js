@@ -124,21 +124,21 @@
       });
     },
 
-    navigate: function (path) {
+    navigate: function (path, replace) {
       if (path.indexOf(this.path) !== 0) {
         path = this.path + path;
       }
 
-      this.navigateToPath(path);
+      this.navigateToPath(path, replace);
     },
 
-    navigateToRoute: function (route) {
+    navigateToRoute: function (route, replace) {
       let path = route.path;
       if (route.parent) {
         path = route.parent.path + route.path;
       }
 
-      this.navigate(path);
+      this.navigate(path, replace);
     },
 
     notFound: function () {
@@ -213,7 +213,7 @@
         _this.resolvedRouteValue = routeValue;
 
         if (staticRoutes.redirectTo) {
-          return this.navigate(staticRoutes.redirectTo);
+          return this.navigate(staticRoutes.redirectTo, true);
         }
         matchCount++;
 

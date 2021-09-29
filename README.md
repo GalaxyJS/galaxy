@@ -7,9 +7,9 @@
 </p>
 
 # GalaxyJS
-## The framework to build fancy web applications.
+## The Framework To Make Visually Stunning Web Applications
 
-Here is what I mean by fancy
+GalaxyJS is a opinionated framework for building visually rich web application. Its main key feature is utilizing the power of a crazy fast animation library called [GSAP](https://github.com/greensock/GSAP)
 
 #### Animations!? No problemo
 some GIF
@@ -17,7 +17,7 @@ some GIF
 #### Data binding!? Done!
 some GIF to show data binding
 
-#### Performance!?  -Blazing fast-
+#### Performance!?  Blazing fast
 GalaxyJS uses native javascript setter/getter for binding
 
 **[Download here](https://github.com/GalaxyJS/galaxy/releases/latest)**

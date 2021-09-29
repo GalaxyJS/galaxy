@@ -9,21 +9,18 @@
      * @param value
      */
     update: function (viewNode, value) {
-      const nativeNode = viewNode.node;
-      const textNode = nativeNode['<>text'];
       let textValue = typeof value === 'undefined' || value === null ? '' : value;
-
-      /*if (textValue instanceof Function) {
-        textValue = textValue.call(viewNode, viewNode.data);
-      } else */if (textValue instanceof Object) {
+      if (textValue instanceof Object) {
         textValue = JSON.stringify(textValue);
       }
 
+      const nativeNode = viewNode.node;
+      const textNode = nativeNode['<>text'];
       if (textNode) {
         textNode.textContent = textValue;
       } else {
-        nativeNode['<>text'] = document.createTextNode(textValue);
-        nativeNode.insertBefore(nativeNode['<>text'], nativeNode.firstChild);
+        const tn = nativeNode['<>text'] = document.createTextNode(textValue);
+        nativeNode.insertBefore(tn, nativeNode.firstChild);
       }
     }
   };
