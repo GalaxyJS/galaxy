@@ -34,8 +34,10 @@
       }
 
       if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
+        // _this.destroyOrigin = _this;
         G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           cleanModuleContent(_this);
+          // _this.destroyOrigin = 0;
           _next();
         });
       }
@@ -49,9 +51,14 @@
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   */
   function cleanModuleContent(viewNode) {
     const children = viewNode.getChildNodes();
     children.forEach(vn => {
+      // console.log(vn);
       if (vn.populateLeaveSequence === Galaxy.View.EMPTY_CALL) {
         vn.populateLeaveSequence = function (finalize) {
           finalize();

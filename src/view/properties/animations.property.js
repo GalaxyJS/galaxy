@@ -125,14 +125,20 @@
           console.warn(viewNode.node);
         }
 
-        viewNode.leaveWithParent = leave.withParent === true;
         viewNode.populateLeaveSequence = function (finalize) {
+          const active = AnimationMeta.parseStep(viewNode, leave.active);
+          if (active === false) {
+            return leave_with_parent.call(viewNode, finalize);
+          }
+
+          const withParentResult = AnimationMeta.parseStep(viewNode, leave.withParent);
+          viewNode.leaveWithParent = withParentResult === true;
           const _node = this.node;
           if (gsap.getTweensOf(_node).length) {
             gsap.killTweensOf(_node);
           }
 
-          if (leave.withParent) {
+          if (withParentResult) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
             if (parent.transitory) {
@@ -162,17 +168,7 @@
         });
       } else {
         // By default, imitate leave with parent behavior
-        viewNode.populateLeaveSequence = function (finalize) {
-          if (gsap.getTweensOf(this.node).length) {
-            gsap.killTweensOf(this.node);
-          }
-
-          if (this.parent.transitory) {
-            return this.dump();
-          } else {
-            finalize();
-          }
-        };
+        viewNode.populateLeaveSequence = leave_with_parent.bind(viewNode);
       }
 
       if (viewNode.cache.class && viewNode.cache.class.observer) {
@@ -184,6 +180,18 @@
       }
     }
   };
+
+  function leave_with_parent(finalize) {
+    if (gsap.getTweensOf(this.node).length) {
+      gsap.killTweensOf(this.node);
+    }
+
+    if (this.parent.transitory) {
+      this.dump();
+    } else {
+      finalize();
+    }
+  }
 
   G.View.AnimationMeta = AnimationMeta;
 
@@ -290,7 +298,7 @@
    */
   AnimationMeta.parseStep = function (node, step) {
     if (step instanceof Function) {
-      return step.call(node);
+      return step.call(node, node.data);
     }
 
     return step;

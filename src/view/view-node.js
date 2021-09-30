@@ -195,6 +195,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.parent = parent;
     _this.finalize = _this.blueprint._destroy ? [_this.blueprint._destroy] : [];
     _this.origin = false;
+    _this.destroyOrigin = 0;
     _this.transitory = false;
     _this.garbage = [];
     _this.leaveWithParent = false;
@@ -412,6 +413,25 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
+    snapshot: function (_animations) {
+      const rect = this.node.getBoundingClientRect();
+      const node = this.node.cloneNode(true);
+      const style = {
+        margin: '0',
+        width: rect.width + 'px',
+        height: rect.height + ' px',
+        top: rect.top + 'px',
+        left: rect.left + 'px',
+        position: 'fixed',
+      };
+      Object.assign(node.style, style);
+
+      return {
+        tag: node,
+        style: style
+      };
+    },
+
     hasAnimation: function () {
       const children = this.getChildNodes();
 
@@ -421,9 +441,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
       for (let i = 0, len = children.length; i < len; i++) {
         const node = children[i];
-        if (node.leaveWithParent) {
-          return true;
-        }
+        // TODO: seems obsolete
+        // if (node.leaveWithParent) {
+        //   return true;
+        // }
 
         if (node.hasAnimation()) {
           return true;
@@ -460,6 +481,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
+      if (_this.parent.destroyOrigin === 0) {
+        _this.destroyOrigin = 1;
+      } else {
+        _this.destroyOrigin = 2;
+      }
 
       if (_this.inDOM) {
         _this.prepareLeaveSequence(hasAnimation || _this.hasAnimation());
@@ -472,10 +498,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       for (let i = 0; i < len; i++) {
         _this.finalize[i].call(_this);
       }
-      // _this.finalize.forEach(act => act.call(_this));
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        _this.populateLeaveSequence(_this.onLeaveComplete);
+        _this.populateLeaveSequence(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
