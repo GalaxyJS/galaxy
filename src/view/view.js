@@ -1011,7 +1011,6 @@ Galaxy.View = /** @class */(function (G) {
         const keys = objKeys(blueprint);
         const needInitKeys = [];
         const viewNode = new G.View.ViewNode(blueprint, parent, _this, scopeData);
-        parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
@@ -1023,6 +1022,7 @@ Galaxy.View = /** @class */(function (G) {
 
           needInitKeys.push(propertyKey);
         }
+        parent.registerChild(viewNode, position);
 
         // Value assignment stage
         for (i = 0, len = needInitKeys.length; i < len; i++) {

@@ -27,12 +27,12 @@
      * @return {boolean}
      */
     install: function (config) {
-      if (this.virtual) {
-        return false;
-      }
-
+      // if (this.virtual) {
+      //   return false;
+      // }
+// debugger
       this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
-
+// debugger
       return false;
     },
     update: function (cache, value, expression) { }

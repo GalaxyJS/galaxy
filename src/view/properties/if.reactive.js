@@ -34,13 +34,11 @@
         viewNode.blueprint.renderConfig.renderDetached = true;
       }
 
-      // config.throttleId = window.requestAnimationFrame(() => {
       viewNode.rendered.then(() => {
         if (viewNode.inDOM !== value) {
           viewNode.setInDOM(value);
         }
       });
-      // });
     }
   };
 

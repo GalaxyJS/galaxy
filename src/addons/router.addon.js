@@ -241,9 +241,9 @@
         return route.handle.call(this, params, parentParams);
       } else {
         this.data.activeModule = route.module;
-        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (next) => {
+        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
-          next();
+          _next();
         });
       }
 
