@@ -33,7 +33,7 @@
       ...routeConfig,
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
-      module: routeConfig.module || null,
+      viewports: routeConfig.viewports || {},
       parent: parentScope ? parentScope.router.activeRoute : null,
       children: routeConfig.children || []
     };
@@ -62,11 +62,21 @@
       activeRoute: null,
       activePath: null,
       activeModule: null,
+      viewports: {
+        main: null,
+      },
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
-    _this.viewport = {
-      tag: 'main',
-      _module: '<>router.activeModule'
+    // _this.viewport = {
+    //   tag: 'main',
+    //   _module: '<>router.activeModule'
+    // };
+
+    _this.viewports = {
+      main: {
+        tag: 'main',
+        _module: '<>router.activeModule'
+      }
     };
 
     Object.defineProperty(this, 'urlParts', {
@@ -87,8 +97,20 @@
       if (this.scope.parentScope && this.scope.parentScope.router) {
         this.parentRoute = this.scope.parentScope.router.activeRoute;
       }
-      this.data.routes = this.routes;
 
+      this.routes.forEach(route => {
+        const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
+        viewportNames.forEach(vp => {
+          if (vp === 'main' || this.viewports[vp]) return;
+
+          this.viewports[vp] = {
+            tag: 'div',
+            _module: '<>router.viewports.' + vp
+          };
+        });
+      });
+
+      this.data.routes = this.routes;
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
 
@@ -169,7 +191,7 @@
 
     },
 
-    callMatchRoute: function (routes, hash, parentParams) {
+    findMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       let matchCount = 0;
       const normalizedHash = _this.normalizeHash(hash);
@@ -226,6 +248,14 @@
     },
 
     callRoute: function (route, hash, params, parentParams) {
+      // if (route.module) {
+      //   const routeViewport = route.module.viewport;
+      //   if (routeViewport) {
+      //     this.data.viewports[routeViewport] = route.module;
+      //     return;
+      //   }
+      // }
+
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;
@@ -240,7 +270,28 @@
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        this.data.activeModule = route.module;
+        for (const key in route.viewports) {
+          let value = route.viewports[key] || null;
+          if (typeof value === 'string') {
+            value = {
+              path: value
+            };
+          }
+
+          if (key === 'main') {
+            this.data.activeModule = value;
+          }
+
+          this.data.viewports[key] = value;
+        }
+        // if (typeof route.viewports.main === 'string') {
+        //   this.data.viewports.main = this.data.activeModule = {
+        //     path: route.viewports.main
+        //   };
+        // } else {
+        //   this.data.viewports.main = this.data.activeModule = route.viewports.main;
+        // }
+
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
           _next();
@@ -296,7 +347,7 @@
       if (hash.indexOf(path) === 0) {
         if (hash !== this.oldURL) {
           this.oldURL = hash;
-          this.callMatchRoute(this.routes, hash, {});
+          this.findMatchRoute(this.routes, hash, {});
         }
       }
     },

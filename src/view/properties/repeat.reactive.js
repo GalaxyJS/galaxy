@@ -69,25 +69,32 @@
      *
      * @this {Galaxy.View.ViewNode}
      * @param config The value returned by getConfig
-     * @param array
+     * @param value
      * @param {Function} expression
      */
-    update: function (config, array, expression) {
+    update: function (config, value, expression) {
       let changes = null;
       if (expression) {
-        array = expression();
-        if (array === null || array === undefined) {
+        value = expression();
+        if (value === null || value === undefined) {
           return;
         }
 
-        if (array instanceof G.View.ArrayChange) {
-          changes = array;
-        } else if (array instanceof Array) {
+        if (value instanceof G.View.ArrayChange) {
+          changes = value;
+        } else if (value instanceof Array) {
           const initialChanges = new G.View.ArrayChange();
-          initialChanges.original = array;
+          initialChanges.original = value;
           initialChanges.type = 'reset';
-          initialChanges.params = array;
-          changes = array.changes = initialChanges;
+          initialChanges.params = value;
+          changes = value.changes = initialChanges;
+        } else if (value instanceof Object) {
+          const output = Object.entries(value).map(([key, value]) => ({ key, value }));
+          const initialChanges = new G.View.ArrayChange();
+          initialChanges.original = output;
+          initialChanges.type = 'reset';
+          initialChanges.params = output;
+          changes = value.changes = initialChanges;
         } else {
           changes = {
             type: 'reset',
@@ -100,10 +107,16 @@
         //   throw new Error('_repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
-        if (array instanceof G.View.ArrayChange) {
-          changes = array;
-        } else if (array instanceof Array) {
-          changes = array.changes;
+        if (value instanceof G.View.ArrayChange) {
+          changes = value;
+        } else if (value instanceof Array) {
+          changes = value.changes;
+        } else if (value instanceof Object) {
+          const output = Object.entries(value).map(([key, value]) => ({ key, value }));
+          changes = new G.View.ArrayChange();
+          changes.original = output;
+          changes.type = 'reset';
+          changes.params = output;
         }
       }
 
