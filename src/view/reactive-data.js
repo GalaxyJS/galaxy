@@ -55,7 +55,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   function ReactiveData(id, data, p) {
     const parent = p || scopeBuilder();
     this.data = data;
-    this.id = parent.id + '.' + id;
+    this.id = parent.id + (id ? '.' + id : '');
     this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
@@ -107,7 +107,12 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         value: this
       });
 
-      this.walk(this.data);
+      if (this.data instanceof Galaxy.Scope) {
+        this.walkOnScope(this.data);
+      } else {
+        this.walk(this.data);
+      }
+
     }
 
     this.fixHierarchy(id, this);
@@ -185,6 +190,10 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           this.makeReactiveObject(data, key);
         }
       }
+    },
+
+    walkOnScope: function (scope) {
+      this.makeReactiveObject(scope, 'data');
     },
     /**
      *

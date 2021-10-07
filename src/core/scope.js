@@ -18,7 +18,7 @@ Galaxy.Scope = /** @class */ (function () {
     _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    _this.data = {};
+    _this.data = _this.element.data || {};
 
     defProp(_this, '__imports__', {
       value: {},
@@ -27,13 +27,13 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: false
     });
 
-    defProp(_this, 'inputs', {
-      enumerable: true,
-      configurable: false,
-      get: function () {
-        return _this.element.inputs;
-      }
-    });
+    // defProp(_this, 'inputs', {
+    //   enumerable: true,
+    //   configurable: false,
+    //   get: function () {
+    //     return _this.element.data;
+    //   }
+    // });
 
     _this.on('module.destroy', this.destroy.bind(this));
   }

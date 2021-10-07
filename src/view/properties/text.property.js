@@ -1,5 +1,13 @@
 /* global Galaxy */
 (function (G) {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['text_3'] = {
+    type: 'prop',
+    key: 'nodeValue'
+  };
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['text_8'] = {
+    type: 'prop',
+    key: 'nodeValue'
+  };
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['text'] = {
     type: 'prop',
     key: 'text',
@@ -17,7 +25,7 @@
       const nativeNode = viewNode.node;
       const textNode = nativeNode['<>text'];
       if (textNode) {
-        textNode.textContent = textValue;
+        textNode.nodeValue = textValue;
       } else {
         const tn = nativeNode['<>text'] = document.createTextNode(textValue);
         nativeNode.insertBefore(tn, nativeNode.firstChild);

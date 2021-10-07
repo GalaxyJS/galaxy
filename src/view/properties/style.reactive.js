@@ -1,6 +1,14 @@
 /* global Galaxy */
 (function (G) {
   G.View.REACTIVE_BEHAVIORS['style'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style_3'] = {
+    type: 'prop',
+    key: 'style'
+  };
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['style_8'] = {
+    type: 'prop',
+    key: 'style'
+  };
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['style'] = {
     type: 'reactive',
     key: 'style',
@@ -45,9 +53,9 @@
       }
 
       if (typeof value === 'string') {
-        return node.setAttribute('style', value);
+        return node.style = value;
       } else if (value instanceof Array) {
-        return node.setAttribute('style', value.join(';'));
+        return node.style = value.join(';');
       }
 
       if (value instanceof Promise) {
@@ -82,7 +90,7 @@
         }
       }
     } else {
-      node.setAttribute('style', value);
+      node.style = value;
     }
   }
 })(Galaxy);

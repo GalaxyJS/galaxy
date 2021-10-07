@@ -30,8 +30,13 @@
       // if (this.virtual) {
       //   return false;
       // }
+
+      if (config.scope.data === config.subjects) {
+        throw new Error('It is not allowed to use Scope.data as _input value');
+      }
 // debugger
-      this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+//       this.inputs = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      Object.assign(this.data, config.subjects);
 // debugger
       return false;
     },

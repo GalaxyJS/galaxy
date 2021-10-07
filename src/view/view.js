@@ -6,12 +6,6 @@ Galaxy.View = /** @class */(function (G) {
 
   //------------------------------
 
-  // Array.prototype.createComputable = function (f) {
-  //   const reactive = this.slice();
-  //   reactive.push(f);
-  //   return reactive;
-  // };
-
   Array.prototype.createDataMap = function (keyPropertyName, valuePropertyName) {
     const map = {};
     for (let i = 0, len = this.length; i < len; i++) {
@@ -57,39 +51,27 @@ Galaxy.View = /** @class */(function (G) {
     children: {
       type: 'none'
     },
-    id: {
-      type: 'attr'
+    data_3: {
+      type: 'prop',
+      key: 'data'
     },
-    title: {
-      type: 'attr'
+    data_8: {
+      type: 'prop',
+      key: 'data'
     },
-    for: {
-      type: 'attr'
-    },
-    href: {
-      type: 'attr'
-    },
-    src: {
-      type: 'attr'
-    },
-    alt: {
-      type: 'attr'
+    data: {
+      type: 'prop',
+      update: (vn, value) => {
+        if (typeof value === 'object' && value !== null) {
+          Object.assign(vn.node.dataset, value);
+        } else {
+          vn.node.dataset = null;
+        }
+      }
     },
     html: {
       type: 'prop',
       key: 'innerHTML'
-    },
-    nodeValue: {
-      type: 'prop',
-    },
-    scrollTop: {
-      type: 'prop',
-    },
-    scrollLeft: {
-      type: 'prop',
-    },
-    disabled: {
-      type: 'attr',
     },
     onchange: {
       type: 'event'
@@ -665,11 +647,14 @@ Galaxy.View = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      if (!hostReactiveData && scopeData && !(scopeData instanceof G.Scope)) {
+      if (!hostReactiveData && scopeData /*&& !(scopeData instanceof G.Scope)*/) {
         if (scopeData.hasOwnProperty('__rd__')) {
           hostReactiveData = scopeData.__rd__;
-        } else {
-          hostReactiveData = new G.View.ReactiveData(targetKeyName, scopeData, null);
+        } else/* if (scopeData instanceof G.Scope) {
+          // debugger
+          hostReactiveData = new G.View.ReactiveData(null, scopeData, null);
+        } else */{
+          hostReactiveData = new G.View.ReactiveData(null, scopeData, null);
         }
       }
       // When the node belongs to a nested _repeat, the scopeData would refer to the for item data
@@ -712,11 +697,11 @@ Galaxy.View = /** @class */(function (G) {
             set: function ref_set(newValue) {
               // console.warn('It is not allowed', hostReactiveData.id, targetKeyName);
               // Not sure about this part
-              if (hostReactiveData.data[propertyKey] === newValue) {
-                return;
-              }
-
-              hostReactiveData.data[propertyKey] = newValue;
+              // if (hostReactiveData.data[propertyKey] === newValue) {
+              //   return;
+              // }
+              // console.log(newValue);
+              // hostReactiveData.data[propertyKey] = newValue;
             },
             get: function ref_get() {
               if (expressionFn) {
@@ -732,6 +717,7 @@ Galaxy.View = /** @class */(function (G) {
 
         // The parentReactiveData would be empty when the developer is trying to bind to a direct property of Scope
         if (!hostReactiveData && scopeData instanceof G.Scope) {
+          debugger
           // If the propertyKey is referring to some local value then there is no error
           if (target instanceof G.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
@@ -740,6 +726,9 @@ Galaxy.View = /** @class */(function (G) {
           throw new Error('Binding to Scope direct properties is not allowed.\n' +
             'Try to define your properties on Scope.data.{property_name}\n' + 'path: ' + scopeData.uri.parsedURL + '\nProperty name: `' +
             propertyKey + '`\n');
+          // debugger
+          // hostReactiveData = new G.View.ReactiveData('', scopeData);
+          // debugger
         }
 
         hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
@@ -768,8 +757,9 @@ Galaxy.View = /** @class */(function (G) {
 
     let parentReactiveData;
     if (!(data instanceof G.Scope)) {
-      parentReactiveData = new G.View.ReactiveData('@', data);
+      parentReactiveData = new G.View.ReactiveData('{}', data);
     }
+    console.log(viewNode.node, parentReactiveData);
 
     for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
@@ -872,9 +862,18 @@ Galaxy.View = /** @class */(function (G) {
    * @param {*} value
    */
   View.setPropertyForNode = function (viewNode, propertyKey, value) {
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const bpKey = propertyKey + '_' + viewNode.node.nodeType;
+    let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
+    if (!property) {
+      property = { type: 'prop' };
+      if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
+        property = { type: 'attr' };
+      }
+
+      View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
+    }
+
     property.key = property.key || propertyKey;
-    // View.getPropertySetterForNode(property, viewNode)(value, null);
 
     switch (property.type) {
       case 'attr':
@@ -941,7 +940,10 @@ Galaxy.View = /** @class */(function (G) {
 
       return {
         tag: 'comment',
-        nodeValue: 'keyframe:enter',
+        text: 'keyframe:enter',
+        data: {
+          test: 'asd'
+        },
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
@@ -954,7 +956,7 @@ Galaxy.View = /** @class */(function (G) {
     leaveKeyframe: function (onComplete, timeline, duration) {
       return {
         tag: 'comment',
-        nodeValue: 'keyframe:leave',
+        text: 'keyframe:leave',
         _animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,

@@ -56,12 +56,10 @@
         value = expression();
       }
 
-      if (typeof value === 'string') {
-        return node.setAttribute('class', value);
+      if (typeof value === 'string' || value === null || value === undefined) {
+        return node.className = value;
       } else if (value instanceof Array) {
-        return node.setAttribute('class', value.join(' '));
-      } else if (value === null || value === undefined) {
-        return node.removeAttribute('class');
+        return node.className = value.join(' ');
       }
 
       if (config.subjects === value) {
@@ -98,13 +96,13 @@
   }
 
   function applyClasses(viewNode, classes) {
-    const currentClasses = viewNode.node.getAttribute('class') || [];
+    const currentClasses = viewNode.node.className || [];
     const newClasses = getClasses(classes);
     if (JSON.stringify(currentClasses) === JSON.stringify(newClasses)) {
       return;
     }
 
-    viewNode.node.setAttribute('class', newClasses.join(' '));
+    viewNode.node.className = newClasses.join(' ');
   }
 })(Galaxy);
 

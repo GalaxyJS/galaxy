@@ -59,11 +59,11 @@
             return console.warn('Read about radio input at: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/radio');
           }
 
-          const nodeValue = nativeNode.hasAttribute('value') ? nativeNode.value : true;
+          const nativeValue = nativeNode.hasAttribute('value') ? nativeNode.value : true;
           if (value instanceof Array) {
-            nativeNode.checked = value.indexOf(nodeValue) !== -1;
+            nativeNode.checked = value.indexOf(nativeValue) !== -1;
           } else {
-            nativeNode.checked = value === nodeValue;
+            nativeNode.checked = value === nativeValue;
           }
         } else if (nativeNode.hasAttribute('value')) {
           nativeNode.checked = value === nativeNode.value;
