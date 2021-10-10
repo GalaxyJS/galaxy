@@ -14,7 +14,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const defProp = Object.defineProperty;
   const scopeBuilder = function (id) {
     return {
-      id: '{Scope}',
+      id: 'Scope',
       shadow: {},
       data: {},
       notify: function () {
@@ -55,7 +55,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   function ReactiveData(id, data, p) {
     const parent = p || scopeBuilder();
     this.data = data;
-    this.id = parent.id + (id ? '.' + id : '');
+    this.id = parent.id + (id ? '.' + id : '.{}');
     this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
@@ -107,12 +107,15 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         value: this
       });
 
+      if(this.data instanceof Galaxy.Scope || this.data.__scope__) {
+        this.addKeyToShadow = G.View.EMPTY_CALL;
+      }
+
       if (this.data instanceof Galaxy.Scope) {
         this.walkOnScope(this.data);
       } else {
         this.walk(this.data);
       }
-
     }
 
     this.fixHierarchy(id, this);
@@ -401,7 +404,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         const ref = this.refs[i];
         const keyInParent = ref.keyInParent;
         const refParent = ref.parent;
-        ref.parent.notify(keyInParent, refParent.data[keyInParent], refParent.refs);
+        ref.parent.notify(keyInParent, refParent.data[keyInParent]);
       }
     },
 
