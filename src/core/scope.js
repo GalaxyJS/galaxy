@@ -45,7 +45,7 @@ Galaxy.Scope = /** @class */ (function () {
      * @param {Object} instance The assigned object to this id
      */
     inject: function (id, instance) {
-      this['__imports__'][id] = instance;
+      this.__imports__[id] = instance;
     },
     /**
      *
@@ -58,7 +58,7 @@ Galaxy.Scope = /** @class */ (function () {
         libId = libId.replace('./', this.uri.path);
       }
 
-      return this['__imports__'][libId];
+      return this.__imports__[libId];
     },
     /**
      *
