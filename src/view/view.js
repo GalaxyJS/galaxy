@@ -1061,38 +1061,6 @@ Galaxy.View = /** @class */(function (G) {
 
   /**
    *
-   * @param {string} key
-   * @param blueprint
-   * @param {Galaxy.Scope|Object} scopeData
-   * @param {Galaxy.View} view
-   * @returns {*}
-   */
-  View.getComponent = function (key, blueprint, scopeData, view) {
-    if (key) {
-      if (key in View.COMPONENTS) {
-        scopeData = View.createChildScope(scopeData);
-        if (blueprint._data) {
-          Object.assign(scopeData, blueprint._data);
-        }
-
-        blueprint = View.COMPONENTS[key].call(null, blueprint, scopeData, view);
-
-        if (blueprint instanceof Array) {
-          throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
-        }
-      } else if (validTagNames.indexOf(key) === -1) {
-        console.warn('Invalid component/tag: ' + key);
-      }
-    }
-
-    return {
-      blueprint,
-      scopeData
-    };
-  };
-
-  /**
-   *
    * @param {Galaxy.Scope} scope
    * @constructor
    * @memberOf Galaxy
@@ -1100,12 +1068,15 @@ Galaxy.View = /** @class */(function (G) {
   function View(scope) {
     const _this = this;
     _this.scope = scope;
+
     _this.config = {
       cleanContainer: false
     };
 
     if (scope.element instanceof G.View.ViewNode) {
       _this.container = scope.element;
+      // Nested views should inherit components from their parent view
+      _this._components = Object.assign({}, scope.element.view._components);
     } else {
       _this.container = new G.View.ViewNode({
         tag: scope.element
@@ -1116,6 +1087,48 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   View.prototype = {
+    _components: {},
+    components: function (map) {
+      for (const key in map) {
+        const comp = map[key];
+        if (typeof comp !== 'function') {
+          throw new Error('Component must be type of function: ' + key);
+        }
+
+        this._components[key] = comp;
+      }
+    },
+
+    /**
+     *
+     * @param {string} key
+     * @param blueprint
+     * @param {Galaxy.Scope|Object} scopeData
+     * @returns {*}
+     */
+    getComponent: function (key, blueprint, scopeData) {
+      if (key) {
+        if (key in this._components) {
+          scopeData = View.createChildScope(scopeData);
+          if (blueprint._data) {
+            Object.assign(scopeData, blueprint._data);
+          }
+
+          blueprint = this._components[key].call(null, blueprint, scopeData, this);
+          if (blueprint instanceof Array) {
+            throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
+          }
+        } else if (validTagNames.indexOf(key) === -1) {
+          console.warn('Invalid component/tag: ' + key);
+        }
+      }
+
+      return {
+        blueprint,
+        scopeData
+      };
+    },
+
     enterKeyframe: function (onComplete, timeline, duration) {
       if (typeof onComplete === 'string') {
         duration = timeline;
@@ -1160,6 +1173,20 @@ Galaxy.View = /** @class */(function (G) {
 
       return this.createNode(blueprint, _this.scope, _this.container, null);
     },
+    /**
+     *
+     * @param {Blueprint|Blueprint[]} blueprint
+     * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
+     */
+    blueprint: function (blueprint) {
+      const _this = this;
+
+      if (_this.config.cleanContainer) {
+        _this.container.node.innerHTML = '';
+      }
+
+      return this.createNode(blueprint, _this.scope, _this.container, null);
+    },
     dispatchEvent: function (event) {
       this.container.dispatchEvent(event);
     },
@@ -1193,7 +1220,7 @@ Galaxy.View = /** @class */(function (G) {
 
         return result;
       } else if (blueprint instanceof Object) {
-        const component = View.getComponent(blueprint.tag, blueprint, scopeData, _this);
+        const component = _this.getComponent(blueprint.tag, blueprint, scopeData);
         let propertyValue, propertyKey;
         const keys = objKeys(component.blueprint);
         const needInitKeys = [];

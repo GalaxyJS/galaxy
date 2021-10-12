@@ -1,6 +1,6 @@
 (function (G) {
   SimpleRouter.PARAMETER_REGEXP = new RegExp(/[:*](\w+)/g);
-  SimpleRouter.REPLACE_VARIABLE_REGEXP = '([^\/]+)';
+  SimpleRouter.REPLACE_VARIABLE_REGEXP = /([^/]+)/;
   SimpleRouter.BASE_URL = '/';
   SimpleRouter.currentPath = {
     handlers: [],
@@ -19,11 +19,11 @@
     SimpleRouter.currentPath.update();
   };
 
-  SimpleRouter.prepareRoute = function (routeConfig, parentScope) {
+  SimpleRouter.prepareRoute = function (routeConfig, parentScopeRouter) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScope));
-      if (parentScope && parentScope.router) {
-        parentScope.router.activeRoute.children = routes;
+      const routes = routeConfig.map((r) => SimpleRouter.prepareRoute(r, parentScopeRouter));
+      if (parentScopeRouter) {
+        parentScopeRouter.activeRoute.children = routes;
       }
 
       return routes;
@@ -34,7 +34,7 @@
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       viewports: routeConfig.viewports || {},
-      parent: parentScope ? parentScope.router.activeRoute : null,
+      parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
       children: routeConfig.children || []
     };
   };
@@ -48,7 +48,9 @@
     };
     _this.scope = scope;
     _this.module = module;
-    _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+
+    // _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
+    _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
@@ -67,10 +69,6 @@
       },
       parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
     };
-    // _this.viewport = {
-    //   tag: 'main',
-    //   _module: '<>router.activeModule'
-    // };
 
     _this.viewports = {
       main: {
@@ -93,7 +91,7 @@
 
   SimpleRouter.prototype = {
     init: function (routeConfigs) {
-      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope);
+      this.routes = SimpleRouter.prepareRoute(routeConfigs, this.scope.parentScope.router);
       if (this.scope.parentScope && this.scope.parentScope.router) {
         this.parentRoute = this.scope.parentScope.router.activeRoute;
       }
@@ -248,14 +246,6 @@
     },
 
     callRoute: function (route, hash, params, parentParams) {
-      // if (route.module) {
-      //   const routeViewport = route.module.viewport;
-      //   if (routeViewport) {
-      //     this.data.viewports[routeViewport] = route.module;
-      //     return;
-      //   }
-      // }
-
       if (!route.redirectTo) {
         if (this.data.activeRoute) {
           this.data.activeRoute.active = false;

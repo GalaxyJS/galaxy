@@ -36,6 +36,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     this.moduleContents = {};
     this.addOnProviders = [];
     this.rootElement = null;
+    this.bootModule = null;
   }
 
   Core.prototype = {
@@ -96,7 +97,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
       bootModule.id = 'system';
 
-      if (!bootModule.element) {
+      if (!_this.rootElement) {
         throw new Error('element property is mandatory');
       }
 
