@@ -14,18 +14,12 @@ let sources = {
     'src/polyfills/*.js',
     // Core
     'src/core/core.js',
-    'src/core/module.js',
-    'src/core/parsers/*.js',
-    'src/core/scope.js',
-    'src/core/uri.js',
     'src/core/**/*.js',
     // View
     'src/view/view.js',
-    'src/view/reactive-data.js',
-    'src/view/array-change.js',
-    'src/view/view-node.js',
-    'src/view/setters/*.js',
-    'src/view/properties/*.js',
+    'src/view/**/*.js',
+    // Router
+    'src/router/router.js',
     // Module addons
     'src/addons/*.js'
   ]

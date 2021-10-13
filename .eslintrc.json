@@ -11,8 +11,7 @@
   },
   "globals": {
     "Galaxy": true,
-    "Scope": true,
-    "module": true
+    "Scope": true
   },
   "extends": [
     "eslint:recommended"

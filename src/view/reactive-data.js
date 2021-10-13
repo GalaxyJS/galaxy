@@ -196,7 +196,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     },
 
     walkOnScope: function (scope) {
-      this.makeReactiveObject(scope, 'data');
+      // this.makeReactiveObject(scope, 'data');
     },
     /**
      *
@@ -231,6 +231,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
+          if(!thisRD) debugger
           for (let i = 0, len = thisRD.refs.length; i < len; i++) {
             const ref = thisRD.refs[i];
             if (ref.shadow[key]) {
@@ -506,9 +507,10 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // if I am the original reference and the only one, then remove the __rd__
       else if (this.refs.length === 1) {
         // TODO: Should be tested as much as possible to make sure it works with no bug
-        delete this.data.__rd__;
+        // debugger
+        // delete this.data.__rd__;
         if (this.data instanceof Array) {
-          delete this.data.live;
+          // delete this.data.live;
           delete this.data.changes;
         }
       }

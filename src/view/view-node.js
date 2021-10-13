@@ -7,7 +7,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
   const DESTROY_IN_NEXT_FRAME = G.View.DESTROY_IN_NEXT_FRAME;
 
-  function createComment(t) {
+  function create_comment(t) {
     const n = commentNode.cloneNode();
     n.textContent = t;
     return n;
@@ -19,7 +19,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @param {Galaxy.View.ViewNode} parentViewNode
    * @returns {HTMLElement|Comment}
    */
-  function createElem(tagName, parentViewNode) {
+  function create_elem(tagName, parentViewNode) {
     if (tagName === 'svg' || (parentViewNode && parentViewNode.blueprint.tag === 'svg')) {
       return document.createElementNS('http://www.w3.org/2000/svg', tagName);
     }
@@ -31,11 +31,57 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return document.createElement(tagName);
   }
 
-  function insertBefore(parentNode, newNode, referenceNode) {
+  function generate_index(vn) {
+    if (vn.parent) {
+      let i = 0;
+      let node = vn.node;
+      while ((node = node.previousSibling) !== null) ++i;
+
+      if (i === 0 && vn.placeholder.parentNode) {
+        i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
+      }
+      return vn.parent.index + ',' + ViewNode.createIndex(i);
+    }
+
+    return '0';
+  }
+
+  // const view_node_template = {
+  //   blueprint: {},
+  //   destroyOrigin: 0,
+  //   localPropertyNames: new Set(),
+  //   properties: new Set(),
+  //   finalize: [],
+  //   placeholder: {},
+  //   populateLeaveSequence: EMPTY_CALL,
+  //   hasBeenDestroyed: EMPTY_CALL,
+  //   inDOM: true,
+  //   parent: null,
+  //   node: null,
+  // };
+  //
+  // function convert_to_simple_view_node(node, index) {
+  //   const vn = Object.assign({}, view_node_template, {
+  //     // parent: node.parent ? node.parent : node.parentNode ? convert_to_simple_view_node(node.parentNode) : {},
+  //     parent: node.parent ? node.parent : { destroyOrigin: 0 },
+  //     node: node,
+  //     index: index
+  //   });
+  //
+  //   vn.clean = ViewNode.prototype.clean.bind(vn);
+  //   vn.prepareLeaveSequence = ViewNode.prototype.prepareLeaveSequence.bind(vn);
+  //   vn.getChildNodes = ViewNode.prototype.getChildNodes.bind(vn);
+  //   vn.hasAnimation = ViewNode.prototype.hasAnimation.bind(vn);
+  //   vn.destroy = ViewNode.prototype.destroy.bind(vn);
+  //   node.__vn__ = vn;
+  //   return vn;
+  // }
+
+  function insert_before(parentNode, newNode, referenceNode) {
     parentNode.insertBefore(newNode, referenceNode);
   }
 
-  function removeChild(node, child) {
+  function remove_child(node, child) {
     node.removeChild(child);
   }
 
@@ -138,17 +184,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     if (destroy) {
       // Destroy
-      viewNode.node.parentNode && removeChild(viewNode.node.parentNode, viewNode.node);
-      viewNode.placeholder.parentNode && removeChild(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
+      viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
       viewNode.hasBeenDestroyed();
     } else {
       // Detach
       if (!viewNode.placeholder.parentNode) {
-        insertBefore(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+        insert_before(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
       }
 
       if (viewNode.node.parentNode) {
-        removeChild(viewNode.node.parentNode, viewNode.node);
+        remove_child(viewNode.node.parentNode, viewNode.node);
       }
 
       viewNode.garbage.forEach(function (node) {
@@ -174,7 +220,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     if (blueprint.tag instanceof Node) {
       _this.node = blueprint.tag;
     } else {
-      _this.node = createElem(blueprint.tag || 'div', parent);
+      _this.node = create_elem(blueprint.tag || 'div', parent);
     }
 
     /**
@@ -187,7 +233,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.inputs = {};
     _this.virtual = false;
     _this.visible = true;
-    _this.placeholder = createComment(blueprint.tag || 'div');
+    _this.placeholder = create_comment(blueprint.tag || 'div');
     _this.properties = new Set();
     _this.inDOM = false;
     _this.setters = {};
@@ -308,7 +354,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     detach: function () {
       if (this.node.parentNode) {
-        removeChild(this.node.parentNode, this.node);
+        remove_child(this.node.parentNode, this.node);
       }
     },
 
@@ -336,11 +382,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
 
         if (!_this.node.parentNode) {
-          insertBefore(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+          insert_before(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
         }
 
         if (_this.placeholder.parentNode) {
-          removeChild(_this.placeholder.parentNode, _this.placeholder);
+          remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
         _this.hasBeenInserted();
@@ -353,7 +399,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.origin = true;
         _this.transitory = true;
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
-        _this.prepareLeaveSequence(_this.hasAnimation());
+        const children = _this.getChildNodes();
+        _this.prepareLeaveSequence(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.populateLeaveSequence(ViewNode.REMOVE_SELF.bind(_this, false));
           _this.origin = false;
@@ -428,9 +475,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       };
     },
 
-    hasAnimation: function () {
-      const children = this.getChildNodes();
-
+    hasAnimation: function (children) {
       if (this.populateLeaveSequence && this.populateLeaveSequence !== EMPTY_CALL) {
         return true;
       }
@@ -442,7 +487,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         //   return true;
         // }
 
-        if (node.hasAnimation()) {
+        if (node.hasAnimation(node.getChildNodes())) {
           return true;
         }
       }
@@ -450,7 +495,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return false;
     },
 
-    prepareLeaveSequence: function (hasAnimation) {
+    prepareLeaveSequence: function (hasAnimation, children) {
       const _this = this;
 
       if (hasAnimation) {
@@ -462,7 +507,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
           // this is not the case for when this node is being detached by _if
-          const children = _this.getChildNodes();
+          // const children = _this.getChildNodes();
           for (let i = 0, len = children.length; i < len; i++) {
             children[i].onLeaveComplete = EMPTY_CALL;
           }
@@ -484,8 +529,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       if (_this.inDOM) {
-        _this.prepareLeaveSequence(hasAnimation || _this.hasAnimation());
-        _this.clean(hasAnimation);
+        const children = _this.getChildNodes();
+        hasAnimation = hasAnimation || _this.hasAnimation(children);
+        _this.prepareLeaveSequence(hasAnimation, children);
+        _this.clean(hasAnimation, children);
       }
 
       _this.properties.forEach((reactiveData) => reactiveData.removeNode(_this));
@@ -524,8 +571,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     /**
      *
      */
-    clean: function (hasAnimation) {
-      GV.DESTROY_NODES(this.getChildNodes(), hasAnimation);
+    clean: function (hasAnimation, children) {
+      children = children || this.getChildNodes();
+      GV.DESTROY_NODES(children, hasAnimation);
     },
 
     createNext: function (act) {
@@ -533,18 +581,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     get index() {
-      if (this.parent) {
-        let i = 0;
-        let node = this.node;
-        while ((node = node.previousSibling) !== null) ++i;
-
-        if (i === 0 && this.placeholder.parentNode) {
-          i = arrIndexOf.call(this.parent.node.childNodes, this.placeholder);
-        }
-        return this.parent.index + ',' + ViewNode.createIndex(i);
-      }
-
-      return '0';
+      return generate_index(this);
     },
 
     get anchor() {

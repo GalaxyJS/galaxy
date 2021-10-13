@@ -18,7 +18,20 @@ Galaxy.Scope = /** @class */ (function () {
     _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    _this.data = _this.element ? _this.element.data || {} : {};
+    // _this.data = _this.element ? _this.element.data ? Object.assign({}, _this.element.data) : {} : {};
+    // _this.data = _this.element ? _this.element.data || {} : {};
+    // _this.data = {};
+    let inputs = {};
+    if (_this.element.data) {
+      inputs = Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true);
+    }
+    defProp(_this, 'data', {
+      enumerable: true,
+      configurable: true,
+      get: function () {
+        return inputs;
+      }
+    });
 
     defProp(_this, '__imports__', {
       value: {},

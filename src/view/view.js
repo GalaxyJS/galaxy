@@ -5,6 +5,9 @@ Galaxy.View = /** @class */(function (G) {
   const arrConcat = Array.prototype.concat.bind([]);
   // Extracted from MDN
   const validTagNames = [
+    'text',
+    'comment',
+    //
     'a',
     'abbr',
     'acronym',
@@ -189,6 +192,9 @@ Galaxy.View = /** @class */(function (G) {
     tag: {
       type: 'none'
     },
+    _props: {
+      type: 'none'
+    },
     children: {
       type: 'none'
     },
@@ -232,6 +238,9 @@ Galaxy.View = /** @class */(function (G) {
           throw new Error('It is not allowed to use Scope.data as _input value');
         }
 
+        // if ('items' in config.subjects)
+        //   debugger
+        // this.data = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
         Object.assign(this.data, config.subjects);
 
         return false;
@@ -812,13 +821,6 @@ Galaxy.View = /** @class */(function (G) {
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
       }
 
-      // if (!hostReactiveData && scopeData && !(scopeData instanceof G.Scope)) {
-      //   if (scopeData.hasOwnProperty('__rd__')) {
-      //     hostReactiveData = scopeData.__rd__;
-      //   } else {
-      //     hostReactiveData = new G.View.ReactiveData(targetKeyName, scopeData, null);
-      //   }
-      // }
       if (!hostReactiveData && scopeData /*&& !(scopeData instanceof G.Scope)*/) {
         if ('__rd__' in scopeData) {
           hostReactiveData = scopeData.__rd__;
@@ -862,16 +864,16 @@ Galaxy.View = /** @class */(function (G) {
 
       if (childPropertyKeyPath === null) {
         if (!(target instanceof G.View.ViewNode)) {
-
           defProp(target, targetKeyName, {
             set: function ref_set(newValue) {
               // console.warn('It is not allowed', hostReactiveData, targetKeyName);
               // Not sure about this part
-              // if (hostReactiveData.data[propertyKey] === newValue) {
-              //   return;
-              // }
+              // This will provide binding to primitive data types as well.
+              if (hostReactiveData.data[propertyKey] === newValue) {
+                return;
+              }
               // console.log(newValue);
-              // hostReactiveData.data[propertyKey] = newValue;
+              hostReactiveData.data[propertyKey] = newValue;
             },
             get: function ref_get() {
               if (expressionFn) {
@@ -945,7 +947,7 @@ Galaxy.View = /** @class */(function (G) {
               rd.removeNode(subjectsClone);
             });
           } catch (error) {
-            console.error('Could not find: ' + path + '\n', error);
+            console.error('bindSubjectsToData -> Could not find: ' + path + '\n in', data, error);
           }
         });
       }
@@ -1069,10 +1071,6 @@ Galaxy.View = /** @class */(function (G) {
     const _this = this;
     _this.scope = scope;
 
-    _this.config = {
-      cleanContainer: false
-    };
-
     if (scope.element instanceof G.View.ViewNode) {
       _this.container = scope.element;
       // Nested views should inherit components from their parent view
@@ -1110,8 +1108,8 @@ Galaxy.View = /** @class */(function (G) {
       if (key) {
         if (key in this._components) {
           scopeData = View.createChildScope(scopeData);
-          if (blueprint._data) {
-            Object.assign(scopeData, blueprint._data);
+          if (blueprint._props) {
+            Object.assign(scopeData, blueprint._props);
           }
 
           blueprint = this._components[key].call(null, blueprint, scopeData, this);
@@ -1164,15 +1162,6 @@ Galaxy.View = /** @class */(function (G) {
         }
       };
     },
-    init: function (blueprint) {
-      const _this = this;
-
-      if (_this.config.cleanContainer) {
-        _this.container.node.innerHTML = '';
-      }
-
-      return this.createNode(blueprint, _this.scope, _this.container, null);
-    },
     /**
      *
      * @param {Blueprint|Blueprint[]} blueprint
@@ -1180,12 +1169,14 @@ Galaxy.View = /** @class */(function (G) {
      */
     blueprint: function (blueprint) {
       const _this = this;
-
-      if (_this.config.cleanContainer) {
-        _this.container.node.innerHTML = '';
-      }
-
       return this.createNode(blueprint, _this.scope, _this.container, null);
+    },
+    /**
+     *
+     * @param {boolean} [hasAnimation]
+     */
+    clean: function (hasAnimation) {
+      this.container.clean(hasAnimation);
     },
     dispatchEvent: function (event) {
       this.container.dispatchEvent(event);
@@ -1206,6 +1197,7 @@ Galaxy.View = /** @class */(function (G) {
         content.innerHTML = blueprint;
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
+          // View.ViewNode.convertToSimpleNode(node);
           parent.node.appendChild(node);
         });
 
