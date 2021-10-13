@@ -107,7 +107,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         value: this
       });
 
-      if(this.data instanceof Galaxy.Scope || this.data.__scope__) {
+      if (this.data instanceof Galaxy.Scope || this.data.__scope__) {
         this.addKeyToShadow = G.View.EMPTY_CALL;
       }
 
@@ -205,10 +205,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param shadow
      */
     makeReactiveObject: function (data, key, shadow) {
+      let value = data[key];
+      if (typeof value === 'function') {
+        return;
+      }
+
       const property = Object.getOwnPropertyDescriptor(data, key);
       const getter = property && property.get;
       const setter = property && property.set;
-      let value = data[key];
 
       defProp(data, key, {
         get: function () {
@@ -231,7 +235,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
-          if(!thisRD) debugger
+          if (!thisRD) debugger
           for (let i = 0, len = thisRD.refs.length; i < len; i++) {
             const ref = thisRD.refs[i];
             if (ref.shadow[key]) {

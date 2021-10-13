@@ -45,7 +45,7 @@
           View.makeBinding(viewNode, '_repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeys.forEach((path) => {
             try {
-              const rd = View.propertyScopeLookup(config.scope, path);
+              const rd = View.propertyRDLookup(config.scope, path);
               viewNode.finalize.push(() => {
                 rd.removeNode(viewNode);
               });
