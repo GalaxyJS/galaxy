@@ -270,13 +270,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
     _this.rendered.resolved = false;
 
-    _this.inserted = new Promise(function (done) {
-      _this.hasBeenInserted = function () {
-        _this.inserted.resolved = true;
-        done();
-      };
-    });
-    _this.inserted.resolved = false;
+    // _this.inserted = new Promise(function (done) {
+    //   _this.hasBeenInserted = function () {
+    //     _this.inserted.resolved = true;
+    //     done();
+    //   };
+    // });
+    // _this.inserted.resolved = false;
 
     _this.destroyed = new Promise(function (done) {
       _this.hasBeenDestroyed = function () {
@@ -337,7 +337,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     virtualize: function () {
-      this.placeholder.nodeValue = JSON.stringify(this.blueprint, null, 2);
+      this.placeholder.nodeValue = JSON.stringify(this.blueprint, (k, v) => {
+        return k === 'children' ? '<children>' : v;
+      }, 2);
       this.virtual = true;
       this.setInDOM(false);
     },
@@ -389,7 +391,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
-        _this.hasBeenInserted();
+        // _this.hasBeenInserted();
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.populateEnterSequence();

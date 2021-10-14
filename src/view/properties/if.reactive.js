@@ -20,11 +20,6 @@
      * @param expression
      */
     update: function (config, value, expression) {
-      // if (config.throttleId) {
-      //   window.cancelAnimationFrame(config.throttleId);
-      //   config.throttleId = 0;
-      // }
-
       const viewNode = this;
       if (expression) {
         value = expression();
