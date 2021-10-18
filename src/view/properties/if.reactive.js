@@ -1,9 +1,9 @@
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['_if'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_if'] = {
+  G.View.REACTIVE_BEHAVIORS['if'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['if'] = {
     type: 'reactive',
-    key: '_if',
+    key: 'if',
     getConfig: function () {
       return {
         throttleId: null,

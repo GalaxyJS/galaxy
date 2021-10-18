@@ -180,7 +180,7 @@ Galaxy.View = /** @class */(function (G) {
    */
 
   View.REACTIVE_BEHAVIORS = {
-    _data: true
+    data: true
   };
 
   View.COMPONENTS = {};
@@ -192,7 +192,7 @@ Galaxy.View = /** @class */(function (G) {
     tag: {
       type: 'none'
     },
-    _props: {
+    props: {
       type: 'none'
     },
     children: {
@@ -206,7 +206,7 @@ Galaxy.View = /** @class */(function (G) {
       type: 'none',
       key: 'data',
     },
-    data: {
+    dataset: {
       type: 'prop',
       update: (vn, value) => {
         if (typeof value === 'object' && value !== null) {
@@ -220,12 +220,12 @@ Galaxy.View = /** @class */(function (G) {
       type: 'prop',
       key: 'innerHTML'
     },
-    _data: {
+    data: {
       type: 'reactive',
-      key: '_data',
+      key: 'data',
       getConfig: function (scope, value) {
         if (value !== null && (typeof value !== 'object' || value instanceof Array)) {
-          throw new Error('_data property should be an object with explicits keys:\n' + JSON.stringify(this.blueprint, null, '  '));
+          throw new Error('data property should be an object with explicits keys:\n' + JSON.stringify(this.blueprint, null, '  '));
         }
 
         return {
@@ -862,8 +862,8 @@ Galaxy.View = /** @class */(function (G) {
       } else if (childPropertyKeyPath) {
         reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
-        // if the propertyKey is used for a _repeat reactive property, then we assume its type is Array.
-        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === '_repeat');
+        // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
+        hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
       }
 
       if (childPropertyKeyPath === null) {
@@ -1119,8 +1119,8 @@ Galaxy.View = /** @class */(function (G) {
       if (key) {
         if (key in this._components) {
           componentScope = View.createChildScope(scopeData);
-          Object.assign(componentScope, blueprint._props || {});
-          // componentScope.props = View.bindSubjectsToData(null, blueprint._props || {}, scopeData, true);
+          Object.assign(componentScope, blueprint.props || {});
+          // componentScope.props = View.bindSubjectsToData(null, blueprint.props || {}, scopeData, true);
           View.bindSubjectsToData(null, componentScope, scopeData);
           componentBlueprint = this._components[key].call(null, blueprint, componentScope, this);
           if (blueprint instanceof Array) {
@@ -1147,7 +1147,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         text: 'keyframe:enter',
-        _animations: {
+        animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
             timeline,
@@ -1160,7 +1160,7 @@ Galaxy.View = /** @class */(function (G) {
       return {
         tag: 'comment',
         text: 'keyframe:leave',
-        _animations: {
+        animations: {
           enter: {
             duration: duration !== undefined ? duration : .01,
             timeline,

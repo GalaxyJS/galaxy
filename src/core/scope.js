@@ -18,18 +18,12 @@ Galaxy.Scope = /** @class */ (function () {
     _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    // _this.data = _this.element ? _this.element.data ? Object.assign({}, _this.element.data) : {} : {};
-    // _this.data = _this.element ? _this.element.data || {} : {};
-    // _this.data = {};
-    let inputs = {};
-    if (_this.element.data) {
-      inputs = Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true);
-    }
+    const _data = _this.element.data ? Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true) : {};
     defProp(_this, 'data', {
       enumerable: true,
       configurable: true,
       get: function () {
-        return inputs;
+        return _data;
       }
     });
 
@@ -40,7 +34,7 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: false
     });
 
-    _this.on('module.destroy', this.destroy.bind(this));
+    _this.on('module.destroy', this.destroy.bind(_this));
   }
 
   Scope.prototype = {

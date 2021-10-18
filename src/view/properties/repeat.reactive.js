@@ -4,10 +4,10 @@
   const CLONE = G.clone;
   const DESTROY_NODES = G.View.DESTROY_NODES;
 
-  View.REACTIVE_BEHAVIORS['_repeat'] = true;
-  View.NODE_BLUEPRINT_PROPERTY_MAP['_repeat'] = {
+  View.REACTIVE_BEHAVIORS['repeat'] = true;
+  View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
     type: 'reactive',
-    key: '_repeat',
+    key: 'repeat',
     getConfig: function (scope, value) {
       this.virtualize();
 
@@ -35,14 +35,14 @@
 
       if (config.data) {
         if (config.as === 'data') {
-          throw new Error('`data` is an invalid value for _repeat.as property. Please choose a different value.`');
+          throw new Error('`data` is an invalid value for repeat.as property. Please choose a different value.`');
         }
         viewNode.localPropertyNames.add(config.as);
         viewNode.localPropertyNames.add(config.indexAs);
 
         const bindings = View.getBindings(config.data);
         if (bindings.propertyKeys.length) {
-          View.makeBinding(viewNode, '_repeat', undefined, config.scope, bindings, viewNode);
+          View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeys.forEach((path) => {
             try {
               const rd = View.propertyRDLookup(config.scope, path);
@@ -54,7 +54,7 @@
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['_repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['_repeat'], viewNode, config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;
@@ -104,7 +104,7 @@
 
         // if (!(changes instanceof Galaxy.View.ArrayChange)) {
         //   debugger;
-        //   throw new Error('_repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
+        //   throw new Error('repeat: Expression has to return an ArrayChange instance or null \n' + config.watch.join(' , ') + '\n');
         // }
       } else {
         if (value instanceof G.View.ArrayChange) {
@@ -121,7 +121,7 @@
       }
 
       if (changes && !(changes instanceof G.View.ArrayChange)) {
-        return console.warn('%c_repeat %cdata is not a type of ArrayChange' +
+        return console.warn('%crepeat %cdata is not a type of ArrayChange' +
           '\ndata: ' + config.data +
           '\n%ctry \'' + config.data + '.changes\'\n', 'color:black;font-weight:bold', null, 'color:green;font-weight:bold');
       }
@@ -146,7 +146,7 @@
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      // if(node.blueprint._animations && node.blueprint._animations.enter && node.blueprint._animations.enter.timeline === 'dots')debugger;
+      // if(node.blueprint.animations && node.blueprint.animations.enter && node.blueprint.animations.enter.timeline === 'dots')debugger;
       // node.index;
       //  config.previousActionId = requestAnimationFrame(() => {
       //   prepareChanges(node, config, changes).then(finalChanges => {
@@ -158,7 +158,7 @@
   };
 
   function prepareChanges(viewNode, config, changes) {
-    const hasAnimation = viewNode.blueprint._animations && viewNode.blueprint._animations.leave;
+    const hasAnimation = viewNode.blueprint.animations && viewNode.blueprint.animations.leave;
     const trackByKey = config.trackBy;
     if (trackByKey && changes.type === 'reset') {
       let newTrackMap;
@@ -223,7 +223,7 @@
     const nodes = config.nodes;
     const trackByKey = config.trackBy;
     const templateBlueprint = viewNode.cloneBlueprint();
-    Reflect.deleteProperty(templateBlueprint, '_repeat');
+    Reflect.deleteProperty(templateBlueprint, 'repeat');
 
     let defaultPosition = nodes.length ? nodes[nodes.length - 1].anchor.nextSibling : viewNode.placeholder.nextSibling;
     let newItems = [];
@@ -262,7 +262,7 @@
     } else if (changes.type === 'splice') {
       const changeParams = changes.params.slice(0, 2);
       const removedItems = Array.prototype.splice.apply(nodes, changeParams);
-      DESTROY_NODES(removedItems.reverse(), viewNode.blueprint._animations && viewNode.blueprint._animations.leave);
+      DESTROY_NODES(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       Array.prototype.splice.apply(trackMap, changeParams);
 
       const startingIndex = changes.params[0];

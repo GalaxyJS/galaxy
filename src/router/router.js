@@ -81,7 +81,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.viewports = {
       main: {
         tag: 'main',
-        _module: '<>router.activeModule'
+        module: '<>router.activeModule'
       }
     };
 
@@ -111,7 +111,7 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.viewports[vp] = {
             tag: 'div',
-            _module: '<>router.viewports.' + vp
+            module: '<>router.viewports.' + vp
           };
         });
       });

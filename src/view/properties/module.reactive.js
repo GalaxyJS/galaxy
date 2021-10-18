@@ -1,9 +1,9 @@
 /* global Galaxy */
 (function (G) {
-  G.View.REACTIVE_BEHAVIORS['_module'] = true;
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_module'] = {
+  G.View.REACTIVE_BEHAVIORS['module'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    key: '_module',
+    key: 'module',
     getConfig: function (scope) {
       return {
         module: null,
@@ -26,7 +26,7 @@
       }
 
       if (typeof newModuleMeta !== 'object') {
-        return console.error('_module property only accept objects as value', newModuleMeta);
+        return console.error('module property only accept objects as value', newModuleMeta);
       }
 
       if (newModuleMeta && config.moduleMeta && newModuleMeta.path === config.moduleMeta.path) {
@@ -79,7 +79,7 @@
     let currentScope = cache.scope;
 
     while (moduleScope) {
-      // In the case where module is a part of _repeat, cache.scope will be NOT an instance of Scope
+      // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
       // but its __parent__ is
       if (!(currentScope instanceof G.Scope)) {
         currentScope = new G.Scope({

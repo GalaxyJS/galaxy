@@ -1,9 +1,9 @@
 /* global Galaxy, gsap */
 (function (G) {
   if (!window.gsap) {
-    G.View.NODE_BLUEPRINT_PROPERTY_MAP['_animations'] = {
+    G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
-      key: '_animations',
+      key: 'animations',
       /**
        *
        * @param {Galaxy.View.ViewNode} viewNode
@@ -70,16 +70,16 @@
     if (!viewNode.parent) return false;
 
     const parent = viewNode.parent;
-    if (parent.blueprint._animations && parent.blueprint._animations.enter && gsap.getTweensOf(parent.node).length) {
+    if (parent.blueprint.animations && parent.blueprint.animations.enter && gsap.getTweensOf(parent.node).length) {
       return true;
     }
 
     return hasParentEnterAnimation(viewNode.parent);
   }
 
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['_animations'] = {
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
-    key: '_animations',
+    key: 'animations',
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
@@ -118,9 +118,9 @@
 
       const leave = value.leave;
       if (leave) {
-        // We need an empty enter animation in order to have a proper behavior for _if
-        if (!enter && viewNode.blueprint._if) {
-          console.warn('The following node has `_if` and a `leave` animation but does NOT have a `enter` animation.' +
+        // We need an empty enter animation in order to have a proper behavior for if
+        if (!enter && viewNode.blueprint.if) {
+          console.warn('The following node has `if` and a `leave` animation but does NOT have a `enter` animation.' +
             '\nThis can result in unexpected UI behavior.\nTry to define a `enter` animation that negates the leave animation to prevent unexpected behavior\n\n');
           console.warn(viewNode.node);
         }
@@ -143,7 +143,7 @@
             const parent = this.parent;
             if (parent.transitory) {
               // We dump this _viewNode so it gets removed when the leave's animation's origin node is detached.
-              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a _if
+              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a if
               return this.dump();
             }
           }

@@ -11,7 +11,8 @@
   },
   "globals": {
     "Galaxy": true,
-    "Scope": true
+    "Scope": true,
+    "gsap": true
   },
   "extends": [
     "eslint:recommended"

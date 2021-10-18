@@ -458,7 +458,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
     },
 
-    snapshot: function (_animations) {
+    snapshot: function (animations) {
       const rect = this.node.getBoundingClientRect();
       const node = this.node.cloneNode(true);
       const style = {
@@ -508,7 +508,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
-          // this is not the case for when this node is being detached by _if
+          // this is not the case for when this node is being detached by if
           // const children = _this.getChildNodes();
           for (let i = 0, len = children.length; i < len; i++) {
             children[i].onLeaveComplete = EMPTY_CALL;
