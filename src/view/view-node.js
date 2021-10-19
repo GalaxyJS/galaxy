@@ -31,20 +31,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return document.createElement(tagName);
   }
 
-  function generate_index(vn) {
-    if (vn.parent) {
-      let i = 0;
-      let node = vn.node;
-      while ((node = node.previousSibling) !== null) ++i;
-
-      if (i === 0 && vn.placeholder.parentNode) {
-        i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
-      }
-      return vn.parent.index + ',' + ViewNode.createIndex(i);
-    }
-
-    return '0';
-  }
+  // function generate_index(vn) {
+  //   if (vn.parent) {
+  //     let i = 0;
+  //     let node = vn.node;
+  //     while ((node = node.previousSibling) !== null) ++i;
+  //
+  //     if (i === 0 && vn.placeholder.parentNode) {
+  //       i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
+  //     }
+  //     return vn.parent.index + ',' + ViewNode.createIndex(i);
+  //   }
+  //
+  //   return '0';
+  // }
 
   // const view_node_template = {
   //   blueprint: {},
@@ -583,7 +583,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     get index() {
-      return generate_index(this);
+      const parent = this.parent;
+      if (parent) {
+        let i = 0;
+        let node = this.node;
+        while ((node = node.previousSibling) !== null) ++i;
+        // i = arrIndexOf.call(parent.node.childNodes, node);
+
+        if (i === 0 && this.placeholder.parentNode) {
+          i = arrIndexOf.call(parent.node.childNodes, this.placeholder);
+        }
+        return parent.index + ',' + ViewNode.createIndex(i);
+      }
+
+      return '0';
     },
 
     get anchor() {

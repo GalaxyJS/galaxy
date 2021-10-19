@@ -167,7 +167,6 @@
           return item;
         });
       } else if (typeof trackByKey === 'string') {
-
         newTrackMap = changes.params.map(item => {
           return item[trackByKey];
         });

@@ -57,7 +57,6 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.scope = scope;
     _this.module = module;
 
-    // _this.path = module.id === 'system' ? '/' : scope.parentScope.router.activeRoute.path;
     _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
@@ -92,7 +91,7 @@ Galaxy.Router = /** @class */ (function (G) {
       enumerable: true
     });
 
-    if (module.id === 'system') {
+    if (module.id === 'root') {
       Router.currentPath.update();
     }
   }

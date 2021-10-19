@@ -95,7 +95,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.id = 'system';
+      bootModule.id = 'root';
 
       if (!_this.rootElement) {
         throw new Error('element property is mandatory');
@@ -147,7 +147,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+        if (!module.id) {
+          module.id = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path /*+ '-' + (new Date()).valueOf() + '-' + Math.round(performance.now())*/;
+        }
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
         let invokers = [module.path];
@@ -283,7 +285,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
-
           const source = module.source;
           const moduleSource = typeof source === 'function' ?
             source :
@@ -314,7 +315,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           };
 
           // if the function is not async, output would be undefined
-          if(output) {
+          if (output) {
             output.then(proceed);
           } else {
             proceed();

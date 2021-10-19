@@ -14,7 +14,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const defProp = Object.defineProperty;
   const scopeBuilder = function (id) {
     return {
-      id: 'Scope',
+      id: id || 'Scope',
       shadow: {},
       data: {},
       notify: function () {
@@ -53,9 +53,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
    * @memberOf Galaxy.View
    */
   function ReactiveData(id, data, p) {
-    const parent = p || scopeBuilder();
+    const parent = p instanceof ReactiveData ? p : scopeBuilder(p);
     this.data = data;
-    this.id = parent.id + (id ? '.' + id : '.{}');
+    this.id = parent.id + (id ? '.' + id : '|Scope');
     this.keyInParent = id;
     this.nodesMap = {};
     this.parent = parent;
@@ -65,7 +65,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
       this.refs = this.data.__rd__.refs;
-      // if (this.id === '{Scope}.data.products') debugger;
       const refExist = this.getRefById(this.id);
       if (refExist) {
         // Sometimes an object is already reactive, but its parent is dead, meaning all references to it are lost
@@ -89,8 +88,8 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         }
 
         this.data = {};
-        // TODO: Don't know if this is a proper fix
         if (this.parent.data[id]) {
+          // debugger
           new ReactiveData(id, this.parent.data[id], this.parent);
         } else {
           this.parent.makeReactiveObject(this.parent.data, id, true);
@@ -241,6 +240,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
             if (ref.shadow[key]) {
               ref.makeKeyEnum(key);
               // setData provide downward data flow
+              // debugger
               ref.shadow[key].setData(val);
             }
           }
@@ -511,12 +511,14 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // if I am the original reference and the only one, then remove the __rd__
       else if (this.refs.length === 1) {
         // TODO: Should be tested as much as possible to make sure it works with no bug
+        // TODO: We either need to return the object to its original state or do nothing
         // debugger
         // delete this.data.__rd__;
-        if (this.data instanceof Array) {
-          // delete this.data.live;
-          delete this.data.changes;
-        }
+        // if (this.data instanceof Array) {
+        // delete this.data.live;
+        // delete this.data.changes;
+        // debugger
+        // }
       }
       // if I am the original reference and not the only one
       else {

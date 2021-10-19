@@ -24,6 +24,9 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: true,
       get: function () {
         return _data;
+      },
+      set: function (value) {
+        Object.assign(_data, value);
       }
     });
 
