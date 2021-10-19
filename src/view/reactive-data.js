@@ -42,8 +42,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     }
   };
 
-  ReactiveData.UPDATE_DIRECTION_TOP_DOWN = 1;
-  ReactiveData.UPDATE_DIRECTION_BOTTOM_UP = 2;
 
   /**
    * @param {string} id
