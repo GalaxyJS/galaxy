@@ -23,7 +23,7 @@
 
     parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
-      let pathURL = query[query.length - 1];
+      let pathURL = query[query.length - 1] + '#text';
       if (unique.indexOf(pathURL) !== -1) {
         return 'Scope.import(\'' + pathURL + '\')';
       }

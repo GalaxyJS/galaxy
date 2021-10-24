@@ -162,7 +162,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           invokers.push(module.path);
         }
 
-        let url = module.path + '?' + _this.convertToURIString(module.params || {});
+        let url = module.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
+        // if (module.params) debugger
         // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
@@ -249,6 +250,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 path: item.path,
                 fresh: item.fresh,
                 contentType: item.contentType,
+                // params: item.params,
                 parentScope: scope,
                 invokers: invokers
               }).then(function () {

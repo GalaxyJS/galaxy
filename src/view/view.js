@@ -951,7 +951,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
       }
     }
 
@@ -1038,7 +1038,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -1080,9 +1080,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = { type: 'prop' };
+      property = {type: 'prop'};
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = { type: 'attr' };
+        property = {type: 'attr'};
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -1157,7 +1157,7 @@ Galaxy.View = /** @class */(function (G) {
           Object.assign(componentScope, blueprint.props || {});
           // componentScope.props = View.bindSubjectsToData(null, blueprint.props || {}, scopeData, true);
           View.bindSubjectsToData(null, componentScope, scopeData);
-          componentBlueprint = this._components[key].call(null, blueprint, componentScope, this);
+          componentBlueprint = this._components[key].call(null, componentScope, blueprint, this);
           if (blueprint instanceof Array) {
             throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
           }
