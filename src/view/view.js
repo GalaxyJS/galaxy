@@ -933,7 +933,6 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         if (hostReactiveData && scopeData instanceof G.Scope) {
-          // debugger
           // If the propertyKey is referring to some local value then there is no error
           if (target instanceof G.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
@@ -944,9 +943,6 @@ Galaxy.View = /** @class */(function (G) {
           //   propertyKey + '`\n');
         }
 
-        // if(propertyKey === 'item' && hostReactiveData.data instanceof G.Scope) {
-        //   debugger
-        // }
         hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
       }
 
@@ -1153,9 +1149,14 @@ Galaxy.View = /** @class */(function (G) {
       let componentBlueprint = blueprint;
       if (key) {
         if (key in this._components) {
+          if (blueprint.props !== null && typeof blueprint.props !== 'object') {
+            throw new Error('The `props` must be a literal object.');
+          }
+
           componentScope = View.createChildScope(scopeData);
           Object.assign(componentScope, blueprint.props || {});
-          // componentScope.props = View.bindSubjectsToData(null, blueprint.props || {}, scopeData, true);
+          console.log(componentScope)
+
           View.bindSubjectsToData(null, componentScope, scopeData);
           componentBlueprint = this._components[key].call(null, componentScope, blueprint, this);
           if (blueprint instanceof Array) {
