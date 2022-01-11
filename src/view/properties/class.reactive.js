@@ -24,12 +24,12 @@
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(function () {
           applyClasses(viewNode, reactiveClasses);
-          observer.onAll((key, value) => {
+          observer.onAll(() => {
             applyClasses(viewNode, reactiveClasses);
           });
         });
       } else {
-        observer.onAll((key, value) => {
+        observer.onAll(() => {
           applyClasses(viewNode, reactiveClasses);
         });
       }
@@ -102,7 +102,11 @@
       return;
     }
 
-    viewNode.node.className = newClasses.join(' ');
+    // viewNode.node.className = newClasses.join(' ');
+    G.View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
+      viewNode.node.className = newClasses.join(' ');
+      _next();
+    });
   }
 })(Galaxy);
 

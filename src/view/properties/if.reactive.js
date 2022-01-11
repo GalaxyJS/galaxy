@@ -29,11 +29,18 @@
         viewNode.blueprint.renderConfig.renderDetached = true;
       }
 
+      // if(viewNode.rendered.resolved) {
+      //   if (viewNode.inDOM !== value) {
+      //     viewNode.setInDOM(value);
+      //   }
+      // } else {
       viewNode.rendered.then(() => {
+        viewNode.node.setAttribute('data-if', value);
         if (viewNode.inDOM !== value) {
           viewNode.setInDOM(value);
         }
       });
+      // }
     }
   };
 

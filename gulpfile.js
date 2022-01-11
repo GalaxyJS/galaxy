@@ -73,4 +73,4 @@ const watchAndBuild = function (done) {
 
 gulp.task('build-galaxy', build);
 gulp.task('build-galaxy-production', buildProduction);
-gulp.task('start-development', gulp.series(build, watchAndBuild));
+gulp.task('watch-and-build', gulp.series(build, watchAndBuild));

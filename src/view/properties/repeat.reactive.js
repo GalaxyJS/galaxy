@@ -196,12 +196,12 @@
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      DESTROY_NODES(hasBeenRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(hasBeenRemoved, hasAnimation);
       return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      DESTROY_NODES(nodesToBeRemoved.reverse(), hasAnimation);
+      DESTROY_NODES(nodesToBeRemoved, hasAnimation);
       const newChanges = Object.assign({}, changes);
       newChanges.type = 'push';
       return newChanges;

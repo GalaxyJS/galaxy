@@ -769,8 +769,12 @@ Galaxy.View = /** @class */(function (G) {
     let middle = [];
     for (let i = 0, len = propertyValues.length; i < len; i++) {
       const val = propertyValues[i];
-      if (typeof val === 'string' && val.indexOf('<>') === 0) {
-        middle.push('_prop(scope, "' + val.replace(/<>/g, '') + '")');
+      if (typeof val === 'string') {
+        if (val.indexOf('<>this.') === 0) {
+          middle.push('_prop(this.data, "' + val.replace('<>this.', '') + '")');
+        } else if (val.indexOf('<>') === 0) {
+          middle.push('_prop(scope, "' + val.replace(/<>/g, '') + '")');
+        }
       } else {
         middle.push('_var[' + i + ']');
       }
@@ -947,7 +951,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath !== null) {
-        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, {propertyKeys: [childPropertyKeyPath]}), root);
+        View.makeBinding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
       }
     }
 
@@ -1034,7 +1038,7 @@ Galaxy.View = /** @class */(function (G) {
      *
      * @type {Galaxy.View.BlueprintProperty}
      */
-    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || {type: 'attr'};
+    const property = View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey] || { type: 'attr' };
     property.key = property.key || propertyKey;
     if (typeof property.beforeActivate !== 'undefined') {
       property.beforeActivate(viewNode, scopeProperty, propertyKey, expression);
@@ -1076,9 +1080,9 @@ Galaxy.View = /** @class */(function (G) {
     const bpKey = propertyKey + '_' + viewNode.node.nodeType;
     let property = View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || View.NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
     if (!property) {
-      property = {type: 'prop'};
+      property = { type: 'prop' };
       if (!(propertyKey in viewNode.node) && 'setAttribute' in viewNode.node) {
-        property = {type: 'attr'};
+        property = { type: 'attr' };
       }
 
       View.NODE_BLUEPRINT_PROPERTY_MAP[bpKey] = property;
@@ -1155,7 +1159,6 @@ Galaxy.View = /** @class */(function (G) {
 
           componentScope = View.createChildScope(scopeData);
           Object.assign(componentScope, blueprint.props || {});
-          console.log(componentScope)
 
           View.bindSubjectsToData(null, componentScope, scopeData);
           componentBlueprint = this._components[key].call(null, componentScope, blueprint, this);
@@ -1174,10 +1177,17 @@ Galaxy.View = /** @class */(function (G) {
     },
 
     enterKeyframe: function (onComplete, timeline, duration) {
-      if (typeof onComplete === 'string') {
+      if (arguments.length <= 2) {
         duration = timeline;
         timeline = onComplete;
         onComplete = View.EMPTY_CALL;
+      }
+
+      let position = undefined;
+      if (typeof timeline === 'string' && timeline.indexOf(':') !== -1) {
+        const parts = timeline.split(':');
+        timeline = parts[0];
+        position = parts[1];
       }
 
       return {
@@ -1187,6 +1197,7 @@ Galaxy.View = /** @class */(function (G) {
           enter: {
             duration: duration !== undefined ? duration : .01,
             timeline,
+            position,
             onComplete
           }
         }

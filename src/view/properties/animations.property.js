@@ -21,7 +21,7 @@
 
     window.gsap = {
       to: function (node, props) {
-        requestAnimationFrame(() => {
+        return requestAnimationFrame(() => {
           if (typeof node === 'string') {
             node = document.querySelector(node);
           }
@@ -83,14 +83,14 @@
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
-     * @param value
+     * @param animationDescriptions
      */
-    update: function (viewNode, value) {
-      if (viewNode.virtual || !value) {
+    update: function (viewNode, animationDescriptions) {
+      if (viewNode.virtual || !animationDescriptions) {
         return;
       }
 
-      const enter = value.enter;
+      const enter = animationDescriptions.enter;
       if (enter) {
         viewNode.populateEnterSequence = function () {
           if (enter.withParent) {
@@ -116,7 +116,7 @@
         };
       }
 
-      const leave = value.leave;
+      const leave = animationDescriptions.leave;
       if (leave) {
         // We need an empty enter animation in order to have a proper behavior for if
         if (!enter && viewNode.blueprint.if) {
@@ -141,9 +141,11 @@
           if (withParentResult) {
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
+            if(this.node.classList.contains('sub-nav-container'))
+              debugger;
             if (parent.transitory) {
-              // We dump this _viewNode so it gets removed when the leave's animation's origin node is detached.
-              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a if
+              // We dump this _viewNode, so it gets removed when the leave's animation's origin node is detached.
+              // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a 'if'
               return this.dump();
             }
           }
@@ -173,13 +175,50 @@
 
       if (viewNode.cache.class && viewNode.cache.class.observer) {
         viewNode.rendered.then(function () {
-          viewNode.cache.class.observer.onAll((key) => {
+          const classes = viewNode.cache.class.observer.context;
 
+          // Apply final state for class animations
+          for (const key in classes) {
+            const type = Boolean(classes[key]);
+            const animationDescription = get_class_based_animation_description(animationDescriptions, type, key);
+            if (animationDescription) {
+              gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
+            }
+          }
+
+          viewNode.cache.class.observer.onAll((key) => {
+            const type = Boolean(classes[key]);
+            const animationType = get_class_based_animation_type(type, key);
+            const animationDescription = get_class_based_animation_description(animationDescriptions, type, key);
+
+            if (animationDescription) {
+              if (type && !viewNode.node.classList.contains(key)) {
+                AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
+              } else if (!type && viewNode.node.classList.contains(key)) {
+                AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
+              }
+            }
           });
         });
       }
     }
   };
+
+  function get_class_based_animation_type(type, key) {
+    return type ? 'add:' + key : 'remove:' + key;
+  }
+
+  /**
+   *
+   * @param animationDescriptions
+   * @param {boolean} type
+   * @param {string} key
+   * @returns {*}
+   */
+  function get_class_based_animation_description(animationDescriptions, type, key) {
+    const animationKey = get_class_based_animation_type(type, key);
+    return animationDescriptions[animationKey];
+  }
 
   function leave_with_parent(finalize) {
     if (gsap.getTweensOf(this.node).length) {
@@ -187,7 +226,14 @@
     }
 
     if (this.parent.transitory) {
-      this.dump();
+      // ToDo: Why this!?
+      if (!this.inDOM && this.node.parentNode) {
+        // console.log(this.inDOM, this.node, this.node.textContent);
+        // this.dump();
+        // this.node.parentNode.removeChild(this.node);
+        // G.View.ViewNode.REMOVE_SELF.call(this, false);
+      }
+
     } else {
       finalize();
     }
@@ -199,7 +245,9 @@
    *
    * @typedef {Object} AnimationConfig
    * @property {string} [timeline]
+   * @property {string[]} [labels]
    * @property {Promise} [await]
+   * @property {string|number} [startPosition]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
    * @property {number} [duration]
@@ -334,18 +382,16 @@
 
     let parentAnimationMeta = null;
     if (timelineName) {
-      const animationMeta = new AnimationMeta(timelineName);
-
-      // if(sequenceName === 'dots')debugger;
-      // viewNode.index;
+      const animationMeta = new AnimationMeta(timelineName, newConfig.labels);
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
 
-        const children = parentAnimationMeta.timeline.getChildren(false);
-        if (children.indexOf(animationMeta.timeline) === -1) {
-          parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
-        }
+        // const children = parentAnimationMeta.timeline.getChildren(false);
+        // if (children.indexOf(animationMeta.timeline) === -1) {
+        //   parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
+        // }
+        animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
       }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
@@ -383,18 +429,29 @@
             }
           }
         }).bind(null, pauseTween);
-        // We don't want the animation wait for the await, if this `viewNode` is destroyed before await gets a chance
+        // We don't want the animation wait for await, if this `viewNode` is destroyed before await gets a chance
         // to be resolved. Therefore, we need to remove await.
-        viewNode.finalize.push(removeAwait);
+        viewNode.finalize.push(() => {
+          // if the element is removed before await is resolved, then make sure the element stays hidden
+          if (animationMeta.awaits.indexOf(newConfig.await) !== -1 && viewNode.node.style) {
+            viewNode.node.style.display = 'none';
+          }
+          removeAwait();
+        });
       }
+
+      // The first tween of an animation type(enter or leave) should use startPosition
+      if (animationMeta.type && animationMeta.type !== type && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
+        newConfig.position = newConfig.startPosition;
+      }
+      animationMeta.type = type;
 
       animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
       if (newConfig.addTo && parentAnimationMeta) {
-        // const addToAnimationMeta = new AnimationMeta(newConfig.addTo);
-        if (!parentAnimationMeta.started) {
+        if (!parentAnimationMeta.started /*&& parentAnimationMeta.name !== '<user-defined>'*/) {
           parentAnimationMeta.started = true;
           parentAnimationMeta.timeline.resume();
         }
@@ -404,28 +461,31 @@
     }
   };
 
+  const TIMELINE_SETUP_MAP = {};
+  G.setupTimeline = function (name, labels) {
+    TIMELINE_SETUP_MAP[name] = labels;
+  };
+  Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
+
   /**
    *
    * @param {string} name
    * @class
    */
   function AnimationMeta(name) {
-    const exist = AnimationMeta.ANIMATIONS[name];
-    if (exist) {
-      if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
-        exist.timeline.clear();
-        exist.timeline.invalidate();
-      }
-      return exist;
-    }
-
     const _this = this;
-    _this.name = name;
-    _this.timeline = gsap.timeline({
-      autoRemoveChildren: true,
-      smoothChildTiming: false,
-      paused: true,
-      onComplete: function () {
+    if (name && typeof name !== 'string') {
+      if (name.__am__) {
+        return name.__am__;
+      }
+
+      const onComplete = name.eventCallback('onComplete') || Galaxy.View.EMPTY_CALL;
+
+      _this.name = '<user-defined>';
+      _this.timeline = name;
+      _this.timeline.__am__ = this;
+      _this.timeline.eventCallback('onComplete', function () {
+        onComplete.call(_this.timeline);
         _this.onCompletesActions.forEach((action) => {
           action(_this.timeline);
         });
@@ -433,30 +493,66 @@
         _this.awaits = [];
         _this.children = [];
         _this.onCompletesActions = [];
-        AnimationMeta.ANIMATIONS[name] = null;
+      });
+      _this.addTo = (tl) => {
+        throw new Error('You can not use addTo with a custom timeline: ' + tl);
+      };
+    } else {
+      const exist = AnimationMeta.ANIMATIONS[name];
+      if (exist) {
+        if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
+          exist.timeline.clear();
+          exist.timeline.invalidate();
+        }
+
+        return exist;
       }
-    });
-    _this.timeline.data = { name };
+
+      _this.name = name;
+      _this.timeline = gsap.timeline({
+        autoRemoveChildren: true,
+        smoothChildTiming: false,
+        paused: true,
+        onComplete: function () {
+          _this.onCompletesActions.forEach((action) => {
+            action(_this.timeline);
+          });
+          _this.nodes = [];
+          _this.awaits = [];
+          _this.children = [];
+          _this.onCompletesActions = [];
+          AnimationMeta.ANIMATIONS[name] = null;
+        }
+      });
+      _this.timeline.data = { name };
+
+      const labels = TIMELINE_SETUP_MAP[name];
+      if (labels) {
+        for (const l in labels) {
+          _this.timeline.addLabel(l, labels[l]);
+        }
+      }
+
+      AnimationMeta.ANIMATIONS[name] = this;
+    }
+
+    _this.type = null;
     _this.onCompletesActions = [];
     _this.started = false;
     _this.configs = {};
     _this.children = [];
     _this.nodes = [];
     _this.awaits = [];
-    _this.timelinesMap = [];
-
-    AnimationMeta.ANIMATIONS[name] = this;
   }
 
   AnimationMeta.prototype = {
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
     },
-    addTo(sequenceName, pip) {
-      const parent = new AnimationMeta(sequenceName);
-      const children = parent.timeline.getChildren(false);
+    addTo(parentAnimationMeta, positionInParent) {
+      const children = parentAnimationMeta.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
-        parent.timeline.add(this.timeline, pip);
+        parentAnimationMeta.timeline.add(this.timeline, positionInParent);
       }
     },
 
@@ -502,18 +598,18 @@
 
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
+
       if (tChildren.length === 0) {
-        _this.timeline.add(tween);
-      }
-      // This fix a bug where if the enter animation has addTo, then the leave animation is ignored
-      else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
+        _this.timeline.add(tween, (config.position && config.position.indexOf('=') === -1) ? config.position : null);
+      } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
+        // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
         _this.timeline.clear();
-        _this.timeline.add(tween, config.position || '+=0');
+        _this.timeline.add(tween, config.position);
       } else {
-        _this.timeline.add(tween, config.position || '+=0');
+        _this.timeline.add(tween, config.position);
       }
 
-      if (!_this.started) {
+      if (!_this.started && _this.name !== '<user-defined>') {
         _this.started = true;
         _this.timeline.resume();
       }

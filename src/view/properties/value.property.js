@@ -14,7 +14,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeActivate : function valueUtil(viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       const nativeNode = viewNode.node;
       if (!scopeReactiveData) {
         return;
@@ -43,10 +43,10 @@
           observer.disconnect();
         });
         nativeNode.addEventListener('change', createHandler(scopeReactiveData, id));
-      } else if (nativeNode.type === 'number') {
+      } else if (nativeNode.type === 'number' || nativeNode.type === 'range') {
         nativeNode.addEventListener('input', createNumberHandler(nativeNode, scopeReactiveData, id));
       } else {
-        nativeNode.addEventListener('keyup', createHandler(scopeReactiveData, id));
+        nativeNode.addEventListener('input', createHandler(scopeReactiveData, id));
       }
     },
     update: function (viewNode, value) {

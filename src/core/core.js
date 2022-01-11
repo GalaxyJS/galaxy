@@ -74,12 +74,17 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       clone.__proto__ = obj.__proto__;
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
-          if (obj[i] instanceof Promise) {
-            clone[i] = obj[i];
-          } else if (typeof (obj[i]) === 'object' && obj[i] !== null) {
-            clone[i] = Galaxy.clone(obj[i]);
+          const v = obj[i];
+          if (v instanceof Promise) {
+            clone[i] = v;
+          } else if (typeof (v) === 'object' && v !== null) {
+            if (i === 'animations' && v && typeof v === 'object') {
+              clone[i] = v;
+            } else {
+              clone[i] = Galaxy.clone(v);
+            }
           } else {
-            clone[i] = obj[i];
+            clone[i] = v;
           }
         }
       }

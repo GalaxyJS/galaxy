@@ -20,7 +20,6 @@
     "start-spa": "ws --spa index.html --config-file lws.config.js"
   },
   "contributors": [],
-  "dependencies": {},
   "devDependencies": {
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",

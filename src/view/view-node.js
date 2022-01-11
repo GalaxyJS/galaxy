@@ -112,6 +112,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     getSetter: () => EMPTY_CALL
   };
 
+  GV.NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
+    type: 'prop',
+    key: '_render',
+    getSetter: () => EMPTY_CALL
+  };
+
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
     type: 'prop',
     key: '_destroy',
@@ -135,6 +141,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
    * @property {RenderConfig} [renderConfig]
    * @property {string} [tag]
    * @property {function} [_create]
+   * @property {function} [_render]
    * @property {function} [_destroy]
    */
 
@@ -206,7 +213,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   /**
    *
-   * @param blueprint
+   * @param {Blueprint} blueprint
    * @param {Galaxy.View.ViewNode} parent
    * @param {Galaxy.View} view
    * @param {any} nodeData
@@ -239,7 +246,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.setters = {};
     /** @type {Galaxy.View.ViewNode} */
     _this.parent = parent;
-    _this.finalize = _this.blueprint._destroy ? [_this.blueprint._destroy] : [];
+    _this.finalize = [];
     _this.origin = false;
     _this.destroyOrigin = 0;
     _this.transitory = false;
@@ -259,6 +266,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.hasBeenRendered = function () {
           _this.rendered.resolved = true;
           _this.node.style.removeProperty('display');
+          if (_this.blueprint._render) {
+            _this.blueprint._render.call(_this, _this.data);
+          }
           done();
         };
       } else {
@@ -270,17 +280,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
     _this.rendered.resolved = false;
 
-    // _this.inserted = new Promise(function (done) {
-    //   _this.hasBeenInserted = function () {
-    //     _this.inserted.resolved = true;
-    //     done();
-    //   };
-    // });
-    // _this.inserted.resolved = false;
-
     _this.destroyed = new Promise(function (done) {
       _this.hasBeenDestroyed = function () {
         _this.destroyed.resolved = true;
+        if (_this.blueprint._destroy) {
+          _this.blueprint._destroy.call(_this, _this.data);
+        }
         done();
       };
     });
@@ -309,10 +314,18 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   ViewNode.prototype = {
     onLeaveComplete: null,
 
+    // updateDump: function () {
+    //   if (this.parent) {
+    //     this.parent.garbage = this.parent.garbage.concat(this.garbage);
+    //     this.garbage = [];
+    //     // this.parent.updateDump();
+    //   }
+    // },
     dump: function () {
+      this.garbage.push(this);
       this.parent.garbage = this.parent.garbage.concat(this.garbage);
-      this.parent.garbage.push(this);
       this.garbage = [];
+      // this.updateDump();
     },
     query: function (selectors) {
       return this.node.querySelector(selectors);
@@ -338,7 +351,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     virtualize: function () {
       this.placeholder.nodeValue = JSON.stringify(this.blueprint, (k, v) => {
-        return k === 'children' ? '<children>' : v;
+        return k === 'children' ? '<children>' : k === 'animations' ? '<animations>' : v;
       }, 2);
       this.virtual = true;
       this.setInDOM(false);
@@ -354,12 +367,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.node.style.display = 'none';
     },
 
-    detach: function () {
-      if (this.node.parentNode) {
-        remove_child(this.node.parentNode, this.node);
-      }
-    },
-
     /**
      *
      * @param {boolean} flag
@@ -373,6 +380,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _next();
         });
         return;
+      }
+
+      if(!flag && _this.node.parentNode && _this.node.classList.contains('sub-nav-container')) {
+        this.garbage;
+        debugger
       }
 
       _this.inDOM = flag;
@@ -391,7 +403,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
-        // _this.hasBeenInserted();
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.populateEnterSequence();
@@ -400,6 +411,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
+        // if(_this.node.classList.contains('main-nav')) {
+        //   this.garbage;
+        //   debugger
+        // }
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         const children = _this.getChildNodes();
         _this.prepareLeaveSequence(_this.hasAnimation(children), children);
@@ -584,17 +599,37 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     get index() {
       const parent = this.parent;
-      if (parent) {
-        let i = 0;
-        let node = this.node;
-        while ((node = node.previousSibling) !== null) ++i;
-        // i = arrIndexOf.call(parent.node.childNodes, node);
 
-        if (i === 0 && this.placeholder.parentNode) {
-          i = arrIndexOf.call(parent.node.childNodes, this.placeholder);
+      // This solution is very performant but might not be reliable
+      if (parent) {
+        let prevNode = this.placeholder.parentNode ? this.placeholder.previousSibling : this.node.previousSibling;
+        if (prevNode) {
+          if (!prevNode.hasOwnProperty('__index__')) {
+            let i = 0;
+            let node = this.node;
+            while ((node = node.previousSibling) !== null) ++i;
+            prevNode.__index__ = i;
+          }
+          this.node.__index__ = prevNode.__index__ + 1;
+        } else {
+          this.node.__index__ = 0;
         }
-        return parent.index + ',' + ViewNode.createIndex(i);
+
+        return parent.index + ',' + ViewNode.createIndex(this.node.__index__);
       }
+
+      // This solution is much more reliable however it's very slow
+      // if (parent) {
+      //   let i = 0;
+      //   let node = this.node;
+      //   while ((node = node.previousSibling) !== null) ++i;
+      //   // i = arrIndexOf.call(parent.node.childNodes, node);
+      //
+      //   if (i === 0 && this.placeholder.parentNode) {
+      //     i = arrIndexOf.call(parent.node.childNodes, this.placeholder);
+      //   }
+      //   return parent.index + ',' + ViewNode.createIndex(i);
+      // }
 
       return '0';
     },

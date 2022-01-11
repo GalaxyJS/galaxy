@@ -255,12 +255,22 @@ Galaxy.Router = /** @class */ (function (G) {
     },
 
     callRoute: function (route, hash, params, parentParams) {
+      const activeRoute = this.data.activeRoute;
+      const activePath = this.data.activePath;
       if (!route.redirectTo) {
-        if (this.data.activeRoute) {
-          this.data.activeRoute.active = false;
+        if (activeRoute) {
+          activeRoute.active = false;
+
+          if (typeof activeRoute.onLeave === 'function') {
+            activeRoute.onLeave.call(null, activePath, route.path, activeRoute, route);
+          }
         }
 
         route.active = true;
+      }
+
+      if (typeof route.onEnter === 'function') {
+        route.onEnter.call(null, activePath, route.path, activeRoute, route);
       }
 
       this.data.activeRoute = route;
