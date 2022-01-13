@@ -94,10 +94,12 @@
       if (enter) {
         viewNode.populateEnterSequence = function () {
           if (enter.withParent) {
+            // if(this.node.classList.contains('sub-nav-container'))
+            //   debugger;
             // if parent has a enter animation, then ignore this node's animation
             // so this node enters with its parent
             if (hasParentEnterAnimation(this)) {
-              return;
+              return gsap.set(this.node, AnimationMeta.parseStep(this, enter.to) || {});
             }
 
             const parent = this.parent;
@@ -139,13 +141,17 @@
           }
 
           if (withParentResult) {
+            // if(this.node.classList.contains('sub-nav-container') && this.garbage.length)
+            //   debugger;
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
-            if(this.node.classList.contains('sub-nav-container'))
-              debugger;
             if (parent.transitory) {
+              // if (this.node.classList.contains('sub-nav-container') && this.garbage.length)
+              // console.log(viewNode.node);
+              //   debugger;
               // We dump this _viewNode, so it gets removed when the leave's animation's origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a 'if'
+
               return this.dump();
             }
           }

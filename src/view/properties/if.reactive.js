@@ -25,6 +25,8 @@
         value = expression();
       }
 
+      value = Boolean(value);
+
       if (!viewNode.rendered.resolved && !value) {
         viewNode.blueprint.renderConfig.renderDetached = true;
       }

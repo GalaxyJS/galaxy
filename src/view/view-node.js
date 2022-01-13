@@ -322,10 +322,28 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     //   }
     // },
     dump: function () {
-      this.garbage.push(this);
-      this.parent.garbage = this.parent.garbage.concat(this.garbage);
+      // this.garbage.push(this);
+      // this.parent.garbage = this.parent.garbage.concat(this.garbage);
+      // this.garbage = [];
+
+      // this.garbage.push(this);
+      let original = this.parent;
+      let targetGarbage = this.garbage;
+      while (original.transitory) {
+        if (original.blueprint.hasOwnProperty('if') && !this.blueprint.hasOwnProperty('if')) {
+          // original.garbage = original.garbage.concat(_this.garbage);
+          // console.log(this.node)
+          targetGarbage = original.garbage;
+        }
+        if (original.parent && original.parent.transitory) {
+          original = original.parent;
+        } else {
+          break;
+        }
+      }
+      targetGarbage.push(this);
+      // debugger
       this.garbage = [];
-      // this.updateDump();
     },
     query: function (selectors) {
       return this.node.querySelector(selectors);
@@ -382,10 +400,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         return;
       }
 
-      if(!flag && _this.node.parentNode && _this.node.classList.contains('sub-nav-container')) {
-        this.garbage;
-        debugger
-      }
+      // if(!flag && _this.node.parentNode && _this.node.classList.contains('sub-nav-container')) {
+      //   this.garbage;
+      //   debugger
+      // }
 
       _this.inDOM = flag;
       if (_this.virtual) return;
@@ -411,10 +429,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        // if(_this.node.classList.contains('main-nav')) {
-        //   this.garbage;
-        //   debugger
-        // }
         const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
         const children = _this.getChildNodes();
         _this.prepareLeaveSequence(_this.hasAnimation(children), children);
