@@ -20,9 +20,9 @@ Galaxy.Router = /** @class */ (function (G) {
     Router.currentPath.update();
   };
 
-  Router.prepareRoute = function (routeConfig, parentScopeRouter) {
+  Router.prepareRoute = function (routeConfig, parentScopeRouter, fullPath) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter));
+      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter, fullPath));
       if (parentScopeRouter) {
         parentScopeRouter.activeRoute.children = routes;
       }
@@ -32,6 +32,7 @@ Galaxy.Router = /** @class */ (function (G) {
 
     return {
       ...routeConfig,
+      fullPath: fullPath + routeConfig.path,
       active: false,
       hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
       viewports: routeConfig.viewports || {},
@@ -57,7 +58,20 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.scope = scope;
     _this.module = module;
 
-    _this.path = scope.parentScope && scope.parentScope.router ? scope.parentScope.router.activeRoute.path : '/';
+    // Find active parent router
+    _this.parentRouterScope = scope.parentScope;
+
+    // ToDo: bug
+    if (_this.parentRouterScope && (!_this.parentRouterScope.router || !_this.parentRouterScope.router.activeRoute)) {
+      let ps = _this.parentRouterScope;
+      while (!ps.router || !ps.router.activeRoute) {
+        ps = ps.parentScope;
+      }
+      _this.config.baseURL = ps.router.activePath;
+      _this.parentRouterScope = null;
+    }
+
+    _this.path = _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
     _this.parentRoute = null;
 
@@ -74,12 +88,13 @@ Galaxy.Router = /** @class */ (function (G) {
       viewports: {
         main: null,
       },
-      parameters: _this.scope.parentScope && _this.scope.parentScope.router ? _this.scope.parentScope.router.parameters : {}
+      parameters: _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.parameters : {}
     };
+    _this.onTransitionFn = Galaxy.View.EMPTY_CALL;
 
     _this.viewports = {
       main: {
-        tag: 'main',
+        tag: 'div',
         module: '<>router.activeModule'
       }
     };
@@ -98,9 +113,9 @@ Galaxy.Router = /** @class */ (function (G) {
 
   Router.prototype = {
     setup: function (routeConfigs) {
-      this.routes = Router.prepareRoute(routeConfigs, this.scope.parentScope ? this.scope.parentScope.router : null);
-      if (this.scope.parentScope && this.scope.parentScope.router) {
-        this.parentRoute = this.scope.parentScope.router.activeRoute;
+      this.routes = Router.prepareRoute(routeConfigs, this.parentRouterScope ? this.parentRouterScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+      if (this.parentRouterScope && this.parentRouterScope.router) {
+        this.parentRoute = this.parentRouterScope.router.activeRoute;
       }
 
       this.routes.forEach(route => {
@@ -126,9 +141,14 @@ Galaxy.Router = /** @class */ (function (G) {
       this.detect();
     },
 
+    /**
+     *
+     * @param {string} path
+     * @param {boolean} replace
+     */
     navigateToPath: function (path, replace) {
       if (path.indexOf('/') !== 0) {
-        throw console.error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
+        throw new Error('Path argument is not starting with a `/`\nplease use `/' + path + '` instead of `' + path + '`');
       }
 
       if (path.indexOf(this.config.baseURL) !== 0) {
@@ -192,8 +212,9 @@ Galaxy.Router = /** @class */ (function (G) {
       return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
     },
 
-    onProceed: function () {
-
+    onTransition: function (handler) {
+      this.onTransitionFn = handler;
+      return this;
     },
 
     findMatchRoute: function (routes, hash, parentParams) {
@@ -231,9 +252,9 @@ Galaxy.Router = /** @class */ (function (G) {
       }
 
       const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0).reduce((a, b) => a.path.length > b.path.length ? a : b);
-      // debugger
       if (staticRoutes) {
         const routeValue = normalizedHash.slice(0, staticRoutes.path.length);
+        // debugger
         if (_this.resolvedRouteValue === routeValue) {
           // static routes don't have parameters
           return Object.assign(_this.data.parameters, _this.createClearParameters());
@@ -257,6 +278,8 @@ Galaxy.Router = /** @class */ (function (G) {
     callRoute: function (route, hash, params, parentParams) {
       const activeRoute = this.data.activeRoute;
       const activePath = this.data.activePath;
+
+      this.onTransitionFn.call(this, activePath, route.path, activeRoute, route);
       if (!route.redirectTo) {
         if (activeRoute) {
           activeRoute.active = false;
@@ -279,7 +302,9 @@ Galaxy.Router = /** @class */ (function (G) {
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        for (const key in route.viewports) {
+        // console.log(route.viewports, this.data.viewports)
+        const allViewports = this.data.viewports;
+        for (const key in allViewports) {
           let value = route.viewports[key] || null;
           if (typeof value === 'string') {
             value = {
@@ -293,12 +318,20 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.data.viewports[key] = value;
         }
-        // if (typeof route.viewports.main === 'string') {
-        //   this.data.viewports.main = this.data.activeModule = {
-        //     path: route.viewports.main
-        //   };
-        // } else {
-        //   this.data.viewports.main = this.data.activeModule = route.viewports.main;
+
+        // for (const key in route.viewports) {
+        //   let value = route.viewports[key] || null;
+        //   if (typeof value === 'string') {
+        //     value = {
+        //       path: value
+        //     };
+        //   }
+        //
+        //   if (key === 'main') {
+        //     this.data.activeModule = value;
+        //   }
+        //
+        //   this.data.viewports[key] = value;
         // }
 
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
@@ -350,7 +383,9 @@ Galaxy.Router = /** @class */ (function (G) {
     },
 
     detect: function () {
-      const hash = window.location.pathname || '/';
+      const pathname = window.location.pathname;
+      const hash = pathname ? pathname.substring(-1) !== '/' ? pathname + '/' : pathname : '/';
+      // const hash = pathname || '/';
       const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
 
       if (hash.indexOf(path) === 0) {

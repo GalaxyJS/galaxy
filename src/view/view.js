@@ -1153,7 +1153,7 @@ Galaxy.View = /** @class */(function (G) {
       let componentBlueprint = blueprint;
       if (key) {
         if (key in this._components) {
-          if (blueprint.props !== null && typeof blueprint.props !== 'object') {
+          if (blueprint.props && typeof blueprint.props !== 'object') {
             throw new Error('The `props` must be a literal object.');
           }
 

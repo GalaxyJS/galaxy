@@ -193,6 +193,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       // Destroy
       viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
       viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
+      viewNode.garbage.forEach(function (node) {
+        ViewNode.REMOVE_SELF.call(node, true);
+      });
       viewNode.hasBeenDestroyed();
     } else {
       // Detach
@@ -207,8 +210,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       viewNode.garbage.forEach(function (node) {
         ViewNode.REMOVE_SELF.call(node, true);
       });
-      viewNode.garbage = [];
     }
+
+    viewNode.garbage = [];
   };
 
   /**
@@ -314,25 +318,12 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   ViewNode.prototype = {
     onLeaveComplete: null,
 
-    // updateDump: function () {
-    //   if (this.parent) {
-    //     this.parent.garbage = this.parent.garbage.concat(this.garbage);
-    //     this.garbage = [];
-    //     // this.parent.updateDump();
-    //   }
-    // },
     dump: function () {
-      // this.garbage.push(this);
-      // this.parent.garbage = this.parent.garbage.concat(this.garbage);
-      // this.garbage = [];
-
-      // this.garbage.push(this);
       let original = this.parent;
       let targetGarbage = this.garbage;
+      // Find the garbage of the origin if
       while (original.transitory) {
         if (original.blueprint.hasOwnProperty('if') && !this.blueprint.hasOwnProperty('if')) {
-          // original.garbage = original.garbage.concat(_this.garbage);
-          // console.log(this.node)
           targetGarbage = original.garbage;
         }
         if (original.parent && original.parent.transitory) {
@@ -342,7 +333,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
       targetGarbage.push(this);
-      // debugger
       this.garbage = [];
     },
     query: function (selectors) {
@@ -399,11 +389,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         });
         return;
       }
-
-      // if(!flag && _this.node.parentNode && _this.node.classList.contains('sub-nav-container')) {
-      //   this.garbage;
-      //   debugger
-      // }
 
       _this.inDOM = flag;
       if (_this.virtual) return;
@@ -553,6 +538,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
+      // if(!_this.parent)debugger;
       if (_this.parent.destroyOrigin === 0) {
         _this.destroyOrigin = 1;
       } else {
@@ -581,6 +567,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.inDOM = false;
         _this.blueprint.node = undefined;
         _this.inputs = {};
+        _this.view = null;
+        _this.parent = null;
         _next();
       });
     },
@@ -605,6 +593,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     clean: function (hasAnimation, children) {
       children = children || this.getChildNodes();
       GV.DESTROY_NODES(children, hasAnimation);
+
+      DESTROY_IN_NEXT_FRAME(this.index, (_next) => {
+        let len = this.finalize.length;
+        for (let i = 0; i < len; i++) {
+          this.finalize[i].call(this);
+        }
+        this.finalize = [];
+        _next();
+      });
     },
 
     createNext: function (act) {

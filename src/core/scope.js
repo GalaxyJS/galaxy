@@ -30,6 +30,14 @@ Galaxy.Scope = /** @class */ (function () {
       }
     });
 
+    /**
+     * @property {{
+     *   'galaxy/view': Galaxy.View,
+     *   'galaxy/router': Galaxy.Router,
+     *   [libId]: any
+     * }} __imports__
+     */
+
     defProp(_this, '__imports__', {
       value: {},
       writable: false,
@@ -39,6 +47,8 @@ Galaxy.Scope = /** @class */ (function () {
 
     _this.on('module.destroy', this.destroy.bind(_this));
   }
+
+
 
   Scope.prototype = {
     /**
@@ -51,14 +61,15 @@ Galaxy.Scope = /** @class */ (function () {
     },
     /**
      *
-     * @param {string} libId Path or id of the addon you want to import
-     * @return {*}
+     * @param {('galaxy/view' | 'galaxy/router' | string)} libId Path or id of the addon you want to import
+     * @return {(Galaxy.View | Galaxy.Router | any)}
      */
     import: function (libId) {
       // if the id starts with `./` then we will replace it with the current scope path.
       if (libId.indexOf('./') === 0) {
         libId = libId.replace('./', this.uri.path);
       }
+
 
       return this.__imports__[libId];
     },

@@ -141,17 +141,11 @@
           }
 
           if (withParentResult) {
-            // if(this.node.classList.contains('sub-nav-container') && this.garbage.length)
-            //   debugger;
             // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
             const parent = this.parent;
             if (parent.transitory) {
-              // if (this.node.classList.contains('sub-nav-container') && this.garbage.length)
-              // console.log(viewNode.node);
-              //   debugger;
-              // We dump this _viewNode, so it gets removed when the leave's animation's origin node is detached.
+              // We dump _node, so it gets removed when the leave's animation's origin node is detached.
               // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a 'if'
-
               return this.dump();
             }
           }
@@ -203,6 +197,7 @@
               } else if (!type && viewNode.node.classList.contains(key)) {
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               }
+              // gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
             }
           });
         });
@@ -232,14 +227,8 @@
     }
 
     if (this.parent.transitory) {
-      // ToDo: Why this!?
-      if (!this.inDOM && this.node.parentNode) {
-        // console.log(this.inDOM, this.node, this.node.textContent);
-        // this.dump();
-        // this.node.parentNode.removeChild(this.node);
-        // G.View.ViewNode.REMOVE_SELF.call(this, false);
-      }
-
+      this.dump();
+      // console.info(this);
     } else {
       finalize();
     }
@@ -388,7 +377,7 @@
 
     let parentAnimationMeta = null;
     if (timelineName) {
-      const animationMeta = new AnimationMeta(timelineName, newConfig.labels);
+      const animationMeta = new AnimationMeta(timelineName);
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
@@ -470,6 +459,10 @@
   const TIMELINE_SETUP_MAP = {};
   G.setupTimeline = function (name, labels) {
     TIMELINE_SETUP_MAP[name] = labels;
+    const animationMeta = AnimationMeta.ANIMATIONS[name];
+    if (animationMeta) {
+      animationMeta.setupLabels(labels);
+    }
   };
   Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
 
@@ -500,6 +493,7 @@
         _this.children = [];
         _this.onCompletesActions = [];
       });
+      _this.parsePosition = (p) => p;
       _this.addTo = (tl) => {
         throw new Error('You can not use addTo with a custom timeline: ' + tl);
       };
@@ -507,10 +501,10 @@
       const exist = AnimationMeta.ANIMATIONS[name];
       if (exist) {
         if (!exist.timeline.getChildren().length && !exist.timeline.isActive()) {
-          exist.timeline.clear();
+          exist.timeline.clear(false);
           exist.timeline.invalidate();
         }
-
+        // console.log(name, 'aaaaaaaaaaaaaaaaa');
         return exist;
       }
 
@@ -527,16 +521,24 @@
           _this.awaits = [];
           _this.children = [];
           _this.onCompletesActions = [];
+          // if (name === 'main-nav-timeline') debugger
           AnimationMeta.ANIMATIONS[name] = null;
         }
       });
       _this.timeline.data = { name };
+      _this.labelCounter = 0;
+      _this.labelsMap = {};
 
       const labels = TIMELINE_SETUP_MAP[name];
       if (labels) {
-        for (const l in labels) {
-          _this.timeline.addLabel(l, labels[l]);
-        }
+        // console.log(_this.timeline.progress())
+        _this.setupLabels(labels);
+        // _this.timeline.play(0);
+        // console.log('\nsetup labels', _this.name, '\n\n')
+        // debugger
+        // for (const l in labels) {
+        //   _this.timeline.addLabel(l, labels[l]);
+        // }
       }
 
       AnimationMeta.ANIMATIONS[name] = this;
@@ -552,13 +554,40 @@
   }
 
   AnimationMeta.prototype = {
+    setupLabels: function (labels) {
+      for (const label in labels) {
+        const newLabel = 'label_' + this.labelCounter++;
+        const position = labels[label];
+        this.labelsMap[label] = newLabel;
+        this.timeline.addLabel(newLabel, typeof position === 'number' ? '+=' + position : position);
+      }
+      // debugger;
+    },
+    parsePosition: function (p) {
+      let position = this.labelsMap[p] || p;
+      let label = null;
+      if (position) {
+        if (position.indexOf('+=') !== -1) {
+          const parts = position.split('+=');
+          label = parts[0];
+        } else if (position.indexOf('-=') !== -1) {
+          const parts = position.split('-=');
+          label = parts[0];
+        }
+      }
+
+      if (label && label !== '<' && label !== '>') {
+        position = position.replace(label, this.labelsMap[label]);
+      }
+      return position;
+    },
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
     },
     addTo(parentAnimationMeta, positionInParent) {
       const children = parentAnimationMeta.timeline.getChildren(false);
       if (children.indexOf(this.timeline) === -1) {
-        parentAnimationMeta.timeline.add(this.timeline, positionInParent);
+        parentAnimationMeta.timeline.add(this.timeline, parentAnimationMeta.parsePosition(positionInParent));
       }
     },
 
@@ -602,17 +631,19 @@
         }
       }
 
+      const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
+      // console.log(position, tween._targets, config.position)
 
       if (tChildren.length === 0) {
-        _this.timeline.add(tween, (config.position && config.position.indexOf('=') === -1) ? config.position : null);
+        _this.timeline.add(tween, (position && position.indexOf('=') === -1) ? position : null);
       } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
-        _this.timeline.clear();
-        _this.timeline.add(tween, config.position);
+        _this.timeline.clear(false);
+        _this.timeline.add(tween, position);
       } else {
-        _this.timeline.add(tween, config.position);
+        _this.timeline.add(tween, position);
       }
 
       if (!_this.started && _this.name !== '<user-defined>') {

@@ -67,6 +67,15 @@
     }
 
     viewNode.clean(true);
+
+    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, (_next) => {
+    //   let len = viewNode.finalize.length;
+    //   for (let i = 0; i < len; i++) {
+    //     viewNode.finalize[i].call(viewNode);
+    //   }
+    //   viewNode.finalize = [];
+    //   _next();
+    // });
   }
 
   function module_loader(viewNode, cache, moduleMeta, _next) {
@@ -100,7 +109,7 @@
       element: viewNode
     }).then(function (module) {
       cache.module = module;
-      viewNode.node.setAttribute('module', module.systemId);
+      viewNode.node.setAttribute('module', module.path);
       module.start();
       _next();
     }).catch(function (response) {

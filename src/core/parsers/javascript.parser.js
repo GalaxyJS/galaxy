@@ -4,7 +4,7 @@
   function parser(content) {
     const imports = [];
     const unique = [];
-    let parsedContent = content.replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
+    let parsedContent = content.replace(/^\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
       let query = path.match(/([\S]+)/gm);
       let pathURL = query[query.length - 1];
       if (unique.indexOf(pathURL) !== -1) {
