@@ -1176,18 +1176,15 @@ Galaxy.View = /** @class */(function (G) {
       };
     },
 
-    enterKeyframe: function (onComplete, timeline, duration) {
-      if (arguments.length <= 2) {
-        duration = timeline;
-        timeline = onComplete;
-        onComplete = View.EMPTY_CALL;
-      }
-
+    enterKeyframe: function (onComplete, timeline, durOrPos) {
       let position = undefined;
-      if (typeof timeline === 'string' && timeline.indexOf(':') !== -1) {
-        const parts = timeline.split(':');
-        timeline = parts[0];
-        position = parts[1];
+      let duration = durOrPos || .01;
+      if (typeof timeline === 'number') {
+        duration = timeline;
+        timeline = null;
+      } else if (typeof timeline === 'string') {
+        position = durOrPos;
+        duration = .01;
       }
 
       return {
@@ -1195,7 +1192,7 @@ Galaxy.View = /** @class */(function (G) {
         text: 'keyframe:enter',
         animations: {
           enter: {
-            duration: duration !== undefined ? duration : .01,
+            duration,
             timeline,
             position,
             onComplete

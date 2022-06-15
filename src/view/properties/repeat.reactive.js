@@ -22,7 +22,8 @@
         positions: [],
         trackMap: [],
         scope: scope,
-        trackBy: value.trackBy
+        trackBy: value.trackBy,
+        onComplete: value.onComplete
       };
     },
 
@@ -354,6 +355,13 @@
         }
       }
 
+      if (config.onComplete) {
+        // debugger
+        View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
+          config.onComplete(nodes);
+          _next();
+        });
+      }
     }
   }
 
