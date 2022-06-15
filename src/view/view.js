@@ -1200,14 +1200,25 @@ Galaxy.View = /** @class */(function (G) {
         }
       };
     },
-    leaveKeyframe: function (onComplete, timeline, duration) {
+    leaveKeyframe: function (onComplete, timeline, durOrPos) {
+      let position = undefined;
+      let duration = durOrPos || .01;
+      if (typeof timeline === 'number') {
+        duration = timeline;
+        timeline = null;
+      } else if (typeof timeline === 'string') {
+        position = durOrPos;
+        duration = .01;
+      }
+
       return {
         tag: 'comment',
         text: 'keyframe:leave',
         animations: {
-          enter: {
-            duration: duration !== undefined ? duration : .01,
+          leave: {
+            duration,
             timeline,
+            position,
             onComplete
           }
         }
