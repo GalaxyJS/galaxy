@@ -17,19 +17,27 @@
         return true;
       }
 
-      const viewNode = this;
       // when value is an object
+      const viewNode = this;
       const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
       const observer = config.observer = new G.Observer(reactiveClasses);
+      const animations = viewNode.blueprint.animations || {};
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        viewNode.rendered.then(function () {
-          applyClasses(viewNode, reactiveClasses);
-          observer.onAll(() => {
+        viewNode.rendered.then(() => {
+          // ToDo: Don't know why this is here. It looks redundant
+          // applyClasses(viewNode, reactiveClasses);
+          observer.onAll((k) => {
+            if (animations['add:' + k] || animations['remove:' + k]) {
+              return;
+            }
             applyClasses(viewNode, reactiveClasses);
           });
         });
       } else {
-        observer.onAll(() => {
+        observer.onAll((k) => {
+          if (animations['add:' + k] || animations['remove:' + k]) {
+            return;
+          }
           applyClasses(viewNode, reactiveClasses);
         });
       }
@@ -68,7 +76,7 @@
 
       // when value is an object
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
-        viewNode.rendered.then(function () {
+        viewNode.rendered.then(() => {
           applyClasses(viewNode, value);
         });
       } else {
@@ -102,7 +110,6 @@
       return;
     }
 
-    // viewNode.node.className = newClasses.join(' ');
     G.View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
       viewNode.node.className = newClasses.join(' ');
       _next();

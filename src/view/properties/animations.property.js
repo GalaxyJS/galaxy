@@ -193,11 +193,16 @@
 
             if (animationDescription) {
               if (type && !viewNode.node.classList.contains(key)) {
+                AnimationMeta.setupOnComplete(animationDescription, () => {
+                  viewNode.node.classList.add(key);
+                });
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               } else if (!type && viewNode.node.classList.contains(key)) {
+                AnimationMeta.setupOnComplete(animationDescription, () => {
+                  viewNode.node.classList.remove(key);
+                });
                 AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
               }
-              // gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
             }
           });
         });
@@ -345,6 +350,20 @@
     }
 
     return step;
+  };
+
+  AnimationMeta.setupOnComplete = function (description, onComplete) {
+    if (description.onComplete) {
+      const userDefinedOnComplete = description.onComplete;
+      description.onComplete = function () {
+        userDefinedOnComplete();
+        onComplete();
+      };
+    } else {
+      description.onComplete = () => {
+        onComplete();
+      };
+    }
   };
 
   /**
@@ -504,7 +523,6 @@
           exist.timeline.clear(false);
           exist.timeline.invalidate();
         }
-        // console.log(name, 'aaaaaaaaaaaaaaaaa');
         return exist;
       }
 
@@ -521,7 +539,6 @@
           _this.awaits = [];
           _this.children = [];
           _this.onCompletesActions = [];
-          // if (name === 'main-nav-timeline') debugger
           AnimationMeta.ANIMATIONS[name] = null;
         }
       });
