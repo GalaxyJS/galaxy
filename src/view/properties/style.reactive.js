@@ -84,7 +84,7 @@
             node.style[key] = v;
           });
         } else if (typeof val === 'function') {
-          node.style[key] = val.call(node.__vn__);
+          node.style[key] = val.call(node.__vn__, node.__vn__.data);
         } else {
           node.style[key] = val;
         }
