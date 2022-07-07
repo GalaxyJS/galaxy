@@ -401,11 +401,11 @@
       if (newConfig.addTo) {
         parentAnimationMeta = new AnimationMeta(newConfig.addTo);
 
-        // const children = parentAnimationMeta.timeline.getChildren(false);
-        // if (children.indexOf(animationMeta.timeline) === -1) {
-        //   parentAnimationMeta.timeline.add(animationMeta.timeline, newConfig.positionInParent);
-        // }
-        animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
+        const children = parentAnimationMeta.timeline.getChildren(false);
+        if (children.indexOf(animationMeta.timeline) === -1) {
+          parentAnimationMeta.timeline.add(animationMeta.timeline, parentAnimationMeta.parsePosition(newConfig.positionInParent));
+        }
+        // animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
       }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
@@ -548,14 +548,7 @@
 
       const labels = TIMELINE_SETUP_MAP[name];
       if (labels) {
-        // console.log(_this.timeline.progress())
         _this.setupLabels(labels);
-        // _this.timeline.play(0);
-        // console.log('\nsetup labels', _this.name, '\n\n')
-        // debugger
-        // for (const l in labels) {
-        //   _this.timeline.addLabel(l, labels[l]);
-        // }
       }
 
       AnimationMeta.ANIMATIONS[name] = this;
@@ -651,7 +644,6 @@
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
-      // console.log(position, tween._targets, config.position)
 
       if (tChildren.length === 0) {
         _this.timeline.add(tween, (position && position.indexOf('=') === -1) ? position : null);

@@ -463,7 +463,7 @@ Galaxy.View = /** @class */(function (G) {
     diff = diff + (now - preTS);
     preTS = now;
 
-    if (diff > 3) {
+    if (diff > 2) {
       diff = 0;
       if (too_many_jumps) {
         clearTimeout(too_many_jumps);
@@ -558,6 +558,36 @@ Galaxy.View = /** @class */(function (G) {
       }
     });
   }
+
+  // function update_on_animation_frame() {
+  //   if (last_dom_manipulation_id) {
+  //     clearTimeout(last_dom_manipulation_id);
+  //     last_dom_manipulation_id = null;
+  //   }
+  //
+  //   dom_manipulation_order = arrConcat(destroy_order, create_order);
+  //   last_dom_manipulation_id = setTimeout(() => {
+  //     if (manipulation_done) {
+  //       manipulation_done = false;
+  //       next_batch.call(dom_manipulation_order);
+  //     }
+  //   });
+  // }
+  //
+  // function update_on_timeout() {
+  //   if (last_dom_manipulation_id) {
+  //     cancelAnimationFrame(last_dom_manipulation_id);
+  //     last_dom_manipulation_id = null;
+  //   }
+  //
+  //   dom_manipulation_order = arrConcat(destroy_order, create_order);
+  //   last_dom_manipulation_id = requestAnimationFrame(() => {
+  //     if (manipulation_done) {
+  //       manipulation_done = false;
+  //       next_batch.call(dom_manipulation_order);
+  //     }
+  //   });
+  // }
 
   /**
    *
@@ -1176,6 +1206,19 @@ Galaxy.View = /** @class */(function (G) {
       };
     },
 
+    /**
+     *
+     * @param {{enter?: AnimationConfig, leave?:AnimationConfig}} animations
+     * @returns Blueprint
+     */
+    addTimeline: function (animations) {
+      return {
+        tag: 'comment',
+        text: 'timeline',
+        animations
+      };
+    },
+
     enterKeyframe: function (onComplete, timeline, durOrPos) {
       let position = undefined;
       let duration = durOrPos || .01;
@@ -1265,7 +1308,7 @@ Galaxy.View = /** @class */(function (G) {
 
         return nodes;
       } else if (typeof blueprint === 'function') {
-        return blueprint();
+        return blueprint.call(_this);
       } else if (blueprint instanceof Array) {
         const result = [];
         for (i = 0, len = blueprint.length; i < len; i++) {
