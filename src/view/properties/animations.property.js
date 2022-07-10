@@ -233,7 +233,6 @@
 
     if (this.parent.transitory) {
       this.dump();
-      // console.info(this);
     } else {
       finalize();
     }

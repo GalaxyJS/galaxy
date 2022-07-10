@@ -175,7 +175,7 @@ Galaxy.View = /** @class */(function (G) {
     return map;
   };
 
-  View.EMPTY_CALL = function () {
+  View.EMPTY_CALL = function EMPTY_CALL() {
   };
 
   View.GET_MAX_INDEX = function () {
@@ -1302,8 +1302,12 @@ Galaxy.View = /** @class */(function (G) {
         content.innerHTML = blueprint;
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
-          // View.ViewNode.convertToSimpleNode(node);
-          parent.node.appendChild(node);
+          // parent.node.appendChild(node);
+          const viewNode = new G.View.ViewNode({ tag: node }, parent, _this);
+          parent.registerChild(viewNode, position);
+          node.parentNode.removeChild(node);
+          View.setPropertyForNode(viewNode, 'animations', {});
+          viewNode.setInDOM(true);
         });
 
         return nodes;
