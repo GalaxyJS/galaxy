@@ -22,12 +22,13 @@
       const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
       const observer = config.observer = new G.Observer(reactiveClasses);
       const animations = viewNode.blueprint.animations || {};
+      const gsapExist  = !!window.gsap.config;
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(() => {
           // ToDo: Don't know why this is here. It looks redundant
           // applyClasses(viewNode, reactiveClasses);
           observer.onAll((k) => {
-            if (animations['add:' + k] || animations['remove:' + k]) {
+            if (gsapExist && (animations['add:' + k] || animations['remove:' + k])) {
               return;
             }
             applyClasses(viewNode, reactiveClasses);
@@ -35,7 +36,7 @@
         });
       } else {
         observer.onAll((k) => {
-          if (animations['add:' + k] || animations['remove:' + k]) {
+          if (gsapExist && (animations['add:' + k] || animations['remove:' + k])) {
             return;
           }
           applyClasses(viewNode, reactiveClasses);
