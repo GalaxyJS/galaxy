@@ -1,6 +1,7 @@
 /* global Galaxy, gsap */
 (function (G) {
   if (!window.gsap) {
+    G.setupTimeline = function () {};
     G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
       type: 'prop',
       key: 'animations',
