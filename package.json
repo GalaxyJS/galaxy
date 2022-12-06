@@ -30,7 +30,7 @@
     "gulp-concat": "^2.6.0",
     "gulp-documentation": "^3.1.0",
     "gulp-jasmine": "^2.4.2",
-    "gulp-jasmine-browser": "^1.7.1",
+    "gulp-jasmine-browser": "^4.1.0",
     "gulp-minify": "^3.1.0",
     "gulp-mocha": "^3.0.1",
     "gulp-open": "^2.0.0",
