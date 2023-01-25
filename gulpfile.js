@@ -10,17 +10,12 @@ const concat = require('gulp-concat');
 
 let sources = {
   galaxy: [
-    // Polyfills
-    'src/core/promise.js',
     // Core
     'src/core/core.js',
     'src/core/**/*.js',
     // View
-    'src/view/view.js',
     'src/view/**/*.js',
-    // Router
-    'src/router/router.js',
-    // Module addons
+    // Addons
     'src/addons/*.js'
   ]
 };

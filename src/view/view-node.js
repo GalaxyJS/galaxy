@@ -564,10 +564,10 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.properties.clear();
         _this.finalize = [];
         _this.inDOM = false;
-        _this.blueprint.node = undefined;
         _this.inputs = {};
         _this.view = null;
         _this.parent = null;
+        Reflect.deleteProperty(_this.blueprint, 'node');
         _next();
       });
     },

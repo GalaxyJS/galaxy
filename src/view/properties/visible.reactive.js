@@ -6,27 +6,27 @@
     key: 'visible',
     getConfig: function () {
       return {
-        throttleId: null,
+        throttleId: 0,
       };
     },
     install: function () {
       return true;
     },
     update: function (config, value, expression) {
-      if (config.throttleId) {
-        window.cancelAnimationFrame(config.throttleId);
+      if (config.throttleId !== 0) {
+        window.clearTimeout(config.throttleId);
         config.throttleId = 0;
       }
       /** @type {Galaxy.View.ViewNode} */
-      const _this = this;
       if (expression) {
         value = expression();
       }
 
-      config.throttleId = window.requestAnimationFrame(() => {
-        _this.rendered.then(() => {
-          if (_this.visible !== value) {
-            _this.setVisibility(value);
+      // setTimeout is called before requestAnimationTimeFrame
+      config.throttleId = window.setTimeout(() => {
+        this.rendered.then(() => {
+          if (this.visible !== value) {
+            this.setVisibility(value);
           }
         });
       });

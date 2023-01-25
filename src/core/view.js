@@ -257,11 +257,10 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         if (!this.blueprint.module) {
-          const node = this.node;
           config.reactiveData = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
           const observer = new G.Observer(config.reactiveData);
           observer.onAll((key, value) => {
-            apply_node_dataset(node, config.reactiveData);
+            apply_node_dataset(this.node, config.reactiveData);
           });
 
           return;

@@ -35,7 +35,7 @@
     }
 
     children.forEach((child) => {
-      if (child.tag === 'comment') return;
+      if (typeof child === 'string' || child.tag === 'comment') return;
       child[ids.content] = '';
 
       if (child.children) {

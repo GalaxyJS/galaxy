@@ -20,12 +20,13 @@
     "start-spa": "ws --spa index.html --config-file lws.config.js"
   },
   "engines": {
-    "node": "^13.0.0"
+    "node": ">=13.0.0",
+    "npm": ">=7.0.0"
   },
   "contributors": [],
   "devDependencies": {
-    "@babel/core": "^7.4.5",
-    "@babel/preset-env": "^7.4.5",
+    "@babel/core": "^7.20.12",
+    "@babel/preset-env": "^7.20.2",
     "eslint": "^5.16.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",

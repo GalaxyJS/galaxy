@@ -14,7 +14,7 @@ Galaxy.View.ArrayChange = /** @class */ (function (G) {
     this.params = [];
     this.type = 'reset';
 
-    Object.preventExtensions(this);
+    // Object.preventExtensions(this);
   }
 
   ArrayChange.prototype = {

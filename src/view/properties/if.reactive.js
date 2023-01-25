@@ -6,7 +6,7 @@
     key: 'if',
     getConfig: function () {
       return {
-        throttleId: null,
+        throttleId: 0,
       };
     },
     install: function (config) {
@@ -20,29 +20,30 @@
      * @param expression
      */
     update: function (config, value, expression) {
-      const viewNode = this;
+      if (config.throttleId !== 0) {
+        window.clearTimeout(config.throttleId);
+        config.throttleId = 0;
+      }
+
       if (expression) {
         value = expression();
       }
 
       value = Boolean(value);
 
-      if (!viewNode.rendered.resolved && !value) {
-        viewNode.blueprint.renderConfig.renderDetached = true;
+      if (!this.rendered.resolved && !value) {
+        this.blueprint.renderConfig.renderDetached = true;
       }
 
-      // if(viewNode.rendered.resolved) {
-      //   if (viewNode.inDOM !== value) {
-      //     viewNode.setInDOM(value);
-      //   }
-      // } else {
-      viewNode.rendered.then(() => {
-        viewNode.node.setAttribute('data-if', value);
-        if (viewNode.inDOM !== value) {
-          viewNode.setInDOM(value);
-        }
+      // setTimeout is called before requestAnimationTimeFrame
+      config.throttleId = setTimeout(() => {
+        this.rendered.then(() => {
+          // this.node.setAttribute('data-if', value);
+          if (this.inDOM !== value) {
+            this.setInDOM(value);
+          }
+        });
       });
-      // }
     }
   };
 
