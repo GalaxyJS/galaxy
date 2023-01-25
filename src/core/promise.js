@@ -10,10 +10,11 @@
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
       (global.ES6Promise = factory());
-}(typeof self !== 'undefined' ? self : this, (function () { 'use strict';
+}(this, (function () {
+  'use strict';
 
   function objectOrFunction(x) {
-    let type = typeof x;
+    var type = typeof x;
     return x !== null && (type === 'object' || type === 'function');
   }
 
@@ -21,9 +22,7 @@
     return typeof x === 'function';
   }
 
-
-
-  let _isArray = void 0;
+  var _isArray = void 0;
   if (Array.isArray) {
     _isArray = Array.isArray;
   } else {
@@ -32,13 +31,13 @@
     };
   }
 
-  let isArray = _isArray;
+  var isArray = _isArray;
 
-  let len = 0;
-  let vertxNext = void 0;
-  let customSchedulerFn = void 0;
+  var len = 0;
+  var vertxNext = void 0;
+  var customSchedulerFn = void 0;
 
-  let asap = function asap(callback, arg) {
+  var asap = function asap(callback, arg) {
     queue[len] = callback;
     queue[len + 1] = arg;
     len += 2;
@@ -62,15 +61,15 @@
     asap = asapFn;
   }
 
-  let browserWindow = typeof window !== 'undefined' ? window : undefined;
-  let browserGlobal = browserWindow || {};
-  let BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-  let isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+  var browserWindow = typeof window !== 'undefined' ? window : undefined;
+  var browserGlobal = browserWindow || {};
+  var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+  var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
 
-  // test for web worker but not in IE10
-  let isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+// test for web worker but not in IE10
+  var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
 
-  // node
+// node
   function useNextTick() {
     // node version 0.10.x displays a deprecation warning when nextTick is used recursively
     // see https://github.com/cujojs/when/issues/410 for details
@@ -79,7 +78,7 @@
     };
   }
 
-  // vertx
+// vertx
   function useVertxTimer() {
     if (typeof vertxNext !== 'undefined') {
       return function () {
@@ -91,9 +90,9 @@
   }
 
   function useMutationObserver() {
-    let iterations = 0;
-    let observer = new BrowserMutationObserver(flush);
-    let node = document.createTextNode('');
+    var iterations = 0;
+    var observer = new BrowserMutationObserver(flush);
+    var node = document.createTextNode('');
     observer.observe(node, { characterData: true });
 
     return function () {
@@ -101,9 +100,9 @@
     };
   }
 
-  // web worker
+// web worker
   function useMessageChannel() {
-    let channel = new MessageChannel();
+    var channel = new MessageChannel();
     channel.port1.onmessage = flush;
     return function () {
       return channel.port2.postMessage(0);
@@ -113,17 +112,18 @@
   function useSetTimeout() {
     // Store setTimeout reference so es6-promise will be unaffected by
     // other code modifying setTimeout (like sinon.useFakeTimers())
-    let globalSetTimeout = setTimeout;
+    var globalSetTimeout = setTimeout;
     return function () {
       return globalSetTimeout(flush, 1);
     };
   }
 
   var queue = new Array(1000);
+
   function flush() {
-    for (let i = 0; i < len; i += 2) {
-      let callback = queue[i];
-      let arg = queue[i + 1];
+    for (var i = 0; i < len; i += 2) {
+      var callback = queue[i];
+      var arg = queue[i + 1];
 
       callback(arg);
 
@@ -136,7 +136,7 @@
 
   function attemptVertx() {
     try {
-      let vertx = Function('return this')().require('vertx');
+      var vertx = Function('return this')().require('vertx');
       vertxNext = vertx.runOnLoop || vertx.runOnContext;
       return useVertxTimer();
     } catch (e) {
@@ -145,7 +145,7 @@
   }
 
   var scheduleFlush = void 0;
-  // Decide what async method to use to triggering processing of queued callbacks:
+// Decide what async method to use to triggering processing of queued callbacks:
   if (isNode) {
     scheduleFlush = useNextTick();
   } else if (BrowserMutationObserver) {
@@ -159,19 +159,18 @@
   }
 
   function then(onFulfillment, onRejection) {
-    let parent = this;
+    var parent = this;
 
-    let child = new this.constructor(noop);
+    var child = new this.constructor(noop);
 
     if (child[PROMISE_ID] === undefined) {
       makePromise(child);
     }
 
-    let _state = parent._state;
-
+    var _state = parent._state;
 
     if (_state) {
-      let callback = arguments[_state - 1];
+      var callback = arguments[_state - 1];
       asap(function () {
         return invokeCallback(_state, child, callback, parent._result);
       });
@@ -215,13 +214,13 @@
    */
   function resolve$1(object) {
     /*jshint validthis:true */
-    let Constructor = this;
+    var Constructor = this;
 
     if (object && typeof object === 'object' && object.constructor === Constructor) {
       return object;
     }
 
-    let promise = new Constructor(noop);
+    var promise = new Constructor(noop);
     resolve(promise, object);
     return promise;
   }
@@ -230,9 +229,9 @@
 
   function noop() {}
 
-  let PENDING = void 0;
-  let FULFILLED = 1;
-  let REJECTED = 2;
+  var PENDING = void 0;
+  var FULFILLED = 1;
+  var REJECTED = 2;
 
   function selfFulfillment() {
     return new TypeError('You cannot resolve a promise with itself');
@@ -252,8 +251,8 @@
 
   function handleForeignThenable(promise, thenable, then$$1) {
     asap(function (promise) {
-      let sealed = false;
-      let error = tryThen(then$$1, thenable, function (value) {
+      var sealed = false;
+      var error = tryThen(then$$1, thenable, function (value) {
         if (sealed) {
           return;
         }
@@ -311,7 +310,7 @@
     if (promise === value) {
       reject(promise, selfFulfillment());
     } else if (objectOrFunction(value)) {
-      let then$$1 = void 0;
+      var then$$1 = void 0;
       try {
         then$$1 = value.then;
       } catch (error) {
@@ -356,9 +355,8 @@
   }
 
   function subscribe(parent, child, onFulfillment, onRejection) {
-    let _subscribers = parent._subscribers;
-    let length = _subscribers.length;
-
+    var _subscribers = parent._subscribers;
+    var length = _subscribers.length;
 
     parent._onerror = null;
 
@@ -372,18 +370,18 @@
   }
 
   function publish(promise) {
-    let subscribers = promise._subscribers;
-    let settled = promise._state;
+    var subscribers = promise._subscribers;
+    var settled = promise._state;
 
     if (subscribers.length === 0) {
       return;
     }
 
-    let child = void 0,
+    var child = void 0,
       callback = void 0,
       detail = promise._result;
 
-    for (let i = 0; i < subscribers.length; i += 3) {
+    for (var i = 0; i < subscribers.length; i += 3) {
       child = subscribers[i];
       callback = subscribers[i + settled];
 
@@ -398,7 +396,7 @@
   }
 
   function invokeCallback(settled, promise, callback, detail) {
-    let hasCallback = isFunction(callback),
+    var hasCallback = isFunction(callback),
       value = void 0,
       error = void 0,
       succeeded = true;
@@ -444,7 +442,8 @@
     }
   }
 
-  let id = 0;
+  var id = 0;
+
   function nextId() {
     return id++;
   }
@@ -460,7 +459,7 @@
     return new Error('Array Methods must be provided an Array');
   }
 
-  let Enumerator = function () {
+  var Enumerator = function () {
     function Enumerator(Constructor, input) {
       this._instanceConstructor = Constructor;
       this.promise = new Constructor(noop);
@@ -490,20 +489,19 @@
     }
 
     Enumerator.prototype._enumerate = function _enumerate(input) {
-      for (let i = 0; this._state === PENDING && i < input.length; i++) {
+      for (var i = 0; this._state === PENDING && i < input.length; i++) {
         this._eachEntry(input[i], i);
       }
     };
 
     Enumerator.prototype._eachEntry = function _eachEntry(entry, i) {
-      let c = this._instanceConstructor;
-      let resolve$$1 = c.resolve;
-
+      var c = this._instanceConstructor;
+      var resolve$$1 = c.resolve;
 
       if (resolve$$1 === resolve$1) {
-        let _then = void 0;
-        let error = void 0;
-        let didError = false;
+        var _then = void 0;
+        var error = void 0;
+        var didError = false;
         try {
           _then = entry.then;
         } catch (e) {
@@ -516,8 +514,8 @@
         } else if (typeof _then !== 'function') {
           this._remaining--;
           this._result[i] = entry;
-        } else if (c === Promise$1) {
-          let promise = new c(noop);
+        } else if (c === Promise$2) {
+          var promise = new c(noop);
           if (didError) {
             reject(promise, error);
           } else {
@@ -535,8 +533,7 @@
     };
 
     Enumerator.prototype._settledAt = function _settledAt(state, i, value) {
-      let promise = this.promise;
-
+      var promise = this.promise;
 
       if (promise._state === PENDING) {
         this._remaining--;
@@ -554,7 +551,7 @@
     };
 
     Enumerator.prototype._willSettleAt = function _willSettleAt(promise, i) {
-      let enumerator = this;
+      var enumerator = this;
 
       subscribe(promise, undefined, function (value) {
         return enumerator._settledAt(FULFILLED, i, value);
@@ -684,7 +681,7 @@
    */
   function race(entries) {
     /*jshint validthis:true */
-    let Constructor = this;
+    var Constructor = this;
 
     if (!isArray(entries)) {
       return new Constructor(function (_, reject) {
@@ -692,8 +689,8 @@
       });
     } else {
       return new Constructor(function (resolve, reject) {
-        let length = entries.length;
-        for (let i = 0; i < length; i++) {
+        var length = entries.length;
+        for (var i = 0; i < length; i++) {
           Constructor.resolve(entries[i]).then(resolve, reject);
         }
       });
@@ -736,8 +733,8 @@
    */
   function reject$1(reason) {
     /*jshint validthis:true */
-    let Constructor = this;
-    let promise = new Constructor(noop);
+    var Constructor = this;
+    var promise = new Constructor(noop);
     reject(promise, reason);
     return promise;
   }
@@ -854,7 +851,7 @@
    @constructor
    */
 
-  var Promise$1 = function () {
+  var Promise$2 = function () {
     function Promise(resolver) {
       this[PROMISE_ID] = nextId();
       this._result = this._state = undefined;
@@ -1051,7 +1048,6 @@
      @return {Promise}
      */
 
-
     Promise.prototype.catch = function _catch(onRejection) {
       return this.then(null, onRejection);
     };
@@ -1095,10 +1091,9 @@
      @return {Promise}
      */
 
-
     Promise.prototype.finally = function _finally(callback) {
-      let promise = this;
-      let constructor = promise.constructor;
+      var promise = this;
+      var constructor = promise.constructor;
 
       if (isFunction(callback)) {
         return promise.then(function (value) {
@@ -1118,18 +1113,18 @@
     return Promise;
   }();
 
-  Promise$1.prototype.then = then;
-  Promise$1.all = all;
-  Promise$1.race = race;
-  Promise$1.resolve = resolve$1;
-  Promise$1.reject = reject$1;
-  Promise$1._setScheduler = setScheduler;
-  Promise$1._setAsap = setAsap;
-  Promise$1._asap = asap;
+  Promise$2.prototype.then = then;
+  Promise$2.all = all;
+  Promise$2.race = race;
+  Promise$2.resolve = resolve$1;
+  Promise$2.reject = reject$1;
+  Promise$2._setScheduler = setScheduler;
+  Promise$2._setAsap = setAsap;
+  Promise$2._asap = asap;
 
   /*global self*/
   function polyfill() {
-    let local = void 0;
+    var local = void 0;
 
     if (typeof global !== 'undefined') {
       local = global;
@@ -1143,10 +1138,10 @@
       }
     }
 
-    let P = local.Promise;
+    var P = local.Promise;
 
     if (P) {
-      let promiseToString = null;
+      var promiseToString = null;
       try {
         promiseToString = Object.prototype.toString.call(P.resolve());
       } catch (e) {
@@ -1158,14 +1153,15 @@
       }
     }
 
-    local.Promise = Promise$1;
+    local.Promise = Promise$2;
   }
 
   // Strange compat..
-  Promise$1.polyfill = polyfill;
-  Promise$1.Promise = Promise$1;
+  Promise$2.polyfill = polyfill;
+  Promise$2.Promise = Promise$2;
 
-  return Promise$1;
+  Promise$2.polyfill();
+
+  return Promise$2;
 
 })));
-

@@ -11,7 +11,7 @@ const concat = require('gulp-concat');
 let sources = {
   galaxy: [
     // Polyfills
-    'src/polyfills/*.js',
+    'src/core/promise.js',
     // Core
     'src/core/core.js',
     'src/core/**/*.js',
@@ -30,7 +30,7 @@ const build = function (done) {
     gulp.src(sources.galaxy),
     concat('galaxy.js'),
     gulp.dest('dist/'),
-    // gulp.dest('site/assets/galaxyjs/'),
+    gulp.dest('site/assets/galaxyjs/'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
