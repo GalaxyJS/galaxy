@@ -19,6 +19,9 @@
   "scripts": {
     "start-spa": "ws --spa index.html --config-file lws.config.js"
   },
+  "engines": {
+    "node": "^13.0.0"
+  },
   "contributors": [],
   "devDependencies": {
     "@babel/core": "^7.4.5",

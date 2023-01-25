@@ -232,7 +232,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
           // This means that the property suppose to be an object and there is probably an active binds to it
           // the active bind could be in one of the ref so we have to check all the ref shadows
-          if (!thisRD) debugger
+          if (!thisRD) debugger;
           for (let i = 0, len = thisRD.refs.length; i < len; i++) {
             const ref = thisRD.refs[i];
             if (ref.shadow[key]) {
