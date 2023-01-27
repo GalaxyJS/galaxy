@@ -84,42 +84,21 @@
     /**
      *
      * @param {Galaxy.View.ViewNode} viewNode
-     * @param animationDescriptions
+     * @param animations
      */
-    update: function (viewNode, animationDescriptions) {
-      if (viewNode.virtual || !animationDescriptions) {
+    update: function (viewNode, animations) {
+      if (viewNode.virtual || !animations) {
         return;
       }
 
-      const enter = animationDescriptions.enter;
+      const enter = animations.enter;
       if (enter) {
         viewNode.populateEnterSequence = function () {
-          if (enter.withParent) {
-            // if(this.node.classList.contains('sub-nav-container'))
-            //   debugger;
-            // if parent has a enter animation, then ignore this node's animation
-            // so this node enters with its parent
-            if (hasParentEnterAnimation(this)) {
-              return gsap.set(this.node, AnimationMeta.parseStep(this, enter.to) || {});
-            }
-
-            const parent = this.parent;
-            // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
-            if (!parent.rendered.resolved) {
-              return;
-            }
-          }
-
-          const _node = this.node;
-          if (gsap.getTweensOf(_node).length) {
-            gsap.killTweensOf(_node);
-          }
-
-          AnimationMeta.installGSAPAnimation(this, 'enter', enter);
+          process_enter_animation(this, enter);
         };
       }
 
-      const leave = animationDescriptions.leave;
+      const leave = animations.leave;
       if (leave) {
         // We need an empty enter animation in order to have a proper behavior for if
         if (!enter && viewNode.blueprint.if) {
@@ -174,36 +153,29 @@
         viewNode.populateLeaveSequence = leave_with_parent.bind(viewNode);
       }
 
-      if (viewNode.cache.class && viewNode.cache.class.observer) {
+      const viewNodeCache = viewNode.cache;
+      if (viewNodeCache.class && viewNodeCache.class.observer) {
         viewNode.rendered.then(function () {
-          const classes = viewNode.cache.class.observer.context;
+          const classes = viewNodeCache.class.observer.context;
 
           // Apply final state for class animations
           for (const key in classes) {
             const type = Boolean(classes[key]);
-            const animationDescription = get_class_based_animation_description(animationDescriptions, type, key);
-            if (animationDescription) {
-              gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationDescription.to));
+            const animationConfig = get_class_based_animation_config(animations, type, key);
+            if (animationConfig) {
+              // debugger
+              gsap.set(viewNode.node, AnimationMeta.parseStep(viewNode, animationConfig.to));
+              // debugger
             }
           }
 
-          viewNode.cache.class.observer.onAll((key) => {
-            const type = Boolean(classes[key]);
-            const animationType = get_class_based_animation_type(type, key);
-            const animationDescription = get_class_based_animation_description(animationDescriptions, type, key);
+          viewNodeCache.class.observer.onAll((className) => {
+            const addOrRemove = Boolean(classes[className]);
+            const animationConfig = get_class_based_animation_config(animations, addOrRemove, className);
 
-            if (animationDescription) {
-              if (type && !viewNode.node.classList.contains(key)) {
-                AnimationMeta.setupOnComplete(animationDescription, () => {
-                  viewNode.node.classList.add(key);
-                });
-                AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
-              } else if (!type && viewNode.node.classList.contains(key)) {
-                AnimationMeta.setupOnComplete(animationDescription, () => {
-                  viewNode.node.classList.remove(key);
-                });
-                AnimationMeta.installGSAPAnimation(viewNode, animationType, animationDescription);
-              }
+            if (animationConfig) {
+              kill_tweens_by_class_name(viewNodeCache, className);
+              process_class_animation(viewNode, animationConfig, addOrRemove, className);
             }
           });
         });
@@ -211,20 +183,97 @@
     }
   };
 
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {AnimationConfig} animationConfig
+   * @returns {*}
+   */
+  function process_enter_animation(viewNode, animationConfig) {
+    if (animationConfig instanceof Array) {
+      animationConfig.forEach((a) => {
+        process_enter_animation(viewNode, a);
+      });
+    } else {
+      const _node = viewNode.node;
+      if (animationConfig.withParent) {
+        // if parent has an enter animation, then ignore viewNode's animation
+        // so viewNode can enter with its parent
+        if (hasParentEnterAnimation(viewNode)) {
+          return gsap.set(_node, AnimationMeta.parseStep(viewNode, animationConfig.to) || {});
+        }
+
+        const parent = viewNode.parent;
+        // if enter.withParent flag is there, then only apply animation to the nodes are rendered rendered
+        if (!parent.rendered.resolved) {
+          return;
+        }
+      }
+
+      if (gsap.getTweensOf(_node).length) {
+        gsap.killTweensOf(_node);
+      }
+
+      AnimationMeta.installGSAPAnimation(viewNode, 'enter', animationConfig);
+    }
+  }
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {AnimationConfig} animationConfig
+   * @param {boolean} addOrRemove
+   * @param {string} className
+   */
+  function process_class_animation(viewNode, animationConfig, addOrRemove, className) {
+    if (animationConfig instanceof Array) {
+      animationConfig.forEach((ac) => {
+        process_class_animation(viewNode, ac, addOrRemove, className);
+      });
+    } else {
+      const animationType = get_class_based_animation_type(addOrRemove, className);
+      const tweenKey = 'tween:' + className;
+      const tweenExist = Boolean(viewNode.cache[tweenKey]);
+
+      if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
+        AnimationMeta.setupOnComplete(animationConfig, () => {
+          viewNode.node.classList.add(className);
+        });
+      } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
+        AnimationMeta.setupOnComplete(animationConfig, () => {
+          viewNode.node.classList.remove(className);
+        });
+      }
+
+      viewNode.cache[tweenKey] = viewNode.cache[tweenKey] || [];
+      if (!animationConfig.timeline) {
+        viewNode.cache[tweenKey].push(AnimationMeta.installGSAPAnimation(viewNode, animationType, animationConfig));
+      }
+    }
+  }
+
+  function kill_tweens_by_class_name(list, className) {
+    const key = 'tween:' + className;
+    if (!list[key]) return;
+
+    list[key].forEach(t => t.kill());
+    Reflect.deleteProperty(list, key);
+  }
+
   function get_class_based_animation_type(type, key) {
     return type ? 'add:' + key : 'remove:' + key;
   }
 
   /**
    *
-   * @param animationDescriptions
+   * @param {*} animations
    * @param {boolean} type
    * @param {string} key
    * @returns {*}
    */
-  function get_class_based_animation_description(animationDescriptions, type, key) {
+  function get_class_based_animation_config(animations, type, key) {
     const animationKey = get_class_based_animation_type(type, key);
-    return animationDescriptions[animationKey];
+    return animations[animationKey];
   }
 
   function leave_with_parent(finalize) {
@@ -244,13 +293,13 @@
   /**
    *
    * @typedef {Object} AnimationConfig
+   * @property {boolean} [withParent]
    * @property {string} [timeline]
    * @property {string[]} [labels]
    * @property {Promise} [await]
    * @property {string|number} [startPosition]
    * @property {string|number} [positionInParent]
    * @property {string|number} [position]
-   * @property {number} [duration]
    * @property {object} [from]
    * @property {object} [to]
    * @property {string} [addTo]
@@ -266,11 +315,9 @@
     const node = viewNode.node;
     let from = AnimationMeta.parseStep(viewNode, config.from);
     let to = AnimationMeta.parseStep(viewNode, config.to);
-    const duration = AnimationMeta.parseStep(viewNode, config.duration) || 0;
 
     if (to) {
       to = Object.assign({}, to);
-      to.duration = duration;
       to.onComplete = finalize;
 
       if (config.onComplete) {
@@ -287,7 +334,6 @@
       tween = gsap.fromTo(node, from, to);
     } else if (from) {
       from = Object.assign({}, from);
-      from.duration = duration;
       from.onComplete = finalize;
 
       if (config.onComplete) {
@@ -309,12 +355,12 @@
       };
 
       tween = gsap.to(node, {
-        duration: duration,
+        duration: 0,
         onComplete: onComplete
       });
     } else {
       tween = gsap.to(node, {
-        duration: duration,
+        duration: 0,
         onComplete: finalize
       });
     }
@@ -349,7 +395,7 @@
       return step.call(node, node.data);
     }
 
-    return step;
+    return {...step};
   };
 
   AnimationMeta.setupOnComplete = function (description, onComplete) {
@@ -458,9 +504,9 @@
       if (animationMeta.type && animationMeta.type !== type && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
         newConfig.position = newConfig.startPosition;
       }
-      animationMeta.type = type;
 
-      animationMeta.add(viewNode, newConfig, finalize);
+      animationMeta.type = type;
+      const tween = animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and we have to resume it if it's not playing
@@ -470,8 +516,10 @@
           parentAnimationMeta.timeline.resume();
         }
       }
+
+      return tween;
     } else {
-      AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
+      return AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
     }
   };
 
@@ -571,7 +619,6 @@
         this.labelsMap[label] = newLabel;
         this.timeline.addLabel(newLabel, typeof position === 'number' ? '+=' + position : position);
       }
-      // debugger;
     },
     parsePosition: function (p) {
       let position = this.labelsMap[p] || p;
@@ -610,22 +657,15 @@
     add: function (viewNode, config, finalize) {
       const _this = this;
       let tween = null;
-      let duration = config.duration;
-      if (duration instanceof Function) {
-        duration = config.duration.call(viewNode);
-      }
 
       if (config.from && config.to) {
         const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
-        to.duration = duration || 0;
         tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
         const from = AnimationMeta.createStep(config.from, config.onStart, config.onComplete, viewNode);
-        from.duration = duration || 0;
         tween = gsap.from(viewNode.node, from);
       } else {
         const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
-        to.duration = duration || 0;
         tween = gsap.to(viewNode.node, to);
       }
 
@@ -659,6 +699,8 @@
         _this.started = true;
         _this.timeline.resume();
       }
+
+      return tween;
     }
   };
 })(Galaxy);
