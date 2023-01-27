@@ -244,11 +244,11 @@
           viewNode.node.classList.remove(className);
         });
       }
-
+      // debugger;
       viewNode.cache[tweenKey] = viewNode.cache[tweenKey] || [];
-      if (!animationConfig.timeline) {
-        viewNode.cache[tweenKey].push(AnimationMeta.installGSAPAnimation(viewNode, animationType, animationConfig));
-      }
+      // if (!animationConfig.timeline) {
+      viewNode.cache[tweenKey].push(AnimationMeta.installGSAPAnimation(viewNode, animationType, animationConfig));
+      // }
     }
   }
 
@@ -395,7 +395,7 @@
       return step.call(node, node.data);
     }
 
-    return {...step};
+    return { ...step };
   };
 
   AnimationMeta.setupOnComplete = function (description, onComplete) {
