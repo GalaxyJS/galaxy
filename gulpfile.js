@@ -26,6 +26,7 @@ const build = function (done) {
     concat('galaxy.js'),
     gulp.dest('dist/'),
     gulp.dest('site/assets/galaxyjs/'),
+    gulp.dest('galaxy-app-template/core/'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -44,6 +45,7 @@ const buildProduction = function (done) {
     uglify({ compress: true }),
     gulp.dest('dist/'),
     gulp.dest('site/assets/galaxyjs/'),
+    gulp.dest('galaxy-app-template/core/'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
