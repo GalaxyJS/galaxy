@@ -138,6 +138,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
   /**
    * @typedef {Object} Blueprint
+   * @memberOf Galaxy
    * @property {RenderConfig} [renderConfig]
    * @property {string} [tag]
    * @property {function} [_create]

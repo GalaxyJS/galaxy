@@ -17,7 +17,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "start-spa": "ws --spa index.html --config-file lws.config.js"
+    "site-development": "node site-development-server.mjs"
   },
   "engines": {
     "node": ">=13.0.0",
@@ -27,12 +27,14 @@
   "devDependencies": {
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
+    "@web/dev-server": "^0.1.35",
     "eslint": "^5.16.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-concat": "^2.6.1",
+    "gulp-preprocess": "^4.0.2",
     "gulp-uglify": "^3.0.2",
-    "local-web-server": "^4.2.1",
-    "pump": "^3.0.0"
+    "pump": "^3.0.0",
+    "watch": "^1.0.2"
   }
 }

@@ -59,8 +59,8 @@
       },
     };
 
-    console.info('%cPlease load GSAP - GreenSock in order to activate animations', 'color: yellowgreen; font-weight: bold;');
-    console.info('%cYou can implement most common animations by loading the following resources', 'color: yellowgreen;');
+    console.info('%cIn order to activate animations, load GSAP - GreenSock', 'color: yellowgreen; font-weight: bold;');
+    console.info('%cYou can implement most common animations by loading the following resources before galaxy.js', 'color: yellowgreen;');
     console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
     console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollToPlugin.min.js');
     console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/EasePack.min.js\n\n');

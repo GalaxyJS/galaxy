@@ -1361,7 +1361,7 @@ Galaxy.View = /** @class */(function (G) {
 
         return viewNode;
       } else {
-        throw Error('blueprint can not be null');
+        throw Error('blueprint should NOT be null');
       }
     }
   };

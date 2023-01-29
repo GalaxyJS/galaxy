@@ -6,27 +6,16 @@ const pump = require('pump');
 const uglify = require('gulp-uglify');
 const babel = require('gulp-babel');
 const concat = require('gulp-concat');
-// TTD
 
-let sources = {
-  galaxy: [
-    // Core
-    'src/core/core.js',
-    'src/core/**/*.js',
-    // View
-    'src/view/**/*.js',
-    // Addons
-    'src/addons/*.js'
-  ]
-};
+let sources = ['src/**/*.js'];
 
 const build = function (done) {
   pump([
-    gulp.src(sources.galaxy),
+    gulp.src(sources),
     concat('galaxy.js'),
     gulp.dest('dist/'),
     gulp.dest('site/assets/galaxyjs/'),
-    gulp.dest('galaxy-app-template/core/'),
+    gulp.dest('galaxy-app-template/src/assets/galaxyjs'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -39,13 +28,13 @@ const build = function (done) {
 
 const buildProduction = function (done) {
   pump([
-    gulp.src(sources.galaxy),
+    gulp.src(sources),
     concat('galaxy.min.js'),
     babel(),
     uglify({ compress: true }),
     gulp.dest('dist/'),
     gulp.dest('site/assets/galaxyjs/'),
-    gulp.dest('galaxy-app-template/core/'),
+    gulp.dest('galaxy-app-template/src/assets/galaxyjs'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -56,14 +45,14 @@ const buildProduction = function (done) {
   done();
 };
 
-const watchAndBuild = function (done) {
-  gulp.watch([
-    'src/**/*.*',
-    'site/**/*.html'
-  ], build);
-  done();
-};
+// const watchAndBuild = function (done) {
+//   gulp.watch([
+//     'src/**/*.*',
+//     'site/**/*.html'
+//   ], build);
+//   done();
+// };
 
 gulp.task('build-galaxy', build);
 gulp.task('build-galaxy-production', buildProduction);
-gulp.task('watch-and-build', gulp.series(build, watchAndBuild));
+// gulp.task('watch-and-build', gulp.series(build, watchAndBuild));
