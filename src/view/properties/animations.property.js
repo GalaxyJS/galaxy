@@ -131,7 +131,17 @@
             const type = Boolean(classes[key]);
             const animationConfig = get_class_based_animation_config(animations, type, key);
             if (animationConfig) {
-              gsap.set(viewNode.node, Object.assign({}, animationConfig.to || {}));
+              if (animationConfig.to.keyframes instanceof Array) {
+                for (let i = 0, len = animationConfig.to.keyframes.length; i < len; i++) {
+                  gsap.set(viewNode.node, Object.assign({}, animationConfig.to.keyframes[i] || {}));
+                }
+              } else {
+                gsap.set(viewNode.node, Object.assign({}, animationConfig.to || {}));
+              }
+
+              if (type) {
+                viewNode.node.classList.add(key);
+              }
             }
           }
 

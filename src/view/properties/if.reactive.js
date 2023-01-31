@@ -31,7 +31,7 @@
 
       value = Boolean(value);
 
-      if (!this.rendered.resolved && !value) {
+      if (!this.rendered.resolved && !this.inDOM && !value) {
         this.blueprint.renderConfig.renderDetached = true;
       }
 
