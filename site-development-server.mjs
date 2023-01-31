@@ -29,7 +29,7 @@ const build = function (done) {
 const watchAndBuild = function (done) {
   gulp.watch([
     'src/**/*.*',
-    'site/**/*.html'
+    // 'site/**/*.html'
   ], build);
   done();
 };

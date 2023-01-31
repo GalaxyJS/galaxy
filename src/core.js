@@ -75,7 +75,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
           const v = obj[i];
-          if (v instanceof Promise) {
+          // Some objects can not be cloned and must be passed by reference
+          if (v instanceof Promise || v instanceof Galaxy.Router) {
             clone[i] = v;
           } else if (typeof (v) === 'object' && v !== null) {
             if (i === 'animations' && v && typeof v === 'object') {

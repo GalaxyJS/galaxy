@@ -52,6 +52,7 @@ Galaxy.Router = /** @class */ (function (G) {
    */
   function Router(scope, module) {
     const _this = this;
+    _this.__singleton__ = true;
     _this.config = {
       baseURL: Router.BASE_URL
     };
@@ -82,6 +83,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.routesMap = null;
     _this.data = {
       routes: [],
+      navs: [],
       activeRoute: null,
       activePath: null,
       activeModule: null,
@@ -131,6 +133,7 @@ Galaxy.Router = /** @class */ (function (G) {
       });
 
       this.data.routes = this.routes;
+      this.data.navs = this.routes.filter(r => !r.hidden);
 
       return this;
     },

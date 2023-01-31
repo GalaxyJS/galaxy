@@ -141,6 +141,8 @@
 
               if (type) {
                 viewNode.node.classList.add(key);
+              } else {
+                viewNode.node.classList.remove(key);
               }
             }
           }

@@ -1008,6 +1008,17 @@ Galaxy.View = /** @class */(function (G) {
     for (let i = 0, len = keys.length; i < len; i++) {
       attributeName = keys[i];
       attributeValue = subjectsClone[attributeName];
+
+      // Object that have __singleton property will be ignored
+      if (attributeValue.__singleton__) {
+        continue;
+      }
+
+      // if (attributeValue instanceof Galaxy.Router) {
+      //   console.log(attributeName, attributeValue)
+      //   continue;
+      // }
+
       const bindings = View.getBindings(attributeValue);
       if (bindings.propertyKeys.length) {
         View.makeBinding(subjectsClone, attributeName, parentReactiveData, data, bindings, viewNode);
