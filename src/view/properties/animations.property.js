@@ -12,9 +12,9 @@
        */
       update: function (viewNode, animationDescriptions) {
         if (animationDescriptions.enter && animationDescriptions.enter.onComplete) {
-          viewNode.populateEnterSequence = animationDescriptions.enter.onComplete;
+          viewNode.processEnterAnimation = animationDescriptions.enter.onComplete;
         }
-        viewNode.populateLeaveSequence = (onComplete) => {
+        viewNode.processLeaveAnimation = (onComplete) => {
           onComplete();
         };
       }
@@ -93,7 +93,7 @@
 
       const enter = animations.enter;
       if (enter) {
-        viewNode.populateEnterSequence = function () {
+        viewNode.processEnterAnimation = function () {
           process_enter_animation(this, enter);
         };
       }
@@ -107,18 +107,18 @@
           console.warn(viewNode.node);
         }
 
-        viewNode.populateLeaveSequence = function (finalize) {
+        viewNode.processLeaveAnimation = function (finalize) {
           process_leave_animation(this, leave, finalize);
         };
 
         // Hide timeline is the same as leave timeline.
         // The only difference is that hide timeline will add `display: 'none'` to the node at the end
-        viewNode.populateHideSequence = viewNode.populateLeaveSequence.bind(viewNode, () => {
+        viewNode.populateHideSequence = viewNode.processLeaveAnimation.bind(viewNode, () => {
           viewNode.node.style.display = 'none';
         });
       } else {
         // By default, imitate leave with parent behavior
-        viewNode.populateLeaveSequence = leave_with_parent.bind(viewNode);
+        viewNode.processLeaveAnimation = leave_with_parent.bind(viewNode);
       }
 
       const viewNodeCache = viewNode.cache;

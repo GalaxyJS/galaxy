@@ -59,8 +59,8 @@
     const children = viewNode.getChildNodes();
     for (let i = 0, len = children.length; i < len; i++) {
       const vn = children[i];
-      if (vn.populateLeaveSequence === EMPTY_CALL) {
-        vn.populateLeaveSequence = function (finalize) {
+      if (vn.processLeaveAnimation === EMPTY_CALL) {
+        vn.processLeaveAnimation = function (finalize) {
           finalize();
         };
       }

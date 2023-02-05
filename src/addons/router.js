@@ -284,7 +284,8 @@ Galaxy.Router = /** @class */ (function (G) {
 
       this.onTransitionFn.call(this, activePath, route.path, activeRoute, route);
       if (!route.redirectTo) {
-        if (activeRoute) {
+        // if current route's path starts with the old route's path, then the old route should stay active
+        if (activeRoute && route.path.indexOf(activePath) !== 0) {
           activeRoute.active = false;
 
           if (typeof activeRoute.onLeave === 'function') {
@@ -321,21 +322,6 @@ Galaxy.Router = /** @class */ (function (G) {
 
           this.data.viewports[key] = value;
         }
-
-        // for (const key in route.viewports) {
-        //   let value = route.viewports[key] || null;
-        //   if (typeof value === 'string') {
-        //     value = {
-        //       path: value
-        //     };
-        //   }
-        //
-        //   if (key === 'main') {
-        //     this.data.activeModule = value;
-        //   }
-        //
-        //   this.data.viewports[key] = value;
-        // }
 
         G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);

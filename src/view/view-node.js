@@ -53,7 +53,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   //   properties: new Set(),
   //   finalize: [],
   //   placeholder: {},
-  //   populateLeaveSequence: EMPTY_CALL,
+  //   processLeaveAnimation: EMPTY_CALL,
   //   hasBeenDestroyed: EMPTY_CALL,
   //   inDOM: true,
   //   parent: null,
@@ -69,7 +69,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   //   });
   //
   //   vn.clean = ViewNode.prototype.clean.bind(vn);
-  //   vn.prepareLeaveSequence = ViewNode.prototype.prepareLeaveSequence.bind(vn);
+  //   vn.prepareLeaveAnimation = ViewNode.prototype.prepareLeaveAnimation.bind(vn);
   //   vn.getChildNodes = ViewNode.prototype.getChildNodes.bind(vn);
   //   vn.hasAnimation = ViewNode.prototype.hasAnimation.bind(vn);
   //   vn.destroy = ViewNode.prototype.destroy.bind(vn);
@@ -233,7 +233,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.node = blueprint.tag;
       blueprint.tag = blueprint.tag.tagName;
       if (_this.node instanceof Text) {
-        _this.populateEnterSequence = EMPTY_CALL;
+        _this.processEnterAnimation = EMPTY_CALL;
       }
     } else {
       _this.node = create_elem(blueprint.tag || 'div', parent);
@@ -370,11 +370,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       this.setInDOM(false);
     },
 
-    populateEnterSequence: function () {
+    processEnterAnimation: function () {
       this.node.style.display = null;
     },
 
-    populateLeaveSequence: EMPTY_CALL,
+    processLeaveAnimation: EMPTY_CALL,
 
     populateHideSequence: function () {
       this.node.style.display = 'none';
@@ -387,8 +387,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     setInDOM: function (flag) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
-        _this.blueprint.renderConfig.renderDetached = false;
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+          _this.blueprint.renderConfig.renderDetached = false;
           _this.hasBeenRendered();
           _next();
         });
@@ -413,20 +413,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.hasBeenRendered();
-          _this.populateEnterSequence();
+          _this.processEnterAnimation();
           _next();
         });
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        const defaultPopulateLeaveSequence = _this.populateLeaveSequence;
+        const defaultProcessLeaveAnimation = _this.processLeaveAnimation;
         const children = _this.getChildNodes();
-        _this.prepareLeaveSequence(_this.hasAnimation(children), children);
+        _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-          _this.populateLeaveSequence(REMOVE_SELF.bind(_this, false));
-          _this.origin = false;
-          _this.transitory = false;
-          _this.populateLeaveSequence = defaultPopulateLeaveSequence;
+          _this.processLeaveAnimation(() => {
+            // set origin and transitory to false after leave animation is over
+            _this.origin = false;
+            _this.transitory = false;
+            REMOVE_SELF.call(_this, false);
+          });
+
+          _this.processLeaveAnimation = defaultProcessLeaveAnimation;
           _next();
         });
       }
@@ -439,7 +443,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (flag && !_this.virtual) {
         CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
           _this.node.style.display = null;
-          _this.populateEnterSequence();
+          _this.processEnterAnimation();
           _next();
         });
       } else if (!flag && _this.node.parentNode) {
@@ -497,7 +501,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     hasAnimation: function (children) {
-      if (this.populateLeaveSequence && this.populateLeaveSequence !== EMPTY_CALL) {
+      if (this.processLeaveAnimation && this.processLeaveAnimation !== EMPTY_CALL) {
         return true;
       }
 
@@ -511,15 +515,15 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return false;
     },
 
-    prepareLeaveSequence: function (hasAnimation, children) {
+    prepareLeaveAnimation: function (hasAnimation, children) {
       const _this = this;
 
       if (hasAnimation) {
-        if (_this.populateLeaveSequence === EMPTY_CALL && _this.origin) {
-          _this.populateLeaveSequence = function () {
+        if (_this.processLeaveAnimation === EMPTY_CALL && _this.origin) {
+          _this.processLeaveAnimation = function () {
             REMOVE_SELF.call(_this, false);
           };
-        } else if (_this.populateLeaveSequence !== EMPTY_CALL && !_this.origin) {
+        } else if (_this.processLeaveAnimation !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
           // this is not the case for when this node is being detached by if
@@ -529,7 +533,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           }
         }
       } else {
-        _this.populateLeaveSequence = function () {
+        _this.processLeaveAnimation = function () {
           REMOVE_SELF.call(_this, !_this.origin);
         };
       }
@@ -548,7 +552,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (_this.inDOM) {
         const children = _this.getChildNodes();
         hasAnimation = hasAnimation || _this.hasAnimation(children);
-        _this.prepareLeaveSequence(hasAnimation, children);
+        _this.prepareLeaveAnimation(hasAnimation, children);
         _this.clean(hasAnimation, children);
       }
 
@@ -560,7 +564,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-        _this.populateLeaveSequence(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
+        _this.processLeaveAnimation(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
         _this.finalize = [];
