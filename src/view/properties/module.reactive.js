@@ -78,6 +78,13 @@
     // });
   }
 
+  /**
+   *
+   * @param viewNode
+   * @param cache
+   * @param {object} moduleMeta
+   * @param _next
+   */
   function module_loader(viewNode, cache, moduleMeta, _next) {
     if (cache.module) {
       cache.module.destroy();
@@ -86,6 +93,10 @@
     const tempURI = new G.GalaxyURI(moduleMeta.path);
     let moduleScope = cache.scope;
     let currentScope = cache.scope;
+
+    if(typeof moduleMeta.onInvoke === 'function') {
+      moduleMeta.onInvoke.call();
+    }
 
     while (moduleScope) {
       // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
@@ -111,6 +122,11 @@
       cache.module = module;
       viewNode.node.setAttribute('module', module.path);
       module.start();
+
+      if(typeof moduleMeta.onLoad === 'function') {
+        moduleMeta.onLoad.call();
+      }
+
       _next();
     }).catch(function (response) {
       console.error(response);

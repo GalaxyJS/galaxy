@@ -1,6 +1,7 @@
 /* global Galaxy */
 Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
+  const delProp = Reflect.deleteProperty;
 
   /**
    *
@@ -15,7 +16,9 @@ Galaxy.Scope = /** @class */ (function () {
     _this.parentScope = module.parentScope || null;
     _this.element = element || null;
     _this.export = {};
+
     _this.uri = new Galaxy.GalaxyURI(module.path);
+    // console.log('---', module.path, _this.uri.path);
     _this.eventHandlers = {};
     _this.observers = [];
     const _data = _this.element.data ? Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true) : {};
@@ -26,6 +29,10 @@ Galaxy.Scope = /** @class */ (function () {
         return _data;
       },
       set: function (value) {
+        if (value === null || typeof value !== 'object') {
+          throw Error('The `Scope.data` property must be type of object and can not be null.');
+        }
+
         Object.assign(_data, value);
       }
     });
@@ -48,8 +55,6 @@ Galaxy.Scope = /** @class */ (function () {
     _this.on('module.destroy', this.destroy.bind(_this));
   }
 
-
-
   Scope.prototype = {
     /**
      *
@@ -70,14 +75,17 @@ Galaxy.Scope = /** @class */ (function () {
         libId = libId.replace('./', this.uri.path);
       }
 
-
       return this.__imports__[libId];
+    },
+
+    importAsText: function (libId) {
+      return this.import(libId + '#text');
     },
     /**
      *
      */
     destroy: function () {
-      this.data = null;
+      delProp(this, 'data');
       this.observers.forEach(function (observer) {
         observer.remove();
       });

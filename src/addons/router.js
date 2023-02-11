@@ -93,6 +93,8 @@ Galaxy.Router = /** @class */ (function (G) {
       parameters: _this.parentRouterScope && _this.parentRouterScope.router ? _this.parentRouterScope.router.parameters : {}
     };
     _this.onTransitionFn = Galaxy.View.EMPTY_CALL;
+    _this.onInvokeFn = Galaxy.View.EMPTY_CALL;
+    _this.onLoadFn = Galaxy.View.EMPTY_CALL;
 
     _this.viewports = {
       main: {
@@ -108,7 +110,7 @@ Galaxy.Router = /** @class */ (function (G) {
       enumerable: true
     });
 
-    if (module.id === 'root') {
+    if (module.id === '@root') {
       Router.currentPath.update();
     }
   }
@@ -220,6 +222,16 @@ Galaxy.Router = /** @class */ (function (G) {
       return this;
     },
 
+    onInvoke: function (handler) {
+      this.onInvokeFn = handler;
+      return this;
+    },
+
+    onLoad: function (handler) {
+      this.onLoadFn = handler;
+      return this;
+    },
+
     findMatchRoute: function (routes, hash, parentParams) {
       const _this = this;
       let matchCount = 0;
@@ -306,13 +318,14 @@ Galaxy.Router = /** @class */ (function (G) {
       if (typeof route.handle === 'function') {
         return route.handle.call(this, params, parentParams);
       } else {
-        // console.log(route.viewports, this.data.viewports)
         const allViewports = this.data.viewports;
         for (const key in allViewports) {
           let value = route.viewports[key] || null;
           if (typeof value === 'string') {
             value = {
-              path: value
+              path: value,
+              onInvoke: this.onInvokeFn.bind(this, value, key),
+              onLoad: this.onLoadFn.bind(this, value, key)
             };
           }
 

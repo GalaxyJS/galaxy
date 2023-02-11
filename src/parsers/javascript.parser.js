@@ -42,7 +42,8 @@
 
     return {
       imports: imports,
-      source: parsedContent
+      source: parsedContent,
+      native: /^export default/gm.test(parsedContent)
     };
   }
 })(Galaxy.Module.Content);

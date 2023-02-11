@@ -101,7 +101,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.id = 'root';
+      bootModule.id = '@root';
 
       if (!_this.rootElement) {
         throw new Error('element property is mandatory');
@@ -153,8 +153,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
+        module.path = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path;
+        // module.path = module.path.indexOf('/') === 0 ? module.path : '/' + module.path;
         if (!module.id) {
-          module.id = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path /*+ '-' + (new Date()).valueOf() + '-' + Math.round(performance.now())*/;
+          module.id = '@' + module.path;
         }
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
@@ -223,39 +225,34 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
         const parsedContent = Galaxy.Module.Content.parse(moduleConstructor);
         const imports = parsedContent.imports;
-        const source = parsedContent.source;
 
         const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.Module(moduleMetaData, source, scope);
+        const module = new Galaxy.Module(moduleMetaData, scope, parsedContent.source, parsedContent.native);
         if (imports.length) {
           const importsCopy = imports.slice(0);
-          imports.forEach(function (item) {
-            const moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.path);
-            // Module is an addon
+          imports.forEach(function (importable) {
+            const moduleAddOnProvider = Galaxy.getAddOnProvider(importable.path);
+            // importable is an addon
             if (moduleAddOnProvider) {
-              const providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-              const addOnInstance = providerStages.create();
-              module.registerAddOn(item.path, addOnInstance);
-              module.addOnProviders.push(providerStages);
-
+              module.addAddOn(moduleAddOnProvider);
               doneImporting(module, importsCopy);
             }
-            // Module is already loaded and we don't need a new instance of it (Singleton)
-            else if (cachedModules[item.path] && !item.fresh) {
+            // importable is already loaded, and we don't need a new instance of it (Singleton)
+            else if (cachedModules[importable.path] && !importable.fresh) {
               doneImporting(module, importsCopy);
             }
-            // Module is not loaded
+            // importable is not loaded
             else {
-              if (item.path.indexOf('./') === 0) {
-                item.path = scope.uri.path + item.path.substr(2);
+              if (importable.path.indexOf('./') === 0) {
+                importable.path = scope.uri.path + importable.path.substring(2);
               }
 
               Galaxy.load({
-                name: item.name,
-                path: item.path,
-                fresh: item.fresh,
-                contentType: item.contentType,
+                name: importable.name,
+                path: importable.path,
+                fresh: importable.fresh,
+                contentType: importable.contentType,
                 // params: item.params,
                 parentScope: scope,
                 invokers: invokers
@@ -278,7 +275,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
-      return new Promise(function (resolve, reject) {
+      return new Promise(async function (resolve, reject) {
         try {
           for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
@@ -293,19 +290,15 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
-          const source = module.source;
+          // debugger;
+          const source = module.native ? (await import('/' + module.path)).default : module.source;
+          // const source = (await import('/' + module.path)).default;
           const moduleSource = typeof source === 'function' ?
-            source :
-            new AsyncFunction('Scope', ['// ' + module.id + ': ' + module.path, source].join('\n'));
-          const output = moduleSource.call(null, module.scope);
+            source : function () { console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;'); };
+          // new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
+          const output = moduleSource.call(null, module.scope) || null;
 
           const proceed = () => {
-            Reflect.deleteProperty(module, 'source');
-
-            module.addOnProviders.forEach(item => item.start());
-
-            Reflect.deleteProperty(module, 'addOnProviders');
-
             const id = module.path;
             // if the module export has _temp then do not cache the module
             if (module.scope.export._temp) {
@@ -317,9 +310,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               };
             }
 
-            const currentModule = module;
-            currentModule.init();
-            return resolve(currentModule);
+            module.init();
+            return resolve(module);
           };
 
           // if the function is not async, output would be undefined
@@ -338,17 +330,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       });
     },
 
-    getModuleAddOnProvider: function (name) {
+    getAddOnProvider: function (name) {
       return this.addOnProviders.filter((service) => {
         return service.name === name;
       })[0];
     },
 
     registerAddOnProvider: function (name, handler) {
-      if (typeof handler !== 'function') {
-        throw 'Addon provider should be a function';
-      }
-
       this.addOnProviders.push({
         name: name,
         handler: handler

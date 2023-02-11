@@ -3,25 +3,35 @@ Galaxy.Module = /** @class */ (function () {
 
   /**
    *
-   * @param {Object} module
-   * @param {string} source
+   * @param {object} module
    * @param {Galaxy.Scope} scope
+   * @param {string} source
+   * @param {boolean} native
    * @constructor
    * @memberOf Galaxy
    */
-  function Module(module, source, scope) {
+  function Module(module, scope, source, native) {
     this.id = module.id;
     this.systemId = module.systemId;
     this.source = source;
     this.path = module.path || null;
     this.importId = module.importId || module.path;
     this.addOns = module.addOns || {};
-    this.addOnProviders = [];
+    this.addOnProviders = {};
     this.scope = scope;
+    this.native = native || false;
   }
 
   Module.prototype = {
     init: function () {
+      const providers = this.addOnProviders;
+      Reflect.deleteProperty(this, 'source');
+      Reflect.deleteProperty(this, 'addOnProviders');
+
+      for (let addOnName in this.addOns) {
+        providers[addOnName].startInstance(this.addOns[addOnName], this);
+      }
+
       this.scope.trigger('module.init');
     },
 
@@ -33,8 +43,10 @@ Galaxy.Module = /** @class */ (function () {
       this.scope.trigger('module.destroy');
     },
 
-    registerAddOn: function (id, object) {
-      this.addOns[id] = object;
+    addAddOn: function (addOnProvider) {
+      const h = addOnProvider.handler;
+      this.addOnProviders[addOnProvider.name] = h;
+      this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
     }
   };
 
