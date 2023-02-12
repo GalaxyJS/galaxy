@@ -147,13 +147,6 @@
 
       config.changeId = changes.id;
       config.oldChanges = changes;
-      // if(node.blueprint.animations && node.blueprint.animations.enter && node.blueprint.animations.enter.timeline === 'dots')debugger;
-      // node.index;
-      //  config.previousActionId = requestAnimationFrame(() => {
-      //   prepareChanges(node, config, changes).then(finalChanges => {
-      //     processChanges(node, config, finalChanges);
-      //   });
-      // });
       processChanges(node, config, prepareChanges(node, config, changes));
     }
   };
@@ -223,7 +216,7 @@
     const nodes = config.nodes;
     const trackByKey = config.trackBy;
     const templateBlueprint = viewNode.cloneBlueprint();
-    Reflect.deleteProperty(templateBlueprint, 'repeat');
+    templateBlueprint.repeat = null;
 
     let defaultPosition = nodes.length ? nodes[nodes.length - 1].anchor.nextSibling : viewNode.placeholder.nextSibling;
     let newItems = [];

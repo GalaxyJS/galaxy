@@ -223,16 +223,6 @@ Galaxy.View = /** @class */(function (G) {
       type: 'none',
       key: 'data',
     },
-    // dataset: {
-    //   type: 'prop',
-    //   update: (vn, value) => {
-    //     if (typeof value === 'object' && value !== null) {
-    //       Object.assign(vn.node.dataset, value);
-    //     } else {
-    //       vn.node.dataset = null;
-    //     }
-    //   }
-    // },
     html: {
       type: 'prop',
       key: 'innerHTML'
@@ -259,7 +249,7 @@ Galaxy.View = /** @class */(function (G) {
         if (!this.blueprint.module) {
           config.reactiveData = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
           const observer = new G.Observer(config.reactiveData);
-          observer.onAll((key, value) => {
+          observer.onAll(() => {
             apply_node_dataset(this.node, config.reactiveData);
           });
 
@@ -1052,9 +1042,13 @@ Galaxy.View = /** @class */(function (G) {
    * @param scopeData
    * @return boolean
    */
-  View.installPropertyForNode = function (blueprintKey, node, key, scopeData) {
-    if (blueprintKey in View.REACTIVE_BEHAVIORS) {
-      const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[blueprintKey];
+  View.installPropertyForNode = function (key, value, node, scopeData) {
+    if (key in View.REACTIVE_BEHAVIORS) {
+      if (value === null || value === undefined) {
+        return false;
+      }
+
+      const reactiveProperty = View.NODE_BLUEPRINT_PROPERTY_MAP[key];
       const data = reactiveProperty.getConfig.call(node, scopeData, node.blueprint[key]);
       if (data !== undefined) {
         node.cache[key] = data;
@@ -1100,7 +1094,6 @@ Galaxy.View = /** @class */(function (G) {
     if (blueprintProperty.type !== 'reactive' && viewNode.virtual) {
       return View.EMPTY_CALL;
     }
-
     // This is the lowest level where the developer can modify the property setter behavior
     // By defining 'createSetter' for the property you can implement your custom functionality for setter
     if (typeof blueprintProperty.getSetter !== 'undefined') {
@@ -1333,15 +1326,18 @@ Galaxy.View = /** @class */(function (G) {
       } else if (blueprint instanceof Object) {
         const component = _this.getComponent(blueprint.tag, blueprint, scopeData);
         let propertyValue, propertyKey;
-        const keys = objKeys(component.blueprint);
+        const _blueprint = component.blueprint;
+        const keys = objKeys(_blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(component.blueprint, parent, _this, component.scopeData);
+        const viewNode = new G.View.ViewNode(_blueprint, parent, _this, component.scopeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
         for (i = 0, len = keys.length; i < len; i++) {
           propertyKey = keys[i];
-          const needValueAssign = View.installPropertyForNode(propertyKey, viewNode, propertyKey, component.scopeData);
+          propertyValue = _blueprint[propertyKey];
+
+          const needValueAssign = View.installPropertyForNode(propertyKey, propertyValue, viewNode, component.scopeData);
           if (needValueAssign === false) {
             continue;
           }
@@ -1354,7 +1350,7 @@ Galaxy.View = /** @class */(function (G) {
           propertyKey = needInitKeys[i];
           if (propertyKey === 'children') continue;
 
-          propertyValue = component.blueprint[propertyKey];
+          propertyValue = _blueprint[propertyKey];
           const bindings = View.getBindings(propertyValue);
           if (bindings.propertyKeys.length) {
             View.makeBinding(viewNode, propertyKey, null, component.scopeData, bindings, viewNode);
@@ -1365,8 +1361,8 @@ Galaxy.View = /** @class */(function (G) {
 
         if (!viewNode.virtual) {
           viewNode.setInDOM(true);
-          if (component.blueprint.children) {
-            _this.createNode(component.blueprint.children, component.scopeData, viewNode, null);
+          if (_blueprint.children) {
+            _this.createNode(_blueprint.children, component.scopeData, viewNode, null);
           }
         }
 

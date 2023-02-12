@@ -18,7 +18,6 @@ Galaxy.Scope = /** @class */ (function () {
     _this.export = {};
 
     _this.uri = new Galaxy.GalaxyURI(module.path);
-    // console.log('---', module.path, _this.uri.path);
     _this.eventHandlers = {};
     _this.observers = [];
     const _data = _this.element.data ? Galaxy.View.bindSubjectsToData(_this.element, _this.element.data, _this.parentScope, true) : {};

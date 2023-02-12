@@ -42,6 +42,62 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     }
   };
 
+  function create_array_value(arr, method, initialChanges) {
+    const originalMethod = ARRAY_PROTO[method];
+    return function array_value() {
+      const __rd__ = this.__rd__;
+
+      let i = arguments.length;
+      const args = new Array(i);
+      while (i--) {
+        args[i] = arguments[i];
+      }
+
+      const returnValue = originalMethod.apply(this, args);
+      const changes = new G.View.ArrayChange();
+      const _original = changes.original = arr;
+      changes.type = method;
+      changes.params = args;
+      changes.returnValue = returnValue;
+      changes.init = initialChanges;
+
+      switch (method) {
+        case 'push':
+        case 'reset':
+        case 'unshift':
+          for (let i = 0, len = changes.params.length; i < len; i++) {
+            const item = changes.params[i];
+            if (item !== null && typeof item === 'object') {
+              new ReactiveData(_original.indexOf(item), item, __rd__);
+            }
+          }
+          break;
+
+        case 'pop':
+        case 'shift':
+          if (returnValue !== null && typeof returnValue === 'object' && '__rd__' in returnValue) {
+            returnValue.__rd__.removeMyRef();
+          }
+          break;
+
+        case 'splice':
+          changes.params.slice(2).forEach(function (item) {
+            if (item !== null && typeof item === 'object') {
+              new ReactiveData(_original.indexOf(item), item, __rd__);
+            }
+          });
+          break;
+      }
+
+      // repeat reactive property uses array.changes to detect the type of the mutation on array and react properly.
+      arr.changes = changes;
+      __rd__.notifyDown('length');
+      __rd__.notifyDown('changes');
+      __rd__.notify(__rd__.keyInParent, this);
+
+      return returnValue;
+    };
+  }
 
   /**
    * @param {string} id
@@ -126,11 +182,11 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     // therefore its keyInParent should NOT be its index in the array but the
     // array's keyInParent. This way we redirect each item in the array to the
     // array's reactive data
-    fixHierarchy: function (id, refrence) {
+    fixHierarchy: function (id, reference) {
       if (this.parent.data instanceof Array) {
         this.keyInParent = this.parent.keyInParent;
       } else {
-        this.parent.shadow[id] = refrence;
+        this.parent.shadow[id] = reference;
       }
     },
     setData: function (data) {
@@ -277,7 +333,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const initialChanges = new G.View.ArrayChange();
-
       initialChanges.original = arr;
       initialChanges.type = 'reset';
       initialChanges.params = arr;
@@ -292,90 +347,17 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       initialChanges.init = initialChanges;
       defProp(arr, 'changes', {
         enumerable: false,
-        configurable: true,
+        configurable: false,
+        writable: true,
         value: initialChanges
       });
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
-        const originalMethod = ARRAY_PROTO[method];
         defProp(arr, method, {
-          value: function () {
-            const thisRD = this.__rd__;
-            let i = arguments.length;
-            const args = new Array(i);
-            while (i--) {
-              args[i] = arguments[i];
-            }
-
-            const returnValue = originalMethod.apply(this, args);
-            const changes = new G.View.ArrayChange();
-            const _original = changes.original = arr;
-            changes.type = method;
-            changes.params = args;
-            changes.returnValue = returnValue;
-            changes.init = initialChanges;
-
-            switch (method) {
-              case 'push':
-              case 'reset':
-              case 'unshift':
-                for (let i = 0, len = changes.params.length; i < len; i++) {
-                  const item = changes.params[i];
-                  if (item !== null && typeof item === 'object') {
-                    new ReactiveData(_original.indexOf(item), item, thisRD);
-                  }
-                }
-                break;
-
-              case 'pop':
-              case 'shift':
-                if (returnValue !== null && typeof returnValue === 'object' && '__rd__' in returnValue) {
-                  returnValue.__rd__.removeMyRef();
-                }
-                break;
-
-              case 'splice':
-                changes.params.slice(2).forEach(function (item) {
-                  if (item !== null && typeof item === 'object') {
-                    new ReactiveData(_original.indexOf(item), item, thisRD);
-                  }
-                });
-                break;
-            }
-
-            // if (method === 'push' || method === 'reset' || method === 'unshift') {
-            //   for (let i = 0, len = changes.params.length; i < len; i++) {
-            //     const item = changes.params[i];
-            //     if (item !== null && typeof item === 'object') {
-            //       new ReactiveData(changes.original.indexOf(item), item, thisRD);
-            //     }
-            //   }
-            // } else if (method === 'pop' || method === 'shift') {
-            //   if (returnValue !== null && typeof returnValue === 'object' && returnValue.hasOwnProperty('__rd__')) {
-            //     returnValue.__rd__.removeMyRef();
-            //   }
-            // } else if (method === 'splice') {
-            //   changes.params.slice(2).forEach(function (item) {
-            //     if (item !== null && typeof item === 'object') {
-            //       new ReactiveData(changes.original.indexOf(item), item, thisRD);
-            //     }
-            //   });
-            // }
-
-            defProp(arr, 'changes', {
-              enumerable: false,
-              configurable: true,
-              value: changes
-            });
-            thisRD.notifyDown('length');
-            thisRD.notifyDown('changes');
-            thisRD.notify(thisRD.keyInParent, this);
-
-            return returnValue;
-          },
+          value: create_array_value(arr, method, initialChanges),
           writable: false,
-          configurable: true
+          configurable: false
         });
       });
 
@@ -510,13 +492,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       else if (this.refs.length === 1) {
         // TODO: Should be tested as much as possible to make sure it works with no bug
         // TODO: We either need to return the object to its original state or do nothing
-        // debugger
-        // delete this.data.__rd__;
-        // if (this.data instanceof Array) {
-        // delete this.data.live;
-        // delete this.data.changes;
-        // debugger
-        // }
       }
       // if I am the original reference and not the only one
       else {
@@ -573,14 +548,18 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         map.nodes.push(node);
 
         let initValue = this.data[dataKey];
-        // if the value is a instance of Array, then we should set its change property to its initial state
+        // if the value is an instance of Array, then we should set its change property to its initial state
         if (initValue instanceof Array && initValue.changes) {
-          // initValue.changes = initValue.changes.init;
-          defProp(initValue, 'changes', {
-            enumerable: false,
-            configurable: true,
-            value: initValue.changes.init
-          });
+          if (initValue.hasOwnProperty('changes')) {
+            initValue.changes = initValue.changes.init;
+          } else {
+            defProp(initValue, 'changes', {
+              enumerable: false,
+              configurable: false,
+              writable: true,
+              value: initValue.changes.init
+            });
+          }
         }
 
         // if initValue is a change object, then we have to use its init for nodes that are newly being added

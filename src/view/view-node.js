@@ -31,52 +31,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     return document.createElement(tagName);
   }
 
-  // function generate_index(vn) {
-  //   if (vn.parent) {
-  //     let i = 0;
-  //     let node = vn.node;
-  //     while ((node = node.previousSibling) !== null) ++i;
-  //
-  //     if (i === 0 && vn.placeholder.parentNode) {
-  //       i = arrIndexOf.call(vn.parent.node.childNodes, vn.placeholder);
-  //     }
-  //     return vn.parent.index + ',' + ViewNode.createIndex(i);
-  //   }
-  //
-  //   return '0';
-  // }
-
-  // const view_node_template = {
-  //   blueprint: {},
-  //   destroyOrigin: 0,
-  //   localPropertyNames: new Set(),
-  //   properties: new Set(),
-  //   finalize: [],
-  //   placeholder: {},
-  //   processLeaveAnimation: EMPTY_CALL,
-  //   hasBeenDestroyed: EMPTY_CALL,
-  //   inDOM: true,
-  //   parent: null,
-  //   node: null,
-  // };
-  //
-  // function convert_to_simple_view_node(node, index) {
-  //   const vn = Object.assign({}, view_node_template, {
-  //     // parent: node.parent ? node.parent : node.parentNode ? convert_to_simple_view_node(node.parentNode) : {},
-  //     parent: node.parent ? node.parent : { destroyOrigin: 0 },
-  //     node: node,
-  //     index: index
-  //   });
-  //
-  //   vn.clean = ViewNode.prototype.clean.bind(vn);
-  //   vn.prepareLeaveAnimation = ViewNode.prototype.prepareLeaveAnimation.bind(vn);
-  //   vn.getChildNodes = ViewNode.prototype.getChildNodes.bind(vn);
-  //   vn.hasAnimation = ViewNode.prototype.hasAnimation.bind(vn);
-  //   vn.destroy = ViewNode.prototype.destroy.bind(vn);
-  //   node.__vn__ = vn;
-  //   return vn;
-  // }
-
   function insert_before(parentNode, newNode, referenceNode) {
     parentNode.insertBefore(newNode, referenceNode);
   }
@@ -94,7 +48,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const __node__ = {
     value: null,
     configurable: false,
-    enumerable: false
+    enumerable: false,
+    writable: true
   };
 
   const arrIndexOf = Array.prototype.indexOf;
@@ -103,7 +58,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   //------------------------------
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
-    type: 'attr'
+    type: 'none'
   };
 
   GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
@@ -167,8 +122,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         ViewNode.cleanReferenceNode(node);
       });
     } else if (blueprints instanceof Object) {
-      __node__.value = null;
-      defProp(blueprints, 'node', __node__);
+      blueprints.node = null;
       ViewNode.cleanReferenceNode(blueprints.children);
     }
   };
@@ -338,6 +292,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         }
       }
       targetGarbage.push(this);
+
       this.garbage = [];
     },
     query: function (selectors) {
@@ -423,13 +378,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const children = _this.getChildNodes();
         _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
         DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
-          _this.processLeaveAnimation(() => {
-            // set origin and transitory to false after leave animation is over
-            _this.origin = false;
-            _this.transitory = false;
-            REMOVE_SELF.call(_this, false);
-          });
-
+          _this.processLeaveAnimation(REMOVE_SELF.bind(_this, false));
+          _this.origin = false;
+          _this.transitory = false;
           _this.processLeaveAnimation = defaultProcessLeaveAnimation;
           _next();
         });

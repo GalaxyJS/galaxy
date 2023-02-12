@@ -1,5 +1,5 @@
 /* global Galaxy, Promise */
-'use strict';
+
 /*!
  * GalaxyJS
  * Eeliya Rasta
@@ -10,6 +10,8 @@
  * @exports Galaxy
  */
 window.Galaxy = window.Galaxy || /** @class */(function () {
+  'use strict';
+
   const AsyncFunction = Object.getPrototypeOf(async function () {
   }).constructor;
   Array.prototype.unique = function () {
@@ -290,12 +292,16 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             }
           }
 
-          // debugger;
           const source = module.native ? (await import('/' + module.path)).default : module.source;
-          // const source = (await import('/' + module.path)).default;
-          const moduleSource = typeof source === 'function' ?
-            source : function () { console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;'); };
-          // new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
+
+          let moduleSource = source;
+          if (typeof source !== 'function') {
+            moduleSource = function () {
+              console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;');
+            };
+            // moduleSource = new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
+          }
+
           const output = moduleSource.call(null, module.scope) || null;
 
           const proceed = () => {

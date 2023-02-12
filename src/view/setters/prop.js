@@ -3,7 +3,19 @@
   G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
     const propName = property.key;
     const updateFn = property.update || G.View.setProp;
-    const setter = function P(value) {
+    const setter = create_prop_setter(updateFn, viewNode, propName);
+    if (expression) {
+      return function P_EXP() {
+        const expressionValue = expression();
+        setter(expressionValue);
+      };
+    }
+
+    return setter;
+  };
+
+  function create_prop_setter(updateFn, viewNode, propName) {
+    return function P(value) {
       if (value instanceof Promise) {
         const asyncCall = function (asyncValue) {
           updateFn(viewNode, asyncValue, propName);
@@ -16,14 +28,6 @@
         updateFn(viewNode, value, propName);
       }
     };
+  }
 
-    if (expression) {
-      return function P_EXP() {
-        const expressionValue = expression();
-        setter(expressionValue);
-      };
-    }
-
-    return setter;
-  };
 })(Galaxy);
