@@ -28,6 +28,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
   };
 
   const cachedModules = {};
+
   Core.cm = cachedModules;
 
   /**
@@ -328,10 +329,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }
         } catch (error) {
           console.error(error.message + ': ' + module.path);
-          console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
-          console.error(error);
+          // console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
+          console.trace(error);
           reject();
-          throw new Error(error);
+          // throw new Error(error);
         }
       });
     },

@@ -77,8 +77,12 @@
       let changes = null;
       if (expression) {
         value = expression();
-        if (value === null || value === undefined) {
+        if (value === undefined) {
           return;
+        }
+
+        if (value === null) {
+          throw Error('Invalid return type: ' + value + '\nThe expression function for `repeat.data` must return an instance of Array or Galaxy.View.ArrayChange or undefined');
         }
 
         if (value instanceof G.View.ArrayChange) {
@@ -225,13 +229,15 @@
       onEachAction = function (vn, p, d) {
         trackMap.push(d);
         this.push(vn);
-        // positions.push(vn.anchor.nextSibling);
       };
-    } else {
+    } else if (typeof trackByKey === 'string') {
       onEachAction = function (vn, p, d) {
         trackMap.push(d[config.trackBy]);
         this.push(vn);
-        // positions.push(vn.anchor.nextSibling);
+      };
+    } else {
+      onEachAction = function (vn, p, d) {
+        this.push(vn);
       };
     }
 

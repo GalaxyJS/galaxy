@@ -232,7 +232,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           if (_this.blueprint._render) {
             _this.blueprint._render.call(_this, _this.data);
           }
-          done();
+          done(_this);
         };
       } else {
         _this.hasBeenRendered = function () {

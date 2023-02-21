@@ -6,6 +6,7 @@ Galaxy.registerAddOnProvider('galaxy/router', {
       scope.on('module.destroy', () => router.destroy());
     }
 
+    scope.__router__ = router;
     scope.router = router.data;
 
     return router;

@@ -24,11 +24,9 @@
 
       // setTimeout is called before requestAnimationTimeFrame
       config.throttleId = window.setTimeout(() => {
-        this.rendered.then(() => {
-          if (this.visible !== value) {
-            this.setVisibility(value);
-          }
-        });
+        if (this.visible !== value) {
+          this.setVisibility(value);
+        }
       });
     }
   };

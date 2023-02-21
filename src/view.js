@@ -146,6 +146,11 @@ Galaxy.View = /** @class */(function (G) {
     'xmp'
   ];
 
+  const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
+  const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
+  const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
+  const BINDING_RE = /^<([^\[\]<>]*)>\s*([^\[\]<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
+
   function apply_node_dataset(node, value) {
     if (typeof value === 'object' && value !== null) {
       const stringifyValue = {};
@@ -181,8 +186,6 @@ Galaxy.View = /** @class */(function (G) {
   View.GET_MAX_INDEX = function () {
     return '@' + performance.now();
   };
-
-  View.BINDING_SYNTAX_REGEX = new RegExp('^<([^\\[\\]<>]*)>\\s*([^\\[\\]<>]*)\\s*$|^=\\s*([^\\[\\]<>]*)\\s*$');
 
   /**
    *
@@ -654,64 +657,71 @@ Galaxy.View = /** @class */(function (G) {
     return result;
   };
 
-  const arg_default_value = /=\s*'<>(.*)'|=\s*"<>(.*)"/m;
-  const function_head = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
   /**
    *
    * @param {string|Array} value
-   * @return {{propertyKeys: *[], isExpression: boolean, expressionFn: null}}
+   * @return {{propertyKeys: *[], propertyValues: *[], bindTypes: *[], isExpression: boolean, expressionFn: null}}
    */
   View.getBindings = function (value) {
-    let allProperties = null;
-    let propertyKeys = [];
+    let propertyKeyPath = [];
     let propertyValues = [];
+    let bindTypes = [];
     let isExpression = false;
     const valueType = typeof (value);
-    let handler = null;
+    let expressionFunction = null;
 
     if (valueType === 'string') {
-      const props = value.match(View.BINDING_SYNTAX_REGEX);
+      const props = value.match(BINDING_RE);
       if (props) {
-        allProperties = [value];
+        bindTypes = [props[1]];
+        propertyKeyPath = [props[2]];
+        propertyValues = [value];
       }
     } else if (valueType === 'function') {
-      const matches = value.toString().match(function_head);
+      isExpression = true;
+      expressionFunction = value;
+      const matches = value.toString().match(FUNCTION_HEAD_RE);
       if (matches) {
         const args = matches[1] || matches [2];
         propertyValues = args.split(',').map(a => {
-          const argDef = a.match(arg_default_value);
-          return argDef ? '<>' + (argDef[1] || argDef[2]) : undefined;
+          const argDef = a.indexOf('"') === -1 ? a.match(ARG_BINDING_SINGLE_QUOTE_RE) : a.match(ARG_BINDING_DOUBLE_QUOTE_RE);
+          if (argDef) {
+            bindTypes.push(argDef[1]);
+            propertyKeyPath.push(argDef[2]);
+            return '<>' + argDef[2];
+          } else {
+            bindTypes.push('');
+            return undefined;
+          }
         });
-        allProperties = propertyValues.slice();
-        handler = value;
-        isExpression = true;
       }
-    } else {
-      allProperties = null;
     }
 
-    if (allProperties) {
-      propertyKeys = allProperties.filter(pkp => {
-        return typeof pkp === 'string' && pkp.indexOf('<>') === 0;
-      });
-
-      // allProperties.forEach(p => {
-      //   if(typeof p === 'string' && p.indexOf('<>') === 0) {
-      //     const key = p.replace(/<>/g, '')
-      //     propertyKeys.push(p);
-      //     propertyValues.push('_prop(scope, "' + key + '")');
-      //   } else {
-      //     propertyValues.push('_var["' + key + '"]');
-      //   }
-      // });
-    }
+    // if (allProperties) {
+    //   propertyKeys = allProperties.filter(pkp => {
+    //     return typeof pkp === 'string' && pkp.indexOf('<>') === 0;
+    //   });
+    //
+    //   // allProperties.forEach(p => {
+    //   //   if(typeof p === 'string' && p.indexOf('<>') === 0) {
+    //   //     const key = p.replace(/<>/g, '')
+    //   //     propertyKeys.push(p);
+    //   //     propertyValues.push('_prop(scope, "' + key + '")');
+    //   //   } else {
+    //   //     propertyValues.push('_var["' + key + '"]');
+    //   //   }
+    //   // });
+    // }
 
     return {
-      propertyKeys: propertyKeys ? propertyKeys.map(function (name) {
-        return name.replace(/<>/g, '');
-      }) : null,
+      // propertyKeys: propertyKeys ? propertyKeys.map(function (name) {
+      //   console.log(name)
+      //   return name.replace(/<>/g, '');
+      // }) : null,
+      propertyKeys: propertyKeyPath,
       propertyValues: propertyValues,
-      handler: handler,
+      bindTypes: bindTypes,
+      handler: expressionFunction,
       isExpression: isExpression,
       expressionFn: null
     };
@@ -777,7 +787,7 @@ Galaxy.View = /** @class */(function (G) {
 
   View.EXPRESSION_ARGS_FUNC_CACHE = {};
 
-  View.createArgumentsProviderFn = function (propertyValues) {
+  View.createArgumentsProviderFn = function (propertyValues, bindTypes) {
     const id = propertyValues.join();
 
     if (View.EXPRESSION_ARGS_FUNC_CACHE[id]) {
@@ -789,10 +799,11 @@ Galaxy.View = /** @class */(function (G) {
     for (let i = 0, len = propertyValues.length; i < len; i++) {
       const val = propertyValues[i];
       if (typeof val === 'string') {
+        // const type = '<' + (bindTypes[i] ) + '>';
         if (val.indexOf('<>this.') === 0) {
           middle.push('_prop(this.data, "' + val.replace('<>this.', '') + '")');
         } else if (val.indexOf('<>') === 0) {
-          middle.push('_prop(scope, "' + val.replace(/<>/g, '') + '")');
+          middle.push('_prop(scope, "' + val.replace('<>', '') + '")');
         }
       } else {
         middle.push('_var[' + i + ']');
@@ -806,7 +817,7 @@ Galaxy.View = /** @class */(function (G) {
     return func;
   };
 
-  View.createExpressionFunction = function (host, scope, handler, keys, values) {
+  View.createExpressionFunction = function (host, scope, handler, keys, values, bindType) {
     if (!values[0]) {
       if (host instanceof G.View.ViewNode) {
         values[0] = host.data;
@@ -815,7 +826,7 @@ Galaxy.View = /** @class */(function (G) {
       }
     }
 
-    const getExpressionArguments = G.View.createArgumentsProviderFn(values);
+    const getExpressionArguments = G.View.createArgumentsProviderFn(values, bindType);
 
     return function () {
       let args = [];
@@ -848,7 +859,7 @@ Galaxy.View = /** @class */(function (G) {
 
     // Generate expression arguments
     try {
-      bindings.expressionFn = G.View.createExpressionFunction(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
+      bindings.expressionFn = G.View.createExpressionFunction(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues, bindings.bindTypes);
       return bindings.expressionFn;
     } catch (exception) {
       throw Error(exception.message + '\n', bindings.propertyKeys);
@@ -867,6 +878,7 @@ Galaxy.View = /** @class */(function (G) {
   View.makeBinding = function (target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
     const propertyKeys = bindings.propertyKeys;
     const expressionFn = View.getExpressionFn(bindings, root, scopeData);
+    const G_View_ReactiveData = G.View.ReactiveData;
 
     let propertyScopeData = scopeData;
     let propertyKey = null;
@@ -876,6 +888,7 @@ Galaxy.View = /** @class */(function (G) {
     for (let i = 0, len = propertyKeys.length; i < len; i++) {
       propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
+      const bindType = bindings.bindTypes[i];
 
       propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
@@ -887,7 +900,7 @@ Galaxy.View = /** @class */(function (G) {
         if ('__rd__' in scopeData) {
           hostReactiveData = scopeData.__rd__;
         } else {
-          hostReactiveData = new G.View.ReactiveData(null, scopeData, scopeData instanceof Galaxy.Scope ? scopeData.systemId : 'child');
+          hostReactiveData = new G_View_ReactiveData(null, scopeData, scopeData instanceof Galaxy.Scope ? scopeData.systemId : 'child');
         }
       }
       // When the scopeData is a childScopeData
@@ -902,7 +915,7 @@ Galaxy.View = /** @class */(function (G) {
         propertyKey = propertyKeyPathItems[1];
         bindings.propertyKeys = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
-        hostReactiveData = new G.View.ReactiveData('data', root.data, 'this');
+        hostReactiveData = new G_View_ReactiveData('data', root.data, 'this');
         propertyScopeData = View.propertyLookup(root.data, propertyKey);
       } else if (propertyScopeData) {
         // Look for the property host object in scopeData hierarchy
@@ -916,9 +929,9 @@ Galaxy.View = /** @class */(function (G) {
 
       let reactiveData;
       if (initValue instanceof Object) {
-        reactiveData = new G.View.ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
+        reactiveData = new G_View_ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
       } else if (childPropertyKeyPath) {
-        reactiveData = new G.View.ReactiveData(propertyKey, null, hostReactiveData);
+        reactiveData = new G_View_ReactiveData(propertyKey, null, hostReactiveData);
       } else if (hostReactiveData) {
         // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
         hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
@@ -966,7 +979,7 @@ Galaxy.View = /** @class */(function (G) {
           //   propertyKey + '`\n');
         }
 
-        hostReactiveData.addNode(target, targetKeyName, propertyKey, expressionFn);
+        hostReactiveData.addNode(target, targetKeyName, propertyKey, bindType, expressionFn);
       }
 
       if (childPropertyKeyPath !== null) {

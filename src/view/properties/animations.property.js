@@ -147,7 +147,14 @@
             }
           }
 
+          let oldHash = JSON.stringify(classes);
           viewNodeCache.class.observer.onAll((className) => {
+            const newHash = JSON.stringify(classes);
+            if (oldHash === newHash) {
+              return;
+            }
+
+            oldHash = newHash;
             const addOrRemove = Boolean(classes[className]);
             const animationConfig = get_class_based_animation_config(animations, addOrRemove, className);
 

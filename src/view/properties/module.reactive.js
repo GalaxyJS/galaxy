@@ -34,10 +34,18 @@
       }
 
       if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
-        G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+        // When this node has a `if`, calling `clean_content(this)` inside a DESTROY_IN_NEXT_FRAME cause the animation
+        // of this node to be executed before the animations of its children, which is not correct.
+        // Calling `clean_content(this)` directly fixes this issue, however it might cause other issues when
+        // this node does not use `if`. Therefore, we make sure both cases are covered.
+        // if (_this.blueprint.hasOwnProperty('if')) {
           clean_content(_this);
-          _next();
-        });
+        // } else {
+        //   G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+        //     clean_content(_this);
+        //     _next();
+        //   });
+        // }
       }
 
       if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
@@ -94,7 +102,7 @@
     let moduleScope = cache.scope;
     let currentScope = cache.scope;
 
-    if(typeof moduleMeta.onInvoke === 'function') {
+    if (typeof moduleMeta.onInvoke === 'function') {
       moduleMeta.onInvoke.call();
     }
 
@@ -123,7 +131,7 @@
       viewNode.node.setAttribute('module', module.path);
       module.start();
 
-      if(typeof moduleMeta.onLoad === 'function') {
+      if (typeof moduleMeta.onLoad === 'function') {
         moduleMeta.onLoad.call();
       }
 

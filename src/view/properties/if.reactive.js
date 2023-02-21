@@ -31,18 +31,15 @@
 
       value = Boolean(value);
 
-      if (!this.rendered.resolved && !this.inDOM && !value) {
-        this.blueprint.renderConfig.renderDetached = true;
+      if (!this.rendered.resolved && !this.inDOM) {
+        this.blueprint.renderConfig.renderDetached = !value;
       }
 
       // setTimeout is called before requestAnimationTimeFrame
       config.throttleId = setTimeout(() => {
-        this.rendered.then(() => {
-          // this.node.setAttribute('data-if', value);
-          if (this.inDOM !== value) {
-            this.setInDOM(value);
-          }
-        });
+        if (this.inDOM !== value) {
+          this.setInDOM(value);
+        }
       });
     }
   };
