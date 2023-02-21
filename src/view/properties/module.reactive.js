@@ -39,7 +39,8 @@
         // Calling `clean_content(this)` directly fixes this issue, however it might cause other issues when
         // this node does not use `if`. Therefore, we make sure both cases are covered.
         // if (_this.blueprint.hasOwnProperty('if')) {
-          clean_content(_this);
+        // ToDo: Make this works properly
+        clean_content(_this);
         // } else {
         //   G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
         //     clean_content(_this);

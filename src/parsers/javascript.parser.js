@@ -5,7 +5,7 @@
     const imports = [];
     const unique = [];
     let parsedContent = content.replace(/^\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
+      let query = path.match(/(\S+)/gm);
       let pathURL = query[query.length - 1];
       if (unique.indexOf(pathURL) !== -1) {
         return 'Scope.import(\'' + pathURL + '\')';
@@ -22,7 +22,7 @@
     });
 
     parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/([\S]+)/gm);
+      let query = path.match(/(\S+)/gm);
       let pathURL = query[query.length - 1] + '#text';
       if (unique.indexOf(pathURL) !== -1) {
         return 'Scope.import(\'' + pathURL + '\')';
