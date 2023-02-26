@@ -4,8 +4,8 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   const commentNode = document.createComment('');
   const defProp = Object.defineProperty;
   const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
-  const CREATE_IN_NEXT_FRAME = G.View.CREATE_IN_NEXT_FRAME;
-  const DESTROY_IN_NEXT_FRAME = G.View.DESTROY_IN_NEXT_FRAME;
+  const create_in_next_frame = G.View.create_in_next_frame;
+  const destroy_in_next_frame = G.View.destroy_in_next_frame;
 
   function create_comment(t) {
     const n = commentNode.cloneNode();
@@ -342,7 +342,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     setInDOM: function (flag) {
       const _this = this;
       if (_this.blueprint.renderConfig.renderDetached) {
-        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+        create_in_next_frame(_this.index, (_next) => {
           _this.blueprint.renderConfig.renderDetached = false;
           _this.hasBeenRendered();
           _next();
@@ -366,7 +366,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           remove_child(_this.placeholder.parentNode, _this.placeholder);
         }
 
-        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+        create_in_next_frame(_this.index, (_next) => {
           _this.hasBeenRendered();
           _this.processEnterAnimation();
           _next();
@@ -377,7 +377,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         const defaultProcessLeaveAnimation = _this.processLeaveAnimation;
         const children = _this.getChildNodes();
         _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
-        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+        destroy_in_next_frame(_this.index, (_next) => {
           _this.processLeaveAnimation(REMOVE_SELF.bind(_this, false));
           _this.origin = false;
           _this.transitory = false;
@@ -392,7 +392,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       _this.visible = flag;
 
       if (flag && !_this.virtual) {
-        CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+        create_in_next_frame(_this.index, (_next) => {
           _this.node.style.display = null;
           _this.processEnterAnimation();
           _next();
@@ -400,7 +400,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
-        DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+        destroy_in_next_frame(_this.index, (_next) => {
           _this.populateHideSequence();
           _this.origin = false;
           _this.transitory = false;
@@ -429,7 +429,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     registerActiveProperty: function (propertyKey, reactiveData, expression) {
       this.properties.add(reactiveData);
-      GV.activatePropertyForNode(this, propertyKey, reactiveData, expression);
+      GV.activate_property_for_node(this, propertyKey, reactiveData, expression);
     },
 
     snapshot: function (animations) {
@@ -514,7 +514,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
         _this.finalize[i].call(_this);
       }
 
-      DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+      destroy_in_next_frame(_this.index, (_next) => {
         _this.processLeaveAnimation(_this.destroyOrigin === 2 ? EMPTY_CALL : _this.onLeaveComplete);
         _this.localPropertyNames.clear();
         _this.properties.clear();
@@ -547,9 +547,9 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     clean: function (hasAnimation, children) {
       children = children || this.getChildNodes();
-      GV.DESTROY_NODES(children, hasAnimation);
+      GV.destroy_nodes(children, hasAnimation);
 
-      DESTROY_IN_NEXT_FRAME(this.index, (_next) => {
+      destroy_in_next_frame(this.index, (_next) => {
         let len = this.finalize.length;
         for (let i = 0; i < len; i++) {
           this.finalize[i].call(this);
@@ -560,7 +560,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     },
 
     createNext: function (act) {
-      CREATE_IN_NEXT_FRAME(this.index, act);
+      create_in_next_frame(this.index, act);
     },
 
     get index() {

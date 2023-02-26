@@ -2,7 +2,7 @@
 (function (G) {
   G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
     const propName = property.key;
-    const updateFn = property.update || G.View.setProp;
+    const updateFn = property.update || G.View.set_prop;
     const setter = create_prop_setter(updateFn, viewNode, propName);
     if (expression) {
       return function P_EXP() {

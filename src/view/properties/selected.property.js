@@ -10,7 +10,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate: function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -23,25 +23,12 @@
 
       // Don't do anything if the node is an option tag
       if (viewNode.blueprint.tag === 'select') {
-        const bindings = G.View.getBindings(viewNode.blueprint.selected);
+        const bindings = G.View.get_bindings(viewNode.blueprint.selected);
         const id = bindings.propertyKeys[0].split('.').pop();
         const nativeNode = viewNode.node;
         nativeNode.addEventListener('change', (event) => {
-          // if (scopeReactiveData.data[id] && !nativeNode.value) {
-          //   nativeNode.value = scopeReactiveData.data[id];
-          // }
+          console.log(viewNode.node, 'SELECTED', event);
         });
-        // const bindings = G.View.getBindings(viewNode.blueprint.selected);
-        // const id = bindings.propertyKeys[0].split('.').pop();
-        // const nativeNode = viewNode.node;
-
-        // const unsubscribe = viewNode.stream.filter('dom').filter('childList').subscribe(function () {
-        //   if (scopeReactiveData.data[id] && !nativeNode.value) {
-        //     nativeNode.value = scopeReactiveData.data[id];
-        //   }
-        // });
-        //
-        // viewNode.destroyed.then(unsubscribe);
       }
     },
     update: function (viewNode, value) {
@@ -52,7 +39,7 @@
           if (viewNode.blueprint.tag === 'select') {
             nativeNode.value = value;
           } else if (value) {
-            nativeNode.setAttribute('selected');
+            nativeNode.setAttribute('selected', true);
           } else {
             nativeNode.removeAttribute('selected');
           }

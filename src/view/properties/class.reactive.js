@@ -19,10 +19,10 @@
 
       // when value is an object
       const viewNode = this;
-      const reactiveClasses = config.reactiveClasses = G.View.bindSubjectsToData(viewNode, config.subjects, config.scope, true);
+      const reactiveClasses = config.reactiveClasses = G.View.bind_subjects_to_data(viewNode, config.subjects, config.scope, true);
       const observer = config.observer = new G.Observer(reactiveClasses);
       const animations = viewNode.blueprint.animations || {};
-      const gsapExist  = !!window.gsap.config;
+      const gsapExist = !!window.gsap.config;
       if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
         viewNode.rendered.then(() => {
           // ToDo: Don't know why this is here. It looks redundant
@@ -111,10 +111,10 @@
       return;
     }
 
-    G.View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
-      viewNode.node.className = newClasses.join(' ');
-      _next();
-    });
+    // G.View.create_in_next_frame(viewNode.index, (_next) => {
+    viewNode.node.className = newClasses.join(' ');
+    // _next();
+    // });
   }
 })(Galaxy);
 

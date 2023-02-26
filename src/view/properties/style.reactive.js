@@ -25,7 +25,7 @@
       }
 
       const node = this.node;
-      const reactiveStyle = config.reactiveStyle = G.View.bindSubjectsToData(this, config.subjects, config.scope, true);
+      const reactiveStyle = config.reactiveStyle = G.View.bind_subjects_to_data(this, config.subjects, config.scope, true);
       const observer = new G.Observer(reactiveStyle);
       observer.onAll(() => {
         setStyle(node, reactiveStyle);

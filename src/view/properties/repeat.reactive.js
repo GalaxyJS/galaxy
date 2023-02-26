@@ -2,7 +2,7 @@
 (function (G) {
   const View = G.View;
   const CLONE = G.clone;
-  const DESTROY_NODES = G.View.DESTROY_NODES;
+  const destroy_nodes = G.View.destroy_nodes;
 
   View.REACTIVE_BEHAVIORS['repeat'] = true;
   View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = {
@@ -41,12 +41,12 @@
         viewNode.localPropertyNames.add(config.as);
         viewNode.localPropertyNames.add(config.indexAs);
 
-        const bindings = View.getBindings(config.data);
+        const bindings = View.get_bindings(config.data);
         if (bindings.propertyKeys.length) {
-          View.makeBinding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
+          View.make_binding(viewNode, 'repeat', undefined, config.scope, bindings, viewNode);
           bindings.propertyKeys.forEach((path) => {
             try {
-              const rd = View.propertyRDLookup(config.scope, path);
+              const rd = View.property_rd_lookup(config.scope, path);
               viewNode.finalize.push(() => {
                 rd.removeNode(viewNode);
               });
@@ -55,7 +55,7 @@
             }
           });
         } else if (config.data instanceof Array) {
-          const setter = viewNode.setters['repeat'] = View.getPropertySetterForNode(G.View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null, config.scope);
+          const setter = viewNode.setters['repeat'] = View.get_property_setter_for_node(G.View.NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null, config.scope);
           const value = new G.View.ArrayChange();
           value.params = config.data;
           config.data.changes = value;
@@ -194,12 +194,12 @@
         return hasBeenRemoved.indexOf(node) === -1;
       });
 
-      DESTROY_NODES(hasBeenRemoved, hasAnimation);
+      destroy_nodes(hasBeenRemoved, hasAnimation);
       return newChanges;
     } else if (changes.type === 'reset') {
       const nodesToBeRemoved = config.nodes.slice(0);
       config.nodes = [];
-      DESTROY_NODES(nodesToBeRemoved, hasAnimation);
+      destroy_nodes(nodesToBeRemoved, hasAnimation);
       const newChanges = Object.assign({}, changes);
       newChanges.type = 'push';
       return newChanges;
@@ -261,7 +261,7 @@
     } else if (changes.type === 'splice') {
       const changeParams = changes.params.slice(0, 2);
       const removedItems = Array.prototype.splice.apply(nodes, changeParams);
-      DESTROY_NODES(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
+      destroy_nodes(removedItems.reverse(), viewNode.blueprint.animations && viewNode.blueprint.animations.leave);
       Array.prototype.splice.apply(trackMap, changeParams);
 
       const startingIndex = changes.params[0];
@@ -356,7 +356,7 @@
 
       if (config.onComplete) {
         // debugger
-        View.CREATE_IN_NEXT_FRAME(viewNode.index, (_next) => {
+        View.create_in_next_frame(viewNode.index, (_next) => {
           config.onComplete(nodes);
           _next();
         });
@@ -365,7 +365,7 @@
   }
 
   function createItemDataScope(nodeScopeData, as, itemData) {
-    const itemDataScope = View.createChildScope(nodeScopeData);
+    const itemDataScope = View.create_child_scope(nodeScopeData);
     itemDataScope[as] = itemData;
     return itemDataScope;
   }

@@ -292,37 +292,36 @@ Galaxy.Router = /** @class */ (function (G) {
       }
     },
 
-    callRoute: function (route, hash, params, parentParams) {
-      const activeRoute = this.data.activeRoute;
-      const activePath = this.data.activePath;
+    callRoute: function (newRoute, hash, params, parentParams) {
+      const oldRoute = this.data.activeRoute;
+      const oldPath = this.data.activePath;
+      this.data.activeRoute = newRoute;
+      this.data.activePath = newRoute.path;
 
-      this.onTransitionFn.call(this, activePath, route.path, activeRoute, route);
-      if (!route.redirectTo) {
+      this.onTransitionFn.call(this, oldPath, newRoute.path, oldRoute, newRoute);
+      if (!newRoute.redirectTo) {
         // if current route's path starts with the old route's path, then the old route should stay active
-        if (activeRoute && route.path.indexOf(activePath) !== 0) {
-          activeRoute.active = false;
+        if (oldRoute && newRoute.path.indexOf(oldPath) !== 0) {
+          oldRoute.active = false;
 
-          if (typeof activeRoute.onLeave === 'function') {
-            activeRoute.onLeave.call(null, activePath, route.path, activeRoute, route);
+          if (typeof oldRoute.onLeave === 'function') {
+            oldRoute.onLeave.call(null, oldPath, newRoute.path, oldRoute, newRoute);
           }
         }
 
-        route.active = true;
+        newRoute.active = true;
       }
 
-      if (typeof route.onEnter === 'function') {
-        route.onEnter.call(null, activePath, route.path, activeRoute, route);
+      if (typeof newRoute.onEnter === 'function') {
+        newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
       }
 
-      this.data.activeRoute = route;
-      this.data.activePath = route.path;
-
-      if (typeof route.handle === 'function') {
-        return route.handle.call(this, params, parentParams);
+      if (typeof newRoute.handle === 'function') {
+        return newRoute.handle.call(this, params, parentParams);
       } else {
-        this.populateViewports(route);
+        this.populateViewports(newRoute);
 
-        G.View.CREATE_IN_NEXT_FRAME(G.View.GET_MAX_INDEX(), (_next) => {
+        G.View.create_in_next_frame(G.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
           _next();
         });

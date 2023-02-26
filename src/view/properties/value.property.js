@@ -1,5 +1,13 @@
 /* global Galaxy */
 (function (G) {
+  const IGNORE_TYPES = [
+    'radio',
+    'checkbox',
+    'button',
+    'reset',
+    'submit'
+  ];
+
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['value.config'] = {
     type: 'none'
   };
@@ -16,7 +24,7 @@
      */
     beforeActivate: function valueUtil(viewNode, scopeReactiveData, prop, expression) {
       const nativeNode = viewNode.node;
-      if (!scopeReactiveData) {
+      if (!scopeReactiveData || IGNORE_TYPES.indexOf(nativeNode.type) !== -1) {
         return;
       }
 
@@ -26,16 +34,13 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = G.View.getBindings(viewNode.blueprint.value);
+      const bindings = G.View.get_bindings(viewNode.blueprint.value);
       const id = bindings.propertyKeys[0].split('.').pop();
       if (nativeNode.tagName === 'SELECT') {
         const observer = new MutationObserver((data) => {
           viewNode.rendered.then(() => {
-            // if (!scopeReactiveData.data[id]) {
-            //   scopeReactiveData.data[id] = nativeNode.value;
-            // } else {
+            // Set the value after the children are rendered
             nativeNode.value = scopeReactiveData.data[id];
-            // }
           });
         });
         observer.observe(nativeNode, { childList: true });

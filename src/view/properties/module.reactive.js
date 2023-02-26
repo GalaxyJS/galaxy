@@ -34,7 +34,7 @@
       }
 
       if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
-        // When this node has a `if`, calling `clean_content(this)` inside a DESTROY_IN_NEXT_FRAME cause the animation
+        // When this node has a `if`, calling `clean_content(this)` inside a destroy_in_next_frame cause the animation
         // of this node to be executed before the animations of its children, which is not correct.
         // Calling `clean_content(this)` directly fixes this issue, however it might cause other issues when
         // this node does not use `if`. Therefore, we make sure both cases are covered.
@@ -42,7 +42,7 @@
         // ToDo: Make this works properly
         clean_content(_this);
         // } else {
-        //   G.View.DESTROY_IN_NEXT_FRAME(_this.index, (_next) => {
+        //   G.View.destroy_in_next_frame(_this.index, (_next) => {
         //     clean_content(_this);
         //     _next();
         //   });
@@ -50,7 +50,7 @@
       }
 
       if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
-        G.View.CREATE_IN_NEXT_FRAME(_this.index, (_next) => {
+        G.View.create_in_next_frame(_this.index, (_next) => {
           module_loader.call(null, _this, config, newModuleMeta, _next);
         });
       }
@@ -77,7 +77,7 @@
 
     viewNode.clean(true);
 
-    // G.View.DESTROY_IN_NEXT_FRAME(viewNode.index, (_next) => {
+    // G.View.destroy_in_next_frame(viewNode.index, (_next) => {
     //   let len = viewNode.finalize.length;
     //   for (let i = 0; i < len; i++) {
     //     viewNode.finalize[i].call(viewNode);

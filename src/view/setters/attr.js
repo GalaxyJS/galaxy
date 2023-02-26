@@ -2,7 +2,7 @@
 (function (G) {
   G.View.PROPERTY_SETTERS.attr = function (viewNode, property, expression) {
     const attrName = property.key;
-    const updateFn = property.update || G.View.setAttr;
+    const updateFn = property.update || G.View.set_attr;
     const setter = create_attr_setter(updateFn, viewNode, attrName);
 
     if (expression) {

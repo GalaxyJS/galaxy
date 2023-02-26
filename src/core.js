@@ -27,9 +27,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     return a;
   };
 
-  const cachedModules = {};
+  const CACHED_MODULES = {};
 
-  Core.cm = cachedModules;
+  Core.cm = CACHED_MODULES;
 
   /**
    *
@@ -242,7 +242,7 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
               doneImporting(module, importsCopy);
             }
             // importable is already loaded, and we don't need a new instance of it (Singleton)
-            else if (cachedModules[importable.path] && !importable.fresh) {
+            else if (CACHED_MODULES[importable.path] && !importable.fresh) {
               doneImporting(module, importsCopy);
             }
             // importable is not loaded
@@ -284,9 +284,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             module.scope.inject(item, module.addOns[item]);
           }
 
-          for (let item in cachedModules) {
-            if (cachedModules.hasOwnProperty(item)) {
-              const asset = cachedModules[item];
+          for (let item in CACHED_MODULES) {
+            if (CACHED_MODULES.hasOwnProperty(item)) {
+              const asset = CACHED_MODULES[item];
               if (asset.module) {
                 module.scope.inject(asset.id, asset.module);
               }
@@ -310,8 +310,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
             // if the module export has _temp then do not cache the module
             if (module.scope.export._temp) {
               module.scope.parentScope.inject(id, module.scope.export);
-            } else if (!cachedModules[id]) {
-              cachedModules[id] = {
+            } else if (!CACHED_MODULES[id]) {
+              CACHED_MODULES[id] = {
                 id: id,
                 module: module.scope.export
               };

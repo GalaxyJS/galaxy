@@ -20,7 +20,7 @@
         }
       });
 
-      G.View.setAttr(viewNode, value ? '' : null, attr);
+      G.View.set_attr(viewNode, value ? '' : null, attr);
     }
   };
 })(Galaxy);

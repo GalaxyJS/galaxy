@@ -519,9 +519,11 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           for (const method of KEYS_TO_REMOVE_FOR_ARRAY) {
             Reflect.deleteProperty(_data, method);
           }
-        } else if (_data instanceof Object) {
-          Reflect.deleteProperty(_data, '__rd__');
         }
+        // This cause an issue since the properties are still reactive
+        // else if (_data instanceof Object) {
+        //   Reflect.deleteProperty(_data, '__rd__');
+        // }
         // TODO: Should be tested as much as possible to make sure it works with no bug
         // TODO: We either need to return the object to its original state or do nothing
       }

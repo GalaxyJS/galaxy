@@ -254,25 +254,24 @@
    * @param {string} className
    */
   function process_class_animation(viewNode, viewNodeCache, tweenKey, animationConfig, addOrRemove, className) {
-    const animationType = get_class_based_animation_type(addOrRemove, className);
-    const tweenExist = Boolean(viewNodeCache[tweenKey]);
+    const IN_NEXT_FRAME = addOrRemove ? G.View.create_in_next_frame : G.View.destroy_in_next_frame;
+    IN_NEXT_FRAME(viewNode.index, (_next) => {
+      const tweenExist = Boolean(viewNodeCache[tweenKey]);
 
-    if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
-      AnimationMeta.setupOnComplete(animationConfig, () => {
-        viewNode.node.classList.add(className);
-      });
-    } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
-      AnimationMeta.setupOnComplete(animationConfig, () => {
-        viewNode.node.classList.remove(className);
-      });
-    }
+      if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
+        AnimationMeta.setupOnComplete(animationConfig, () => {
+          viewNode.node.classList.add(className);
+        });
+      } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
+        AnimationMeta.setupOnComplete(animationConfig, () => {
+          viewNode.node.classList.remove(className);
+        });
+      }
 
-    viewNodeCache[tweenKey] = viewNodeCache[tweenKey] || [];
-    viewNodeCache[tweenKey].push(AnimationMeta.installGSAPAnimation(viewNode, animationType, animationConfig));
-  }
-
-  function get_class_based_animation_type(type, key) {
-    return type ? 'add:' + key : 'remove:' + key;
+      viewNodeCache[tweenKey] = viewNodeCache[tweenKey] || [];
+      viewNodeCache[tweenKey].push(AnimationMeta.installGSAPAnimation(viewNode, null, animationConfig));
+      _next();
+    });
   }
 
   /**
@@ -283,7 +282,7 @@
    * @returns {*}
    */
   function get_class_based_animation_config(animations, type, key) {
-    const animationKey = get_class_based_animation_type(type, key);
+    const animationKey = type ? 'add:' + key : 'remove:' + key;
     return animations[animationKey];
   }
 
@@ -414,7 +413,7 @@
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
-   * @param {'enter'|'leave'|'class-add'|'class-remove'} type
+   * @param {'enter'|'leave'|null} type
    * @param {AnimationConfig} descriptions
    * @param {Function} [finalize]
    */
@@ -426,18 +425,15 @@
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
-    if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
-      to = Object.assign(to || {}, { overwrite: 'none' });
-    }
+    // if (type.indexOf('add:') === 0 || type.indexOf('remove:') === 0) {
+    //   to = Object.assign(to || {}, { overwrite: 'none' });
+    // }
     /** @type {AnimationConfig} */
     const newConfig = Object.assign({}, descriptions);
     newConfig.from = from;
     newConfig.to = to;
     let timelineName = newConfig.timeline;
 
-    // if (newConfig.timeline instanceof Function) {
-    //   timelineName = newConfig.timeline.call(viewNode);
-    // }
 
     let parentAnimationMeta = null;
     if (timelineName) {
@@ -450,7 +446,6 @@
         if (children.indexOf(animationMeta.timeline) === -1) {
           parentAnimationMeta.timeline.add(animationMeta.timeline, parentAnimationMeta.parsePosition(newConfig.positionInParent));
         }
-        // animationMeta.addTo(parentAnimationMeta, newConfig.positionInParent);
       }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
@@ -499,6 +494,10 @@
         });
       }
 
+      // Class animation do not have a type since their `enter` and `leave` states are not the same a
+      // node's `enter` and `leave`. A class can be added or in other word, have an `enter` state while its timeline
+      // is in a `leave` state or vice versa.
+      type = type || animationMeta.type;
       // The first tween of an animation type(enter or leave) should use startPosition
       if (animationMeta.type && animationMeta.type !== type && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
         newConfig.position = newConfig.startPosition;
@@ -508,7 +507,7 @@
       const tween = animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
-      // its only child and we have to resume it if it's not playing
+      // its only child and, we have to resume it if it's not playing
       if (newConfig.addTo && parentAnimationMeta) {
         if (!parentAnimationMeta.started /*&& parentAnimationMeta.name !== '<user-defined>'*/) {
           parentAnimationMeta.started = true;

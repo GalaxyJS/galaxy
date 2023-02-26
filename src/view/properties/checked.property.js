@@ -10,7 +10,7 @@
      * @param prop
      * @param {Function} expression
      */
-    beforeActivate : function (viewNode, scopeReactiveData, prop, expression) {
+    beforeActivate: function (viewNode, scopeReactiveData, prop, expression) {
       if (!scopeReactiveData) {
         return;
       }
@@ -21,12 +21,12 @@
           'It uses its bound value as its `model` and expressions can not be used as model.\n');
       }
 
-      const bindings = G.View.getBindings(viewNode.blueprint.checked);
+      const bindings = G.View.get_bindings(viewNode.blueprint.checked);
       const id = bindings.propertyKeys[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', function () {
-        if (/\[\]$/.test(nativeNode.name) && nativeNode.type !== 'radio') {
-          const data = scopeReactiveData.data[id];
+        const data = scopeReactiveData.data[id];
+        if (data instanceof Array && nativeNode.type !== 'radio') {
           // if the node does not have value attribute, then we take its default value into the account
           // The default value for checkbox is 'on' but we translate that to true
           const value = nativeNode.hasAttribute('value') ? nativeNode.value : true;
@@ -53,18 +53,15 @@
     update: function (viewNode, value) {
       const nativeNode = viewNode.node;
       viewNode.rendered.then(function () {
-        if (/\[\]$/.test(nativeNode.name)) {
+        // if (/]$/.test(nativeNode.name)) {
+        if (value instanceof Array) {
           if (nativeNode.type === 'radio') {
             console.error('Inputs with type `radio` can not provide array as a value.');
             return console.warn('Read about radio input at: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/radio');
           }
 
           const nativeValue = nativeNode.hasAttribute('value') ? nativeNode.value : true;
-          if (value instanceof Array) {
-            nativeNode.checked = value.indexOf(nativeValue) !== -1;
-          } else {
-            nativeNode.checked = value === nativeValue;
-          }
+          nativeNode.checked = value.indexOf(nativeValue) !== -1;
         } else if (nativeNode.hasAttribute('value')) {
           nativeNode.checked = value === nativeNode.value;
         } else {
