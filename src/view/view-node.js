@@ -225,7 +225,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     });
 
     _this.rendered = new Promise(function (done) {
-      if (_this.node.style) {
+      if ('style' in _this.node) {
         _this.hasBeenRendered = function () {
           _this.rendered.resolved = true;
           _this.node.style.removeProperty('display');
@@ -354,7 +354,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       if (_this.virtual) return;
 
       if (flag) {
-        if (_this.node.style) {
+        if ('style' in _this.node) {
           _this.node.style.setProperty('display', 'none');
         }
 
@@ -371,6 +371,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
           _this.processEnterAnimation();
           _next();
         });
+
+        const children = _this.getChildNodesAsc();
+        const len = children.length;
+        for (let i = 0; i < len; i++) {
+          // console.log(children[i].node);
+          children[i].setInDOM(true);
+        }
       } else if (!flag && _this.node.parentNode) {
         _this.origin = true;
         _this.transitory = true;
@@ -470,10 +477,17 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const _this = this;
 
       if (hasAnimation) {
-        if (_this.processLeaveAnimation === EMPTY_CALL && _this.origin) {
-          _this.processLeaveAnimation = function () {
-            REMOVE_SELF.call(_this, false);
-          };
+        if (_this.processLeaveAnimation === EMPTY_CALL) {
+          if (_this.origin) {
+            _this.processLeaveAnimation = function () {
+              REMOVE_SELF.call(_this, false);
+            };
+          }
+          // if a child has an animation and this node is being removed directly, then we need to remove this node
+          // in order for element to get removed properly
+          else if (_this.destroyOrigin === 1) {
+            REMOVE_SELF.call(_this, true);
+          }
         } else if (_this.processLeaveAnimation !== EMPTY_CALL && !_this.origin) {
           // Children with leave animation should not get removed from dom for visual purposes.
           // Since their this node already has a leave animation and eventually will be removed from dom.
@@ -493,10 +507,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     destroy: function (hasAnimation) {
       const _this = this;
       _this.transitory = true;
-      // if(!_this.parent)debugger;
       if (_this.parent.destroyOrigin === 0) {
+        // destroy() has been called on this node
         _this.destroyOrigin = 1;
       } else {
+        // destroy() has been called on a parent node
         _this.destroyOrigin = 2;
       }
 
@@ -508,7 +523,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
 
       _this.properties.forEach((reactiveData) => reactiveData.removeNode(_this));
-
       let len = _this.finalize.length;
       for (let i = 0; i < len; i++) {
         _this.finalize[i].call(_this);
@@ -532,6 +546,20 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const nodes = [];
       const cn = arrSlice.call(this.node.childNodes, 0);
       for (let i = cn.length - 1; i >= 0; i--) {
+        // All the nodes that are ViewNode
+        const node = cn[i];
+        if ('__vn__' in node) {
+          nodes.push(node['__vn__']);
+        }
+      }
+
+      return nodes;
+    },
+
+    getChildNodesAsc: function () {
+      const nodes = [];
+      const cn = arrSlice.call(this.node.childNodes, 0);
+      for (let i = 0; i < cn.length; i++) {
         // All the nodes that are ViewNode
         const node = cn[i];
         if ('__vn__' in node) {
@@ -583,19 +611,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
         return parent.index + ',' + ViewNode.createIndex(this.node.__index__);
       }
-
-      // This solution is much more reliable however it's very slow
-      // if (parent) {
-      //   let i = 0;
-      //   let node = this.node;
-      //   while ((node = node.previousSibling) !== null) ++i;
-      //   // i = arrIndexOf.call(parent.node.childNodes, node);
-      //
-      //   if (i === 0 && this.placeholder.parentNode) {
-      //     i = arrIndexOf.call(parent.node.childNodes, this.placeholder);
-      //   }
-      //   return parent.index + ',' + ViewNode.createIndex(i);
-      // }
 
       return '0';
     },

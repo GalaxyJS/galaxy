@@ -11,8 +11,8 @@
        * @param animationDescriptions
        */
       update: function (viewNode, animationDescriptions) {
-        if (animationDescriptions.enter && animationDescriptions.enter.onComplete) {
-          viewNode.processEnterAnimation = animationDescriptions.enter.onComplete;
+        if (animationDescriptions.enter && animationDescriptions.enter.to.onComplete) {
+          viewNode.processEnterAnimation = animationDescriptions.enter.to.onComplete;
         }
         viewNode.processLeaveAnimation = (onComplete) => {
           onComplete();
@@ -67,7 +67,7 @@
     return;
   }
 
-  function hasParentEnterAnimation(viewNode) {
+  function has_parent_enter_animation(viewNode) {
     if (!viewNode.parent) return false;
 
     const parent = viewNode.parent;
@@ -75,8 +75,10 @@
       return true;
     }
 
-    return hasParentEnterAnimation(viewNode.parent);
+    return has_parent_enter_animation(viewNode.parent);
   }
+
+  const document_body = document.body;
 
   G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
     type: 'prop',
@@ -133,10 +135,10 @@
             if (animationConfig) {
               if (animationConfig.to.keyframes instanceof Array) {
                 for (let i = 0, len = animationConfig.to.keyframes.length; i < len; i++) {
-                  gsap.set(viewNode.node, Object.assign({}, animationConfig.to.keyframes[i] || {}));
+                  gsap.set(viewNode.node, Object.assign({ callbackScope: viewNode }, animationConfig.to.keyframes[i] || {}));
                 }
               } else {
-                gsap.set(viewNode.node, Object.assign({}, animationConfig.to || {}));
+                gsap.set(viewNode.node, Object.assign({ callbackScope: viewNode }, animationConfig.to || {}));
               }
 
               if (type) {
@@ -165,6 +167,10 @@
                 Reflect.deleteProperty(viewNodeCache, tweenKey);
               }
 
+              // if(!viewNode.rendered.resolved) {
+              //   console.log(viewNode.node)
+              // }
+
               process_class_animation(viewNode, viewNodeCache, tweenKey, animationConfig, addOrRemove, className);
             }
           });
@@ -184,7 +190,7 @@
     if (animationConfig.withParent) {
       // if parent has an enter animation, then ignore viewNode's animation
       // so viewNode can enter with its parent
-      if (hasParentEnterAnimation(viewNode)) {
+      if (has_parent_enter_animation(viewNode)) {
         return gsap.set(_node, Object.assign({}, animationConfig.to || {}));
       }
 
@@ -197,6 +203,15 @@
 
     if (gsap.getTweensOf(_node).length) {
       gsap.killTweensOf(_node);
+    }
+
+    // if a parent node is rendered detached, then this node won't be in the DOM
+    // therefore, their animations should be ignored.
+    if (!document_body.contains(_node)) {
+      // console.log(_node);
+      // if the node is not part of the DOM/body then probably it's being rendered detached,
+      // and we should skip its enter animation
+      return;
     }
 
     AnimationMeta.installGSAPAnimation(viewNode, 'enter', animationConfig);
@@ -217,14 +232,15 @@
     const withParentResult = animationConfig.withParent;
     viewNode.leaveWithParent = withParentResult === true;
     const _node = viewNode.node;
-    if (gsap.getTweensOf(_node).length) {
-      gsap.killTweensOf(_node);
-    }
+    // if (gsap.getTweensOf(_node).length) {
+    //   gsap.killTweensOf(_node);
+    // }
 
     if (withParentResult) {
       // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
       const parent = viewNode.parent;
       if (parent.transitory) {
+        gsap.killTweensOf(_node);
         // We dump _node, so it gets removed when the leave's animation's origin node is detached.
         // This fixes a bug where removed elements stay in DOM if the cause of the leave animation is a 'if'
         return viewNode.dump();
@@ -239,6 +255,16 @@
       _node.style.visibility === 'hidden') {
       gsap.killTweensOf(_node);
       return finalize();
+    }
+
+    const tweens = gsap.getTweensOf(_node);
+    for (const t of tweens) {
+      if (t.parent) {
+        t.parent.pause();
+        t.parent.remove(t);
+      } else {
+        t.pause();
+      }
     }
 
     AnimationMeta.installGSAPAnimation(viewNode, 'leave', animationConfig, finalize);
@@ -287,8 +313,18 @@
   }
 
   function leave_with_parent(finalize) {
-    if (gsap.getTweensOf(this.node).length) {
-      gsap.killTweensOf(this.node);
+    // if (gsap.getTweensOf(this.node).length) {
+    //   gsap.killTweensOf(this.node);
+    // }
+    const tweens = gsap.getTweensOf(this.node);
+    for (const t of tweens) {
+      if (t.parent) {
+        // t.pause();
+        t.parent.pause();
+        t.parent.remove(t);
+      } else {
+        t.pause();
+      }
     }
 
     if (this.parent.transitory) {
@@ -387,11 +423,9 @@
    * @param viewNode
    * @return {*}
    */
-  AnimationMeta.createStep = function (stepDescription, onStart, onComplete, viewNode) {
+  AnimationMeta.addCallbackScope = function (stepDescription, viewNode) {
     const step = Object.assign({}, stepDescription);
     step.callbackScope = viewNode;
-    step.onStart = onStart;
-    step.onComplete = onComplete;
 
     return step;
   };
@@ -421,7 +455,7 @@
     const from = descriptions.from;
     let to = descriptions.to;
 
-    if (type !== 'leave' && to) {
+    if (type !== 'leave' && to && viewNode.node.nodeType !== Node.COMMENT_NODE) {
       to.clearProps = to.hasOwnProperty('clearProps') ? to.clearProps : 'all';
     }
 
@@ -434,19 +468,21 @@
     newConfig.to = to;
     let timelineName = newConfig.timeline;
 
-
     let parentAnimationMeta = null;
     if (timelineName) {
       const animationMeta = new AnimationMeta(timelineName);
+      // Class animation do not have a type since their `enter` and `leave` states are not the same a
+      // node's `enter` and `leave`. A class can be added or in other word, have an `enter` state while its timeline
+      // is in a `leave` state or vice versa.
+      type = type || animationMeta.type;
       // By calling 'addTo' first, we can provide a parent for the 'animationMeta.timeline'
-      if (newConfig.addTo) {
-        parentAnimationMeta = new AnimationMeta(newConfig.addTo);
-
-        const children = parentAnimationMeta.timeline.getChildren(false);
-        if (children.indexOf(animationMeta.timeline) === -1) {
-          parentAnimationMeta.timeline.add(animationMeta.timeline, parentAnimationMeta.parsePosition(newConfig.positionInParent));
-        }
-      }
+      // if (newConfig.addTo) {
+      //   parentAnimationMeta = new AnimationMeta(newConfig.addTo);
+      //   const children = parentAnimationMeta.timeline.getChildren(false);
+      //   if (children.indexOf(animationMeta.timeline) === -1) {
+      //     parentAnimationMeta.timeline.add(animationMeta.timeline, parentAnimationMeta.parsePosition(newConfig.positionInParent));
+      //   }
+      // }
 
       // Make sure the await step is added to highest parent as long as that parent is not the 'gsap.globalTimeline'
       if (newConfig.await && animationMeta.awaits.indexOf(newConfig.await) === -1) {
@@ -494,16 +530,21 @@
         });
       }
 
-      // Class animation do not have a type since their `enter` and `leave` states are not the same a
-      // node's `enter` and `leave`. A class can be added or in other word, have an `enter` state while its timeline
-      // is in a `leave` state or vice versa.
-      type = type || animationMeta.type;
       // The first tween of an animation type(enter or leave) should use startPosition
-      if (animationMeta.type && animationMeta.type !== type && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
-        newConfig.position = newConfig.startPosition;
+      if (animationMeta.type && animationMeta.type !== type && !newConfig.keyframe && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
+        // newConfig.position = newConfig.startPosition;
+      }
+
+      const children = animationMeta.timeline.getChildren(false);
+      if (children.length) {
+        const lastTween = children[children.length - 1];
+        if (lastTween.data === 'timeline:start') {
+          newConfig.position = '+=0';
+        }
       }
 
       animationMeta.type = type;
+      // console.log(newConfig)
       const tween = animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
@@ -559,9 +600,6 @@
         _this.onCompletesActions = [];
       });
       _this.parsePosition = (p) => p;
-      _this.addTo = (tl) => {
-        throw new Error('You can not use addTo with a custom timeline: ' + tl);
-      };
     } else {
       const exist = AnimationMeta.ANIMATIONS[name];
       if (exist) {
@@ -621,7 +659,7 @@
     parsePosition: function (p) {
       let position = this.labelsMap[p] || p;
       let label = null;
-      if (position) {
+      if (position || typeof position === 'number') {
         if (position.indexOf('+=') !== -1) {
           const parts = position.split('+=');
           label = parts[0];
@@ -639,12 +677,6 @@
     addOnComplete: function (action) {
       this.onCompletesActions.push(action);
     },
-    addTo(parentAnimationMeta, positionInParent) {
-      const children = parentAnimationMeta.timeline.getChildren(false);
-      if (children.indexOf(this.timeline) === -1) {
-        parentAnimationMeta.timeline.add(this.timeline, parentAnimationMeta.parsePosition(positionInParent));
-      }
-    },
 
     /**
      *
@@ -657,13 +689,13 @@
       let tween = null;
 
       if (config.from && config.to) {
-        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
+        const to = AnimationMeta.addCallbackScope(config.to, viewNode);
         tween = gsap.fromTo(viewNode.node, config.from, to);
       } else if (config.from) {
-        const from = AnimationMeta.createStep(config.from, config.onStart, config.onComplete, viewNode);
+        const from = AnimationMeta.addCallbackScope(config.from, viewNode);
         tween = gsap.from(viewNode.node, from);
       } else {
-        const to = AnimationMeta.createStep(config.to, config.onStart, config.onComplete, viewNode);
+        const to = AnimationMeta.addCallbackScope(config.to, viewNode);
         tween = gsap.to(viewNode.node, to);
       }
 
@@ -682,19 +714,27 @@
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
+      // console.log(config)
 
       if (tChildren.length === 0) {
-        _this.timeline.add(tween, (position && position.indexOf('=') === -1) ? position : null);
+        // if the tween is the very first child then its position can not be negative
+        _this.timeline.add(tween, (position && position.indexOf('-=') === -1) ? position : null);
       } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
+        debugger
         _this.timeline.clear(false);
         _this.timeline.add(tween, position);
       } else {
         _this.timeline.add(tween, position);
       }
 
-      if (!_this.started && _this.name !== '<user-defined>') {
+      if (_this.name === '<user-defined>')
+        return tween;
+
+      if (!_this.started) {
         _this.started = true;
+        _this.timeline.resume();
+      } else if (_this.timeline.paused()) {
         _this.timeline.resume();
       }
 

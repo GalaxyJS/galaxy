@@ -149,7 +149,8 @@ Galaxy.View = /** @class */(function (G) {
   const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
   const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
   const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
-  const BINDING_RE = /^<([^\[\]<>]*)>\s*([^\[\]<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
+  const BINDING_RE = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
+  const PROPERTY_NAME_SPLITTER_RE = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g;
 
   function apply_node_dataset(node, value) {
     if (typeof value === 'object' && value !== null) {
@@ -526,7 +527,7 @@ Galaxy.View = /** @class */(function (G) {
   }
 
   function add_dom_manipulation(index, act, order, search) {
-    if (dom_manipulation_table.hasOwnProperty(index)) {
+    if (index in dom_manipulation_table) {
       dom_manipulation_table[index].push(act);
     } else {
       dom_manipulation_table[index] = [act];
@@ -534,12 +535,12 @@ Galaxy.View = /** @class */(function (G) {
     }
   }
 
-  let last_dom_manipulation_id;
+  let last_dom_manipulation_id = 0;
 
   function update_dom_manipulation_order() {
-    if (last_dom_manipulation_id) {
+    if (last_dom_manipulation_id !== 0) {
       clearTimeout(last_dom_manipulation_id);
-      last_dom_manipulation_id = null;
+      last_dom_manipulation_id = 0;
     }
 
     dom_manipulation_order = arr_concat(destroy_order, create_order);
@@ -867,8 +868,9 @@ Galaxy.View = /** @class */(function (G) {
       propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
       const bindType = bindings.bindTypes[i];
+      let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+      propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
 
-      propertyKeyPathItems = propertyKey.split('.');
       if (propertyKeyPathItems.length > 1) {
         propertyKey = propertyKeyPathItems[0];
         childPropertyKeyPath = propertyKeyPathItems.slice(1).join('.');
@@ -881,11 +883,13 @@ Galaxy.View = /** @class */(function (G) {
           hostReactiveData = new G_View_ReactiveData(null, scopeData, scopeData instanceof Galaxy.Scope ? scopeData.systemId : 'child');
         }
       }
-      // When the scopeData is a childScopeData
-      // But developer should still be able to access parent/root scopeData
-      if (propertyKeyPathItems[0] === 'data' && scopeData && scopeData.hasOwnProperty('__scope__') &&
-        propertyKey === 'data') {
-        hostReactiveData = null;
+
+      if (propertyKeyPathItems[0] === 'Scope') {
+        throw new Error('`Scope` keyword must be omitted when it is used  used in bindings: ' + propertyKeys.join('.'));
+      }
+
+      if (propertyKey.indexOf('[') === 0) {
+        propertyKey = propertyKey.substring(1, propertyKey.length - 1);
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
@@ -910,8 +914,7 @@ Galaxy.View = /** @class */(function (G) {
         reactiveData = new G_View_ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
       } else if (childPropertyKeyPath) {
         reactiveData = new G_View_ReactiveData(propertyKey, null, hostReactiveData);
-      } else if (hostReactiveData && expressionFn === false) {
-        // We don't need a shadow key if propertyKey is bound to an expression
+      } else if (hostReactiveData) {
         // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
         hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
       }
@@ -1153,6 +1156,60 @@ Galaxy.View = /** @class */(function (G) {
     }
   }
 
+  function TimelineControl(type) {
+    this.type = type;
+  }
+
+  TimelineControl.prototype.startKeyframe = function (timeline, position) {
+    if (!timeline) {
+      throw new Error('Argument Missing: view.' + this.type + '.start(timeline:string) needs a `timeline`');
+    }
+
+    position = position || '+=0';
+
+    const animations = {
+      [this.type]: {
+        // keyframe: true,
+        to: {
+          data: 'timeline:start',
+          duration: 0.001
+        },
+        timeline,
+        position
+      }
+    };
+
+    return {
+      tag: 'comment',
+      text: ['', this.type + ':timeline:start', 'position: ' + position, 'timeline: ' + timeline, ''].join('\n'),
+      animations
+    };
+  };
+
+  TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position) {
+    if (!timeline) {
+      throw new Error('Argument Missing: view.' + this.type + '.add(timeline:string) needs a `timeline`');
+    }
+
+    const animations = {
+      [this.type]: {
+        // keyframe: true,
+        to: {
+          duration: 0.001,
+          onComplete
+        },
+        timeline,
+        position,
+      }
+    };
+
+    return {
+      tag: 'comment',
+      text: this.type + ':timeline:keyframe',
+      animations
+    };
+  };
+
   View.prototype = {
     _components: {},
     components: function (map) {
@@ -1165,6 +1222,12 @@ Galaxy.View = /** @class */(function (G) {
         this._components[key] = comp;
       }
     },
+    /**
+     *
+     */
+    entering: new TimelineControl('enter'),
+
+    leaving: new TimelineControl('leave'),
 
     /**
      *
@@ -1214,54 +1277,6 @@ Galaxy.View = /** @class */(function (G) {
       };
     },
 
-    enterKeyframe: function (onComplete, timeline, durOrPos) {
-      let position = undefined;
-      let duration = durOrPos || .01;
-      if (typeof timeline === 'number') {
-        duration = timeline;
-        timeline = null;
-      } else if (typeof timeline === 'string') {
-        position = durOrPos;
-        duration = .01;
-      }
-
-      return {
-        tag: 'comment',
-        text: 'keyframe:enter',
-        animations: {
-          enter: {
-            duration,
-            timeline,
-            position,
-            onComplete
-          }
-        }
-      };
-    },
-    leaveKeyframe: function (onComplete, timeline, durOrPos) {
-      let position = undefined;
-      let duration = durOrPos || .01;
-      if (typeof timeline === 'number') {
-        duration = timeline;
-        timeline = null;
-      } else if (typeof timeline === 'string') {
-        position = durOrPos;
-        duration = .01;
-      }
-
-      return {
-        tag: 'comment',
-        text: 'keyframe:leave',
-        animations: {
-          leave: {
-            duration,
-            timeline,
-            position,
-            onComplete
-          }
-        }
-      };
-    },
     /**
      *
      * @param {Blueprint|Blueprint[]} blueprint

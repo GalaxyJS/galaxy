@@ -315,13 +315,6 @@
               continue;
             }
 
-            // const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
-            // const cns = CLONE(templateBlueprint);
-            // itemDataScope[indexAs] = trackMap.length;
-            //
-            // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
-            // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
-
             createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         } else {
@@ -333,29 +326,16 @@
               continue;
             }
 
-            // const itemDataScope = createItemDataScope(nodeScopeData, as, newItemCopy);
-            // const cns = CLONE(templateBlueprint);
-            // itemDataScope[indexAs] = trackMap.length;
-            //
-            // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
-            // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
             createNode(view, templateBlueprint, nodeScopeData, as, newItemCopy, indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
           }
         }
       } else {
         for (let i = 0, len = newItems.length; i < len; i++) {
-          // const itemDataScope = createItemDataScope(nodeScopeData, as, newItemsCopy[i]);
-          // const cns = CLONE(templateBlueprint);
-          // itemDataScope[indexAs] = i;
-          //
-          // vn = view.createNode(cns, itemDataScope, parentNode, placeholdersPositions[i] || defaultPosition, node);
-          // onEachAction.call(nodes, vn, positions[i], itemDataScope[as]);
           createNode(view, templateBlueprint, nodeScopeData, as, newItemsCopy[i], indexAs, i, parentNode, placeholders[i] || defaultPosition, onEachAction, nodes, positions);
         }
       }
 
       if (config.onComplete) {
-        // debugger
         View.create_in_next_frame(viewNode.index, (_next) => {
           config.onComplete(nodes);
           _next();

@@ -6,7 +6,7 @@
     key: 'module',
     getConfig: function (scope) {
       return {
-        module: null,
+        previousModule: null,
         moduleMeta: null,
         scope: scope
       };
@@ -14,7 +14,7 @@
     install: function () {
       return true;
     },
-    update: function handleModule(config, newModuleMeta, expression) {
+    update: function handleModule(cache, newModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
@@ -29,11 +29,11 @@
         return console.error('module property only accept objects as value', newModuleMeta);
       }
 
-      if (newModuleMeta && config.moduleMeta && newModuleMeta.path === config.moduleMeta.path) {
+      if (newModuleMeta && cache.moduleMeta && newModuleMeta.path === cache.moduleMeta.path) {
         return;
       }
 
-      if (!newModuleMeta || newModuleMeta !== config.moduleMeta) {
+      if (!newModuleMeta || newModuleMeta !== cache.moduleMeta) {
         // When this node has a `if`, calling `clean_content(this)` inside a destroy_in_next_frame cause the animation
         // of this node to be executed before the animations of its children, which is not correct.
         // Calling `clean_content(this)` directly fixes this issue, however it might cause other issues when
@@ -41,6 +41,10 @@
         // if (_this.blueprint.hasOwnProperty('if')) {
         // ToDo: Make this works properly
         clean_content(_this);
+        if (cache.loadedModule) {
+          cache.loadedModule.destroy();
+          cache.loadedModule = null;
+        }
         // } else {
         //   G.View.destroy_in_next_frame(_this.index, (_next) => {
         //     clean_content(_this);
@@ -49,12 +53,14 @@
         // }
       }
 
-      if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== config.moduleMeta) {
+
+
+      if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== cache.moduleMeta) {
         G.View.create_in_next_frame(_this.index, (_next) => {
-          module_loader.call(null, _this, config, newModuleMeta, _next);
+          module_loader.call(null, _this, cache, newModuleMeta, _next);
         });
       }
-      config.moduleMeta = newModuleMeta;
+      cache.moduleMeta = newModuleMeta;
     }
   };
 
@@ -75,7 +81,7 @@
       }
     }
 
-    viewNode.clean(true);
+    viewNode.clean(viewNode.hasAnimation(children));
 
     // G.View.destroy_in_next_frame(viewNode.index, (_next) => {
     //   let len = viewNode.finalize.length;
@@ -95,9 +101,9 @@
    * @param _next
    */
   function module_loader(viewNode, cache, moduleMeta, _next) {
-    if (cache.module) {
-      cache.module.destroy();
-    }
+    // if (cache.module) {
+    //   cache.module.destroy();
+    // }
     // Check for circular module loading
     const tempURI = new G.GalaxyURI(moduleMeta.path);
     let moduleScope = cache.scope;
@@ -128,7 +134,7 @@
     currentScope.load(moduleMeta, {
       element: viewNode
     }).then(function (module) {
-      cache.module = module;
+      cache.loadedModule = module;
       viewNode.node.setAttribute('module', module.path);
       module.start();
 

@@ -54,35 +54,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     }
   };
 
-  const SYNC_NODE = {
-    _(node, key, value) {
-      // Pass a copy of the ArrayChange to every bound
-      if (value instanceof G.View.ArrayChange) {
-        value = value.getInstance();
-      }
-
-      if (node instanceof G.View.ViewNode) {
-        node.setters[key](value);
-      } else {
-        node[key] = value;
-      }
-
-      G.Observer.notify(node, key, value);
-    },
-    self(node, key, value, sameObjectValue, fromChild) {
-      if (fromChild || sameObjectValue)
-        return;
-
-      SYNC_NODE._(node, key, value);
-    },
-    props(node, key, value, sameObjectValue, fromChild) {
-      if (!fromChild)
-        return;
-
-      SYNC_NODE._(node, key, value);
-    },
-  };
-
   function create_array_value(arr, method, initialChanges) {
     const originalMethod = ARRAY_PROTO[method];
     return function array_value() {
@@ -106,10 +77,11 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         case 'push':
         case 'reset':
         case 'unshift':
+          const _length = _original.length - 1;
           for (let i = 0, len = changes.params.length; i < len; i++) {
             const item = changes.params[i];
             if (item !== null && typeof item === 'object') {
-              new ReactiveData(_original.indexOf(item), item, __rd__);
+              new ReactiveData(_length + i, item, __rd__);
             }
           }
           break;
@@ -140,8 +112,55 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     };
   }
 
+  const SYNC_NODE = {
+    _(node, key, value) {
+      // Pass a copy of the ArrayChange to every bound
+      if (value instanceof G.View.ArrayChange) {
+        value = value.getInstance();
+      }
+
+      if (node instanceof G.View.ViewNode) {
+        node.setters[key](value);
+      } else {
+        node[key] = value;
+      }
+
+      G.Observer.notify(node, key, value);
+    },
+    self(node, key, value, sameObjectValue, fromChild) {
+      if (fromChild || sameObjectValue)
+        return;
+
+      SYNC_NODE._(node, key, value);
+    },
+    props(node, key, value, sameObjectValue, fromChild) {
+      if (!fromChild)
+        return;
+
+      SYNC_NODE._(node, key, value);
+    },
+  };
+
+  function NodeMap() {
+    this.keys = [];
+    this.nodes = [];
+    this.types = [];
+  }
+
   /**
-   * @param {string} id
+   *
+   * @param nodeKey
+   * @param node
+   * @param bindType
+   */
+  NodeMap.prototype.push = function (nodeKey, node, bindType) {
+    this.keys.push(nodeKey);
+    this.nodes.push(node);
+    this.types.push(bindType);
+  };
+
+  /**
+   * @param {string|number} id
    * @param {Object} data
    * @param {Galaxy.View.ReactiveData} p
    * @constructor
@@ -152,10 +171,10 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     this.data = data;
     this.id = parent.id + (id ? '.' + id : '|Scope');
     this.keyInParent = id;
-    this.nodesMap = {};
+    this.nodesMap = Object.create(null);
     this.parent = parent;
     this.refs = [];
-    this.shadow = {};
+    this.shadow = Object.create(null);
     this.nodeCount = -1;
 
     if (this.data && this.data.hasOwnProperty('__rd__')) {
@@ -562,11 +581,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     addNode: function (node, nodeKey, dataKey, bindType, expression) {
       let map = this.nodesMap[dataKey];
       if (!map) {
-        map = this.nodesMap[dataKey] = {
-          keys: [],
-          nodes: [],
-          types: []
-        };
+        map = this.nodesMap[dataKey] = new NodeMap();
       }
 
       bindType = bindType || '_';
@@ -582,9 +597,11 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           node.registerActiveProperty(nodeKey, this, expression);
         }
 
-        map.keys.push(nodeKey);
-        map.nodes.push(node);
-        map.types.push(bindType);
+        map.push(nodeKey, node, bindType);
+
+        // map.keys.push(nodeKey);
+        // map.nodes.push(node);
+        // map.types.push(bindType);
 
         let initValue = this.data[dataKey];
         // if the value is an instance of Array, then we should set its change property to its initial state
@@ -644,8 +661,8 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      * @param {boolean} isArray
      */
     addKeyToShadow: function (key, isArray) {
-      // Don't empty the shadow object if it exist
-      if (!this.shadow[key]) {
+      // Don't empty the shadow object if it exists
+      if (!(key in this.shadow)) {
         if (isArray) {
           this.shadow[key] = new ReactiveData(key, [], this);
         } else {

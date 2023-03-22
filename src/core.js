@@ -165,12 +165,13 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
         let invokers = [module.path];
         if (module.invokers) {
-          if (module.invokers.indexOf(module.path) !== -1) {
-            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwant to load: ' + module.path);
+          const invokedPath = module.invokerPath + '|' + module.path;
+          if (module.invokers.indexOf(invokedPath) !== -1) {
+            return reject(new Error('Circular dependencies: \n-> ' + module.invokerPath + ' wants to load ' + module.path));
           }
 
           invokers = module.invokers;
-          invokers.push(module.path);
+          invokers.push(invokedPath);
         }
 
         let url = module.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
@@ -258,7 +259,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
                 contentType: importable.contentType,
                 // params: item.params,
                 parentScope: scope,
-                invokers: invokers
+                invokers: invokers,
+                invokerPath: module.path
               }).then(function () {
                 doneImporting(module, importsCopy);
               });
