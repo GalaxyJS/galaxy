@@ -179,6 +179,24 @@
     }
   };
 
+  function clear_tweens(node) {
+    const tweens = gsap.getTweensOf(node);
+    for (const t of tweens) {
+      if (t.parent) {
+        if (t.parent === gsap.globalTimeline) {
+          // we can not pause the parent timeline if it's the  global timeline
+          t.pause();
+        } else {
+          t.parent.pause();
+        }
+
+        t.parent.remove(t);
+      } else {
+        t.pause();
+      }
+    }
+  }
+
   /**
    *
    * @param {Galaxy.View.ViewNode} viewNode
@@ -257,16 +275,7 @@
       return finalize();
     }
 
-    const tweens = gsap.getTweensOf(_node);
-    for (const t of tweens) {
-      if (t.parent) {
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
-
+    clear_tweens(_node);
     AnimationMeta.installGSAPAnimation(viewNode, 'leave', animationConfig, finalize);
   }
 
@@ -285,11 +294,11 @@
       const tweenExist = Boolean(viewNodeCache[tweenKey]);
 
       if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.add(className);
         });
       } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.remove(className);
         });
       }
@@ -313,19 +322,7 @@
   }
 
   function leave_with_parent(finalize) {
-    // if (gsap.getTweensOf(this.node).length) {
-    //   gsap.killTweensOf(this.node);
-    // }
-    const tweens = gsap.getTweensOf(this.node);
-    for (const t of tweens) {
-      if (t.parent) {
-        // t.pause();
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
+    clear_tweens(this.node);
 
     if (this.parent.transitory) {
       this.dump();
@@ -418,8 +415,6 @@
   /**
    *
    * @param stepDescription
-   * @param onStart
-   * @param onComplete
    * @param viewNode
    * @return {*}
    */

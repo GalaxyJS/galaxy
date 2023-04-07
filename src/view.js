@@ -364,6 +364,22 @@ Galaxy.View = /** @class */(function (G) {
   //   }
   // };
 
+  function parse_bind_exp_string(propertyKey, clean) {
+    const matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+    const result = matches.filter(a => a !== '' && a !== '.');
+
+    if (clean) {
+      return result.map(p => {
+        if (p.indexOf('[') === 0) {
+          return p.substring(1, p.length - 1);
+        }
+        return p;
+      });
+    }
+
+    return result;
+  }
+
   /**
    *
    * @param data
@@ -371,8 +387,8 @@ Galaxy.View = /** @class */(function (G) {
    * @return {*}
    */
   function safe_property_lookup(data, properties) {
-    properties = properties.split('.');
-    let property = properties[0];
+    const propertiesArr = parse_bind_exp_string(properties, true);
+    let property = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -394,8 +410,8 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     target = target || {};
-    const lastIndex = properties.length - 1;
-    properties.forEach(function (key, i) {
+    const lastIndex = propertiesArr.length - 1;
+    propertiesArr.forEach(function (key, i) {
       target = target[key];
 
       if (i !== lastIndex && !(target instanceof Object)) {
@@ -708,8 +724,8 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.property_lookup = function (data, key) {
-    key = key.split('.');
-    let firstKey = key[0];
+    const propertiesArr = parse_bind_exp_string(key, true);
+    let firstKey = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -868,8 +884,9 @@ Galaxy.View = /** @class */(function (G) {
       propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
       const bindType = bindings.bindTypes[i];
-      let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
-      propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      // let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+      // propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      propertyKeyPathItems = parse_bind_exp_string(propertyKey);
 
       if (propertyKeyPathItems.length > 1) {
         propertyKey = propertyKeyPathItems[0];
