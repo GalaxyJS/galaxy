@@ -170,7 +170,6 @@
               // if(!viewNode.rendered.resolved) {
               //   console.log(viewNode.node)
               // }
-
               process_class_animation(viewNode, viewNodeCache, tweenKey, animationConfig, addOrRemove, className);
             }
           });
@@ -429,7 +428,7 @@
     if (description.onComplete) {
       const userDefinedOnComplete = description.onComplete;
       description.onComplete = function () {
-        userDefinedOnComplete();
+        userDefinedOnComplete.call(this);
         onComplete();
       };
     } else {
@@ -709,14 +708,11 @@
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
-      // console.log(config)
-
       if (tChildren.length === 0) {
         // if the tween is the very first child then its position can not be negative
         _this.timeline.add(tween, (position && position.indexOf('-=') === -1) ? position : null);
       } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
-        debugger
         _this.timeline.clear(false);
         _this.timeline.add(tween, position);
       } else {

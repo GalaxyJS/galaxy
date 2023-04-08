@@ -15,6 +15,7 @@ Galaxy.Router = /** @class */ (function (G) {
       });
     }
   };
+  Router.TITLE_SEPARATOR = ' | ';
 
   Router.mainListener = function (e) {
     Router.currentPath.update();
@@ -79,6 +80,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.config = {
       baseURL: Router.BASE_URL
     };
+    _this.title = '';
     _this.scope = scope;
     _this.module = module;
     _this.routes = [];
@@ -93,8 +95,10 @@ Galaxy.Router = /** @class */ (function (G) {
       while (!_parentScope.router || !_parentScope.router.activeRoute) {
         _parentScope = _parentScope.parentScope;
       }
-      _this.config.baseURL = _parentScope.router.activePath;
+      // This line cause a bug
+      // _this.config.baseURL = _parentScope.router.activePath;
       _this.parentScope = _parentScope;
+      _this.parentRouter = _parentScope.__router__ ;
     }
 
     _this.path = _this.parentScope && _this.parentScope.router ? _this.parentScope.router.activeRoute.path : '/';
@@ -166,6 +170,18 @@ Galaxy.Router = /** @class */ (function (G) {
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
       this.detect();
+    },
+
+    setTitle(title) {
+      this.title = title;
+    },
+
+    getTitle(title) {
+      if (this.parentRouter) {
+        return this.parentRouter.getTitle() + Router.TITLE_SEPARATOR + (title || this.title);
+      }
+
+      return (title || this.title);
     },
 
     /**
@@ -344,6 +360,7 @@ Galaxy.Router = /** @class */ (function (G) {
         newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
       }
 
+      document.title = this.getTitle(newRoute.title || '');
       if (typeof newRoute.handle === 'function') {
         return newRoute.handle.call(this, params, parentParams);
       } else {
