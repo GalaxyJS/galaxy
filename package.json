@@ -1,10 +1,11 @@
 {
   "name": "galaxyjs",
-  "version": "0.9.0",
+  "version": "4.0.0",
   "keywords": [
     "modular",
     "web components",
-    "frontend library"
+    "frontend library",
+    "framework"
   ],
   "author": {
     "name": "Eeliya Rasta",
@@ -15,38 +16,25 @@
     "url": "https://github.com/GalaxyJS/galaxy.git"
   },
   "license": "MIT",
+  "scripts": {
+    "site-development": "node site-development-server.mjs"
+  },
+  "engines": {
+    "node": ">=13.0.0",
+    "npm": ">=7.0.0"
+  },
   "contributors": [],
-  "dependencies": {},
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-es2015-script": "^1.1.0",
-    "eslint": "^3.19.0",
-    "eslint-plugin-jasmine": "^2.2.0",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^7.0.1",
-    "gulp-concat": "^2.6.0",
-    "gulp-documentation": "^3.1.0",
-    "gulp-jasmine": "^2.4.2",
-    "gulp-jasmine-browser": "^1.7.1",
-    "gulp-minify": "^3.1.0",
-    "gulp-mocha": "^3.0.1",
-    "gulp-open": "^2.0.0",
-    "gulp-rename": "^1.4.0",
-    "gulp-sourcemaps": "^2.6.4",
-    "gulp-uglify": "^3.0.1",
-    "gulp-watch": "^4.3.10",
-    "jasmine-core": "^2.99.1",
-    "karma": "^1.7.1",
-    "karma-babel-preprocessor": "^7.0.0",
-    "karma-browserify": "^5.3.0",
-    "karma-chrome-launcher": "^2.2.0",
-    "karma-jasmine": "^1.1.1",
-    "karma-jasmine-html-reporter": "^0.2.2",
-    "karma-phantomjs-launcher": "^1.0.4",
-    "mocha": "^5.2.0",
-    "pump": "^3.0.0"
+    "@babel/core": "^7.20.12",
+    "@babel/preset-env": "^7.20.2",
+    "@web/dev-server": "^0.1.35",
+    "eslint": "^5.16.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-preprocess": "^4.0.2",
+    "gulp-uglify": "^3.0.2",
+    "pump": "^3.0.0",
+    "watch": "^1.0.2"
   }
 }

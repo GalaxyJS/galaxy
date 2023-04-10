@@ -1,18 +1,14 @@
 /* global Galaxy */
-'use strict';
+Galaxy.registerAddOnProvider('galaxy/view', {
+  /**
+   *
+   * @return {Galaxy.View}
+   */
+  provideInstance: function (scope, module) {
+    return new Galaxy.View(scope);
+  },
+  startInstance: function (instance, module) {
 
-(function (G) {
-  G.registerAddOnProvider('galaxy/view', function (scope) {
-    return {
-      /**
-       *
-       * @return {Galaxy.View}
-       */
-      create: function () {
-        return new Galaxy.View(scope);
-      },
-      finalize: function () {
-      }
-    };
-  });
-})(Galaxy);
+  }
+
+});

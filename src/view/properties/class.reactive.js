@@ -1,30 +1,58 @@
 /* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['class'] = {
+(function (G) {
+  G.View.REACTIVE_BEHAVIORS['class'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['class'] = {
     type: 'reactive',
-    name: 'class'
-  };
-
-  GV.REACTIVE_BEHAVIORS['class'] = {
-    regex: GV.BINDING_SYNTAX_REGEX,
-    prepare: function (m, s) {
+    key: 'class',
+    getConfig: function (scope, value) {
       return {
-        scope: s
+        scope,
+        subjects: value,
+        reactiveClasses: null,
+        observer: null,
       };
     },
-    install: function (data) {
+    install: function (config) {
+      if (this.virtual || config.subjects === null || config.subjects instanceof Array || typeof config.subjects !== 'object') {
+        return true;
+      }
+
+      // when value is an object
+      const viewNode = this;
+      const reactiveClasses = config.reactiveClasses = G.View.bind_subjects_to_data(viewNode, config.subjects, config.scope, true);
+      const observer = config.observer = new G.Observer(reactiveClasses);
+      const animations = viewNode.blueprint.animations || {};
+      const gsapExist = !!window.gsap.config;
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
+        viewNode.rendered.then(() => {
+          // ToDo: Don't know why this is here. It looks redundant
+          // applyClasses(viewNode, reactiveClasses);
+          observer.onAll((k) => {
+            if (gsapExist && (animations['add:' + k] || animations['remove:' + k])) {
+              return;
+            }
+            applyClasses(viewNode, reactiveClasses);
+          });
+        });
+      } else {
+        observer.onAll((k) => {
+          if (gsapExist && (animations['add:' + k] || animations['remove:' + k])) {
+            return;
+          }
+          applyClasses(viewNode, reactiveClasses);
+        });
+      }
+
       return true;
     },
     /**
      *
-     * @param data
+     * @param config
      * @param value
-     * @param oldValue
      * @param expression
      * @this {Galaxy.View.ViewNode}
      */
-    apply: function (data, value, oldValue, expression) {
+    update: function (config, value, expression) {
       if (this.virtual) {
         return;
       }
@@ -37,45 +65,23 @@
         value = expression();
       }
 
-      if (typeof value === 'string') {
-        return node.setAttribute('class', value);
+      if (typeof value === 'string' || value === null || value === undefined) {
+        return node.className = value;
       } else if (value instanceof Array) {
-        return node.setAttribute('class', value.join(' '));
-      } else if (value === null) {
-        return node.removeAttribute('class');
+        return node.className = value.join(' ');
       }
 
-      node.setAttribute('class', []);
+      if (config.subjects === value) {
+        value = config.reactiveClasses;
+      }
 
       // when value is an object
-      const clone = GV.bindSubjectsToData(viewNode, value, data.scope, true);
-      const observer = new Galaxy.Observer(clone);
-
-      if (viewNode.schema.renderConfig && viewNode.schema.renderConfig.applyClassListAfterRender) {
-        const items = Object.getOwnPropertyDescriptors(clone);
-        const staticClasses = {};
-        for (let key in items) {
-          const item = items[key];
-          if (item.enumerable && !item.hasOwnProperty('get')) {
-            staticClasses[key] = clone[key];
-          }
-        }
-
-        applyClasses.call(viewNode, '*', true, false, staticClasses);
-
-        viewNode.rendered.then(function () {
-          applyClasses.call(viewNode, '*', true, false, clone);
-
-          observer.onAll(function (key, value, oldValue) {
-            applyClasses.call(viewNode, key, value, oldValue, clone);
-          });
+      if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
+        viewNode.rendered.then(() => {
+          applyClasses(viewNode, value);
         });
       } else {
-        observer.onAll(function (key, value, oldValue) {
-          applyClasses.call(viewNode, key, value, oldValue, clone);
-        });
-
-        applyClasses.call(viewNode, '*', true, false, clone);
+        applyClasses(viewNode, value);
       }
     }
   };
@@ -98,20 +104,17 @@
     }
   }
 
-  function applyClasses(key, value, oldValue, classes) {
-    if (oldValue === value) {
+  function applyClasses(viewNode, classes) {
+    const currentClasses = viewNode.node.className || [];
+    const newClasses = getClasses(classes);
+    if (JSON.stringify(currentClasses) === JSON.stringify(newClasses)) {
       return;
     }
-    const _this = this;
 
-    let oldClasses = this.node.getAttribute('class');
-    oldClasses = oldClasses ? oldClasses.split(' ') : [];
-    const newClasses = getClasses(classes);
-
-    _this.notifyObserver('class', newClasses, oldClasses);
-    _this.sequences.classList.nextAction(function () {
-      _this.node.setAttribute('class', newClasses.join(' '));
-    });
+    // G.View.create_in_next_frame(viewNode.index, (_next) => {
+    viewNode.node.className = newClasses.join(' ');
+    // _next();
+    // });
   }
-})(Galaxy.View);
+})(Galaxy);
 

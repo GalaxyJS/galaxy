@@ -1,38 +1,21 @@
 /* global require */
-// COre
+// Core
 const gulp = require('gulp');
 const pump = require('pump');
 // plugins
 const uglify = require('gulp-uglify');
 const babel = require('gulp-babel');
 const concat = require('gulp-concat');
-// TTD
-const Server = require('karma').Server;
 
-let sources = {
-  galaxy: [
-    // Polyfills
-    'src/polyfills/*.js',
-    // Core
-    'src/core.js',
-    'src/*.js',
-    // View
-    'src/view/view.js',
-    'src/view/properties/*.js',
-    'src/view/**/*.js',
-    // Module addons
-    'src/addons/*.js'
-  ]
-};
+let sources = ['src/**/*.js'];
 
-gulp.task('build-galaxy', function () {
-  return pump([
-    gulp.src(sources.galaxy),
+const build = function (done) {
+  pump([
+    gulp.src(sources),
     concat('galaxy.js'),
     gulp.dest('dist/'),
-    gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/'),
-    gulp.dest('C:/xampp/htdocs/TeamScreen/public/assets/galaxyjs')
+    gulp.dest('site/assets/galaxyjs/'),
+    gulp.dest('galaxy-app-template/src/assets/galaxyjs'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -40,19 +23,18 @@ gulp.task('build-galaxy', function () {
       console.info(error.stack);
     }
   });
-});
+  done();
+};
 
-gulp.task('build-galaxy-production', function () {
-  return pump([
-    gulp.src(sources.galaxy),
-    babel({
-      presets: ['es2015-script']
-    }),
+const buildProduction = function (done) {
+  pump([
+    gulp.src(sources),
     concat('galaxy.min.js'),
-    uglify({compress: true}),
+    babel(),
+    uglify({ compress: true }),
     gulp.dest('dist/'),
-    gulp.dest('site/galaxyjs/'),
-    gulp.dest('../imerce-viewer/assets/'),
+    gulp.dest('site/assets/galaxyjs/'),
+    gulp.dest('galaxy-app-template/src/assets/galaxyjs'),
   ], function (error) {
     if (error) {
       console.error('error in: ', error.plugin);
@@ -60,17 +42,17 @@ gulp.task('build-galaxy-production', function () {
       console.info(error.stack);
     }
   });
-});
+  done();
+};
 
-gulp.task('start-development', ['build-galaxy'], function () {
-  gulp.watch([
-    'src/**/*.*',
-    'site/**/*.html'
-  ], ['build-galaxy']);
-});
+// const watchAndBuild = function (done) {
+//   gulp.watch([
+//     'src/**/*.*',
+//     'site/**/*.html'
+//   ], build);
+//   done();
+// };
 
-gulp.task('tdd', function (done) {
-  new Server({
-    configFile: __dirname + '/karma.config.js'
-  }, done).start();
-});
+gulp.task('build-galaxy', build);
+gulp.task('build-galaxy-production', buildProduction);
+// gulp.task('watch-and-build', gulp.series(build, watchAndBuild));

@@ -1,32 +1,32 @@
 /* global Galaxy */
-
-Galaxy.View.PROPERTY_SETTERS.prop = function (viewNode, attrName, property, expression) {
-  if (!property.name) {
-    console.error(property);
-    throw new Error('PROPERTY_SETTERS.prop: property.name is mandatory in order to create property setter');
-  }
-
-  const valueFn = property.value || Galaxy.View.setProp;
-
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, property.name);
-        viewNode.notifyObserver(property.name, value, oldValue);
+(function (G) {
+  G.View.PROPERTY_SETTERS.prop = function (viewNode, property, expression) {
+    const propName = property.key;
+    const updateFn = property.update || G.View.set_prop;
+    const setter = create_prop_setter(updateFn, viewNode, propName);
+    if (expression) {
+      return function P_EXP() {
+        const expressionValue = expression();
+        setter(expressionValue);
       };
-      value.then(asyncCall).catch(asyncCall);
-    } else {
-      valueFn(viewNode, value, oldValue, property.name);
-      viewNode.notifyObserver(property.name, value, oldValue);
     }
+
+    return setter;
   };
 
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
+  function create_prop_setter(updateFn, viewNode, propName) {
+    return function P(value) {
+      if (value instanceof Promise) {
+        const asyncCall = function (asyncValue) {
+          updateFn(viewNode, asyncValue, propName);
+        };
+        value.then(asyncCall).catch(asyncCall);
+      } else if (value instanceof Function) {
+        const result = value.call(viewNode, viewNode.data);
+        updateFn(viewNode, result, propName);
+      } else {
+        updateFn(viewNode, value, propName);
+      }
     };
   }
-
-  return setter;
-};
+})(Galaxy);

@@ -1,24 +1,33 @@
 /* global Galaxy */
+(function (G) {
+  G.View.PROPERTY_SETTERS.attr = function (viewNode, property, expression) {
+    const attrName = property.key;
+    const updateFn = property.update || G.View.set_attr;
+    const setter = create_attr_setter(updateFn, viewNode, attrName);
 
-Galaxy.View.PROPERTY_SETTERS.attr = function (viewNode, attrName, property, expression) {
-  const valueFn = property.value || Galaxy.View.setAttr;
-  const setter = function (value, oldValue) {
-    if (value instanceof Promise) {
-      const asyncCall = function (asyncValue) {
-        valueFn(viewNode, asyncValue, oldValue, attrName);
+    if (expression) {
+      return function A_EXP() {
+        const expressionValue = expression();
+        setter(expressionValue);
       };
-      value.then(asyncCall).catch(asyncCall);
-    } else {
-      valueFn(viewNode, value, oldValue, attrName);
     }
+
+    return setter;
   };
 
-  if (expression) {
-    return function (none, oldValue) {
-      const expressionValue = expression(none);
-      setter(expressionValue, oldValue);
+  function create_attr_setter(updateFn, viewNode, attrName) {
+    return function A(value) {
+      if (value instanceof Promise) {
+        const asyncCall = function (asyncValue) {
+          updateFn(viewNode, asyncValue, attrName);
+        };
+        value.then(asyncCall).catch(asyncCall);
+      } else if (value instanceof Function) {
+        const result = value.call(viewNode, viewNode.data);
+        updateFn(viewNode, result, attrName);
+      } else {
+        updateFn(viewNode, value, attrName);
+      }
     };
   }
-
-  return setter;
-};
+})(Galaxy);

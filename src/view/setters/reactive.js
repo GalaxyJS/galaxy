@@ -1,16 +1,17 @@
 /* global Galaxy */
-(function () {
-  Galaxy.View.PROPERTY_SETTERS.reactive = function (viewNode, attrName, property, expression, scope) {
-    const behavior = Galaxy.View.REACTIVE_BEHAVIORS[property.name];
-    const cache = viewNode.cache[attrName];
-    const reactiveFunction = createReactiveFunction(behavior, viewNode, cache, expression, scope);
+(function (G) {
+  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
+    const propertyName = property.key;
+    const updateFn = property.update;
+    const config = viewNode.cache[propertyName];
 
-    return reactiveFunction;
+    return create_reactive_setter(updateFn, viewNode, config, expression, scope);
   };
 
-  function createReactiveFunction(behavior, vn, data, expression, scope) {
-    return function (value, oldValue) {
-      return behavior.apply.call(vn, data, value, oldValue, expression, scope);
+  function create_reactive_setter(updateFn, vn, config, expression, scope) {
+    const nodeUpdateFn = updateFn.bind(vn);
+    return function R(value) {
+      return nodeUpdateFn(config, value, expression, scope);
     };
   }
-})();
+})(Galaxy);

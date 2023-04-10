@@ -1,116 +1,152 @@
 /* global Galaxy */
-
-(function (GV) {
-  GV.NODE_SCHEMA_PROPERTY_MAP['module'] = {
+(function (G) {
+  G.View.REACTIVE_BEHAVIORS['module'] = true;
+  G.View.NODE_BLUEPRINT_PROPERTY_MAP['module'] = {
     type: 'reactive',
-    name: 'module'
-  };
-
-  GV.REACTIVE_BEHAVIORS['module'] = {
-    regex: null,
-    prepare: function (matches, scope) {
+    key: 'module',
+    getConfig: function (scope) {
       return {
-        module: null,
+        previousModule: null,
         moduleMeta: null,
         scope: scope
       };
     },
-    install: function (data) {
+    install: function () {
       return true;
     },
-    apply: function handleModule(data, moduleMeta, oldModuleMeta, expression) {
+    update: function handleModule(cache, newModuleMeta, expression) {
       const _this = this;
 
       if (expression) {
-        moduleMeta = expression();
+        newModuleMeta = expression();
       }
 
-      if (moduleMeta === undefined) {
+      if (newModuleMeta === undefined) {
         return;
       }
 
-      if (typeof moduleMeta !== 'object') {
-        return console.error('module property only accept objects as value', moduleMeta);
+      if (typeof newModuleMeta !== 'object') {
+        return console.error('module property only accept objects as value', newModuleMeta);
       }
 
-      if (!_this.virtual && moduleMeta && moduleMeta.url && moduleMeta !== data.moduleMeta) {
-        _this.rendered.then(function () {
-          Promise.resolve().then(function () {
-            // Only truncate renderingFlow if the node is in the DOM
-            if (_this.inDOM) {
-              _this.renderingFlow.truncate();
-            }
-
-            _this.renderingFlow.nextAction(function () {
-              const nodes = _this.getChildNodes();
-              _this.clean(_this.sequences.leave);
-              _this.sequences.leave.nextAction(function () {
-                _this.flush(nodes);
-              });
-
-              moduleLoaderGenerator(_this, data, moduleMeta)(function () {});
-            });
-          });
-        });
-      } else if (!moduleMeta) {
-        Promise.resolve().then(function () {
-          _this.renderingFlow.nextAction(function () {
-            const nodes = _this.getChildNodes();
-            _this.clean(_this.sequences.leave);
-            _this.sequences.leave.nextAction(function () {
-              _this.flush(nodes);
-            });
-          });
-        });
+      if (newModuleMeta && cache.moduleMeta && newModuleMeta.path === cache.moduleMeta.path) {
+        return;
       }
 
-      data.moduleMeta = moduleMeta;
+      if (!newModuleMeta || newModuleMeta !== cache.moduleMeta) {
+        // When this node has a `if`, calling `clean_content(this)` inside a destroy_in_next_frame cause the animation
+        // of this node to be executed before the animations of its children, which is not correct.
+        // Calling `clean_content(this)` directly fixes this issue, however it might cause other issues when
+        // this node does not use `if`. Therefore, we make sure both cases are covered.
+        // if (_this.blueprint.hasOwnProperty('if')) {
+        // ToDo: Make this works properly
+        clean_content(_this);
+        if (cache.loadedModule) {
+          cache.loadedModule.destroy();
+          cache.loadedModule = null;
+        }
+        // } else {
+        //   G.View.destroy_in_next_frame(_this.index, (_next) => {
+        //     clean_content(_this);
+        //     _next();
+        //   });
+        // }
+      }
+
+
+
+      if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== cache.moduleMeta) {
+        G.View.create_in_next_frame(_this.index, (_next) => {
+          module_loader.call(null, _this, cache, newModuleMeta, _next);
+        });
+      }
+      cache.moduleMeta = newModuleMeta;
     }
   };
 
-  const moduleLoaderGenerator = function (viewNode, cache, moduleMeta) {
-    return function (done) {
-      if (cache.module) {
-        cache.module.destroy();
+  const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
+
+  /**
+   *
+   * @param {Galaxy.View.ViewNode} viewNode
+   */
+  function clean_content(viewNode) {
+    const children = viewNode.getChildNodes();
+    for (let i = 0, len = children.length; i < len; i++) {
+      const vn = children[i];
+      if (vn.processLeaveAnimation === EMPTY_CALL) {
+        vn.processLeaveAnimation = function (finalize) {
+          finalize();
+        };
       }
-      // Check for circular module loading
-      const tempURI = new Galaxy.GalaxyURI(moduleMeta.url);
-      let moduleScope = cache.scope;
-      let currentScope = cache.scope;
+    }
 
-      while (moduleScope) {
-        // In the case where module is a part of $for, cache.scope will be NOT an instance of Scope
-        // but its __parent__ is
-        if (!(currentScope instanceof Galaxy.Scope)) {
-          currentScope = new Galaxy.Scope({
-            systemId: '$for-item',
-            url: moduleMeta.url,
-            parentScope: cache.scope.__parent__
-          });
-        }
+    viewNode.clean(viewNode.hasAnimation(children));
 
-        if (tempURI.parsedURL === currentScope.uri.paresdURL) {
-          return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.paresdURL + ' tries to load itself.');
-        }
+    // G.View.destroy_in_next_frame(viewNode.index, (_next) => {
+    //   let len = viewNode.finalize.length;
+    //   for (let i = 0; i < len; i++) {
+    //     viewNode.finalize[i].call(viewNode);
+    //   }
+    //   viewNode.finalize = [];
+    //   _next();
+    // });
+  }
 
-        moduleScope = moduleScope.parentScope;
-      }
+  /**
+   *
+   * @param viewNode
+   * @param cache
+   * @param {object} moduleMeta
+   * @param _next
+   */
+  function module_loader(viewNode, cache, moduleMeta, _next) {
+    // if (cache.module) {
+    //   cache.module.destroy();
+    // }
+    // Check for circular module loading
+    const tempURI = new G.GalaxyURI(moduleMeta.path);
+    let moduleScope = cache.scope;
+    let currentScope = cache.scope;
 
-      Promise.resolve().then(function () {
-        viewNode.renderingFlow.truncate();
-        currentScope.load(moduleMeta, {
-          element: viewNode
-        }).then(function (module) {
-          cache.module = module;
-          viewNode.node.setAttribute('module', module.systemId);
-          module.start();
-          done();
-        }).catch(function (response) {
-          console.error(response);
-          done();
+    if (typeof moduleMeta.onInvoke === 'function') {
+      moduleMeta.onInvoke.call();
+    }
+
+    while (moduleScope) {
+      // In the case where module is a part of repeat, cache.scope will be NOT an instance of Scope
+      // but its __parent__ is
+      if (!(currentScope instanceof G.Scope)) {
+        currentScope = new G.Scope({
+          systemId: 'repeat-item',
+          path: cache.scope.__parent__.uri.parsedURL,
+          parentScope: cache.scope.__parent__
         });
-      });
-    };
-  };
-})(Galaxy.View);
+      }
+
+      if (tempURI.parsedURL === currentScope.uri.parsedURL) {
+        return console.error('Circular module loading detected and stopped. \n' + currentScope.uri.parsedURL + ' tries to load itself.');
+      }
+
+      moduleScope = moduleScope.parentScope;
+    }
+
+    currentScope.load(moduleMeta, {
+      element: viewNode
+    }).then(function (module) {
+      cache.loadedModule = module;
+      viewNode.node.setAttribute('module', module.path);
+      module.start();
+
+      if (typeof moduleMeta.onLoad === 'function') {
+        moduleMeta.onLoad.call();
+      }
+
+      _next();
+    }).catch(function (response) {
+      console.error(response);
+      _next();
+    });
+  }
+})(Galaxy);
 

@@ -1,8 +1,7 @@
 /* global Galaxy */
-'use strict';
-
 Galaxy.Scope = /** @class */ (function () {
   const defProp = Object.defineProperty;
+  const delProp = Reflect.deleteProperty;
 
   /**
    *
@@ -16,11 +15,34 @@ Galaxy.Scope = /** @class */ (function () {
     _this.systemId = module.systemId;
     _this.parentScope = module.parentScope || null;
     _this.element = element || null;
-    _this.exports = {};
-    _this.uri = new Galaxy.GalaxyURI(module.url);
+    _this.export = {};
+
+    _this.uri = new Galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    _this.data = {};
+    const _data = _this.element.data ? Galaxy.View.bind_subjects_to_data(_this.element, _this.element.data, _this.parentScope, true) : {};
+    defProp(_this, 'data', {
+      enumerable: true,
+      configurable: true,
+      get: function () {
+        return _data;
+      },
+      set: function (value) {
+        if (value === null || typeof value !== 'object') {
+          throw Error('The `Scope.data` property must be type of object and can not be null.');
+        }
+
+        Object.assign(_data, value);
+      }
+    });
+
+    /**
+     * @property {{
+     *   'galaxy/view': Galaxy.View,
+     *   'galaxy/router': Galaxy.Router,
+     *   [libId]: any
+     * }} __imports__
+     */
 
     defProp(_this, '__imports__', {
       value: {},
@@ -29,15 +51,7 @@ Galaxy.Scope = /** @class */ (function () {
       configurable: false
     });
 
-    defProp(_this, 'inputs', {
-      enumerable: true,
-      configurable: false,
-      get: function () {
-        return _this.element.inputs;
-      }
-    });
-
-    this.on('module.destroy', this.destroy.bind(this));
+    _this.on('module.destroy', this.destroy.bind(_this));
   }
 
   Scope.prototype = {
@@ -47,23 +61,37 @@ Galaxy.Scope = /** @class */ (function () {
      * @param {Object} instance The assigned object to this id
      */
     inject: function (id, instance) {
-      this['__imports__'][id] = instance;
+      this.__imports__[id] = instance;
     },
     /**
      *
-     * @param {string} libId Path or id of the addon you want to import
-     * @return {*}
+     * @param {('galaxy/view' | 'galaxy/router' | string)} libId Path or id of the addon you want to import
+     * @return {(Galaxy.View | Galaxy.Router | any)}
      */
     import: function (libId) {
-      return this['__imports__'][libId];
+      // if the id starts with `./` then we will replace it with the current scope path.
+      if (libId.indexOf('./') === 0) {
+        libId = libId.replace('./', this.uri.path);
+      }
+
+      return this.__imports__[libId];
+    },
+
+    importAsText: function (libId) {
+      return this.import(libId + '#text');
     },
     /**
      *
      */
     destroy: function () {
+      delProp(this, 'data');
       this.observers.forEach(function (observer) {
         observer.remove();
       });
+    },
+
+    kill: function () {
+      throw Error('Scope.kill() should not be invoked at the runtime');
     },
     /**
      *
@@ -74,8 +102,8 @@ Galaxy.Scope = /** @class */ (function () {
     load: function (moduleMeta, config) {
       const newModuleMetaData = Object.assign({}, moduleMeta, config || {});
 
-      if (newModuleMetaData.url.indexOf('./') === 0) {
-        newModuleMetaData.url = this.uri.path + moduleMeta.url.substr(2);
+      if (newModuleMetaData.path.indexOf('./') === 0) {
+        newModuleMetaData.path = this.uri.path + moduleMeta.path.substr(2);
       }
 
       newModuleMetaData.parentScope = this;

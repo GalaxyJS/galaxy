@@ -1,9 +1,19 @@
 /* global Galaxy, Promise */
-'use strict';
+
+/*!
+ * GalaxyJS
+ * Eeliya Rasta
+ * Released under the MIT License.
+ */
+
 /**
  * @exports Galaxy
  */
 window.Galaxy = window.Galaxy || /** @class */(function () {
+  'use strict';
+
+  const AsyncFunction = Object.getPrototypeOf(async function () {
+  }).constructor;
   Array.prototype.unique = function () {
     const a = this.concat();
     for (let i = 0, lenI = a.length; i < lenI; ++i) {
@@ -17,17 +27,19 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
     return a;
   };
 
-  const importedLibraries = {};
+  const CACHED_MODULES = {};
+
+  Core.cm = CACHED_MODULES;
 
   /**
    *
    * @constructor
    */
   function Core() {
-    this.modules = {};
     this.moduleContents = {};
     this.addOnProviders = [];
     this.rootElement = null;
+    this.bootModule = null;
   }
 
   Core.prototype = {
@@ -65,12 +77,18 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       clone.__proto__ = obj.__proto__;
       for (let i in obj) {
         if (obj.hasOwnProperty(i)) {
-          if (typeof(obj[i]) === 'object' && obj[i] !== null) {
-
-            clone[i] = Galaxy.clone(obj[i]);
+          const v = obj[i];
+          // Some objects can not be cloned and must be passed by reference
+          if (v instanceof Promise || v instanceof Galaxy.Router) {
+            clone[i] = v;
+          } else if (typeof (v) === 'object' && v !== null) {
+            if (i === 'animations' && v && typeof v === 'object') {
+              clone[i] = v;
+            } else {
+              clone[i] = Galaxy.clone(v);
+            }
           } else {
-            // console.info(Object.getOwnPropertyDescriptor(obj, i).enumerable, i);
-            clone[i] = obj[i];
+            clone[i] = v;
           }
         }
       }
@@ -86,15 +104,15 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       const _this = this;
       _this.rootElement = bootModule.element;
 
-      bootModule.id = 'system';
+      bootModule.id = '@root';
 
-      if (!bootModule.element) {
+      if (!_this.rootElement) {
         throw new Error('element property is mandatory');
       }
 
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         _this.load(bootModule).then(function (module) {
-          // Replace galaxy temporary  bootModule with user specified bootModule
+          // Replace galaxy temporary bootModule with user specified bootModule
           _this.bootModule = module;
           resolve(module);
         }).catch(function (error) {
@@ -102,8 +120,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           reject();
         });
       });
-
-      return promise;
     },
 
     convertToURIString: function (obj, prefix) {
@@ -119,7 +135,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
       return str.join('&');
     },
-
     /**
      *
      * @param module
@@ -131,9 +146,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
       }
 
       const _this = this;
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(function (resolve, reject) {
         if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
-          module.url = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+          module.path = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
           module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
           return _this.compileModuleContent(module, module.constructor, []).then(function (compiledModule) {
@@ -141,43 +156,52 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           });
         }
 
-        module.id = module.id || 'noid-' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+        module.path = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path;
+        // module.path = module.path.indexOf('/') === 0 ? module.path : '/' + module.path;
+        if (!module.id) {
+          module.id = '@' + module.path;
+        }
         module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
 
-        let invokers = [module.url];
+        let invokers = [module.path];
         if (module.invokers) {
-          if (module.invokers.indexOf(module.url) !== -1) {
-            throw new Error('circular dependencies: \n' + module.invokers.join('\n') + '\nwanna load: ' + module.url);
+          const invokedPath = module.invokerPath + '|' + module.path;
+          if (module.invokers.indexOf(invokedPath) !== -1) {
+            return reject(new Error('Circular dependencies: \n-> ' + module.invokerPath + ' wants to load ' + module.path));
           }
 
           invokers = module.invokers;
-          invokers.push(module.url);
+          invokers.push(invokedPath);
         }
 
-        let url = module.url + '?' + _this.convertToURIString(module.params || {});
-        // contentFetcher makes sure that any module gets loaded from network only once unless fresh property is present
+        let url = module.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
+        // if (module.params) debugger
+        // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
         let contentFetcher = Galaxy.moduleContents[url];
         if (!contentFetcher || module.fresh) {
-          contentFetcher = Galaxy.moduleContents[url] = fetch(url).then(function (response) {
-            if (response.status !== 200) {
-              reject(response);
-              return '';
+          Galaxy.moduleContents[url] = contentFetcher = fetch(url).then((response) => {
+            if (!response.ok) {
+              console.error(response.statusText, url);
+              return reject(response.statusText);
             }
 
-            return response.text();
+            return response;
           }).catch(reject);
         }
 
-        contentFetcher.then(function (moduleContent) {
-          _this.compileModuleContent(module, moduleContent, invokers).then(function (compiledModule) {
-            return _this.executeCompiledModule(compiledModule).then(resolve);
+        contentFetcher = contentFetcher.then(response => {
+          const contentType = module.contentType || response.headers.get('content-type');
+          return response.clone().text().then(content => {
+            return new Galaxy.Module.Content(contentType, content, module);
           });
+        });
 
-          return moduleContent;
-        }).catch(reject);
+        contentFetcher
+          .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
+          .then(compiledModule => _this.executeCompiledModule(compiledModule))
+          .then(resolve)
+          .catch(reject);
       });
-
-      return promise;
     },
 
     /**
@@ -189,9 +213,9 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      */
     compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
       const _this = this;
-      const promise = new Promise(function (resolve, reject) {
-        let doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(module.importId || module.url) - 1, 1);
+      return new Promise(function (resolve, reject) {
+        const doneImporting = function (module, imports) {
+          imports.splice(imports.indexOf(module.path) - 1, 1);
 
           if (imports.length === 0) {
             // This will load the original initializer
@@ -199,72 +223,44 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           }
         };
 
-        const unique = [];
-        let imports = [];
-
         if (typeof moduleConstructor === 'function') {
-          imports = moduleMetaData.imports ? moduleMetaData.imports.slice(0) : [];
-          imports = imports.map(function (item) {
-            if (unique.indexOf(item) !== -1) {
-              return null;
-            }
-
-            unique.push(item);
-            return { url: item };
-          }).filter(Boolean);
-        } else {
-          // extract imports from the source code
-          // removing comments cause an bug
-          // moduleConstructor = moduleConstructor.replace(/\/\*[\s\S]*?\*\n?\/|([^:;]|^)^[^\n]?\s*\/\/.*\n?$/gm, '');
-          moduleConstructor = moduleConstructor.replace(/Scope\.import\(['|"](.*)['|"]\);/gm, function (match, path) {
-            let query = path.match(/([\S]+)/gm);
-            let url = query[query.length - 1];
-            if (unique.indexOf(url) !== -1) {
-              return 'Scope.__imports__[\'' + url + '\']';
-            }
-
-            unique.push(url);
-            imports.push({
-              url: url,
-              fresh: query.indexOf('new') !== -1
-            });
-
-            return 'Scope.__imports__[\'' + url + '\']';
-          });
+          moduleConstructor = new Galaxy.Module.Content('function', moduleConstructor, moduleMetaData);
         }
+
+        const parsedContent = Galaxy.Module.Content.parse(moduleConstructor);
+        const imports = parsedContent.imports;
 
         const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
         // Create module from moduleMetaData
-        const module = new Galaxy.Module(moduleMetaData, moduleConstructor, scope);
-        Galaxy.modules[module.systemId] = module;
-
+        const module = new Galaxy.Module(moduleMetaData, scope, parsedContent.source, parsedContent.native);
         if (imports.length) {
           const importsCopy = imports.slice(0);
-          imports.forEach(function (item) {
-            let moduleAddOnProvider = Galaxy.getModuleAddOnProvider(item.url);
+          imports.forEach(function (importable) {
+            const moduleAddOnProvider = Galaxy.getAddOnProvider(importable.path);
+            // importable is an addon
             if (moduleAddOnProvider) {
-              let providerStages = moduleAddOnProvider.handler.call(null, scope, module);
-              let addOnInstance = providerStages.create();
-              module.registerAddOn(item.url, addOnInstance);
-              module.addOnProviders.push(providerStages);
-
+              module.addAddOn(moduleAddOnProvider);
               doneImporting(module, importsCopy);
-            } else if (importedLibraries[item.url] && !item.fresh) {
+            }
+            // importable is already loaded, and we don't need a new instance of it (Singleton)
+            else if (CACHED_MODULES[importable.path] && !importable.fresh) {
               doneImporting(module, importsCopy);
-            } else {
-              const importId = item.url;
-              if (item.url.indexOf('./') === 0) {
-                item.url = scope.uri.path + item.url.substr(2);
+            }
+            // importable is not loaded
+            else {
+              if (importable.path.indexOf('./') === 0) {
+                importable.path = scope.uri.path + importable.path.substring(2);
               }
 
               Galaxy.load({
-                importId: importId,
-                name: item.name,
-                url: item.url,
-                fresh: item.fresh,
+                name: importable.name,
+                path: importable.path,
+                fresh: importable.fresh,
+                contentType: importable.contentType,
+                // params: item.params,
                 parentScope: scope,
                 invokers: invokers,
-                temporary: true
+                invokerPath: module.path
               }).then(function () {
                 doneImporting(module, importsCopy);
               });
@@ -276,8 +272,6 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
         resolve(module);
       });
-
-      return promise;
     },
 
     /**
@@ -286,82 +280,72 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
      * @return {Promise<any>}
      */
     executeCompiledModule: function (module) {
-      const promise = new Promise(function (resolve, reject) {
+      return new Promise(async function (resolve, reject) {
         try {
           for (let item in module.addOns) {
             module.scope.inject(item, module.addOns[item]);
           }
 
-          for (let item in importedLibraries) {
-            if (importedLibraries.hasOwnProperty(item)) {
-              let asset = importedLibraries[item];
+          for (let item in CACHED_MODULES) {
+            if (CACHED_MODULES.hasOwnProperty(item)) {
+              const asset = CACHED_MODULES[item];
               if (asset.module) {
-                module.scope.inject(asset.name, asset.module);
+                module.scope.inject(asset.id, asset.module);
               }
             }
           }
 
-          const source = module.source;
-          const moduleSource = typeof module.source === 'function' ?
-            module.source :
-            new Function('Scope', ['// ' + module.id + ': ' + module.url, source].join('\n'));
-          moduleSource.call(module.scope, module.scope);
+          const source = module.native ? (await import('/' + module.path)).default : module.source;
 
-          Reflect.deleteProperty(module, 'source');
-
-          module.addOnProviders.forEach(function (item) {
-            item.finalize();
-          });
-
-          Reflect.deleteProperty(module, 'addOnProviders');
-
-          const mId = module.importId || module.url;
-          if (!importedLibraries[mId]) {
-            importedLibraries[mId] = {
-              name: module.name || mId,
-              module: module.scope.exports
+          let moduleSource = source;
+          if (typeof source !== 'function') {
+            moduleSource = function () {
+              console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;');
             };
-          } else if (module.fresh) {
-            importedLibraries[mId].module = module.scope.exports;
+            // moduleSource = new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
+          }
+
+          const output = moduleSource.call(null, module.scope) || null;
+
+          const proceed = () => {
+            const id = module.path;
+            // if the module export has _temp then do not cache the module
+            if (module.scope.export._temp) {
+              module.scope.parentScope.inject(id, module.scope.export);
+            } else if (!CACHED_MODULES[id]) {
+              CACHED_MODULES[id] = {
+                id: id,
+                module: module.scope.export
+              };
+            }
+
+            module.init();
+            return resolve(module);
+          };
+
+          // if the function is not async, output would be undefined
+          if (output) {
+            output.then(proceed);
           } else {
-            // module.scope.imports[module.url] = importedLibraries[module.url].module;
+            proceed();
           }
-
-          let currentModule = Galaxy.modules[module.systemId];
-          if (module.temporary || module.scope._doNotRegister) {
-            Reflect.deleteProperty(module, 'scope._doNotRegister');
-            currentModule = {
-              id: module.id,
-              scope: module.scope
-            };
-          }
-
-          currentModule.init();
-          resolve(currentModule);
-        }
-        catch (error) {
-          console.error(error.message + ': ' + module.url);
-          console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function')
-          console.error(error);
+        } catch (error) {
+          console.error(error.message + ': ' + module.path);
+          // console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
+          console.trace(error);
           reject();
-          throw new Error(error);
+          // throw new Error(error);
         }
       });
-
-      return promise;
     },
 
-    getModuleAddOnProvider: function (name) {
-      return this.addOnProviders.filter(function (service) {
+    getAddOnProvider: function (name) {
+      return this.addOnProviders.filter((service) => {
         return service.name === name;
       })[0];
     },
 
     registerAddOnProvider: function (name, handler) {
-      if (typeof handler !== 'function') {
-        throw 'Addon provider should be a function';
-      }
-
       this.addOnProviders.push({
         name: name,
         handler: handler
