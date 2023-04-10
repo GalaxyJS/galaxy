@@ -1,5 +1,6 @@
 /* global Galaxy */
 Galaxy.Router = /** @class */ (function (G) {
+  Router.TITLE_SEPARATOR = ' • ';
   Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
   Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
   Router.BASE_URL = '/';
@@ -15,7 +16,6 @@ Galaxy.Router = /** @class */ (function (G) {
       });
     }
   };
-  Router.TITLE_SEPARATOR = ' | ';
 
   Router.mainListener = function (e) {
     Router.currentPath.update();
@@ -80,7 +80,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.config = {
       baseURL: Router.BASE_URL
     };
-    _this.title = '';
+
     _this.scope = scope;
     _this.module = module;
     _this.routes = [];
@@ -98,12 +98,14 @@ Galaxy.Router = /** @class */ (function (G) {
       // This line cause a bug
       // _this.config.baseURL = _parentScope.router.activePath;
       _this.parentScope = _parentScope;
-      _this.parentRouter = _parentScope.__router__ ;
+      _this.parentRouter = _parentScope.__router__;
     }
 
-    _this.path = _this.parentScope && _this.parentScope.router ? _this.parentScope.router.activeRoute.path : '/';
+    const hasParentRouter = _this.parentScope && _this.parentScope.router;
+    _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : '';
+    _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
-    _this.parentRoute = null;
+    _this.parentRoute = hasParentRouter ? this.parentScope.router.activeRoute : null;
     _this.oldURL = '';
     _this.resolvedRouteValue = null;
     _this.resolvedDynamicRouteValue = null;
@@ -144,9 +146,9 @@ Galaxy.Router = /** @class */ (function (G) {
   Router.prototype = {
     setup: function (routeConfigs) {
       this.routes = Router.prepareRoute(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
-      if (this.parentScope && this.parentScope.router) {
-        this.parentRoute = this.parentScope.router.activeRoute;
-      }
+      // if (this.parentScope && this.parentScope.router) {
+      //   this.parentRoute = this.parentScope.router.activeRoute;
+      // }
 
       this.routes.forEach(route => {
         const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
@@ -176,12 +178,36 @@ Galaxy.Router = /** @class */ (function (G) {
       this.title = title;
     },
 
-    getTitle(title) {
-      if (this.parentRouter) {
-        return this.parentRouter.getTitle() + Router.TITLE_SEPARATOR + (title || this.title);
+    getTitle(route) {
+      const titles = [];
+      if (route.pageTitle) {
+        return route.pageTitle;
       }
 
-      return (title || this.title);
+      if (this.parentRouter) {
+        // if parentRoute has a pageTitle, then that pageTitle will be the starting title
+        const parentPageTitle = this.parentRoute.pageTitle;
+        if (parentPageTitle) {
+          titles.push(parentPageTitle);
+          if (route.title) {
+            titles.push(route.title);
+          }
+
+          return titles.join(Router.TITLE_SEPARATOR);
+        }
+
+        titles.push(this.parentRouter.title);
+      }
+
+      if (this.title) {
+        titles.push(this.title);
+      }
+
+      if (route.title) {
+        titles.push(route.title);
+      }
+
+      return titles.join(Router.TITLE_SEPARATOR);
     },
 
     /**
@@ -360,7 +386,7 @@ Galaxy.Router = /** @class */ (function (G) {
         newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
       }
 
-      document.title = this.getTitle(newRoute.title || '');
+      document.title = this.getTitle(newRoute);
       if (typeof newRoute.handle === 'function') {
         return newRoute.handle.call(this, params, parentParams);
       } else {
