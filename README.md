@@ -12,7 +12,7 @@
 GalaxyJS is an opinionated framework for building visually rich web applications. Its main key feature is utilizing the power of a crazy fast animation library called **[GSAP](https://greensock.com/gsap/)**.
 
 ## Documentation
-**[Official Website](galaxyjs.github.io)**
+**[Official Website](https://galaxyjs.github.io)**
 
 ## License 
 **[MIT](https://opensource.org/licenses/MIT)**
