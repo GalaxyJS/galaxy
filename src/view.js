@@ -1179,7 +1179,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.startKeyframe = function (timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.start(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.startKeyframe(timeline:string) needs a `timeline`');
     }
 
     position = position || '+=0';
@@ -1205,7 +1205,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.add(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.addKeyframe(timeline:string) needs a `timeline`');
     }
 
     const animations = {

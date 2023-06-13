@@ -1099,6 +1099,22 @@ Galaxy.View = /** @class */(function (G) {
   //   }
   // };
 
+  function parse_bind_exp_string(propertyKey, clean) {
+    const matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+    const result = matches.filter(a => a !== '' && a !== '.');
+
+    if (clean) {
+      return result.map(p => {
+        if (p.indexOf('[') === 0) {
+          return p.substring(1, p.length - 1);
+        }
+        return p;
+      });
+    }
+
+    return result;
+  }
+
   /**
    *
    * @param data
@@ -1106,8 +1122,8 @@ Galaxy.View = /** @class */(function (G) {
    * @return {*}
    */
   function safe_property_lookup(data, properties) {
-    properties = properties.split('.');
-    let property = properties[0];
+    const propertiesArr = parse_bind_exp_string(properties, true);
+    let property = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -1129,8 +1145,8 @@ Galaxy.View = /** @class */(function (G) {
     }
 
     target = target || {};
-    const lastIndex = properties.length - 1;
-    properties.forEach(function (key, i) {
+    const lastIndex = propertiesArr.length - 1;
+    propertiesArr.forEach(function (key, i) {
       target = target[key];
 
       if (i !== lastIndex && !(target instanceof Object)) {
@@ -1443,8 +1459,8 @@ Galaxy.View = /** @class */(function (G) {
   };
 
   View.property_lookup = function (data, key) {
-    key = key.split('.');
-    let firstKey = key[0];
+    const propertiesArr = parse_bind_exp_string(key, true);
+    let firstKey = propertiesArr[0];
     const original = data;
     let target = data;
     let temp = data;
@@ -1603,8 +1619,9 @@ Galaxy.View = /** @class */(function (G) {
       propertyKey = propertyKeys[i];
       childPropertyKeyPath = null;
       const bindType = bindings.bindTypes[i];
-      let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
-      propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      // let matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
+      // propertyKeyPathItems = matches.filter(a => a !== '' && a !== '.');
+      propertyKeyPathItems = parse_bind_exp_string(propertyKey);
 
       if (propertyKeyPathItems.length > 1) {
         propertyKey = propertyKeyPathItems[0];
@@ -1897,7 +1914,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.startKeyframe = function (timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.start(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.startKeyframe(timeline:string) needs a `timeline`');
     }
 
     position = position || '+=0';
@@ -1923,7 +1940,7 @@ Galaxy.View = /** @class */(function (G) {
 
   TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position) {
     if (!timeline) {
-      throw new Error('Argument Missing: view.' + this.type + '.add(timeline:string) needs a `timeline`');
+      throw new Error('Argument Missing: view.' + this.type + '.addKeyframe(timeline:string) needs a `timeline`');
     }
 
     const animations = {
@@ -2138,6 +2155,7 @@ Galaxy.registerAddOnProvider('galaxy/router', {
 
 /* global Galaxy */
 Galaxy.Router = /** @class */ (function (G) {
+  Router.TITLE_SEPARATOR = ' • ';
   Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
   Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
   Router.BASE_URL = '/';
@@ -2217,6 +2235,7 @@ Galaxy.Router = /** @class */ (function (G) {
     _this.config = {
       baseURL: Router.BASE_URL
     };
+
     _this.scope = scope;
     _this.module = module;
     _this.routes = [];
@@ -2231,13 +2250,17 @@ Galaxy.Router = /** @class */ (function (G) {
       while (!_parentScope.router || !_parentScope.router.activeRoute) {
         _parentScope = _parentScope.parentScope;
       }
-      _this.config.baseURL = _parentScope.router.activePath;
+      // This line cause a bug
+      // _this.config.baseURL = _parentScope.router.activePath;
       _this.parentScope = _parentScope;
+      _this.parentRouter = _parentScope.__router__;
     }
 
-    _this.path = _this.parentScope && _this.parentScope.router ? _this.parentScope.router.activeRoute.path : '/';
+    const hasParentRouter = _this.parentScope && _this.parentScope.router;
+    _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : '';
+    _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : '/';
     _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
-    _this.parentRoute = null;
+    _this.parentRoute = hasParentRouter ? this.parentScope.router.activeRoute : null;
     _this.oldURL = '';
     _this.resolvedRouteValue = null;
     _this.resolvedDynamicRouteValue = null;
@@ -2278,9 +2301,9 @@ Galaxy.Router = /** @class */ (function (G) {
   Router.prototype = {
     setup: function (routeConfigs) {
       this.routes = Router.prepareRoute(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
-      if (this.parentScope && this.parentScope.router) {
-        this.parentRoute = this.parentScope.router.activeRoute;
-      }
+      // if (this.parentScope && this.parentScope.router) {
+      //   this.parentRoute = this.parentScope.router.activeRoute;
+      // }
 
       this.routes.forEach(route => {
         const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
@@ -2304,6 +2327,42 @@ Galaxy.Router = /** @class */ (function (G) {
       this.listener = this.detect.bind(this);
       window.addEventListener('popstate', this.listener);
       this.detect();
+    },
+
+    setTitle(title) {
+      this.title = title;
+    },
+
+    getTitle(route) {
+      const titles = [];
+      if (route.pageTitle) {
+        return route.pageTitle;
+      }
+
+      if (this.parentRouter) {
+        // if parentRoute has a pageTitle, then that pageTitle will be the starting title
+        const parentPageTitle = this.parentRoute.pageTitle;
+        if (parentPageTitle) {
+          titles.push(parentPageTitle);
+          if (route.title) {
+            titles.push(route.title);
+          }
+
+          return titles.join(Router.TITLE_SEPARATOR);
+        }
+
+        titles.push(this.parentRouter.title);
+      }
+
+      if (this.title) {
+        titles.push(this.title);
+      }
+
+      if (route.title) {
+        titles.push(route.title);
+      }
+
+      return titles.join(Router.TITLE_SEPARATOR);
     },
 
     /**
@@ -2482,6 +2541,7 @@ Galaxy.Router = /** @class */ (function (G) {
         newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
       }
 
+      document.title = this.getTitle(newRoute);
       if (typeof newRoute.handle === 'function') {
         return newRoute.handle.call(this, params, parentParams);
       } else {
@@ -2585,182 +2645,6 @@ Galaxy.registerAddOnProvider('galaxy/view', {
   }
 
 });
-
-(function (GMC) {
-  GMC.registerParser('text/css', parser);
-
-  const hosts = {};
-
-  function getHostId(id) {
-    if (hosts.hasOwnProperty(id)) {
-      return hosts[id];
-    }
-    const index = Object.keys(hosts).length;
-    const ids = {
-      host: 'gjs-host-' + index,
-      content: 'gjs-content-' + index,
-    };
-
-    hosts[id] = ids;
-
-    return ids;
-  }
-
-  function rulesForCssText(styleContent) {
-    const doc = document.implementation.createHTMLDocument(''),
-      styleElement = document.createElement('style');
-
-    styleElement.textContent = styleContent;
-    // the style will only be parsed once it is added to a document
-    doc.body.appendChild(styleElement);
-
-    return styleElement;
-  }
-
-  function applyContentAttr(children, ids) {
-    if (!(children instanceof Array) && children !== null && children !== undefined) {
-      children = [children];
-    }
-
-    children.forEach((child) => {
-      if (typeof child === 'string' || child.tag === 'comment') return;
-      child[ids.content] = '';
-
-      if (child.children) {
-        applyContentAttr(child.children, ids);
-      }
-    });
-  }
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function (Scope) {
-        const ids = getHostId(Scope.systemId);
-        const cssRules = rulesForCssText(content);
-        const hostSuffix = '[' + ids.host + ']';
-        // const contentSuffix = '[' + ids.content + ']';
-        const parsedCSSRules = [];
-        const host = /(:host)/g;
-        const selector = /([^\s+>~,]+)/g;
-        const selectorReplacer = function (item) {
-          if (item === ':host') {
-            return item;
-          }
-
-          return item /*+ contentSuffix*/;
-        };
-
-        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
-          let selectorText = css.selectorText.replace(selector, selectorReplacer);
-
-          css.selectorText = selectorText.replace(host, hostSuffix);
-          parsedCSSRules.push(css.cssText);
-        });
-        const parsedCSSText = parsedCSSRules.join('\n');
-
-        Scope.export = {
-          _temp: true,
-          tag: 'style',
-          type: 'text/css',
-          id: Scope.systemId,
-          text: parsedCSSText,
-          _create() {
-            const parent = this.parent;
-            parent.node.setAttribute(ids.host, '');
-            const children = parent.blueprint.children || [];
-            applyContentAttr(children, ids);
-          }
-        };
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('default', parser);
-
-  function parser(content) {
-    return {
-      imports: [],
-      source: async function as_text(scope) {
-        scope.export = content;
-      }
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('function', parser);
-
-  function parser(content, metaData) {
-    const unique = [];
-    let imports = metaData.imports ? metaData.imports.slice(0) : [];
-    imports = imports.map(function (item) {
-      if (unique.indexOf(item) !== -1) {
-        return null;
-      }
-
-      unique.push(item);
-      return { path: item };
-    }).filter(Boolean);
-
-    return {
-      imports: imports,
-      source: content
-    };
-  }
-})(Galaxy.Module.Content);
-
-(function (GMC) {
-  GMC.registerParser('application/javascript', parser);
-
-  function parser(content) {
-    const imports = [];
-    const unique = [];
-    let parsedContent = content.replace(/^\s*\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/(\S+)/gm);
-      let pathURL = query[query.length - 1];
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: query.indexOf('new') === 0,
-        contentType: null
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
-      let query = path.match(/(\S+)/gm);
-      let pathURL = query[query.length - 1] + '#text';
-      if (unique.indexOf(pathURL) !== -1) {
-        return 'Scope.import(\'' + pathURL + '\')';
-      }
-
-      unique.push(pathURL);
-      imports.push({
-        path: pathURL,
-        fresh: true,
-        contentType: 'text/plain'
-      });
-
-      return 'Scope.import(\'' + pathURL + '\')';
-    });
-
-    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
-
-    return {
-      imports: imports,
-      source: parsedContent,
-      native: /^export default/gm.test(parsedContent)
-    };
-  }
-})(Galaxy.Module.Content);
 
 /* global Galaxy */
 Galaxy.View.ArrayChange = /** @class */ (function (G) {
@@ -4137,6 +4021,182 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
 })(Galaxy);
 
+(function (GMC) {
+  GMC.registerParser('text/css', parser);
+
+  const hosts = {};
+
+  function getHostId(id) {
+    if (hosts.hasOwnProperty(id)) {
+      return hosts[id];
+    }
+    const index = Object.keys(hosts).length;
+    const ids = {
+      host: 'gjs-host-' + index,
+      content: 'gjs-content-' + index,
+    };
+
+    hosts[id] = ids;
+
+    return ids;
+  }
+
+  function rulesForCssText(styleContent) {
+    const doc = document.implementation.createHTMLDocument(''),
+      styleElement = document.createElement('style');
+
+    styleElement.textContent = styleContent;
+    // the style will only be parsed once it is added to a document
+    doc.body.appendChild(styleElement);
+
+    return styleElement;
+  }
+
+  function applyContentAttr(children, ids) {
+    if (!(children instanceof Array) && children !== null && children !== undefined) {
+      children = [children];
+    }
+
+    children.forEach((child) => {
+      if (typeof child === 'string' || child.tag === 'comment') return;
+      child[ids.content] = '';
+
+      if (child.children) {
+        applyContentAttr(child.children, ids);
+      }
+    });
+  }
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function (Scope) {
+        const ids = getHostId(Scope.systemId);
+        const cssRules = rulesForCssText(content);
+        const hostSuffix = '[' + ids.host + ']';
+        // const contentSuffix = '[' + ids.content + ']';
+        const parsedCSSRules = [];
+        const host = /(:host)/g;
+        const selector = /([^\s+>~,]+)/g;
+        const selectorReplacer = function (item) {
+          if (item === ':host') {
+            return item;
+          }
+
+          return item /*+ contentSuffix*/;
+        };
+
+        Array.prototype.forEach.call(cssRules.sheet.cssRules, function (css) {
+          let selectorText = css.selectorText.replace(selector, selectorReplacer);
+
+          css.selectorText = selectorText.replace(host, hostSuffix);
+          parsedCSSRules.push(css.cssText);
+        });
+        const parsedCSSText = parsedCSSRules.join('\n');
+
+        Scope.export = {
+          _temp: true,
+          tag: 'style',
+          type: 'text/css',
+          id: Scope.systemId,
+          text: parsedCSSText,
+          _create() {
+            const parent = this.parent;
+            parent.node.setAttribute(ids.host, '');
+            const children = parent.blueprint.children || [];
+            applyContentAttr(children, ids);
+          }
+        };
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('default', parser);
+
+  function parser(content) {
+    return {
+      imports: [],
+      source: async function as_text(scope) {
+        scope.export = content;
+      }
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('function', parser);
+
+  function parser(content, metaData) {
+    const unique = [];
+    let imports = metaData.imports ? metaData.imports.slice(0) : [];
+    imports = imports.map(function (item) {
+      if (unique.indexOf(item) !== -1) {
+        return null;
+      }
+
+      unique.push(item);
+      return { path: item };
+    }).filter(Boolean);
+
+    return {
+      imports: imports,
+      source: content
+    };
+  }
+})(Galaxy.Module.Content);
+
+(function (GMC) {
+  GMC.registerParser('application/javascript', parser);
+
+  function parser(content) {
+    const imports = [];
+    const unique = [];
+    let parsedContent = content.replace(/^\s*\/\/.*$/gm, '').replace(/Scope\.import\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/(\S+)/gm);
+      let pathURL = query[query.length - 1];
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: query.indexOf('new') === 0,
+        contentType: null
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.importAsText\(['"](.*)['"]\)/gm, function (match, path) {
+      let query = path.match(/(\S+)/gm);
+      let pathURL = query[query.length - 1] + '#text';
+      if (unique.indexOf(pathURL) !== -1) {
+        return 'Scope.import(\'' + pathURL + '\')';
+      }
+
+      unique.push(pathURL);
+      imports.push({
+        path: pathURL,
+        fresh: true,
+        contentType: 'text/plain'
+      });
+
+      return 'Scope.import(\'' + pathURL + '\')';
+    });
+
+    parsedContent = parsedContent.replace(/Scope\.kill\(.*\)/gm, 'return');
+
+    return {
+      imports: imports,
+      source: parsedContent,
+      native: /^export default/gm.test(parsedContent)
+    };
+  }
+})(Galaxy.Module.Content);
+
 /* global Galaxy, gsap */
 (function (G) {
   if (!window.gsap) {
@@ -4309,7 +4369,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               // if(!viewNode.rendered.resolved) {
               //   console.log(viewNode.node)
               // }
-
               process_class_animation(viewNode, viewNodeCache, tweenKey, animationConfig, addOrRemove, className);
             }
           });
@@ -4317,6 +4376,24 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       }
     }
   };
+
+  function clear_tweens(node) {
+    const tweens = gsap.getTweensOf(node);
+    for (const t of tweens) {
+      if (t.parent) {
+        if (t.parent === gsap.globalTimeline) {
+          // we can not pause the parent timeline if it's the  global timeline
+          t.pause();
+        } else {
+          t.parent.pause();
+        }
+
+        t.parent.remove(t);
+      } else {
+        t.pause();
+      }
+    }
+  }
 
   /**
    *
@@ -4396,16 +4473,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       return finalize();
     }
 
-    const tweens = gsap.getTweensOf(_node);
-    for (const t of tweens) {
-      if (t.parent) {
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
-
+    clear_tweens(_node);
     AnimationMeta.installGSAPAnimation(viewNode, 'leave', animationConfig, finalize);
   }
 
@@ -4424,11 +4492,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const tweenExist = Boolean(viewNodeCache[tweenKey]);
 
       if (addOrRemove && (!viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.add(className);
         });
       } else if (!addOrRemove && (viewNode.node.classList.contains(className) || tweenExist)) {
-        AnimationMeta.setupOnComplete(animationConfig, () => {
+        AnimationMeta.setupOnComplete(animationConfig.to || animationConfig.from, () => {
           viewNode.node.classList.remove(className);
         });
       }
@@ -4452,19 +4520,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   }
 
   function leave_with_parent(finalize) {
-    // if (gsap.getTweensOf(this.node).length) {
-    //   gsap.killTweensOf(this.node);
-    // }
-    const tweens = gsap.getTweensOf(this.node);
-    for (const t of tweens) {
-      if (t.parent) {
-        // t.pause();
-        t.parent.pause();
-        t.parent.remove(t);
-      } else {
-        t.pause();
-      }
-    }
+    clear_tweens(this.node);
 
     if (this.parent.transitory) {
       this.dump();
@@ -4557,8 +4613,6 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
   /**
    *
    * @param stepDescription
-   * @param onStart
-   * @param onComplete
    * @param viewNode
    * @return {*}
    */
@@ -4573,7 +4627,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     if (description.onComplete) {
       const userDefinedOnComplete = description.onComplete;
       description.onComplete = function () {
-        userDefinedOnComplete();
+        userDefinedOnComplete.call(this);
         onComplete();
       };
     } else {
@@ -4853,14 +4907,11 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
-      // console.log(config)
-
       if (tChildren.length === 0) {
         // if the tween is the very first child then its position can not be negative
         _this.timeline.add(tween, (position && position.indexOf('-=') === -1) ? position : null);
       } else if (tChildren.length === 1 && !firstChild.hasOwnProperty('timeline') && firstChild.getChildren(false).length === 0) {
         // This fix a bug where if the 'enter' animation has addTo, then the 'leave' animation is ignored
-        debugger
         _this.timeline.clear(false);
         _this.timeline.add(tween, position);
       } else {
