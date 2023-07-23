@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.Router = /** @class */ (function (G) {
+(function (_galaxy) {
   Router.TITLE_SEPARATOR = ' • ';
   Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
   Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
@@ -21,9 +21,9 @@ Galaxy.Router = /** @class */ (function (G) {
     Router.currentPath.update();
   };
 
-  Router.prepareRoute = function (routeConfig, parentScopeRouter, fullPath) {
+  Router.prepare_route = function (routeConfig, parentScopeRouter, fullPath) {
     if (routeConfig instanceof Array) {
-      const routes = routeConfig.map((r) => Router.prepareRoute(r, parentScopeRouter, fullPath));
+      const routes = routeConfig.map((r) => Router.prepare_route(r, parentScopeRouter, fullPath));
       if (parentScopeRouter) {
         parentScopeRouter.activeRoute.children = routes;
       }
@@ -63,18 +63,17 @@ Galaxy.Router = /** @class */ (function (G) {
 
       return null;
     }).filter(Boolean);
-  },
+  };
 
-    window.addEventListener('popstate', Router.mainListener);
+  window.addEventListener('popstate', Router.mainListener);
 
   /**
    *
    * @param {Galaxy.Scope} scope
-   * @param {Galaxy.Module} module
    * @constructor
    * @memberOf Galaxy
    */
-  function Router(scope, module) {
+  function Router(scope) {
     const _this = this;
     _this.__singleton__ = true;
     _this.config = {
@@ -82,7 +81,6 @@ Galaxy.Router = /** @class */ (function (G) {
     };
 
     _this.scope = scope;
-    _this.module = module;
     _this.routes = [];
     // Find active parent router
     _this.parentScope = scope.parentScope;
@@ -121,9 +119,9 @@ Galaxy.Router = /** @class */ (function (G) {
       },
       parameters: _this.parentScope && _this.parentScope.router ? _this.parentScope.router.parameters : {}
     };
-    _this.onTransitionFn = Galaxy.View.EMPTY_CALL;
-    _this.onInvokeFn = Galaxy.View.EMPTY_CALL;
-    _this.onLoadFn = Galaxy.View.EMPTY_CALL;
+    _this.onTransitionFn = _galaxy.View.EMPTY_CALL;
+    _this.onInvokeFn = _galaxy.View.EMPTY_CALL;
+    _this.onLoadFn = _galaxy.View.EMPTY_CALL;
     _this.viewports = {
       main: {
         tag: 'div',
@@ -138,14 +136,14 @@ Galaxy.Router = /** @class */ (function (G) {
       enumerable: true
     });
 
-    if (module.id === '@root') {
+    if (scope.systemId === '@root') {
       Router.currentPath.update();
     }
   }
 
   Router.prototype = {
     setup: function (routeConfigs) {
-      this.routes = Router.prepareRoute(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+      this.routes = Router.prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
       // if (this.parentScope && this.parentScope.router) {
       //   this.parentRoute = this.parentScope.router.activeRoute;
       // }
@@ -392,7 +390,7 @@ Galaxy.Router = /** @class */ (function (G) {
       } else {
         this.populateViewports(newRoute);
 
-        G.View.create_in_next_frame(G.View.GET_MAX_INDEX(), (_next) => {
+        _galaxy.View.create_in_next_frame(_galaxy.View.GET_MAX_INDEX(), (_next) => {
           Object.assign(this.data.parameters, params);
           _next();
         });
@@ -473,5 +471,22 @@ Galaxy.Router = /** @class */ (function (G) {
     }
   };
 
-  return Router;
+  /** @class */
+  _galaxy.Router = Router;
+
+  /**
+   * @memberOf Galaxy.Scope
+   * @returns {Galaxy.Router}
+   */
+  _galaxy.Scope.prototype.useRouter = function () {
+    const router = new Router(this);
+    if (this.systemId !== '@root') {
+      this.on('module.destroy', () => router.destroy());
+    }
+
+    this.__router__ = router;
+    this.router = router.data;
+
+    return router;
+  };
 })(Galaxy);
