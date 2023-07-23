@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.View = /** @class */(function (G) {
+(function (_galaxy) {
   const def_prop = Object.defineProperty;
   const obj_keys = Object.keys;
   const arr_concat = Array.prototype.concat.bind([]);
@@ -251,8 +251,8 @@ Galaxy.View = /** @class */(function (G) {
         }
 
         if (!this.blueprint.module) {
-          config.reactiveData = G.View.bind_subjects_to_data(this, config.subjects, config.scope, true);
-          const observer = new G.Observer(config.reactiveData);
+          config.reactiveData = View.bind_subjects_to_data(this, config.subjects, config.scope, true);
+          const observer = new _galaxy.Observer(config.reactiveData);
           observer.onAll(() => {
             apply_node_dataset(this.node, config.reactiveData);
           });
@@ -419,7 +419,7 @@ Galaxy.View = /** @class */(function (G) {
       }
     });
 
-    if (target instanceof G.View.ArrayChange) {
+    if (target instanceof View.ArrayChange) {
       return target.getInstance();
     }
 
@@ -814,14 +814,14 @@ Galaxy.View = /** @class */(function (G) {
 
   View.create_expression_fn = function (host, scope, handler, keys, values) {
     if (!values[0]) {
-      if (host instanceof G.View.ViewNode) {
+      if (host instanceof View.ViewNode) {
         values[0] = host.data;
       } else {
         values[0] = scope;
       }
     }
 
-    const getExpressionArguments = G.View.create_args_provider_fn(values);
+    const getExpressionArguments = View.create_args_provider_fn(values);
 
     return function () {
       let args = [];
@@ -854,7 +854,7 @@ Galaxy.View = /** @class */(function (G) {
 
     // Generate expression arguments
     try {
-      bindings.expressionFn = G.View.create_expression_fn(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
+      bindings.expressionFn = View.create_expression_fn(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
       return bindings.expressionFn;
     } catch (exception) {
       throw Error(exception.message + '\n' + bindings.propertyKeys);
@@ -873,7 +873,7 @@ Galaxy.View = /** @class */(function (G) {
   View.make_binding = function (target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
     const propertyKeys = bindings.propertyKeys;
     const expressionFn = View.get_expression_fn(bindings, root, scopeData);
-    const G_View_ReactiveData = G.View.ReactiveData;
+    const G_View_ReactiveData = View.ReactiveData;
 
     let propertyScopeData = scopeData;
     let propertyKey = null;
@@ -910,7 +910,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-      if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof G.View.ViewNode) {
+      if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof View.ViewNode) {
         propertyKey = propertyKeyPathItems[1];
         bindings.propertyKeys = propertyKeyPathItems.slice(2);
         childPropertyKeyPath = null;
@@ -937,7 +937,7 @@ Galaxy.View = /** @class */(function (G) {
       }
 
       if (childPropertyKeyPath === null) {
-        if (!(target instanceof G.View.ViewNode)) {
+        if (!(target instanceof View.ViewNode)) {
           def_prop(target, targetKeyName, {
             set: function ref_set(newValue) {
               // console.warn('It is not allowed', hostReactiveData, targetKeyName);
@@ -967,9 +967,9 @@ Galaxy.View = /** @class */(function (G) {
           });
         }
 
-        if (hostReactiveData && scopeData instanceof G.Scope) {
+        if (hostReactiveData && scopeData instanceof _galaxy.Scope) {
           // If the propertyKey is referring to some local value then there is no error
-          if (target instanceof G.View.ViewNode && target.localPropertyNames.has(propertyKey)) {
+          if (target instanceof View.ViewNode && target.localPropertyNames.has(propertyKey)) {
             return;
           }
 
@@ -1000,11 +1000,11 @@ Galaxy.View = /** @class */(function (G) {
     const keys = obj_keys(subjects);
     let attributeName;
     let attributeValue;
-    const subjectsClone = cloneSubject ? G.clone(subjects) : subjects;
+    const subjectsClone = cloneSubject ? _galaxy.clone(subjects) : subjects;
 
     let parentReactiveData;
-    if (!(data instanceof G.Scope)) {
-      parentReactiveData = new G.View.ReactiveData(null, data, 'BSTD');
+    if (!(data instanceof _galaxy.Scope)) {
+      parentReactiveData = new View.ReactiveData(null, data, 'BSTD');
     }
 
     for (let i = 0, len = keys.length; i < len; i++) {
@@ -1160,12 +1160,12 @@ Galaxy.View = /** @class */(function (G) {
     const _this = this;
     _this.scope = scope;
 
-    if (scope.element instanceof G.View.ViewNode) {
+    if (scope.element instanceof View.ViewNode) {
       _this.container = scope.element;
       // Nested views should inherit components from their parent view
       _this._components = Object.assign({}, scope.element.view._components);
     } else {
-      _this.container = new G.View.ViewNode({
+      _this.container = new View.ViewNode({
         tag: scope.element
       }, null, _this);
 
@@ -1330,7 +1330,7 @@ Galaxy.View = /** @class */(function (G) {
         const nodes = Array.prototype.slice.call(content.childNodes);
         nodes.forEach(function (node) {
           // parent.node.appendChild(node);
-          const viewNode = new G.View.ViewNode({ tag: node }, parent, _this);
+          const viewNode = new View.ViewNode({ tag: node }, parent, _this);
           parent.registerChild(viewNode, position);
           node.parentNode.removeChild(node);
           View.set_property_for_node(viewNode, 'animations', {});
@@ -1353,7 +1353,7 @@ Galaxy.View = /** @class */(function (G) {
         const _blueprint = component.blueprint;
         const keys = obj_keys(_blueprint);
         const needInitKeys = [];
-        const viewNode = new G.View.ViewNode(_blueprint, parent, _this, component.scopeData);
+        const viewNode = new View.ViewNode(_blueprint, parent, _this, component.scopeData);
         parent.registerChild(viewNode, position);
 
         // Behaviors installation stage
@@ -1397,5 +1397,15 @@ Galaxy.View = /** @class */(function (G) {
     }
   };
 
-  return View;
+  /** @class */
+  _galaxy.View = View;
+
+  /**
+   *
+   * @memberOf Galaxy.Scope
+   * @returns {Galaxy.View}
+   */
+  _galaxy.Scope.prototype.useView = function () {
+    return new Galaxy.View(this);
+  };
 })(Galaxy);

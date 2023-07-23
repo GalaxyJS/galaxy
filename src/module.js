@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.Module = /** @class */ (function () {
+(function (_galaxy) {
 
   /**
    *
@@ -43,17 +43,17 @@ Galaxy.Module = /** @class */ (function () {
       this.scope.trigger('module.destroy');
     },
 
-    addAddOn: function (addOnProvider) {
-      const h = addOnProvider.handler;
-      this.addOnProviders[addOnProvider.name] = h;
-      this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
-    }
+    // addAddOn: function (addOnProvider) {
+    //   const h = addOnProvider.handler;
+    //   this.addOnProviders[addOnProvider.name] = h;
+    //   this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
+    // }
   };
 
-  return Module;
-})();
+  _galaxy.Module = Module;
+})(Galaxy);
 
-Galaxy.Module.Content = /** @class */ (function () {
+(function (_module) {
   const parsers = {};
 
   /**
@@ -97,5 +97,6 @@ Galaxy.Module.Content = /** @class */ (function () {
 
   Content.prototype = {};
 
-  return Content;
-})();
+  /** @class */
+  _module.Content = Content;
+})(Galaxy.Module);

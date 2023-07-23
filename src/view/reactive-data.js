@@ -22,9 +22,9 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     'changes',
     '__rd__'
   ];
-  const objKeys = Object.keys;
-  const defProp = Object.defineProperty;
-  const scopeBuilder = function (id) {
+  const obj_keys = Object.keys;
+  const def_prop = Object.defineProperty;
+  const scope_builder = function (id) {
     return {
       id: id || 'Scope',
       shadow: {},
@@ -42,7 +42,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     };
   };
 
-  const getKeys = function (obj) {
+  const get_keys = function (obj) {
     if (obj instanceof Array) {
       const keys = ['length'];
       if (obj.hasOwnProperty('changes')) {
@@ -167,7 +167,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
    * @memberOf Galaxy.View
    */
   function ReactiveData(id, data, p) {
-    const parent = p instanceof ReactiveData ? p : scopeBuilder(p);
+    const parent = p instanceof ReactiveData ? p : scope_builder(p);
     this.data = data;
     this.id = parent.id + (id ? '.' + id : '|Scope');
     this.keyInParent = id;
@@ -213,7 +213,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         return;
       }
 
-      defProp(this.data, '__rd__', {
+      def_prop(this.data, '__rd__', {
         enumerable: false,
         configurable: true,
         value: this
@@ -279,7 +279,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           this.syncAll();
         }
       } else {
-        defProp(this.data, '__rd__', {
+        def_prop(this.data, '__rd__', {
           enumerable: false,
           configurable: true,
           value: this
@@ -288,7 +288,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
         this.walk(this.data);
       }
 
-      this.setupShadowProperties(getKeys(this.data));
+      this.setupShadowProperties(get_keys(this.data));
     },
     /**
      *
@@ -325,7 +325,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const getter = property && property.get;
       const setter = property && property.set;
 
-      defProp(data, key, {
+      def_prop(data, key, {
         get: function () {
           return getter ? getter.call(data) : value;
         },
@@ -396,7 +396,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
       _this.sync('length', arr.length, false, false);
       initialChanges.init = initialChanges;
-      defProp(arr, 'changes', {
+      def_prop(arr, 'changes', {
         enumerable: false,
         configurable: false,
         writable: true,
@@ -405,7 +405,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
 
       // We override all the array methods which mutate the array
       ARRAY_MUTATOR_METHODS.forEach(function (method) {
-        defProp(arr, method, {
+        def_prop(arr, method, {
           value: create_array_value(arr, method, initialChanges),
           writable: false,
           configurable: true
@@ -485,7 +485,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
      */
     syncAll: function () {
       const _this = this;
-      const keys = objKeys(_this.data);
+      const keys = obj_keys(_this.data);
       for (let i = 0, len = keys.length; i < len; i++) {
         _this.sync(keys[i], _this.data[keys[i]], false, false);
       }
@@ -550,7 +550,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       else {
         this.data.__rd__.removeRef(this);
         const nextOwner = this.refs[0];
-        defProp(this.data, '__rd__', {
+        def_prop(this.data, '__rd__', {
           enumerable: false,
           configurable: true,
           value: nextOwner
@@ -609,7 +609,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
           if (initValue.hasOwnProperty('changes')) {
             initValue.changes = initValue.changes.init;
           } else {
-            defProp(initValue, 'changes', {
+            def_prop(initValue, 'changes', {
               enumerable: false,
               configurable: false,
               writable: true,
@@ -700,7 +700,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const desc = Object.getOwnPropertyDescriptor(this.data, key);
       if (desc && desc.enumerable === false) {
         desc.enumerable = true;
-        defProp(this.data, key, desc);
+        def_prop(this.data, key, desc);
       }
     }
   };

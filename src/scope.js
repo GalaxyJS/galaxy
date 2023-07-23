@@ -1,7 +1,7 @@
 /* global Galaxy */
-Galaxy.Scope = /** @class */ (function () {
-  const defProp = Object.defineProperty;
-  const delProp = Reflect.deleteProperty;
+(function (_galaxy) {
+  const def_prop = Object.defineProperty;
+  const del_prop = Reflect.deleteProperty;
 
   /**
    *
@@ -17,11 +17,11 @@ Galaxy.Scope = /** @class */ (function () {
     _this.element = element || null;
     _this.export = {};
 
-    _this.uri = new Galaxy.GalaxyURI(module.path);
+    _this.uri = new _galaxy.GalaxyURI(module.path);
     _this.eventHandlers = {};
     _this.observers = [];
-    const _data = _this.element.data ? Galaxy.View.bind_subjects_to_data(_this.element, _this.element.data, _this.parentScope, true) : {};
-    defProp(_this, 'data', {
+    const _data = _this.element.data ? _galaxy.View.bind_subjects_to_data(_this.element, _this.element.data, _this.parentScope, true) : {};
+    def_prop(_this, 'data', {
       enumerable: true,
       configurable: true,
       get: function () {
@@ -38,13 +38,13 @@ Galaxy.Scope = /** @class */ (function () {
 
     /**
      * @property {{
-     *   'galaxy/view': Galaxy.View,
-     *   'galaxy/router': Galaxy.Router,
+     *   'galaxy/view': _galaxy.View,
+     *   'galaxy/router': _galaxy.Router,
      *   [libId]: any
      * }} __imports__
      */
 
-    defProp(_this, '__imports__', {
+    def_prop(_this, '__imports__', {
       value: {},
       writable: false,
       enumerable: false,
@@ -55,6 +55,8 @@ Galaxy.Scope = /** @class */ (function () {
   }
 
   Scope.prototype = {
+    systemId: null,
+    parentScope: null,
     /**
      *
      * @param {string} id ID string which is going to be used for importing
@@ -66,7 +68,7 @@ Galaxy.Scope = /** @class */ (function () {
     /**
      *
      * @param {('galaxy/view' | 'galaxy/router' | string)} libId Path or id of the addon you want to import
-     * @return {(Galaxy.View | Galaxy.Router | any)}
+     * @return {(_galaxy.View | _galaxy.Router | any)}
      */
     import: function (libId) {
       // if the id starts with `./` then we will replace it with the current scope path.
@@ -84,7 +86,7 @@ Galaxy.Scope = /** @class */ (function () {
      *
      */
     destroy: function () {
-      delProp(this, 'data');
+      del_prop(this, 'data');
       this.observers.forEach(function (observer) {
         observer.remove();
       });
@@ -107,7 +109,7 @@ Galaxy.Scope = /** @class */ (function () {
       }
 
       newModuleMetaData.parentScope = this;
-      return Galaxy.load(newModuleMetaData);
+      return _galaxy.load(newModuleMetaData);
     },
     /**
      *
@@ -152,15 +154,16 @@ Galaxy.Scope = /** @class */ (function () {
     /**
      *
      * @param object
-     * @returns {Galaxy.Observer}
+     * @returns {_galaxy.Observer}
      */
     observe: function (object) {
-      const observer = new Galaxy.Observer(object);
+      const observer = new _galaxy.Observer(object);
       this.observers.push(observer);
 
       return observer;
     }
   };
 
-  return Scope;
-})();
+  /** @class */
+  _galaxy.Scope = Scope;
+})(Galaxy);

@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.GalaxyURI = /** @class */ (function () {
+(function (_galaxy) {
   /**
    *
    * @param {string} url
@@ -17,5 +17,5 @@ Galaxy.GalaxyURI = /** @class */ (function () {
     this.protocol = urlParser.protocol;
   }
 
-  return GalaxyURI;
-})();
+  _galaxy.GalaxyURI = GalaxyURI;
+})(Galaxy);

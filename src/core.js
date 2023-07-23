@@ -9,11 +9,11 @@
 /**
  * @exports Galaxy
  */
-window.Galaxy = window.Galaxy || /** @class */(function () {
+(function (_window) {
   'use strict';
 
-  const AsyncFunction = Object.getPrototypeOf(async function () {
-  }).constructor;
+  // const AsyncFunction = Object.getPrototypeOf(async function () {
+  // }).constructor;
   Array.prototype.unique = function () {
     const a = this.concat();
     for (let i = 0, lenI = a.length; i < lenI; ++i) {
@@ -29,20 +29,12 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
 
   const CACHED_MODULES = {};
 
-  Core.cm = CACHED_MODULES;
-
-  /**
-   *
-   * @constructor
-   */
-  function Core() {
-    this.moduleContents = {};
-    this.addOnProviders = [];
-    this.rootElement = null;
-    this.bootModule = null;
-  }
-
-  Core.prototype = {
+  const Galaxy = {
+    cm: CACHED_MODULES,
+    moduleContents: {},
+    addOnProviders: [],
+    rootElement: null,
+    bootModule: null,
     /**
      *
      * @param {Object} out
@@ -236,14 +228,8 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
         if (imports.length) {
           const importsCopy = imports.slice(0);
           imports.forEach(function (importable) {
-            const moduleAddOnProvider = Galaxy.getAddOnProvider(importable.path);
-            // importable is an addon
-            if (moduleAddOnProvider) {
-              module.addAddOn(moduleAddOnProvider);
-              doneImporting(module, importsCopy);
-            }
             // importable is already loaded, and we don't need a new instance of it (Singleton)
-            else if (CACHED_MODULES[importable.path] && !importable.fresh) {
+            if (CACHED_MODULES[importable.path] && !importable.fresh) {
               doneImporting(module, importsCopy);
             }
             // importable is not loaded
@@ -334,27 +320,10 @@ window.Galaxy = window.Galaxy || /** @class */(function () {
           // console.warn('Search for es6 features in your code and remove them if your browser does not support them, e.g. arrow function');
           console.trace(error);
           reject();
-          // throw new Error(error);
         }
       });
     },
-
-    getAddOnProvider: function (name) {
-      return this.addOnProviders.filter((service) => {
-        return service.name === name;
-      })[0];
-    },
-
-    registerAddOnProvider: function (name, handler) {
-      this.addOnProviders.push({
-        name: name,
-        handler: handler
-      });
-    }
   };
 
-  const instance = new Core();
-  instance.Core = Core;
-
-  return instance;
+  _window.Galaxy = _window.Galaxy || Galaxy;
 }(this));

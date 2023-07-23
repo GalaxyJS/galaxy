@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.Observer = /** @class */ (function () {
+(function (_galaxy) {
   const defProp = Object.defineProperty;
 
   Observer.notify = function (obj, key, value) {
@@ -78,5 +78,6 @@ Galaxy.Observer = /** @class */ (function () {
     }
   };
 
-  return Observer;
-})();
+  /** @class */
+  _galaxy.Observer = Observer;
+})(Galaxy);

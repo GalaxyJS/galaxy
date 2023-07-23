@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.View.ArrayChange = /** @class */ (function (G) {
+(function (G) {
   let lastId = 0;
 
   function ArrayChange() {
@@ -29,5 +29,5 @@ Galaxy.View.ArrayChange = /** @class */ (function (G) {
     }
   };
 
-  return ArrayChange;
+  G.View.ArrayChange = ArrayChange;
 })(Galaxy);
