@@ -1,6 +1,7 @@
 {
   "name": "galaxyjs",
   "version": "4.0.0",
+  "type": "module",
   "keywords": [
     "modular",
     "web components",
@@ -17,7 +18,9 @@
   },
   "license": "MIT",
   "scripts": {
-    "site-development": "node site-development-server.mjs"
+    "build": "esbuild src/core.js --bundle --sourcemap --outdir=dist",
+    "site-development": "node site-development-server.mjs",
+    "site-development-esbuild": "node dev-esbuild.mjs"
   },
   "engines": {
     "node": ">=13.0.0",
@@ -36,5 +39,8 @@
     "gulp-uglify": "^3.0.2",
     "pump": "^3.0.0",
     "watch": "^1.0.2"
+  },
+  "dependencies": {
+    "esbuild": "0.18.16"
   }
 }

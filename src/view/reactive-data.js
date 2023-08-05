@@ -1,5 +1,5 @@
 /* global Galaxy */
-Galaxy.View.ReactiveData = /** @class */ (function (G) {
+(function (_galaxy) {
   const ARRAY_PROTO = Array.prototype;
   const ARRAY_MUTATOR_METHODS = [
     'push',
@@ -66,7 +66,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const returnValue = originalMethod.apply(this, args);
-      const changes = new G.View.ArrayChange();
+      const changes = new _galaxy.View.ArrayChange();
       const _original = changes.original = arr;
       changes.type = method;
       changes.params = args;
@@ -115,17 +115,17 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
   const SYNC_NODE = {
     _(node, key, value) {
       // Pass a copy of the ArrayChange to every bound
-      if (value instanceof G.View.ArrayChange) {
+      if (value instanceof _galaxy.View.ArrayChange) {
         value = value.getInstance();
       }
 
-      if (node instanceof G.View.ViewNode) {
+      if (node instanceof _galaxy.View.ViewNode) {
         node.setters[key](value);
       } else {
         node[key] = value;
       }
 
-      G.Observer.notify(node, key, value);
+      _galaxy.Observer.notify(node, key, value);
     },
     self(node, key, value, sameObjectValue, fromChild) {
       if (fromChild || sameObjectValue)
@@ -220,7 +220,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       });
 
       if (this.data instanceof Galaxy.Scope || this.data.__scope__) {
-        this.addKeyToShadow = G.View.EMPTY_CALL;
+        this.addKeyToShadow = _galaxy.View.EMPTY_CALL;
       }
 
       if (this.data instanceof Galaxy.Scope) {
@@ -383,7 +383,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       }
 
       const _this = this;
-      const initialChanges = new G.View.ArrayChange();
+      const initialChanges = new _galaxy.View.ArrayChange();
       initialChanges.original = arr;
       initialChanges.type = 'reset';
       initialChanges.params = arr;
@@ -472,7 +472,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       const _this = this;
       const map = _this.nodesMap[propertyKey];
       // notify the observers on the data
-      G.Observer.notify(_this.data, propertyKey, value);
+      _galaxy.Observer.notify(_this.data, propertyKey, value);
 
       if (map) {
         for (let i = 0, len = map.nodes.length; i < len; i++) {
@@ -593,7 +593,7 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
       // Ensure that same node with different property bind can exist
       if (index === -1 || map.keys[index] !== nodeKey) {
         this.nodeCount++;
-        if (node instanceof G.View.ViewNode && !node.setters[nodeKey]) {
+        if (node instanceof _galaxy.View.ViewNode && !node.setters[nodeKey]) {
           node.registerActiveProperty(nodeKey, this, expression);
         }
 
@@ -705,6 +705,6 @@ Galaxy.View.ReactiveData = /** @class */ (function (G) {
     }
   };
 
-  return ReactiveData;
+  _galaxy.View.ReactiveData = ReactiveData;
 
 })(Galaxy);

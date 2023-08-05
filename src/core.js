@@ -12,6 +12,14 @@
 (function (_window) {
   'use strict';
 
+  function FetchContent(type, content, metaData) {
+    this.type = type;
+    this.content = content;
+    this.metaData = metaData;
+  }
+
+  FetchContent.prototype = {};
+
   // const AsyncFunction = Object.getPrototypeOf(async function () {
   // }).constructor;
   Array.prototype.unique = function () {
@@ -27,10 +35,29 @@
     return a;
   };
 
+  const FETCH_CONTENT_PARSERS = {};
+
+  /**
+   *
+   * @param {FetchContent} content
+   * @returns {*}
+   */
+  function parse_fetch_content(content) {
+    const safeType = (content.type || '').split(';')[0];
+    const parser = FETCH_CONTENT_PARSERS[safeType];
+
+    if (parser) {
+      return parser.call(null, content.content, content.metaData);
+    }
+
+    return FETCH_CONTENT_PARSERS['default'].call(null, content.content, content.metaData);
+  }
+
   const CACHED_MODULES = {};
 
   const Galaxy = {
-    cm: CACHED_MODULES,
+    CACHED_MODULES,
+    FETCH_CONTENT_PARSERS,
     moduleContents: {},
     addOnProviders: [],
     rootElement: null,
@@ -184,7 +211,7 @@
         contentFetcher = contentFetcher.then(response => {
           const contentType = module.contentType || response.headers.get('content-type');
           return response.clone().text().then(content => {
-            return new Galaxy.Module.Content(contentType, content, module);
+            return new FetchContent(contentType, content, module);
           });
         });
 
@@ -216,10 +243,10 @@
         };
 
         if (typeof moduleConstructor === 'function') {
-          moduleConstructor = new Galaxy.Module.Content('function', moduleConstructor, moduleMetaData);
+          moduleConstructor = new FetchContent('function', moduleConstructor, moduleMetaData);
         }
 
-        const parsedContent = Galaxy.Module.Content.parse(moduleConstructor);
+        const parsedContent = parse_fetch_content(moduleConstructor);
         const imports = parsedContent.imports;
 
         const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);

@@ -1,5 +1,5 @@
-(function (GMC) {
-  GMC.registerParser('default', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['default'] = parser;
 
   function parser(content) {
     return {
@@ -9,4 +9,4 @@
       }
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);

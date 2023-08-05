@@ -1,6 +1,6 @@
 /* global Galaxy */
 (function (_galaxy) {
-
+  'use strict';
   /**
    *
    * @param {object} module
@@ -42,61 +42,7 @@
     destroy: function () {
       this.scope.trigger('module.destroy');
     },
-
-    // addAddOn: function (addOnProvider) {
-    //   const h = addOnProvider.handler;
-    //   this.addOnProviders[addOnProvider.name] = h;
-    //   this.addOns[addOnProvider.name] = h.provideInstance(this.scope, this);
-    // }
   };
 
   _galaxy.Module = Module;
 })(Galaxy);
-
-(function (_module) {
-  const parsers = {};
-
-  /**
-   *
-   * @param {Galaxy.Module.Content} ModuleContent
-   * @returns {*}
-   */
-  Content.parse = function (ModuleContent) {
-    const safeType = (ModuleContent.type || '').split(';')[0];
-    const parser = parsers[safeType];
-
-    if (parser) {
-      return parser.call(null, ModuleContent.content, ModuleContent.metaData);
-    }
-
-    return parsers['default'].call(null, ModuleContent.content, ModuleContent.metaData);
-  };
-
-  /**
-   *
-   * @param {string} type
-   * @param {function} parser
-   */
-  Content.registerParser = function (type, parser) {
-    parsers[type] = parser;
-  };
-
-  /**
-   *
-   * @param {string} type
-   * @param {*} content
-   * @param {*} metaData
-   * @constructor
-   * @memberOf Galaxy.Module
-   */
-  function Content(type, content, metaData) {
-    this.type = type;
-    this.content = content;
-    this.metaData = metaData;
-  }
-
-  Content.prototype = {};
-
-  /** @class */
-  _module.Content = Content;
-})(Galaxy.Module);

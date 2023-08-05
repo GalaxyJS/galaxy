@@ -1,6 +1,7 @@
 /* global Galaxy */
 (function (_galaxy) {
-  const defProp = Object.defineProperty;
+  'use strict';
+  const def_prop = Object.defineProperty;
 
   Observer.notify = function (obj, key, value) {
     const observers = obj.__observers__;
@@ -25,7 +26,7 @@
 
     const __observers__ = '__observers__';
     if (!this.context.hasOwnProperty(__observers__)) {
-      defProp(context, __observers__, {
+      def_prop(context, __observers__, {
         value: [],
         writable: true,
         configurable: true

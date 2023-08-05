@@ -1,5 +1,5 @@
-(function (GMC) {
-  GMC.registerParser('text/css', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['text/css'] = parser;
 
   const hosts = {};
 
@@ -87,4 +87,4 @@
       }
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);

@@ -1,5 +1,7 @@
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
+
   const def_prop = Object.defineProperty;
   const del_prop = Reflect.deleteProperty;
 
@@ -55,6 +57,7 @@
   }
 
   Scope.prototype = {
+    data: null,
     systemId: null,
     parentScope: null,
     /**

@@ -1,14 +1,14 @@
 /* global Galaxy, Promise */
-Galaxy.View.ViewNode = /** @class */ (function (G) {
-  const GV = G.View;
-  const commentNode = document.createComment('');
-  const defProp = Object.defineProperty;
-  const EMPTY_CALL = Galaxy.View.EMPTY_CALL;
-  const create_in_next_frame = G.View.create_in_next_frame;
-  const destroy_in_next_frame = G.View.destroy_in_next_frame;
+(function (_galaxy) {
+  const _galaxy_view = _galaxy.View;
+  const EMPTY_CALL = _galaxy_view.EMPTY_CALL;
+  const create_in_next_frame = _galaxy_view.create_in_next_frame;
+  const destroy_in_next_frame = _galaxy_view.destroy_in_next_frame;
+  const COMMENT_NODE = document.createComment('');
+  const def_prop = Object.defineProperty;
 
   function create_comment(t) {
-    const n = commentNode.cloneNode();
+    const n = COMMENT_NODE.cloneNode();
     n.textContent = t;
     return n;
   }
@@ -39,47 +39,47 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     node.removeChild(child);
   }
 
-  const referenceToThis = {
+  const REFERENCE_TO_THIS = {
     value: this,
     configurable: false,
     enumerable: false
   };
 
-  const __node__ = {
+  const __NODE__ = {
     value: null,
     configurable: false,
     enumerable: false,
     writable: true
   };
 
-  const arrIndexOf = Array.prototype.indexOf;
-  const arrSlice = Array.prototype.slice;
+  const arr_index_of = Array.prototype.indexOf;
+  const arr_slice = Array.prototype.slice;
 
   //------------------------------
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
     type: 'none'
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
     type: 'prop',
     key: '_create',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
     type: 'prop',
     key: '_render',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
     type: 'prop',
     key: '_destroy',
     getSetter: () => EMPTY_CALL
   };
 
-  GV.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
+  _galaxy_view.NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
     type: 'prop',
     key: 'renderConfig'
   };
@@ -218,7 +218,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     _this.onLeaveComplete = REMOVE_SELF.bind(_this, true);
 
     const cache = {};
-    defProp(_this, 'cache', {
+    def_prop(_this, 'cache', {
       enumerable: false,
       configurable: false,
       value: cache
@@ -260,13 +260,13 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     _this.blueprint.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, blueprint.renderConfig || {});
 
-    __node__.value = this.node;
-    defProp(_this.blueprint, 'node', __node__);
+    __NODE__.value = this.node;
+    def_prop(_this.blueprint, 'node', __NODE__);
 
-    referenceToThis.value = this;
+    REFERENCE_TO_THIS.value = this;
     if (!_this.node.__vn__) {
-      defProp(_this.node, '__vn__', referenceToThis);
-      defProp(_this.placeholder, '__vn__', referenceToThis);
+      def_prop(_this.node, '__vn__', REFERENCE_TO_THIS);
+      def_prop(_this.placeholder, '__vn__', REFERENCE_TO_THIS);
     }
 
     if (_this.blueprint._create) {
@@ -307,7 +307,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
       const blueprintClone = Object.assign({}, this.blueprint);
       ViewNode.cleanReferenceNode(blueprintClone);
 
-      defProp(blueprintClone, 'mother', {
+      def_prop(blueprintClone, 'mother', {
         value: this.blueprint,
         writable: false,
         enumerable: false,
@@ -436,7 +436,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     registerActiveProperty: function (propertyKey, reactiveData, expression) {
       this.properties.add(reactiveData);
-      GV.activate_property_for_node(this, propertyKey, reactiveData, expression);
+      _galaxy_view.activate_property_for_node(this, propertyKey, reactiveData, expression);
     },
 
     snapshot: function (animations) {
@@ -483,7 +483,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
               REMOVE_SELF.call(_this, false);
             };
           }
-          // if a child has an animation and this node is being removed directly, then we need to remove this node
+            // if a child has an animation and this node is being removed directly, then we need to remove this node
           // in order for element to get removed properly
           else if (_this.destroyOrigin === 1) {
             REMOVE_SELF.call(_this, true);
@@ -544,7 +544,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     getChildNodes: function () {
       const nodes = [];
-      const cn = arrSlice.call(this.node.childNodes, 0);
+      const cn = arr_slice.call(this.node.childNodes, 0);
       for (let i = cn.length - 1; i >= 0; i--) {
         // All the nodes that are ViewNode
         const node = cn[i];
@@ -558,7 +558,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
 
     getChildNodesAsc: function () {
       const nodes = [];
-      const cn = arrSlice.call(this.node.childNodes, 0);
+      const cn = arr_slice.call(this.node.childNodes, 0);
       for (let i = 0; i < cn.length; i++) {
         // All the nodes that are ViewNode
         const node = cn[i];
@@ -575,7 +575,7 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
      */
     clean: function (hasAnimation, children) {
       children = children || this.getChildNodes();
-      GV.destroy_nodes(children, hasAnimation);
+      _galaxy_view.destroy_nodes(children, hasAnimation);
 
       destroy_in_next_frame(this.index, (_next) => {
         let len = this.finalize.length;
@@ -624,6 +624,5 @@ Galaxy.View.ViewNode = /** @class */ (function (G) {
     }
   };
 
-  return ViewNode;
-
+  _galaxy_view.ViewNode = ViewNode;
 })(Galaxy);

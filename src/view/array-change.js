@@ -1,5 +1,5 @@
 /* global Galaxy */
-(function (G) {
+(function (_galaxy) {
   let lastId = 0;
 
   function ArrayChange() {
@@ -19,7 +19,7 @@
 
   ArrayChange.prototype = {
     getInstance: function () {
-      const instance = new G.View.ArrayChange();
+      const instance = new _galaxy.View.ArrayChange();
       instance.init = this.init;
       instance.original = this.original;
       instance.params = this.params.slice(0);
@@ -29,5 +29,5 @@
     }
   };
 
-  G.View.ArrayChange = ArrayChange;
+  _galaxy.View.ArrayChange = ArrayChange;
 })(Galaxy);

@@ -1,5 +1,6 @@
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
   /**
    *
    * @param {string} url

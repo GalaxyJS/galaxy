@@ -1,5 +1,5 @@
-(function (GMC) {
-  GMC.registerParser('application/javascript', parser);
+(function (_galaxy) {
+  _galaxy.FETCH_CONTENT_PARSERS['application/javascript'] =  parser;
 
   function parser(content) {
     const imports = [];
@@ -46,4 +46,4 @@
       native: /^export default/gm.test(parsedContent)
     };
   }
-})(Galaxy.Module.Content);
+})(Galaxy);

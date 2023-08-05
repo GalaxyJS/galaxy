@@ -1,5 +1,7 @@
 /* global Galaxy */
 (function (_galaxy) {
+  'use strict';
+
   const def_prop = Object.defineProperty;
   const obj_keys = Object.keys;
   const arr_concat = Array.prototype.concat.bind([]);
