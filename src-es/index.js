@@ -1,5 +1,5 @@
-import Scope from './scope.js';
-import Module from './module.js';
+import Scope from './scope';
+import Module from './module';
 
 function FetchContent(type, content, metaData) {
   this.type = type;

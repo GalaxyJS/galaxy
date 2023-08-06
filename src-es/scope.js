@@ -1,8 +1,8 @@
-import Galaxy from './index.js';
-import Observer from './observer.js';
-import URI from './uri.js';
-import { def_prop, del_prop } from './utils.js';
-import { bind_subjects_to_data } from './view.js';
+import Galaxy from './index';
+import Observer from './observer';
+import URI from './uri';
+import { def_prop, del_prop } from './utils';
+import { bind_subjects_to_data } from './view';
 
 
 /**

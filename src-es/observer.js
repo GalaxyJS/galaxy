@@ -1,4 +1,4 @@
-import { def_prop } from './utils.js';
+import { def_prop } from './utils';
 
 Observer.notify = function (obj, key, value) {
   const observers = obj.__observers__;

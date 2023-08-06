@@ -1401,6 +1401,7 @@ View.prototype = {
  * @memberOf Scope
  * @returns {View}
  */
+debugger;
 Scope.prototype.useView = function () {
   return new View(this);
 };
