@@ -14,6 +14,13 @@
     install: function () {
       return true;
     },
+
+    /**
+     *
+     * @param cache
+     * @param {Galaxy.ModuleMetaData} newModuleMeta
+     * @param expression
+     */
     update: function handleModule(cache, newModuleMeta, expression) {
       const _this = this;
 

@@ -38,21 +38,6 @@
       }
     });
 
-    /**
-     * @property {{
-     *   'galaxy/view': _galaxy.View,
-     *   'galaxy/router': _galaxy.Router,
-     *   [libId]: any
-     * }} __imports__
-     */
-
-    def_prop(_this, '__imports__', {
-      value: {},
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
-
     _this.on('module.destroy', this.destroy.bind(_this));
   }
 
@@ -60,30 +45,20 @@
     data: null,
     systemId: null,
     parentScope: null,
-    /**
-     *
-     * @param {string} id ID string which is going to be used for importing
-     * @param {Object} instance The assigned object to this id
-     */
-    inject: function (id, instance) {
-      this.__imports__[id] = instance;
-    },
-    /**
-     *
-     * @param {('galaxy/view' | 'galaxy/router' | string)} libId Path or id of the addon you want to import
-     * @return {(_galaxy.View | _galaxy.Router | any)}
-     */
-    import: function (libId) {
-      // if the id starts with `./` then we will replace it with the current scope path.
+
+    importAsText: function (libId) {
+      // return this.import(libId + '#text');
       if (libId.indexOf('./') === 0) {
         libId = libId.replace('./', this.uri.path);
       }
 
-      return this.__imports__[libId];
-    },
-
-    importAsText: function (libId) {
-      return this.import(libId + '#text');
+      return fetch(libId, {
+        headers: {
+          'Content-Type': 'text/plain'
+        }
+      }).then(response => {
+        return response.text();
+      });
     },
     /**
      *
@@ -100,7 +75,7 @@
     },
     /**
      *
-     * @param {*} moduleMeta
+     * @param {Galaxy.ModuleMetaData} moduleMeta
      * @param {*} config
      * @returns {*}
      */

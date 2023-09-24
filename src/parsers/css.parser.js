@@ -1,5 +1,5 @@
 (function (_galaxy) {
-  _galaxy.FETCH_CONTENT_PARSERS['text/css'] = parser;
+  // _galaxy.FETCH_CONTENT_PARSERS['text/css'] = parser;
 
   const hosts = {};
 
@@ -67,6 +67,7 @@
           let selectorText = css.selectorText.replace(selector, selectorReplacer);
 
           css.selectorText = selectorText.replace(host, hostSuffix);
+          console.log( css)
           parsedCSSRules.push(css.cssText);
         });
         const parsedCSSText = parsedCSSRules.join('\n');

@@ -5,32 +5,30 @@
    *
    * @param {object} module
    * @param {Galaxy.Scope} scope
-   * @param {string} source
-   * @param {boolean} native
    * @constructor
    * @memberOf Galaxy
    */
-  function Module(module, scope, source, native) {
+  function Module(module, scope) {
     this.id = module.id;
     this.systemId = module.systemId;
-    this.source = source;
+    this.source = typeof module.source === 'function' ? module.source : null;
     this.path = module.path || null;
     this.importId = module.importId || module.path;
-    this.addOns = module.addOns || {};
-    this.addOnProviders = {};
+    // this.addOns = module.addOns || {};
+    // this.addOnProviders = {};
     this.scope = scope;
-    this.native = native || false;
+    // this.native = native || false;
   }
 
   Module.prototype = {
     init: function () {
-      const providers = this.addOnProviders;
+      // const providers = this.addOnProviders;
       Reflect.deleteProperty(this, 'source');
       Reflect.deleteProperty(this, 'addOnProviders');
 
-      for (let addOnName in this.addOns) {
-        providers[addOnName].startInstance(this.addOns[addOnName], this);
-      }
+      // for (let addOnName in this.addOns) {
+      //   providers[addOnName].startInstance(this.addOns[addOnName], this);
+      // }
 
       this.scope.trigger('module.init');
     },

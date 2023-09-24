@@ -1396,6 +1396,12 @@
       } else {
         throw Error('blueprint should NOT be null');
       }
+    },
+
+    loadStyle(path) {
+      if (path.indexOf('./') === 0) {
+        path = path.replace('./', this.scope.uri.path);
+      }
     }
   };
 

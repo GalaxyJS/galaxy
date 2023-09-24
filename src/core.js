@@ -12,16 +12,18 @@
 (function (_window) {
   'use strict';
 
-  function FetchContent(type, content, metaData) {
-    this.type = type;
-    this.content = content;
-    this.metaData = metaData;
-  }
+  /**
+   *
+   * @typedef {Object} Galaxy.ModuleMetaData
+   * @property {Function} [constructor]
+   * @property {Function|string} [source]
+   * @property {string} [id]
+   * @property {string} [systemId]
+   * @property {string} [path]
+   * @property {Galaxy.Scope} [parentScope]
+   * @property {Node} [element]
+   */
 
-  FetchContent.prototype = {};
-
-  // const AsyncFunction = Object.getPrototypeOf(async function () {
-  // }).constructor;
   Array.prototype.unique = function () {
     const a = this.concat();
     for (let i = 0, lenI = a.length; i < lenI; ++i) {
@@ -35,29 +37,7 @@
     return a;
   };
 
-  const FETCH_CONTENT_PARSERS = {};
-
-  /**
-   *
-   * @param {FetchContent} content
-   * @returns {*}
-   */
-  function parse_fetch_content(content) {
-    const safeType = (content.type || '').split(';')[0];
-    const parser = FETCH_CONTENT_PARSERS[safeType];
-
-    if (parser) {
-      return parser.call(null, content.content, content.metaData);
-    }
-
-    return FETCH_CONTENT_PARSERS['default'].call(null, content.content, content.metaData);
-  }
-
-  const CACHED_MODULES = {};
-
   const Galaxy = {
-    CACHED_MODULES,
-    FETCH_CONTENT_PARSERS,
     moduleContents: {},
     addOnProviders: [],
     rootElement: null,
@@ -116,7 +96,7 @@
     },
     /**
      *
-     * @param {Object} bootModule
+     * @param {Galaxy.ModuleMetaData} bootModule
      * @return {Promise<any>}
      */
     boot: function (bootModule) {
@@ -154,50 +134,47 @@
 
       return str.join('&');
     },
+
     /**
      *
-     * @param module
+     * @param {Galaxy.ModuleMetaData} moduleMetaData
+     * @returns {Galaxy.Module}
+     */
+    createModule: function (moduleMetaData) {
+      const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || this.rootElement);
+      return new Galaxy.Module(moduleMetaData, scope);
+    },
+
+    /**
+     *
+     * @param {Galaxy.ModuleMetaData} moduleMeta
      * @return {Promise<any>}
      */
-    load: function (module) {
-      if (!module) {
+    load: function (moduleMeta) {
+      if (!moduleMeta) {
         throw new Error('Module meta data or constructor is missing');
       }
 
       const _this = this;
       return new Promise(function (resolve, reject) {
-        if (module.hasOwnProperty('constructor') && typeof module.constructor === 'function') {
-          module.path = module.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
-          module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
+        if (moduleMeta.hasOwnProperty('constructor') && typeof moduleMeta.constructor === 'function') {
+          moduleMeta.path = moduleMeta.id = 'internal/' + (new Date()).valueOf() + '-' + Math.round(performance.now());
+          moduleMeta.systemId = moduleMeta.parentScope ? moduleMeta.parentScope.systemId + '/' + moduleMeta.id : moduleMeta.id;
+          moduleMeta.source = moduleMeta.constructor;
 
-          return _this.compileModuleContent(module, module.constructor, []).then(function (compiledModule) {
-            return _this.executeCompiledModule(compiledModule).then(resolve);
-          });
+          return _this.executeCompiledModule(_this.createModule(moduleMeta)).then(resolve);
         }
 
-        module.path = module.path.indexOf('/') === 0 ? module.path.substring(1) : module.path;
-        // module.path = module.path.indexOf('/') === 0 ? module.path : '/' + module.path;
-        if (!module.id) {
-          module.id = '@' + module.path;
+        moduleMeta.path = moduleMeta.path.indexOf('/') === 0 ? moduleMeta.path.substring(1) : moduleMeta.path;
+        if (!moduleMeta.id) {
+          moduleMeta.id = '@' + moduleMeta.path;
         }
-        module.systemId = module.parentScope ? module.parentScope.systemId + '/' + module.id : module.id;
+        moduleMeta.systemId = moduleMeta.parentScope ? moduleMeta.parentScope.systemId + '/' + moduleMeta.id : moduleMeta.id;
 
-        let invokers = [module.path];
-        if (module.invokers) {
-          const invokedPath = module.invokerPath + '|' + module.path;
-          if (module.invokers.indexOf(invokedPath) !== -1) {
-            return reject(new Error('Circular dependencies: \n-> ' + module.invokerPath + ' wants to load ' + module.path));
-          }
-
-          invokers = module.invokers;
-          invokers.push(invokedPath);
-        }
-
-        let url = module.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
-        // if (module.params) debugger
-        // contentFetcher makes sure that any module gets loaded from network only once unless cache property is present
+        let url = moduleMeta.path /*+ '?' + _this.convertToURIString(module.params || {})*/;
+        // contentFetcher makes sure that any module gets loaded from network only once
         let contentFetcher = Galaxy.moduleContents[url];
-        if (!contentFetcher || module.fresh) {
+        if (!contentFetcher) {
           Galaxy.moduleContents[url] = contentFetcher = fetch(url).then((response) => {
             if (!response.ok) {
               console.error(response.statusText, url);
@@ -209,81 +186,12 @@
         }
 
         contentFetcher = contentFetcher.then(response => {
-          const contentType = module.contentType || response.headers.get('content-type');
-          return response.clone().text().then(content => {
-            return new FetchContent(contentType, content, module);
-          });
+          return response.clone().text();
         });
 
-        contentFetcher
-          .then(moduleContent => _this.compileModuleContent(module, moduleContent, invokers))
-          .then(compiledModule => _this.executeCompiledModule(compiledModule))
-          .then(resolve)
-          .catch(reject);
-      });
-    },
-
-    /**
-     *
-     * @param {Object} moduleMetaData
-     * @param moduleConstructor
-     * @param invokers
-     * @returns {Promise<Galaxy.Module>}
-     */
-    compileModuleContent: function (moduleMetaData, moduleConstructor, invokers) {
-      const _this = this;
-      return new Promise(function (resolve, reject) {
-        const doneImporting = function (module, imports) {
-          imports.splice(imports.indexOf(module.path) - 1, 1);
-
-          if (imports.length === 0) {
-            // This will load the original initializer
-            resolve(module);
-          }
-        };
-
-        if (typeof moduleConstructor === 'function') {
-          moduleConstructor = new FetchContent('function', moduleConstructor, moduleMetaData);
-        }
-
-        const parsedContent = parse_fetch_content(moduleConstructor);
-        const imports = parsedContent.imports;
-
-        const scope = new Galaxy.Scope(moduleMetaData, moduleMetaData.element || _this.rootElement);
-        // Create module from moduleMetaData
-        const module = new Galaxy.Module(moduleMetaData, scope, parsedContent.source, parsedContent.native);
-        if (imports.length) {
-          const importsCopy = imports.slice(0);
-          imports.forEach(function (importable) {
-            // importable is already loaded, and we don't need a new instance of it (Singleton)
-            if (CACHED_MODULES[importable.path] && !importable.fresh) {
-              doneImporting(module, importsCopy);
-            }
-            // importable is not loaded
-            else {
-              if (importable.path.indexOf('./') === 0) {
-                importable.path = scope.uri.path + importable.path.substring(2);
-              }
-
-              Galaxy.load({
-                name: importable.name,
-                path: importable.path,
-                fresh: importable.fresh,
-                contentType: importable.contentType,
-                // params: item.params,
-                parentScope: scope,
-                invokers: invokers,
-                invokerPath: module.path
-              }).then(function () {
-                doneImporting(module, importsCopy);
-              });
-            }
-          });
-
-          return;
-        }
-
-        resolve(module);
+        contentFetcher.then(text => {
+          return _this.executeCompiledModule(_this.createModule(moduleMeta));
+        }).then(resolve).catch(reject);
       });
     },
 
@@ -295,43 +203,17 @@
     executeCompiledModule: function (module) {
       return new Promise(async function (resolve, reject) {
         try {
-          for (let item in module.addOns) {
-            module.scope.inject(item, module.addOns[item]);
-          }
-
-          for (let item in CACHED_MODULES) {
-            if (CACHED_MODULES.hasOwnProperty(item)) {
-              const asset = CACHED_MODULES[item];
-              if (asset.module) {
-                module.scope.inject(asset.id, asset.module);
-              }
-            }
-          }
-
-          const source = module.native ? (await import('/' + module.path)).default : module.source;
+          const source = module.source || (await import('/' + module.path)).default;
 
           let moduleSource = source;
           if (typeof source !== 'function') {
             moduleSource = function () {
               console.error('Can\'t find default function in %c' + module.path, 'font-weight: bold;');
             };
-            // moduleSource = new AsyncFunction('Scope', ['//' + module.id + ': ' + module.path, '"use strict";\n', source].join('\n'));
           }
 
           const output = moduleSource.call(null, module.scope) || null;
-
           const proceed = () => {
-            const id = module.path;
-            // if the module export has _temp then do not cache the module
-            if (module.scope.export._temp) {
-              module.scope.parentScope.inject(id, module.scope.export);
-            } else if (!CACHED_MODULES[id]) {
-              CACHED_MODULES[id] = {
-                id: id,
-                module: module.scope.export
-              };
-            }
-
             module.init();
             return resolve(module);
           };

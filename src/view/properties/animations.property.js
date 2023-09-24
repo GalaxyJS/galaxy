@@ -525,8 +525,8 @@
       }
 
       // The first tween of an animation type(enter or leave) should use startPosition
-      if (animationMeta.type && animationMeta.type !== type && !newConfig.keyframe && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
-        // newConfig.position = newConfig.startPosition;
+      if (animationMeta.type && animationMeta.type !== type && (newConfig.position && newConfig.position.indexOf('=') !== -1)) {
+        newConfig.position = newConfig.startPosition;
       }
 
       const children = animationMeta.timeline.getChildren(false);
@@ -539,18 +539,18 @@
 
       animationMeta.type = type;
       // console.log(newConfig)
-      const tween = animationMeta.add(viewNode, newConfig, finalize);
+      // const tween = animationMeta.add(viewNode, newConfig, finalize);
 
       // In the case where the addToAnimationMeta.timeline has no child then animationMeta.timeline would be
       // its only child and, we have to resume it if it's not playing
-      if (newConfig.addTo && parentAnimationMeta) {
-        if (!parentAnimationMeta.started /*&& parentAnimationMeta.name !== '<user-defined>'*/) {
-          parentAnimationMeta.started = true;
-          parentAnimationMeta.timeline.resume();
-        }
-      }
+      // if (newConfig.addTo && parentAnimationMeta) {
+      //   if (!parentAnimationMeta.started /*&& parentAnimationMeta.name !== '<user-defined>'*/) {
+      //     parentAnimationMeta.started = true;
+      //     parentAnimationMeta.timeline.resume();
+      //   }
+      // }
 
-      return tween;
+      return animationMeta.add(viewNode, newConfig, finalize);;
     } else {
       return AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
     }
