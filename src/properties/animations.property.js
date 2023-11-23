@@ -1,71 +1,78 @@
-/* global Galaxy, gsap */
-(function (G) {
-  if (!window.gsap) {
-    G.setupTimeline = function () {};
-    G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
-      type: 'prop',
-      key: 'animations',
-      /**
-       *
-       * @param {Galaxy.View.ViewNode} viewNode
-       * @param animationDescriptions
-       */
-      update: function (viewNode, animationDescriptions) {
-        if (animationDescriptions.enter && animationDescriptions.enter.to.onComplete) {
-          viewNode.processEnterAnimation = animationDescriptions.enter.to.onComplete;
-        }
-        viewNode.processLeaveAnimation = (onComplete) => {
-          onComplete();
-        };
+/* global  gsap */
+import { create_in_next_frame, destroy_in_next_frame } from '../view.js';
+import { EMPTY_CALL } from '../utils.js';
+
+/**
+ *
+ * @type {Galaxy.View.BlueprintProperty}
+ */
+export let animations_property;
+
+if (!window.gsap) {
+  // Galaxy.setupTimeline = function () {};
+  animations_property = {
+    type: 'prop',
+    key: 'animations',
+    /**
+     *
+     * @param {Galaxy.View.ViewNode} viewNode
+     * @param animationDescriptions
+     */
+    update: function (viewNode, animationDescriptions) {
+      if (animationDescriptions.enter && animationDescriptions.enter.to.onComplete) {
+        viewNode.processEnterAnimation = animationDescriptions.enter.to.onComplete;
       }
-    };
+      viewNode.processLeaveAnimation = (onComplete) => {
+        onComplete();
+      };
+    }
+  };
 
-    window.gsap = {
-      to: function (node, props) {
-        return requestAnimationFrame(() => {
-          if (typeof node === 'string') {
-            node = document.querySelector(node);
-          }
+  window.gsap = {
+    to: function (node, props) {
+      return requestAnimationFrame(() => {
+        if (typeof node === 'string') {
+          node = document.querySelector(node);
+        }
 
-          const style = node.style;
-          if (style) {
-            const keys = Object.keys(props);
-            for (let i = 0, len = keys.length; i < len; i++) {
-              const key = keys[i];
-              const value = props[key];
-              switch (key) {
-                case 'duration':
-                case 'ease':
-                  break;
+        const style = node.style;
+        if (style) {
+          const keys = Object.keys(props);
+          for (let i = 0, len = keys.length; i < len; i++) {
+            const key = keys[i];
+            const value = props[key];
+            switch (key) {
+              case 'duration':
+              case 'ease':
+                break;
 
-                case 'opacity':
-                case 'z-index':
-                  style.setProperty(key, value);
-                  break;
+              case 'opacity':
+              case 'z-index':
+                style.setProperty(key, value);
+                break;
 
-                case 'scrollTo':
-                  node.scrollTop = typeof value.y === 'string' ? document.querySelector(value.y).offsetTop : value.y;
-                  node.scrollLeft = typeof value.x === 'string' ? document.querySelector(value.x).offsetLeft : value.x;
-                  break;
+              case 'scrollTo':
+                node.scrollTop = typeof value.y === 'string' ? document.querySelector(value.y).offsetTop : value.y;
+                node.scrollLeft = typeof value.x === 'string' ? document.querySelector(value.x).offsetLeft : value.x;
+                break;
 
-                default:
-                  style.setProperty(key, typeof value === 'number' && value !== 0 ? value + 'px' : value);
-              }
+              default:
+                style.setProperty(key, typeof value === 'number' && value !== 0 ? value + 'px' : value);
             }
-          } else {
-            Object.assign(node, props);
           }
-        });
-      },
-    };
+        } else {
+          Object.assign(node, props);
+        }
+      });
+    },
+  };
 
-    console.info('%cIn order to activate animations, load GSAP - GreenSock', 'color: yellowgreen; font-weight: bold;');
-    console.info('%cYou can implement most common animations by loading the following resources before galaxy.js', 'color: yellowgreen;');
-    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
-    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollToPlugin.min.js');
-    console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/EasePack.min.js\n\n');
-    return;
-  }
+  console.info('%cIn order to activate animations, load GSAP - GreenSock', 'color: yellowgreen; font-weight: bold;');
+  console.info('%cYou can implement most common animations by loading the following resources before galaxy.js', 'color: yellowgreen;');
+  console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js');
+  console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/ScrollToPlugin.min.js');
+  console.info('https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/EasePack.min.js\n\n');
+} else {
 
   function has_parent_enter_animation(viewNode) {
     if (!viewNode.parent) return false;
@@ -80,7 +87,7 @@
 
   const document_body = document.body;
 
-  G.View.NODE_BLUEPRINT_PROPERTY_MAP['animations'] = {
+  animations_property = {
     type: 'prop',
     key: 'animations',
     /**
@@ -288,7 +295,7 @@
    * @param {string} className
    */
   function process_class_animation(viewNode, viewNodeCache, tweenKey, animationConfig, addOrRemove, className) {
-    const IN_NEXT_FRAME = addOrRemove ? G.View.create_in_next_frame : G.View.destroy_in_next_frame;
+    const IN_NEXT_FRAME = addOrRemove ? create_in_next_frame : destroy_in_next_frame;
     IN_NEXT_FRAME(viewNode.index, (_next) => {
       const tweenExist = Boolean(viewNodeCache[tweenKey]);
 
@@ -462,7 +469,7 @@
     newConfig.to = to;
     let timelineName = newConfig.timeline;
 
-    let parentAnimationMeta = null;
+    // let parentAnimationMeta = null;
     if (timelineName) {
       const animationMeta = new AnimationMeta(timelineName);
       // Class animation do not have a type since their `enter` and `leave` states are not the same a
@@ -550,21 +557,22 @@
       //   }
       // }
 
-      return animationMeta.add(viewNode, newConfig, finalize);;
+      return animationMeta.add(viewNode, newConfig, finalize);
+
     } else {
       return AnimationMeta.createSimpleAnimation(viewNode, newConfig, finalize);
     }
   };
 
   const TIMELINE_SETUP_MAP = {};
-  G.setupTimeline = function (name, labels) {
-    TIMELINE_SETUP_MAP[name] = labels;
-    const animationMeta = AnimationMeta.ANIMATIONS[name];
-    if (animationMeta) {
-      animationMeta.setupLabels(labels);
-    }
-  };
-  Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
+  // const setupTimeline = function (name, labels) {
+  //   TIMELINE_SETUP_MAP[name] = labels;
+  //   const animationMeta = AnimationMeta.ANIMATIONS[name];
+  //   if (animationMeta) {
+  //     animationMeta.setupLabels(labels);
+  //   }
+  // };
+  //Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
 
   /**
    *
@@ -578,7 +586,7 @@
         return name.__am__;
       }
 
-      const onComplete = name.eventCallback('onComplete') || Galaxy.View.EMPTY_CALL;
+      const onComplete = name.eventCallback('onComplete') || EMPTY_CALL;
 
       _this.name = '<user-defined>';
       _this.timeline = name;
@@ -680,7 +688,7 @@
      */
     add: function (viewNode, config, finalize) {
       const _this = this;
-      let tween = null;
+      let tween;
 
       if (config.from && config.to) {
         const to = AnimationMeta.addCallbackScope(config.to, viewNode);
@@ -732,4 +740,4 @@
       return tween;
     }
   };
-})(Galaxy);
+}

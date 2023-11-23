@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+
+
+    <script type="module">
+      import Galaxy from './main.js';
+
+      function run() {
+        Galaxy.boot({
+          element: document.getElementById('app'),
+          path: 'test.js',
+          // path: 'modules/main/binding-type-self.js',
+          // path: 'modules/main/multi-tween.test.js',
+          // path: 'modules/main/component-test.js',
+          // path: 'modules/main/list-performance.js',
+          // path: 'modules/main/if-performance.js',
+          // path: 'modules/main/animation-test.js',
+          // path: 'modules/main/mods.js',
+          // path: 'modules/main/compute-fn.js',
+        }).then(function (module) {
+          module.start();
+        });
+      }
+
+      window.addEventListener('load', run);
+    </script>
+  </body>
+</html>

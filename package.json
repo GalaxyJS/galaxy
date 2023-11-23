@@ -18,29 +18,23 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "esbuild src/core.js --bundle --sourcemap --outdir=dist",
-    "site-development": "node site-development-server.mjs",
-    "site-development-esbuild": "node dev-esbuild.mjs"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "engines": {
-    "node": ">=13.0.0",
-    "npm": ">=7.0.0"
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/galaxy.cjs",
+  "module": "./dist/galaxy.js",
+  "exports": {
+    ".": {
+      "import": "./dist/galaxy.js",
+      "require": "./dist/galaxy.umd.cjs"
+    }
   },
   "contributors": [],
   "devDependencies": {
-    "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2",
-    "@web/dev-server": "^0.1.35",
-    "eslint": "^5.16.0",
-    "gulp": "^4.0.2",
-    "gulp-babel": "^8.0.0",
-    "gulp-concat": "^2.6.1",
-    "gulp-preprocess": "^4.0.2",
-    "gulp-uglify": "^3.0.2",
-    "pump": "^3.0.0",
-    "watch": "^1.0.2"
-  },
-  "dependencies": {
-    "esbuild": "0.18.16"
+    "vite": "^5.0.2"
   }
 }

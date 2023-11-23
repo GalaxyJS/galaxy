@@ -1,6 +1,4 @@
-/* global Galaxy */
-(function (G) {
-  G.View.PROPERTY_SETTERS.reactive = function (viewNode, property, expression, scope) {
+export default function reactive_setter (viewNode, property, expression, scope) {
     const propertyName = property.key;
     const updateFn = property.update;
     const config = viewNode.cache[propertyName];
@@ -14,4 +12,3 @@
       return nodeUpdateFn(config, value, expression, scope);
     };
   }
-})(Galaxy);
