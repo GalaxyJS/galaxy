@@ -1,6 +1,7 @@
 import { EMPTY_CALL } from '../utils.js';
 import GalaxyURI from '../uri.js';
 import Scope from '../scope.js';
+import { create_in_next_frame } from '../view.js';
 
 export const module_property = {
   type: 'reactive',
@@ -53,16 +54,10 @@ export const module_property = {
         cache.loadedModule.destroy();
         cache.loadedModule = null;
       }
-      // } else {
-      //   G.View.destroy_in_next_frame(_this.index, (_next) => {
-      //     clean_content(_this);
-      //     _next();
-      //   });
-      // }
     }
 
     if (!_this.virtual && newModuleMeta && newModuleMeta.path && newModuleMeta !== cache.moduleMeta) {
-      G.View.create_in_next_frame(_this.index, (_next) => {
+      create_in_next_frame(_this.index, (_next) => {
         module_loader.call(null, _this, cache, newModuleMeta, _next);
       });
     }
@@ -72,7 +67,7 @@ export const module_property = {
 
 /**
  *
- * @param {Galaxy.View.ViewNode} viewNode
+ * @param {Galaxy.ViewNode} viewNode
  */
 function clean_content(viewNode) {
   const children = viewNode.getChildNodes();
@@ -86,15 +81,6 @@ function clean_content(viewNode) {
   }
 
   viewNode.clean(viewNode.hasAnimation(children));
-
-  // G.View.destroy_in_next_frame(viewNode.index, (_next) => {
-  //   let len = viewNode.finalize.length;
-  //   for (let i = 0; i < len; i++) {
-  //     viewNode.finalize[i].call(viewNode);
-  //   }
-  //   viewNode.finalize = [];
-  //   _next();
-  // });
 }
 
 /**

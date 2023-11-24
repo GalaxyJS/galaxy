@@ -1,4 +1,3 @@
-/* global  gsap */
 import { create_in_next_frame, destroy_in_next_frame } from '../view.js';
 import { EMPTY_CALL } from '../utils.js';
 
@@ -7,15 +6,16 @@ import { EMPTY_CALL } from '../utils.js';
  * @type {Galaxy.View.BlueprintProperty}
  */
 export let animations_property;
+export let setupTimeline;
 
 if (!window.gsap) {
-  // Galaxy.setupTimeline = function () {};
+  setupTimeline = function () {};
   animations_property = {
     type: 'prop',
     key: 'animations',
     /**
      *
-     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {Galaxy.ViewNode} viewNode
      * @param animationDescriptions
      */
     update: function (viewNode, animationDescriptions) {
@@ -92,7 +92,7 @@ if (!window.gsap) {
     key: 'animations',
     /**
      *
-     * @param {Galaxy.View.ViewNode} viewNode
+     * @param {Galaxy.ViewNode} viewNode
      * @param animations
      */
     update: function (viewNode, animations) {
@@ -205,7 +205,7 @@ if (!window.gsap) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {AnimationConfig} animationConfig
    * @returns {*}
    */
@@ -243,7 +243,7 @@ if (!window.gsap) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {AnimationConfig} animationConfig
    * @param {Function} [finalize]
    */
@@ -287,7 +287,7 @@ if (!window.gsap) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {Object} viewNodeCache
    * @param {string} tweenKey
    * @param {AnimationConfig} animationConfig
@@ -337,8 +337,6 @@ if (!window.gsap) {
     }
   }
 
-  G.View.AnimationMeta = AnimationMeta;
-
   /**
    *
    * @typedef {Object} AnimationConfig
@@ -360,7 +358,7 @@ if (!window.gsap) {
   AnimationMeta.TIMELINES = {};
 
   AnimationMeta.createSimpleAnimation = function (viewNode, config, finalize) {
-    finalize = finalize || G.View.EMPTY_CALL;
+    finalize = finalize || EMPTY_CALL;
     const node = viewNode.node;
     let from = config.from;
     let to = config.to;
@@ -447,7 +445,7 @@ if (!window.gsap) {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {'enter'|'leave'|null} type
    * @param {AnimationConfig} descriptions
    * @param {Function} [finalize]
@@ -565,14 +563,13 @@ if (!window.gsap) {
   };
 
   const TIMELINE_SETUP_MAP = {};
-  // const setupTimeline = function (name, labels) {
-  //   TIMELINE_SETUP_MAP[name] = labels;
-  //   const animationMeta = AnimationMeta.ANIMATIONS[name];
-  //   if (animationMeta) {
-  //     animationMeta.setupLabels(labels);
-  //   }
-  // };
-  //Galaxy.TIMELINE_SETUP_MAP = TIMELINE_SETUP_MAP;
+  setupTimeline = function (name, labels) {
+    TIMELINE_SETUP_MAP[name] = labels;
+    const animationMeta = AnimationMeta.ANIMATIONS[name];
+    if (animationMeta) {
+      animationMeta.setupLabels(labels);
+    }
+  };
 
   /**
    *

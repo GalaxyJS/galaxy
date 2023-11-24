@@ -1,9 +1,11 @@
+import { get_bindings } from '../view.js';
+
 export const selected_property = {
   type: 'prop',
   key: 'selected',
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {Galaxy.View.ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
@@ -21,7 +23,7 @@ export const selected_property = {
 
     // Don't do anything if the node is an option tag
     if (viewNode.blueprint.tag === 'select') {
-      const bindings = G.View.get_bindings(viewNode.blueprint.selected);
+      const bindings = get_bindings(viewNode.blueprint.selected);
       const id = bindings.propertyKeys[0].split('.').pop();
       const nativeNode = viewNode.node;
       nativeNode.addEventListener('change', (event) => {

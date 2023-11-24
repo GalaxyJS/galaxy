@@ -3,7 +3,7 @@ export const on_property = {
   key: 'on',
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param events
    */
   update: function (viewNode, events) {

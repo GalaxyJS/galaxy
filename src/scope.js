@@ -1,7 +1,7 @@
 import { def_prop, del_prop } from './utils';
 import GalaxyURI from './uri.js';
 import Observer from './observer.js';
-import View from './view.js';
+import { bind_subjects_to_data } from './view.js';
 
 /**
  *
@@ -22,7 +22,7 @@ function Scope(context, module, element) {
   _this.uri = new GalaxyURI(module.path);
   _this.eventHandlers = {};
   _this.observers = [];
-  const _data = _this.element.data ? View.bind_subjects_to_data(_this.element, _this.element.data, _this.parentScope, true) : {};
+  const _data = _this.element.data ? bind_subjects_to_data(_this.element, _this.element.data, _this.parentScope, true) : {};
   def_prop(_this, 'data', {
     enumerable: true,
     configurable: true,

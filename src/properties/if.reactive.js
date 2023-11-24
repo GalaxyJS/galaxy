@@ -15,7 +15,7 @@ export const if_property = {
   },
   /**
    *
-   * @this Galaxy.View.ViewNode
+   * @this Galaxy.ViewNode
    * @param config
    * @param value
    * @param expression

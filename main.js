@@ -11,6 +11,7 @@
  */
 
 import { createModule, executeCompiledModule } from './src/core.js';
+import { setupTimeline } from './src/properties/animations.property.js';
 
 Array.prototype.unique = function () {
   const a = this.concat();
@@ -65,33 +66,6 @@ const Galaxy = {
 
   /**
    *
-   * @param {Galaxy.ModuleMetaData} bootModule
-   * @return {Promise<any>}
-   */
-  boot: function (bootModule) {
-    const _this = this;
-    _this.rootElement = bootModule.element;
-
-    bootModule.id = '@root';
-
-    if (!_this.rootElement) {
-      throw new Error('element property is mandatory');
-    }
-
-    return new Promise(function (resolve, reject) {
-      _this.load(bootModule).then(function (module) {
-        // Replace galaxy temporary bootModule with user specified bootModule
-        _this.bootModule = module;
-        resolve(module);
-      }).catch(function (error) {
-        console.error('Something went wrong', error);
-        reject();
-      });
-    });
-  },
-
-  /**
-   *
    * @param {Galaxy.ModuleMetaData} moduleMeta
    * @return {Promise<any>}
    */
@@ -141,4 +115,34 @@ const Galaxy = {
   },
 };
 
-export default Galaxy;
+/**
+ *
+ * @param {Galaxy.ModuleMetaData} bootModule
+ * @return {Promise<any>}
+ */
+function boot(bootModule) {
+  Galaxy.rootElement = bootModule.element;
+
+  bootModule.id = '@root';
+
+  if (!Galaxy.rootElement) {
+    throw new Error('element property is mandatory');
+  }
+
+  return new Promise(function (resolve, reject) {
+    Galaxy.load(bootModule).then(function (module) {
+      // Replace galaxy temporary bootModule with user specified bootModule
+      Galaxy.bootModule = module;
+      resolve(module);
+    }).catch(function (error) {
+      console.error('Something went wrong', error);
+      reject();
+    });
+  });
+}
+
+export {
+  boot,
+  setupTimeline
+};
+

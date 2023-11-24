@@ -1,3 +1,5 @@
+import { get_bindings } from '../view.js';
+
 /**
  *
  * @type {Galaxy.View.BlueprintProperty}
@@ -7,7 +9,7 @@ export const checked_property = {
   key: 'checked',
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {Galaxy.View.ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
@@ -23,7 +25,7 @@ export const checked_property = {
         'It uses its bound value as its `model` and expressions can not be used as model.\n');
     }
 
-    const bindings = G.View.get_bindings(viewNode.blueprint.checked);
+    const bindings = get_bindings(viewNode.blueprint.checked);
     const id = bindings.propertyKeys[0].split('.').pop();
     const nativeNode = viewNode.node;
     nativeNode.addEventListener('change', function () {

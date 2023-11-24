@@ -4,6 +4,11 @@ export default function (scope) {
   console.log(scope);
   console.log(view);
 
+  scope.data.counter = 0;
+  setInterval(() => {
+    scope.data.counter++;
+  }, 1000);
+
   view.blueprint({
     tag: 'div',
     children: [
@@ -14,6 +19,19 @@ export default function (scope) {
       {
         tag: 'p',
         text: 'This is a paragraph'
+      },
+      {
+        tag: 'p',
+        children: [
+          {
+            tag: 'strong',
+            text: 'Counter: '
+          },
+          {
+            tag: 'span',
+            text: '<>data.counter'
+          }
+        ]
       }
     ]
   });

@@ -69,7 +69,7 @@ export const repeat_property = {
 
   /**
    *
-   * @this {Galaxy.View.ViewNode}
+   * @this Galaxy.ViewNode
    * @param config The value returned by getConfig
    * @param value
    * @param {Function} expression

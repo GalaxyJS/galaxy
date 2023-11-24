@@ -1,3 +1,5 @@
+import { get_bindings } from '../view.js';
+
 const IGNORE_TYPES = [
   'radio',
   'checkbox',
@@ -15,7 +17,7 @@ export const value_property = {
   key: 'value',
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param {Galaxy.View.ReactiveData} scopeReactiveData
    * @param prop
    * @param {Function} expression
@@ -32,7 +34,7 @@ export const value_property = {
         'It uses its bound value as its `model` and expressions can not be used as model.\n');
     }
 
-    const bindings = G.View.get_bindings(viewNode.blueprint.value);
+    const bindings = get_bindings(viewNode.blueprint.value);
     const id = bindings.propertyKeys[0].split('.').pop();
     if (nativeNode.tagName === 'SELECT') {
       const observer = new MutationObserver(() => {

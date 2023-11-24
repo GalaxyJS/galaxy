@@ -11,7 +11,7 @@ export const text_property = {
   key: 'text',
   /**
    *
-   * @param {Galaxy.View.ViewNode} viewNode
+   * @param {Galaxy.ViewNode} viewNode
    * @param value
    */
   update: function (viewNode, value) {

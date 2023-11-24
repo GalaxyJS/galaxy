@@ -1,3 +1,6 @@
+import { bind_subjects_to_data } from '../view.js';
+import Observer from '../observer.js';
+
 /**
  *
  * @type {Galaxy.View.BlueprintProperty}
@@ -20,8 +23,8 @@ export const class_property = {
 
     // when value is an object
     const viewNode = this;
-    const reactiveClasses = config.reactiveClasses = G.View.bind_subjects_to_data(viewNode, config.subjects, config.scope, true);
-    const observer = config.observer = new G.Observer(reactiveClasses);
+    const reactiveClasses = config.reactiveClasses = bind_subjects_to_data(viewNode, config.subjects, config.scope, true);
+    const observer = config.observer = new Observer(reactiveClasses);
     const animations = viewNode.blueprint.animations || {};
     const gsapExist = !!window.gsap.config;
     if (viewNode.blueprint.renderConfig.applyClassListAfterRender) {
@@ -51,14 +54,13 @@ export const class_property = {
    * @param config
    * @param value
    * @param expression
-   * @this {Galaxy.View.ViewNode}
+   * @this Galaxy.ViewNode
    */
   update: function (config, value, expression) {
     if (this.virtual) {
       return;
     }
 
-    /** @type Galaxy.View.ViewNode */
     const viewNode = this;
     const node = viewNode.node;
 

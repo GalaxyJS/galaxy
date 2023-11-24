@@ -35,6 +35,7 @@
   },
   "contributors": [],
   "devDependencies": {
+    "eslint": "^8.54.0",
     "vite": "^5.0.2"
   }
 }

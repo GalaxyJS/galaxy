@@ -1,3 +1,6 @@
+import { bind_subjects_to_data } from '../view.js';
+import Observer from '../observer.js';
+
 export const style_3_property = {
   type: 'prop',
   key: 'style'
@@ -23,8 +26,8 @@ export const style_property = {
     }
 
     const node = this.node;
-    const reactiveStyle = config.reactiveStyle = G.View.bind_subjects_to_data(this, config.subjects, config.scope, true);
-    const observer = new G.Observer(reactiveStyle);
+    const reactiveStyle = config.reactiveStyle = bind_subjects_to_data(this, config.subjects, config.scope, true);
+    const observer = new Observer(reactiveStyle);
     observer.onAll(() => {
       setStyle(node, reactiveStyle);
     });
@@ -36,7 +39,7 @@ export const style_property = {
    * @param config
    * @param value
    * @param expression
-   * @this {Galaxy.View.ViewNode}
+   * @this {Galaxy.ViewNode}
    */
   update: function (config, value, expression) {
     if (this.virtual) {

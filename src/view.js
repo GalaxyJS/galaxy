@@ -1,8 +1,8 @@
-import { arr_concat, clone, def_prop, obj_keys } from './utils.js';
+import { arr_concat, clone, def_prop, EMPTY_CALL, obj_keys } from './utils.js';
 import Scope from './scope.js';
 import ViewNode from './view-node.js';
 import ArrayChange from './array-change.js';
-import { NODE_BLUEPRINT_PROPERTY_MAP } from './constants.js';
+import { NODE_BLUEPRINT_PROPERTY_MAP, VALID_TAG_NAMES } from './constants.js';
 import prop_setter from './setters/prop.js';
 import attr_setter from './setters/attr.js';
 import reactive_setter from './setters/reactive.js';
@@ -20,149 +20,8 @@ import { selected_property } from './properties/selected.property.js';
 import { style_3_property, style_8_property, style_property } from './properties/style.reactive.js';
 import { value_config_property, value_property } from './properties/value.property.js';
 import { visible_property } from './properties/visible.reactive.js';
+import ReactiveData from './reactive-data.js';
 
-// Extracted from MDN
-const VALID_TAG_NAMES = [
-  'text',
-  'comment',
-  //
-  'a',
-  'abbr',
-  'acronym',
-  'address',
-  'applet',
-  'area',
-  'article',
-  'aside',
-  'audio',
-  'b',
-  'base',
-  'basefont',
-  'bdi',
-  'bdo',
-  'bgsound',
-  'big',
-  'blink',
-  'blockquote',
-  'body',
-  'br',
-  'button',
-  'canvas',
-  'caption',
-  'center',
-  'cite',
-  'code',
-  'col',
-  'colgroup',
-  'content',
-  'data',
-  'datalist',
-  'dd',
-  'decorator',
-  'del',
-  'details',
-  'dfn',
-  'dir',
-  'div',
-  'dl',
-  'dt',
-  'element',
-  'em',
-  'embed',
-  'fieldset',
-  'figcaption',
-  'figure',
-  'font',
-  'footer',
-  'form',
-  'frame',
-  'frameset',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'head',
-  'header',
-  'hgroup',
-  'hr',
-  'html',
-  'i',
-  'iframe',
-  'img',
-  'input',
-  'ins',
-  'isindex',
-  'kbd',
-  'keygen',
-  'label',
-  'legend',
-  'li',
-  'link',
-  'listing',
-  'main',
-  'map',
-  'mark',
-  'marquee',
-  'menu',
-  'menuitem',
-  'meta',
-  'meter',
-  'nav',
-  'nobr',
-  'noframes',
-  'noscript',
-  'object',
-  'ol',
-  'optgroup',
-  'option',
-  'output',
-  'p',
-  'param',
-  'plaintext',
-  'pre',
-  'progress',
-  'q',
-  'rp',
-  'rt',
-  'ruby',
-  's',
-  'samp',
-  'script',
-  'section',
-  'select',
-  'shadow',
-  'small',
-  'source',
-  'spacer',
-  'span',
-  'strike',
-  'strong',
-  'style',
-  'sub',
-  'summary',
-  'sup',
-  'table',
-  'tbody',
-  'td',
-  'template',
-  'textarea',
-  'tfoot',
-  'th',
-  'thead',
-  'time',
-  'title',
-  'tr',
-  'track',
-  'tt',
-  'u',
-  'ul',
-  'var',
-  'video',
-  'wbr',
-  'xmp'
-];
 
 const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
 const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
@@ -170,43 +29,8 @@ const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
 const BINDING_RE = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
 const PROPERTY_NAME_SPLITTER_RE = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g;
 
-//------------------------------
 
-Array.prototype.createDataMap = function (keyPropertyName, valuePropertyName) {
-  const map = {};
-  for (let i = 0, len = this.length; i < len; i++) {
-    const item = this[i];
-    map[item[keyPropertyName]] = item[valuePropertyName];
-  }
 
-  return map;
-};
-
-View.GET_MAX_INDEX = function () {
-  return '@' + performance.now();
-};
-
-View.COMPONENTS = {};
-
-NODE_BLUEPRINT_PROPERTY_MAP['data'] = data_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text_3'] = text_3_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text_8'] = text_8_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text'] = text_property;
-NODE_BLUEPRINT_PROPERTY_MAP['animations'] = animations_property;
-NODE_BLUEPRINT_PROPERTY_MAP['checked'] = checked_property;
-NODE_BLUEPRINT_PROPERTY_MAP['class'] = class_property;
-NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = disabled_property;
-NODE_BLUEPRINT_PROPERTY_MAP['if'] = if_property;
-NODE_BLUEPRINT_PROPERTY_MAP['module'] = module_property;
-NODE_BLUEPRINT_PROPERTY_MAP['on'] = on_property;
-NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = repeat_property;
-NODE_BLUEPRINT_PROPERTY_MAP['selected'] = selected_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style'] = style_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style_3'] = style_3_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style_8'] = style_8_property;
-NODE_BLUEPRINT_PROPERTY_MAP['value.config'] = value_config_property;
-NODE_BLUEPRINT_PROPERTY_MAP['value'] = value_property;
-NODE_BLUEPRINT_PROPERTY_MAP['visible'] = visible_property;
 
 
 const REACTIVE_BEHAVIORS = {};
@@ -217,14 +41,18 @@ for (const key in NODE_BLUEPRINT_PROPERTY_MAP) {
   }
 }
 
-View.PROPERTY_SETTERS = {
+const PROPERTY_SETTERS = {
   'none': function () {
-    return View.EMPTY_CALL;
+    return EMPTY_CALL;
   },
   'prop': prop_setter,
   'attr': attr_setter,
   'reactive': reactive_setter
 };
+
+export function max_index () {
+  return '@' + performance.now();
+}
 
 // let opt_count = 0;
 // const _next_batch = function (_jump, dirty) {
@@ -518,7 +346,7 @@ export function create_in_next_frame(index, action) {
 
 /**
  *
- * @param {Array<Galaxy.View.ViewNode>} toBeRemoved
+ * @param {Array<Galaxy.ViewNode>} toBeRemoved
  * @param {boolean} hasAnimation
  * @memberOf Galaxy.View
  * @static
@@ -534,7 +362,7 @@ export function destroy_nodes(toBeRemoved, hasAnimation) {
 
 /**
  *
- * @param {Galaxy.View.ViewNode} viewNode
+ * @param {Galaxy.ViewNode} viewNode
  * @param value
  * @param name
  */
@@ -615,7 +443,7 @@ export function get_bindings(value) {
   };
 }
 
-View.property_lookup = function (data, key) {
+export function property_lookup (data, key) {
   const propertiesArr = parse_bind_exp_string(key, true);
   let firstKey = propertiesArr[0];
   const original = data;
@@ -658,7 +486,7 @@ export function property_rd_lookup(data, absoluteKey) {
   const li = keys.length - 1;
   let target = data;
   keys.forEach(function (p, i) {
-    target = View.property_lookup(target, p);
+    target = property_lookup(target, p);
 
     if (i !== li) {
       if (!target[p]) {
@@ -673,13 +501,13 @@ export function property_rd_lookup(data, absoluteKey) {
   return target.__rd__;
 }
 
-View.EXPRESSION_ARGS_FUNC_CACHE = {};
+const EXPRESSION_ARGS_FUNC_CACHE = {};
 
-View.create_args_provider_fn = function (propertyValues) {
+export function create_args_provider_fn (propertyValues) {
   const id = propertyValues.join();
 
-  if (View.EXPRESSION_ARGS_FUNC_CACHE[id]) {
-    return View.EXPRESSION_ARGS_FUNC_CACHE[id];
+  if (EXPRESSION_ARGS_FUNC_CACHE[id]) {
+    return EXPRESSION_ARGS_FUNC_CACHE[id];
   }
 
   let functionContent = 'return [';
@@ -699,21 +527,21 @@ View.create_args_provider_fn = function (propertyValues) {
   functionContent += middle.join(',') + ']';
 
   const func = new Function('scope, _prop , _var', functionContent);
-  View.EXPRESSION_ARGS_FUNC_CACHE[id] = func;
+  EXPRESSION_ARGS_FUNC_CACHE[id] = func;
 
   return func;
-};
+}
 
-View.create_expression_fn = function (host, scope, handler, keys, values) {
+export function create_expression_fn (host, scope, handler, keys, values) {
   if (!values[0]) {
-    if (host instanceof View.ViewNode) {
+    if (host instanceof ViewNode) {
       values[0] = host.data;
     } else {
       values[0] = scope;
     }
   }
 
-  const getExpressionArguments = View.create_args_provider_fn(values);
+  const getExpressionArguments = create_args_provider_fn(values);
 
   return function () {
     let args = [];
@@ -726,7 +554,7 @@ View.create_expression_fn = function (host, scope, handler, keys, values) {
 
     return handler.apply(host, args);
   };
-};
+}
 
 /**
  *
@@ -735,7 +563,7 @@ View.create_expression_fn = function (host, scope, handler, keys, values) {
  * @param scope
  * @returns {Function|boolean}
  */
-View.get_expression_fn = function (bindings, target, scope) {
+export function get_expression_fn (bindings, target, scope) {
   if (!bindings.isExpression) {
     return false;
   }
@@ -746,26 +574,25 @@ View.get_expression_fn = function (bindings, target, scope) {
 
   // Generate expression arguments
   try {
-    bindings.expressionFn = View.create_expression_fn(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
+    bindings.expressionFn = create_expression_fn(target, scope, bindings.handler, bindings.propertyKeys, bindings.propertyValues);
     return bindings.expressionFn;
   } catch (exception) {
     throw Error(exception.message + '\n' + bindings.propertyKeys);
   }
-};
+}
 
 /**
  *
- * @param {Galaxy.View.ViewNode | Object} target
+ * @param {Galaxy.ViewNode | Object} target
  * @param {String} targetKeyName
  * @param {Galaxy.View.ReactiveData} hostReactiveData
  * @param {Galaxy.View.ReactiveData} scopeData
  * @param {Object} bindings
- * @param {Galaxy.View.ViewNode | undefined} root
+ * @param {Galaxy.ViewNode | undefined} root
  */
 export function make_binding(target, targetKeyName, hostReactiveData, scopeData, bindings, root) {
   const propertyKeys = bindings.propertyKeys;
-  const expressionFn = View.get_expression_fn(bindings, root, scopeData);
-  const G_View_ReactiveData = View.ReactiveData;
+  const expressionFn = get_expression_fn(bindings, root, scopeData);
 
   let propertyScopeData = scopeData;
   let propertyKey = null;
@@ -789,7 +616,7 @@ export function make_binding(target, targetKeyName, hostReactiveData, scopeData,
       if ('__rd__' in scopeData) {
         hostReactiveData = scopeData.__rd__;
       } else {
-        hostReactiveData = new G_View_ReactiveData(null, scopeData, scopeData instanceof Galaxy.Scope ? scopeData.systemId : 'child');
+        hostReactiveData = new ReactiveData(null, scopeData, scopeData instanceof Scope ? scopeData.systemId : 'child');
       }
     }
 
@@ -802,15 +629,15 @@ export function make_binding(target, targetKeyName, hostReactiveData, scopeData,
     }
 
     // If the property name is `this` and its index is zero, then it is pointing to the ViewNode.data property
-    if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof View.ViewNode) {
+    if (propertyKeyPathItems[0] === 'this' && propertyKey === 'this' && root instanceof ViewNode) {
       propertyKey = propertyKeyPathItems[1];
       bindings.propertyKeys = propertyKeyPathItems.slice(2);
       childPropertyKeyPath = null;
-      hostReactiveData = new G_View_ReactiveData('data', root.data, 'this');
-      propertyScopeData = View.property_lookup(root.data, propertyKey);
+      hostReactiveData = new ReactiveData('data', root.data, 'this');
+      propertyScopeData = property_lookup(root.data, propertyKey);
     } else if (propertyScopeData) {
       // Look for the property host object in scopeData hierarchy
-      propertyScopeData = View.property_lookup(propertyScopeData, propertyKey);
+      propertyScopeData = property_lookup(propertyScopeData, propertyKey);
     }
 
     initValue = propertyScopeData;
@@ -820,16 +647,16 @@ export function make_binding(target, targetKeyName, hostReactiveData, scopeData,
 
     let reactiveData;
     if (initValue instanceof Object) {
-      reactiveData = new G_View_ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
+      reactiveData = new ReactiveData(propertyKey, initValue, hostReactiveData || scopeData.__scope__.__rd__);
     } else if (childPropertyKeyPath) {
-      reactiveData = new G_View_ReactiveData(propertyKey, null, hostReactiveData);
+      reactiveData = new ReactiveData(propertyKey, null, hostReactiveData);
     } else if (hostReactiveData) {
       // if the propertyKey is used for a repeat reactive property, then we assume its type is Array.
       hostReactiveData.addKeyToShadow(propertyKey, targetKeyName === 'repeat');
     }
 
     if (childPropertyKeyPath === null) {
-      if (!(target instanceof View.ViewNode)) {
+      if (!(target instanceof ViewNode)) {
         def_prop(target, targetKeyName, {
           set: function ref_set(newValue) {
             // console.warn('It is not allowed', hostReactiveData, targetKeyName);
@@ -861,7 +688,7 @@ export function make_binding(target, targetKeyName, hostReactiveData, scopeData,
 
       if (hostReactiveData && scopeData instanceof Scope) {
         // If the propertyKey is referring to some local value then there is no error
-        if (target instanceof View.ViewNode && target.localPropertyNames.has(propertyKey)) {
+        if (target instanceof ViewNode && target.localPropertyNames.has(propertyKey)) {
           return;
         }
 
@@ -874,7 +701,7 @@ export function make_binding(target, targetKeyName, hostReactiveData, scopeData,
     }
 
     if (childPropertyKeyPath !== null) {
-      View.make_binding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
+      make_binding(target, targetKeyName, reactiveData, initValue, Object.assign({}, bindings, { propertyKeys: [childPropertyKeyPath] }), root);
     }
   }
 }
@@ -895,7 +722,7 @@ export function bind_subjects_to_data(viewNode, subjects, data, cloneSubject) {
 
   let parentReactiveData;
   if (!(data instanceof Scope)) {
-    parentReactiveData = new View.ReactiveData(null, data, 'BSTD');
+    parentReactiveData = new ReactiveData(null, data, 'BSTD');
   }
 
   for (let i = 0, len = keys.length; i < len; i++) {
@@ -939,7 +766,7 @@ export function bind_subjects_to_data(viewNode, subjects, data, cloneSubject) {
 
 /**
  *
- * @param {Galaxy.View.ViewNode} node
+ * @param {Galaxy.ViewNode} node
  * @param scopeData
  * @param {string} key
  * @param {any} value
@@ -987,7 +814,7 @@ export function activate_property_for_node(viewNode, propertyKey, scopeProperty,
 /**
  *
  * @param {Galaxy.View.BlueprintProperty} blueprintProperty
- * @param {Galaxy.View.ViewNode} viewNode
+ * @param {Galaxy.ViewNode} viewNode
  * @param [scopeProperty]
  * @param {Function} [expression]
  * @returns {Galaxy.View.EMPTY_CALL|(function())}
@@ -995,7 +822,7 @@ export function activate_property_for_node(viewNode, propertyKey, scopeProperty,
 export function get_property_setter_for_node(blueprintProperty, viewNode, scopeProperty, expression) {
   // if viewNode is virtual, then the expression should be ignored
   if (blueprintProperty.type !== 'reactive' && viewNode.virtual) {
-    return View.EMPTY_CALL;
+    return EMPTY_CALL;
   }
   // This is the lowest level where the developer can modify the property setter behavior
   // By defining 'createSetter' for the property you can implement your custom functionality for setter
@@ -1003,16 +830,16 @@ export function get_property_setter_for_node(blueprintProperty, viewNode, scopeP
     return blueprintProperty.getSetter(viewNode, blueprintProperty, blueprintProperty, expression);
   }
 
-  return View.PROPERTY_SETTERS[blueprintProperty.type](viewNode, blueprintProperty, expression);
+  return PROPERTY_SETTERS[blueprintProperty.type](viewNode, blueprintProperty, expression);
 }
 
 /**
  *
- * @param {Galaxy.View.ViewNode} viewNode
+ * @param {Galaxy.ViewNode} viewNode
  * @param {string} propertyKey
  * @param {*} value
  */
-View.set_property_for_node = function (viewNode, propertyKey, value) {
+export function set_property_for_node (viewNode, propertyKey, value) {
   const bpKey = propertyKey + '_' + viewNode.node.nodeType;
   let property = NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
   if (!property) {
@@ -1039,8 +866,9 @@ View.set_property_for_node = function (viewNode, propertyKey, value) {
       };
       break;
   }
-};
+}
 
+View.COMPONENTS = {};
 /**
  *
  * @param {Galaxy.Scope} scope
@@ -1153,10 +981,10 @@ View.prototype = {
           throw new Error('The `props` must be a literal object.');
         }
 
-        componentScope = View.create_child_scope(scopeData);
+        componentScope = create_child_scope(scopeData);
         Object.assign(componentScope, blueprint.props || {});
 
-        View.bind_subjects_to_data(null, componentScope, scopeData);
+        bind_subjects_to_data(null, componentScope, scopeData);
         componentBlueprint = this._components[key].call(null, componentScope, blueprint, this);
         if (blueprint instanceof Array) {
           throw new Error('A component\'s blueprint can NOT be an array. A component must have only one root node.');
@@ -1188,7 +1016,7 @@ View.prototype = {
   /**
    *
    * @param {Blueprint|Blueprint[]} blueprint
-   * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
+   * @return {Galaxy.ViewNode|Array<Galaxy.ViewNode>}
    */
   blueprint: function (blueprint) {
     const _this = this;
@@ -1208,9 +1036,9 @@ View.prototype = {
    *
    * @param {Object} blueprint
    * @param {Object} scopeData
-   * @param {Galaxy.View.ViewNode} parent
+   * @param {Galaxy.ViewNode} parent
    * @param {Node|Element|null} position
-   * @return {Galaxy.View.ViewNode|Array<Galaxy.View.ViewNode>}
+   * @return {Galaxy.ViewNode|Array<Galaxy.ViewNode>}
    */
   createNode: function (blueprint, scopeData, parent, position) {
     const _this = this;
@@ -1221,10 +1049,10 @@ View.prototype = {
       const nodes = Array.prototype.slice.call(content.childNodes);
       nodes.forEach(function (node) {
         // parent.node.appendChild(node);
-        const viewNode = new View.ViewNode({ tag: node }, parent, _this);
+        const viewNode = new ViewNode({ tag: node }, parent, _this);
         parent.registerChild(viewNode, position);
         node.parentNode.removeChild(node);
-        View.set_property_for_node(viewNode, 'animations', {});
+        set_property_for_node(viewNode, 'animations', {});
         viewNode.setInDOM(true);
       });
 
@@ -1268,9 +1096,9 @@ View.prototype = {
         propertyValue = _blueprint[propertyKey];
         const bindings = get_bindings(propertyValue);
         if (bindings.propertyKeys.length) {
-          View.make_binding(viewNode, propertyKey, null, component.scopeData, bindings, viewNode);
+          make_binding(viewNode, propertyKey, null, component.scopeData, bindings, viewNode);
         } else {
-          View.set_property_for_node(viewNode, propertyKey, propertyValue);
+          set_property_for_node(viewNode, propertyKey, propertyValue);
         }
       }
 

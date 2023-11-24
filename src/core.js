@@ -1,6 +1,7 @@
 import Scope from './scope.js';
 import Module from './module.js';
 import View from './view.js';
+import Router from './router.js';
 
 export function convertToURIString(obj, prefix) {
   let str = [], p;
@@ -72,6 +73,20 @@ export function executeCompiledModule(module) {
  */
 Scope.prototype.useView = function () {
   return new View(this);
+}
+
+/**
+ * @memberOf Galaxy.Scope
+ * @returns {Galaxy.Router}
+ */
+Scope.prototype.useRouter = function () {
+  const router = new Router(this);
+  if (this.systemId !== '@root') {
+    this.on('module.destroy', () => router.destroy());
+  }
+
+  this.__router__ = router;
+  this.router = router.data;
+
+  return router;
 };
-
-

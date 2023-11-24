@@ -1,29 +1,9 @@
 import { EMPTY_CALL } from './utils.js';
+import { create_in_next_frame, max_index } from './view.js';
 
-Router.TITLE_SEPARATOR = ' • ';
-Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
-Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
-Router.BASE_URL = '/';
-Router.currentPath = {
-  handlers: [],
-  subscribe: function (handler) {
-    this.handlers.push(handler);
-    handler(location.pathname);
-  },
-  update: function () {
-    this.handlers.forEach((h) => {
-      h(location.pathname);
-    });
-  }
-};
-
-Router.mainListener = function (e) {
-  Router.currentPath.update();
-};
-
-Router.prepare_route = function (routeConfig, parentScopeRouter, fullPath) {
+function prepare_route(routeConfig, parentScopeRouter, fullPath) {
   if (routeConfig instanceof Array) {
-    const routes = routeConfig.map((r) => Router.prepare_route(r, parentScopeRouter, fullPath));
+    const routes = routeConfig.map((r) => prepare_route(r, parentScopeRouter, fullPath));
     if (parentScopeRouter) {
       parentScopeRouter.activeRoute.children = routes;
     }
@@ -40,9 +20,9 @@ Router.prepare_route = function (routeConfig, parentScopeRouter, fullPath) {
     parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
     children: routeConfig.children || []
   };
-};
+}
 
-Router.extract_dynamic_routes = function (routesPath) {
+function extract_dynamic_routes(routesPath) {
   return routesPath.map(function (route) {
     const paramsNames = [];
 
@@ -63,6 +43,27 @@ Router.extract_dynamic_routes = function (routesPath) {
 
     return null;
   }).filter(Boolean);
+}
+
+Router.TITLE_SEPARATOR = ' • ';
+Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
+Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
+Router.BASE_URL = '/';
+Router.currentPath = {
+  handlers: [],
+  subscribe: function (handler) {
+    this.handlers.push(handler);
+    handler(location.pathname);
+  },
+  update: function () {
+    this.handlers.forEach((h) => {
+      h(location.pathname);
+    });
+  }
+};
+
+Router.mainListener = function (e) {
+  Router.currentPath.update();
 };
 
 window.addEventListener('popstate', Router.mainListener);
@@ -143,7 +144,7 @@ function Router(scope) {
 
 Router.prototype = {
   setup: function (routeConfigs) {
-    this.routes = Router.prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+    this.routes = prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
     // if (this.parentScope && this.parentScope.router) {
     //   this.parentRoute = this.parentScope.router.activeRoute;
     // }
@@ -309,7 +310,7 @@ Router.prototype = {
     let matchCount = 0;
     const normalizedHash = _this.normalizeHash(hash);
     const routesPath = routes.map(item => item.path);
-    const dynamicRoutes = Router.extract_dynamic_routes(routesPath);
+    const dynamicRoutes = extract_dynamic_routes(routesPath);
     const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0);
     const targetStaticRoute = staticRoutes.length ? staticRoutes.reduce((a, b) => a.path.length > b.path.length ? a : b) : false;
 
@@ -390,7 +391,7 @@ Router.prototype = {
     } else {
       this.populateViewports(newRoute);
 
-      _galaxy.View.create_in_next_frame(_galaxy.View.GET_MAX_INDEX(), (_next) => {
+      create_in_next_frame(max_index(), (_next) => {
         Object.assign(this.data.parameters, params);
         _next();
       });
@@ -470,23 +471,4 @@ Router.prototype = {
     window.removeEventListener('popstate', this.listener);
   }
 };
-
-// /** @class */
-// _galaxy.Router = Router;
-//
-// /**
-//  * @memberOf Galaxy.Scope
-//  * @returns {Galaxy.Router}
-//  */
-// _galaxy.Scope.prototype.useRouter = function () {
-//   const router = new Router(this);
-//   if (this.systemId !== '@root') {
-//     this.on('module.destroy', () => router.destroy());
-//   }
-//
-//   this.__router__ = router;
-//   this.router = router.data;
-//
-//   return router;
-// };
 export default Router;

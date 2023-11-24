@@ -33,3 +33,28 @@ export function clone(obj) {
 
   return cloned;
 }
+
+const COMMENT_NODE = document.createComment('');
+
+export function create_comment(t) {
+  const n = COMMENT_NODE.cloneNode();
+  n.textContent = t;
+  return n;
+}
+/**
+ *
+ * @param {string} tagName
+ * @param {Galaxy.ViewNode} parentViewNode
+ * @returns {HTMLElement|Comment}
+ */
+export function create_elem(tagName, parentViewNode) {
+  if (tagName === 'svg' || (parentViewNode && parentViewNode.blueprint.tag === 'svg')) {
+    return document.createElementNS('http://www.w3.org/2000/svg', tagName);
+  }
+
+  if (tagName === 'comment') {
+    return document.createComment('ViewNode');
+  }
+
+  return document.createElement(tagName);
+}

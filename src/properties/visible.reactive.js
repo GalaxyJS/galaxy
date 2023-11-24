@@ -14,7 +14,7 @@ export const visible_property = {
       window.clearTimeout(config.throttleId);
       config.throttleId = 0;
     }
-    /** @type {Galaxy.View.ViewNode} */
+
     if (expression) {
       value = expression();
     }

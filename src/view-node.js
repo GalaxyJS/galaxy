@@ -1,71 +1,45 @@
-import { arr_slice, EMPTY_CALL } from './utils.js';
+import { NODE_BLUEPRINT_PROPERTY_MAP } from './constants.js';
+import { arr_slice, create_comment, create_elem, def_prop, EMPTY_CALL } from './utils.js';
 import {
   activate_property_for_node,
   create_in_next_frame,
   destroy_in_next_frame, destroy_nodes
 } from './view.js';
-import { NODE_BLUEPRINT_PROPERTY_MAP } from './constants.js';
+import { data_property } from './properties/data.reactive.js';
+import { text_3_property, text_8_property, text_property } from './properties/text.property.js';
+import { animations_property } from './properties/animations.property.js';
+import { checked_property } from './properties/checked.property.js';
+import { class_property } from './properties/class.reactive.js';
+import { disabled_property } from './properties/disabled.property.js';
+import { if_property } from './properties/if.reactive.js';
+import { module_property } from './properties/module.reactive.js';
+import { on_property } from './properties/on.property.js';
+import { repeat_property } from './properties/repeat.reactive.js';
+import { selected_property } from './properties/selected.property.js';
+import { style_3_property, style_8_property, style_property } from './properties/style.reactive.js';
+import { value_config_property, value_property } from './properties/value.property.js';
+import { visible_property } from './properties/visible.reactive.js';
 import Scope from './scope.js';
 
-// const _galaxy_view = _galaxy.View;
-
-const COMMENT_NODE = document.createComment('');
-const def_prop = Object.defineProperty;
-
-function create_comment(t) {
-  const n = COMMENT_NODE.cloneNode();
-  n.textContent = t;
-  return n;
-}
-
-/**
- *
- * @param {string} tagName
- * @param {Galaxy.View.ViewNode} parentViewNode
- * @returns {HTMLElement|Comment}
- */
-function create_elem(tagName, parentViewNode) {
-  if (tagName === 'svg' || (parentViewNode && parentViewNode.blueprint.tag === 'svg')) {
-    return document.createElementNS('http://www.w3.org/2000/svg', tagName);
-  }
-
-  if (tagName === 'comment') {
-    return document.createComment('ViewNode');
-  }
-
-  return document.createElement(tagName);
-}
-
-function insert_before(parentNode, newNode, referenceNode) {
-  parentNode.insertBefore(newNode, referenceNode);
-}
-
-function remove_child(node, child) {
-  node.removeChild(child);
-}
-
-const REFERENCE_TO_THIS = {
-  value: this,
-  configurable: false,
-  enumerable: false
-};
-
-const __NODE__ = {
-  value: null,
-  configurable: false,
-  enumerable: false,
-  writable: true
-};
-
-const arr_index_of = Array.prototype.indexOf;
-
-
-//------------------------------
-
-NODE_BLUEPRINT_PROPERTY_MAP['node'] = {
-  type: 'none'
-};
-
+NODE_BLUEPRINT_PROPERTY_MAP['data'] = data_property;
+NODE_BLUEPRINT_PROPERTY_MAP['text_3'] = text_3_property;
+NODE_BLUEPRINT_PROPERTY_MAP['text_8'] = text_8_property;
+NODE_BLUEPRINT_PROPERTY_MAP['text'] = text_property;
+NODE_BLUEPRINT_PROPERTY_MAP['animations'] = animations_property;
+NODE_BLUEPRINT_PROPERTY_MAP['checked'] = checked_property;
+NODE_BLUEPRINT_PROPERTY_MAP['class'] = class_property;
+NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = disabled_property;
+NODE_BLUEPRINT_PROPERTY_MAP['if'] = if_property;
+NODE_BLUEPRINT_PROPERTY_MAP['module'] = module_property;
+NODE_BLUEPRINT_PROPERTY_MAP['on'] = on_property;
+NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = repeat_property;
+NODE_BLUEPRINT_PROPERTY_MAP['selected'] = selected_property;
+NODE_BLUEPRINT_PROPERTY_MAP['style'] = style_property;
+NODE_BLUEPRINT_PROPERTY_MAP['style_3'] = style_3_property;
+NODE_BLUEPRINT_PROPERTY_MAP['style_8'] = style_8_property;
+NODE_BLUEPRINT_PROPERTY_MAP['value.config'] = value_config_property;
+NODE_BLUEPRINT_PROPERTY_MAP['value'] = value_property;
+NODE_BLUEPRINT_PROPERTY_MAP['visible'] = visible_property;
 NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
   type: 'prop',
   key: '_create',
@@ -89,21 +63,61 @@ NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
   key: 'renderConfig'
 };
 
+const REFERENCE_TO_THIS = {
+  value: this,
+  configurable: false,
+  enumerable: false
+};
+
+const __NODE__ = {
+  value: null,
+  configurable: false,
+  enumerable: false,
+  writable: true
+};
+
+function insert_before(parentNode, newNode, referenceNode) {
+  parentNode.insertBefore(newNode, referenceNode);
+}
+
+function remove_child(node, child) {
+  node.removeChild(child);
+}
+
+function remove_self(destroy) {
+  const viewNode = this;
+
+  if (destroy) {
+    // Destroy
+    viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
+    viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
+    viewNode.garbage.forEach(function (node) {
+      remove_self.call(node, true);
+    });
+    viewNode.hasBeenDestroyed();
+  } else {
+    // Detach
+    if (!viewNode.placeholder.parentNode) {
+      insert_before(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
+    }
+
+    if (viewNode.node.parentNode) {
+      remove_child(viewNode.node.parentNode, viewNode.node);
+    }
+
+    viewNode.garbage.forEach(function (node) {
+      remove_self.call(node, true);
+    });
+  }
+
+  viewNode.garbage = [];
+}
+
 /**
  *
  * @typedef {Object} RenderConfig
  * @property {boolean} [applyClassListAfterRender] - Indicates whether classlist applies after the render.
  * @property {boolean} [renderDetached] - Make the node to be rendered in a detached mode.
- */
-
-/**
- * @typedef {Object} Blueprint
- * @memberOf Galaxy
- * @property {RenderConfig} [renderConfig]
- * @property {string} [tag]
- * @property {function} [_create]
- * @property {function} [_render]
- * @property {function} [_destroy]
  */
 
 /**
@@ -118,7 +132,7 @@ ViewNode.GLOBAL_RENDER_CONFIG = {
 /**
  *
  * @param blueprints
- * @memberOf Galaxy.View.ViewNode
+ * @memberOf Galaxy.ViewNode
  * @static
  */
 ViewNode.cleanReferenceNode = function (blueprints) {
@@ -146,48 +160,28 @@ ViewNode.createIndex = function (i) {
   return r + res;
 };
 
-function REMOVE_SELF(destroy) {
-  const viewNode = this;
-
-  if (destroy) {
-    // Destroy
-    viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
-    viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
-    viewNode.garbage.forEach(function (node) {
-      REMOVE_SELF.call(node, true);
-    });
-    viewNode.hasBeenDestroyed();
-  } else {
-    // Detach
-    if (!viewNode.placeholder.parentNode) {
-      insert_before(viewNode.node.parentNode, viewNode.placeholder, viewNode.node);
-    }
-
-    if (viewNode.node.parentNode) {
-      remove_child(viewNode.node.parentNode, viewNode.node);
-    }
-
-    viewNode.garbage.forEach(function (node) {
-      REMOVE_SELF.call(node, true);
-    });
-  }
-
-  viewNode.garbage = [];
-}
+/**
+ * @typedef {Object} Blueprint
+ * @memberOf Galaxy
+ * @property {RenderConfig} [renderConfig]
+ * @property {string|Node} [tag]
+ * @property {function} [_create]
+ * @property {function} [_render]
+ * @property {function} [_destroy]
+ */
 
 /**
  *
  * @param {Blueprint} blueprint
- * @param {Galaxy.View.ViewNode|null} parent
+ * @param {Galaxy.ViewNode|null} parent
  * @param {Galaxy.View} view
  * @param {any} [nodeData]
  * @constructor
- * @memberOf Galaxy.View
+ * @memberOf Galaxy
  */
 function ViewNode(blueprint, parent, view, nodeData) {
   const _this = this;
   _this.view = view;
-  /** @type {Node|Element|*} */
   if (blueprint.tag instanceof Node) {
     _this.node = blueprint.tag;
     blueprint.tag = blueprint.tag.tagName;
@@ -212,7 +206,6 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.properties = new Set();
   _this.inDOM = false;
   _this.setters = {};
-  /** @type {Galaxy.View.ViewNode} */
   _this.parent = parent;
   _this.finalize = [];
   _this.origin = false;
@@ -220,7 +213,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.transitory = false;
   _this.garbage = [];
   _this.leaveWithParent = false;
-  _this.onLeaveComplete = REMOVE_SELF.bind(_this, true);
+  _this.onLeaveComplete = remove_self.bind(_this, true);
 
   const cache = {};
   def_prop(_this, 'cache', {
@@ -390,7 +383,7 @@ ViewNode.prototype = {
       const children = _this.getChildNodes();
       _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
       destroy_in_next_frame(_this.index, (_next) => {
-        _this.processLeaveAnimation(REMOVE_SELF.bind(_this, false));
+        _this.processLeaveAnimation(remove_self.bind(_this, false));
         _this.origin = false;
         _this.transitory = false;
         _this.processLeaveAnimation = defaultProcessLeaveAnimation;
@@ -423,7 +416,7 @@ ViewNode.prototype = {
 
   /**
    *
-   * @param {Galaxy.View.ViewNode} childNode
+   * @param {Galaxy.ViewNode} childNode
    * @param position
    */
   registerChild: function (childNode, position) {
@@ -485,13 +478,13 @@ ViewNode.prototype = {
       if (_this.processLeaveAnimation === EMPTY_CALL) {
         if (_this.origin) {
           _this.processLeaveAnimation = function () {
-            REMOVE_SELF.call(_this, false);
+            remove_self.call(_this, false);
           };
         }
           // if a child has an animation and this node is being removed directly, then we need to remove this node
         // in order for element to get removed properly
         else if (_this.destroyOrigin === 1) {
-          REMOVE_SELF.call(_this, true);
+          remove_self.call(_this, true);
         }
       } else if (_this.processLeaveAnimation !== EMPTY_CALL && !_this.origin) {
         // Children with leave animation should not get removed from dom for visual purposes.
@@ -504,7 +497,7 @@ ViewNode.prototype = {
       }
     } else {
       _this.processLeaveAnimation = function () {
-        REMOVE_SELF.call(_this, !_this.origin);
+        remove_self.call(_this, !_this.origin);
       };
     }
   },
