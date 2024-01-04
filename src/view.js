@@ -22,16 +22,11 @@ import { value_config_property, value_property } from './properties/value.proper
 import { visible_property } from './properties/visible.reactive.js';
 import ReactiveData from './reactive-data.js';
 
-
 const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
 const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
 const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
 const BINDING_RE = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
 const PROPERTY_NAME_SPLITTER_RE = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g;
-
-
-
-
 
 const REACTIVE_BEHAVIORS = {};
 
@@ -50,7 +45,7 @@ const PROPERTY_SETTERS = {
   'reactive': reactive_setter
 };
 
-export function max_index () {
+export function max_index() {
   return '@' + performance.now();
 }
 
@@ -443,7 +438,7 @@ export function get_bindings(value) {
   };
 }
 
-export function property_lookup (data, key) {
+export function property_lookup(data, key) {
   const propertiesArr = parse_bind_exp_string(key, true);
   let firstKey = propertiesArr[0];
   const original = data;
@@ -503,7 +498,7 @@ export function property_rd_lookup(data, absoluteKey) {
 
 const EXPRESSION_ARGS_FUNC_CACHE = {};
 
-export function create_args_provider_fn (propertyValues) {
+export function create_args_provider_fn(propertyValues) {
   const id = propertyValues.join();
 
   if (EXPRESSION_ARGS_FUNC_CACHE[id]) {
@@ -532,7 +527,7 @@ export function create_args_provider_fn (propertyValues) {
   return func;
 }
 
-export function create_expression_fn (host, scope, handler, keys, values) {
+export function create_expression_fn(host, scope, handler, keys, values) {
   if (!values[0]) {
     if (host instanceof ViewNode) {
       values[0] = host.data;
@@ -563,7 +558,7 @@ export function create_expression_fn (host, scope, handler, keys, values) {
  * @param scope
  * @returns {Function|boolean}
  */
-export function get_expression_fn (bindings, target, scope) {
+export function get_expression_fn(bindings, target, scope) {
   if (!bindings.isExpression) {
     return false;
   }
@@ -839,7 +834,7 @@ export function get_property_setter_for_node(blueprintProperty, viewNode, scopeP
  * @param {string} propertyKey
  * @param {*} value
  */
-export function set_property_for_node (viewNode, propertyKey, value) {
+export function set_property_for_node(viewNode, propertyKey, value) {
   const bpKey = propertyKey + '_' + viewNode.node.nodeType;
   let property = NODE_BLUEPRINT_PROPERTY_MAP[bpKey] || NODE_BLUEPRINT_PROPERTY_MAP[propertyKey];
   if (!property) {
@@ -869,6 +864,7 @@ export function set_property_for_node (viewNode, propertyKey, value) {
 }
 
 View.COMPONENTS = {};
+
 /**
  *
  * @param {Galaxy.Scope} scope
@@ -922,7 +918,7 @@ TimelineControl.prototype.startKeyframe = function (timeline, position) {
   };
 };
 
-TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position) {
+TimelineControl.prototype.keyframe = function (onComplete, timeline, position) {
   if (!timeline) {
     throw new Error('Argument Missing: view.' + this.type + '.addKeyframe(timeline:string) needs a `timeline`');
   }
@@ -942,6 +938,28 @@ TimelineControl.prototype.addKeyframe = function (onComplete, timeline, position
   return {
     tag: 'comment',
     text: this.type + ':timeline:keyframe',
+    animations
+  };
+};
+
+TimelineControl.prototype.waitKeyframe = function (timeline, position) {
+  if (!timeline) {
+    throw new Error('Argument Missing: view.' + this.type + '.addKeyframe(timeline:string) needs a `timeline`');
+  }
+
+  const animations = {
+    [this.type]: {
+      to: {
+        duration: 0.001
+      },
+      timeline,
+      position,
+    }
+  };
+
+  return {
+    tag: 'comment',
+    text: this.type + ':timeline:waitKeyframe',
     animations
   };
 };

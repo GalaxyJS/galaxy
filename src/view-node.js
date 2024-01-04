@@ -185,11 +185,13 @@ function ViewNode(blueprint, parent, view, nodeData) {
   if (blueprint.tag instanceof Node) {
     _this.node = blueprint.tag;
     blueprint.tag = blueprint.tag.tagName;
-    if (_this.node instanceof Text) {
-      _this.processEnterAnimation = EMPTY_CALL;
-    }
   } else {
     _this.node = create_elem(blueprint.tag || 'div', parent);
+  }
+
+  // if node does not have style property, then it doesn't have processEnterAnimation
+  if (!('style' in _this.node)) {
+    _this.processEnterAnimation = EMPTY_CALL;
   }
 
   /**

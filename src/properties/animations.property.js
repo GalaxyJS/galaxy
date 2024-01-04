@@ -117,6 +117,8 @@ if (!window.gsap) {
         }
 
         viewNode.processLeaveAnimation = function (finalize) {
+          // if(this.blueprint.text === 'leave:timeline:keyframe')
+          //   debugger
           process_leave_animation(this, leave, finalize);
         };
 
@@ -256,9 +258,6 @@ if (!window.gsap) {
     const withParentResult = animationConfig.withParent;
     viewNode.leaveWithParent = withParentResult === true;
     const _node = viewNode.node;
-    // if (gsap.getTweensOf(_node).length) {
-    //   gsap.killTweensOf(_node);
-    // }
 
     if (withParentResult) {
       // if the leaveWithParent flag is there, then apply animation only to non-transitory nodes
@@ -271,14 +270,16 @@ if (!window.gsap) {
       }
     }
 
-    // in the case which the _viewNode is not visible, then ignore its animation
-    const rect = _node.getBoundingClientRect();
-    if (rect.width === 0 ||
-      rect.height === 0 ||
-      _node.style.opacity === '0' ||
-      _node.style.visibility === 'hidden') {
-      gsap.killTweensOf(_node);
-      return finalize();
+    if ('style' in _node) {
+      // in the case which the _viewNode is not visible, then ignore its animation
+      const rect = _node.getBoundingClientRect();
+      if (rect.width === 0 ||
+        rect.height === 0 ||
+        _node.style.opacity === '0' ||
+        _node.style.visibility === 'hidden') {
+        gsap.killTweensOf(_node);
+        return finalize();
+      }
     }
 
     clear_tweens(_node);
@@ -345,7 +346,6 @@ if (!window.gsap) {
    * @property {string[]} [labels]
    * @property {Promise} [await]
    * @property {string|number} [startPosition]
-   * @property {string|number} [positionInParent]
    * @property {string|number} [position]
    * @property {object} [from]
    * @property {object} [to]
@@ -534,6 +534,7 @@ if (!window.gsap) {
         newConfig.position = newConfig.startPosition;
       }
 
+      // if previous tween was a timeline:start then the next tween should use +=0
       const children = animationMeta.timeline.getChildren(false);
       if (children.length) {
         const lastTween = children[children.length - 1];
@@ -701,7 +702,7 @@ if (!window.gsap) {
       if (finalize) {
         if (tween.vars.onComplete) {
           const userDefinedOnComplete = tween.vars.onComplete;
-          return function () {
+          tween.vars.onComplete = function () {
             userDefinedOnComplete.apply(this, arguments);
             finalize();
           };
@@ -713,6 +714,7 @@ if (!window.gsap) {
       const position = this.parsePosition(config.position);
       const tChildren = _this.timeline.getChildren(false);
       const firstChild = tChildren[0];
+
       if (tChildren.length === 0) {
         // if the tween is the very first child then its position can not be negative
         _this.timeline.add(tween, (position && position.indexOf('-=') === -1) ? position : null);

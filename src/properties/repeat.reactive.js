@@ -56,7 +56,7 @@ export const repeat_property = {
           }
         });
       } else if (config.data instanceof Array) {
-        const setter = viewNode.setters['repeat'] = get_property_setter_for_node(NODE_BLUEPRINT_PROPERTY_MAP['repeat'], viewNode, config.data, null);
+        const setter = viewNode.setters['repeat'] = get_property_setter_for_node(repeat_property, viewNode, config.data, null);
         const value = new ArrayChange();
         value.params = config.data;
         config.data.changes = value;
