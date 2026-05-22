@@ -6,20 +6,6 @@ import { NODE_BLUEPRINT_PROPERTY_MAP, VALID_TAG_NAMES } from "./constants.js";
 import prop_setter from "./setters/prop.js";
 import attr_setter from "./setters/attr.js";
 import reactive_setter from "./setters/reactive.js";
-import { text_property, text_3_property, text_8_property } from "./properties/text.property.js";
-import { data_property } from "./properties/data.reactive.js";
-import { animations_property } from "./properties/animations.property.js";
-import { checked_property } from "./properties/checked.property.js";
-import { class_property } from "./properties/class.reactive.js";
-import { disabled_property } from "./properties/disabled.property.js";
-import { if_property } from "./properties/if.reactive.js";
-import { module_property } from "./properties/module.reactive.js";
-import { on_property } from "./properties/on.property.js";
-import { repeat_property } from "./properties/repeat.reactive.js";
-import { selected_property } from "./properties/selected.property.js";
-import { style_3_property, style_8_property, style_property } from "./properties/style.reactive.js";
-import { value_config_property, value_property } from "./properties/value.property.js";
-import { visible_property } from "./properties/visible.reactive.js";
 import ReactiveData from "./reactive-data.js";
 
 const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
@@ -209,60 +195,6 @@ const next_batch = function() {
     next_batch_body.call(this);
   }
 };
-
-function comp_asc(a, b) {
-  return a > b;
-}
-
-function comp_desc(a, b) {
-  return a < b;
-}
-
-function binary_search(array, key, _fn) {
-  let start = 0;
-  let end = array.length - 1;
-  let index = 0;
-
-  while (start <= end) {
-    let middle = Math.floor((start + end) / 2);
-    let midVal = array[middle];
-
-    if (_fn(key, midVal)) {
-      // continue searching to the right
-      index = start = middle + 1;
-    } else {
-      // search searching to the left
-      index = middle;
-      end = middle - 1;
-    }
-  }
-
-  return index;
-}
-
-function pos_asc(array, el) {
-  if (el < array[0]) {
-    return 0;
-  }
-
-  if (el > array[array.length - 1]) {
-    return array.length;
-  }
-
-  return binary_search(array, el, comp_asc);
-}
-
-function pos_desc(array, el) {
-  if (el > array[0]) {
-    return 0;
-  }
-
-  if (el < array[array.length - 1]) {
-    return array.length;
-  }
-
-  return binary_search(array, el, comp_desc);
-}
 
 function add_dom_manipulation(index, act, order, mark_order_dirty) {
   if (index in dom_manipulation_table) {

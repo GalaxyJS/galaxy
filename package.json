@@ -20,8 +20,11 @@
   "scripts": {
     "dev": "npx vite",
     "build": "npx vite build",
-    "build-dev": "npx vite build  && cp dist/* -r 'site/galaxyjs'",
-    "preview": "npx vite preview"
+    "preview": "npx vite preview",
+    "lint": "npx eslint .",
+    "lint:fix": "npx eslint . --fix",
+    "format": "npx prettier . --write",
+    "format:check": "npx prettier . --check"
   },
   "files": [
     "dist"
@@ -36,7 +39,9 @@
   },
   "contributors": [],
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "eslint": "10.4.0",
+    "globals": "^17.6.0",
     "prettier": "3.8.3",
     "vite": "^8.0.14"
   }
