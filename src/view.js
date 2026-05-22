@@ -146,7 +146,13 @@ const create_order = [], destroy_order = [];
 let dom_manipulation_order = [];
 let manipulation_done = true, dom_manipulations_dirty = false;
 let diff = 0, preTS = 0, too_many_jumps;
+let create_order_dirty = false, destroy_order_dirty = false;
+let dom_manipulation_update_scheduled = false;
 
+const schedule_microtask = typeof queueMicrotask === "function"
+  ? queueMicrotask
+  : (cb) => Promise.resolve().then(cb);
+console.log(dom_manipulation_table)
 const next_action = function(_jump, dirty) {
   if (dirty) {
     return _jump();
@@ -179,6 +185,7 @@ const next_batch = function() {
   if (dom_manipulations_dirty) {
     dom_manipulations_dirty = false;
     diff = 0;
+    refresh_dom_manipulation_order();
     return next_batch.call(dom_manipulation_order);
   }
 
@@ -257,25 +264,41 @@ function pos_desc(array, el) {
   return binary_search(array, el, comp_desc);
 }
 
-function add_dom_manipulation(index, act, order, search) {
+function add_dom_manipulation(index, act, order, mark_order_dirty) {
   if (index in dom_manipulation_table) {
     dom_manipulation_table[index].push(act);
   } else {
     dom_manipulation_table[index] = [act];
-    order.splice(search(order, index), 0, index);
+    order.push(index);
+    mark_order_dirty();
   }
 }
 
-let last_dom_manipulation_id = 0;
+function refresh_dom_manipulation_order() {
+  if (destroy_order_dirty) {
+    destroy_order.sort((a, b) => (a > b ? -1 : a < b ? 1 : 0));
+    destroy_order_dirty = false;
+  }
 
-function update_dom_manipulation_order() {
-  if (last_dom_manipulation_id !== 0) {
-    clearTimeout(last_dom_manipulation_id);
-    last_dom_manipulation_id = 0;
+  if (create_order_dirty) {
+    create_order.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    create_order_dirty = false;
   }
 
   dom_manipulation_order = arr_concat(destroy_order, create_order);
-  last_dom_manipulation_id = setTimeout(() => {
+}
+
+function update_dom_manipulation_order() {
+  if (dom_manipulation_update_scheduled) {
+    return;
+  }
+
+  dom_manipulation_update_scheduled = true;
+
+  schedule_microtask(() => {
+    dom_manipulation_update_scheduled = false;
+    refresh_dom_manipulation_order();
+
     if (manipulation_done) {
       manipulation_done = false;
       next_batch.call(dom_manipulation_order);
@@ -283,7 +306,7 @@ function update_dom_manipulation_order() {
   });
 }
 
-// function update_on_animation_frame() {
+// function update_on_timeout() {
 //   if (last_dom_manipulation_id) {
 //     clearTimeout(last_dom_manipulation_id);
 //     last_dom_manipulation_id = null;
@@ -298,7 +321,7 @@ function update_dom_manipulation_order() {
 //   });
 // }
 //
-// function update_on_timeout() {
+// function update_on_animation_frame() {
 //   if (last_dom_manipulation_id) {
 //     cancelAnimationFrame(last_dom_manipulation_id);
 //     last_dom_manipulation_id = null;
@@ -321,7 +344,9 @@ function update_dom_manipulation_order() {
  */
 export function destroy_in_next_frame(index, action) {
   dom_manipulations_dirty = true;
-  add_dom_manipulation("<" + index, action, destroy_order, pos_desc);
+  add_dom_manipulation("<" + index, action, destroy_order, () => {
+    destroy_order_dirty = true;
+  });
   update_dom_manipulation_order();
 }
 
@@ -333,7 +358,9 @@ export function destroy_in_next_frame(index, action) {
  */
 export function create_in_next_frame(index, action) {
   dom_manipulations_dirty = true;
-  add_dom_manipulation(">" + index, action, create_order, pos_asc);
+  add_dom_manipulation(">" + index, action, create_order, () => {
+    create_order_dirty = true;
+  });
   update_dom_manipulation_order();
 }
 
@@ -437,35 +464,43 @@ export function get_bindings(value) {
 
 export function property_lookup(data, key) {
   const propertiesArr = parse_bind_exp_string(key, true);
-  let firstKey = propertiesArr[0];
+  const firstKey = propertiesArr[0];
+
+  if (!data || typeof data !== "object" || !firstKey) {
+    return data;
+  }
+
   const original = data;
   let target = data;
-  let temp = data;
-  let nestingLevel = 0;
-  let parent;
+  let current = data;
+  const visitedParents = new Set();
+
   if (data[firstKey] === undefined) {
-    while (temp.__parent__) {
-      parent = temp.__parent__;
-      if (parent.hasOwnProperty(firstKey)) {
+    while (current && current.__parent__ && typeof current.__parent__ === "object") {
+      const parent = current.__parent__;
+
+      // Protect against accidental circular __parent__ chains.
+      if (visitedParents.has(parent)) {
+        throw Error("Circular parent chain detected while looking up `" + firstKey + "`.");
+      }
+      visitedParents.add(parent);
+
+      if (Object.prototype.hasOwnProperty.call(parent, firstKey)) {
         target = parent;
         break;
       }
 
-      if (nestingLevel++ >= 1000) {
-        throw Error("Maximum nested property lookup has reached `" + firstKey + "`\n" + data);
-      }
-
-      temp = parent;
+      current = parent;
     }
 
-    // if the property is not found in the parents then return the original object as the context
+    // If the property is not found in the parents then return the original object as the context.
     if (target[firstKey] === undefined) {
       return original;
     }
   }
 
   return target;
-};
+}
 
 /**
  *

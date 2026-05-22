@@ -12,6 +12,28 @@ export const arr_concat = Array.prototype.concat.bind([]);
 
 export const arr_slice = Array.prototype.slice;
 
+const INDEX_BASE = 36;
+const INDEX_WIDTH = 4;
+const INDEX_MAX = INDEX_BASE ** INDEX_WIDTH - 1;
+const INDEX_CACHE_LIMIT = 4096;
+const INDEX_CACHE = Array.from({ length: INDEX_CACHE_LIMIT }, (_, idx) => {
+  return idx.toString(INDEX_BASE).padStart(INDEX_WIDTH, "0");
+});
+
+export function create_index(i) {
+  if (!Number.isFinite(i)) return INDEX_CACHE[0];
+
+  i = Math.floor(i);
+  if (i < 0) return INDEX_CACHE[0];
+  if (i < INDEX_CACHE_LIMIT) return INDEX_CACHE[i];
+
+  if (i > INDEX_MAX) {
+    throw new Error("ViewNode index overflow: " + i + ". Increase INDEX_WIDTH to support larger sibling indexes.");
+  }
+
+  return i.toString(INDEX_BASE).padStart(INDEX_WIDTH, "0");
+}
+
 export function clone(obj) {
   let cloned = obj instanceof Array ? [] : {};
   cloned.__proto__ = obj.__proto__;
