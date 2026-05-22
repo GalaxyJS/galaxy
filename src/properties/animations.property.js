@@ -1,5 +1,5 @@
-import { create_in_next_frame, destroy_in_next_frame } from '../view.js';
 import { EMPTY_CALL } from '../utils.js';
+import { create_in_next_frame, destroy_in_next_frame } from "../dom-scheduler.js";
 
 /**
  *
@@ -86,7 +86,6 @@ if (!window.gsap) {
   }
 
   const document_body = document.body;
-
   animations_property = {
     type: 'prop',
     key: 'animations',

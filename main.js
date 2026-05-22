@@ -1,4 +1,8 @@
 /**
+ * @namespace GalaxyJS
+ */
+
+/**
  *
  * @typedef {Object} ModuleMetaData
  * @property {Function} [constructor]
@@ -6,17 +10,17 @@
  * @property {string} id
  * @property {string} [path]
  * @property {Scope} [parentScope]
- * @property {Node} [element]
+ * @property {Node|ViewNode} [element]
  */
-
-import { create_module, execute_compiled_module, load_module } from "./src/utils.js";
+import { prepare_module_meta_data } from "./src/runtime.js";
 import { setupTimeline } from "./src/properties/animations.property.js";
 import Scope from "./src/scope.js";
 import Router from "./src/router.js";
 import Module from "./src/module.js";
 import View from "./src/view.js";
 
-Array.prototype.unique = function () {
+
+Array.prototype.unique = function() {
   const a = this.concat();
   for (let i = 0, lenI = a.length; i < lenI; ++i) {
     for (let j = i + 1, lenJ = a.length; j < lenJ; ++j) {
@@ -42,7 +46,7 @@ const Galaxy = {
    * @param {Object} out
    * @returns {*|{}}
    */
-  extend: function (out) {
+  extend: function(out) {
     let result = out || {},
       obj;
     for (let i = 1; i < arguments.length; i++) {
@@ -83,18 +87,46 @@ function boot(bootModule) {
     throw new Error("element property is mandatory");
   }
 
-  return new Promise(function (resolve, reject) {
-    load_module(bootModule)
-      .then(function (module) {
-        // Replace galaxy temporary bootModule with user specified bootModule
-        Galaxy.bootModule = module;
-        resolve(module);
+  return new Promise(function(resolve, reject) {
+    prepare_module_meta_data(bootModule)
+      .then((pmmd) => {
+        const s = new Scope(pmmd);
+        return new Module(s).init().then(bootModule => {
+          // Replace galaxy temporary bootModule with user specified bootModule
+          Galaxy.bootModule = bootModule;
+          return resolve(bootModule);
+        });
+
       })
-      .catch(function (error) {
+      .catch(function(error) {
         console.error("Something went wrong", error);
         reject();
       });
   });
 }
+
+/**
+ *
+ * @returns {View}
+ */
+Scope.prototype.useView = function() {
+  return new View(this);
+};
+
+/**
+ *
+ * @returns {Router}
+ */
+Scope.prototype.useRouter = function() {
+  const router = new Router(this);
+  if (this.moduleId !== "@root") {
+    this.on("module.destroy", () => router.destroy());
+  }
+
+  this.__router__ = router;
+  this.router = router.data;
+
+  return router;
+};
 
 export { boot, setupTimeline, Galaxy, Scope, Router, Module, View };

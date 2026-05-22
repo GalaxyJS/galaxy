@@ -29,12 +29,11 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/galaxy.umd.cjs",
+  "main": "./dist/galaxy.js",
   "module": "./dist/galaxy.js",
   "exports": {
     ".": {
-      "import": "./dist/galaxy.js",
-      "require": "./dist/galaxy.umd.cjs"
+      "import": "./dist/galaxy.js"
     }
   },
   "contributors": [],

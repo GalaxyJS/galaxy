@@ -1,4 +1,4 @@
-import { arr_concat, clone, def_prop, EMPTY_CALL, obj_keys } from "./utils.js";
+import { clone, def_prop, EMPTY_CALL, obj_keys } from "./utils.js";
 import Scope from "./scope.js";
 import ViewNode from "./view-node.js";
 import ArrayChange from "./array-change.js";
@@ -7,11 +7,8 @@ import prop_setter from "./setters/prop.js";
 import attr_setter from "./setters/attr.js";
 import reactive_setter from "./setters/reactive.js";
 import ReactiveData from "./reactive-data.js";
+import { get_bindings } from "./bindings.js";
 
-const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
-const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
-const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
-const BINDING_RE = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
 const PROPERTY_NAME_SPLITTER_RE = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g;
 
 const REACTIVE_BEHAVIORS = {};
@@ -30,40 +27,6 @@ const PROPERTY_SETTERS = {
   "attr": attr_setter,
   "reactive": reactive_setter,
 };
-
-export function max_index() {
-  return "@" + performance.now();
-}
-
-// let opt_count = 0;
-// const _next_batch = function (_jump, dirty) {
-//   if (dirty) {
-//     return _jump();
-//   }
-//
-//   if (opt_count > 233) {
-//     opt_count = 0;
-//     // console.log(performance.now());
-//     return requestAnimationFrame(() => {
-//       if (dirty) {
-//         return _jump();
-//       }
-//
-//       if (this.length) {
-//         this.shift()(_next_batch.bind(this, _jump));
-//       } else {
-//         _jump();
-//       }
-//     });
-//   }
-//
-//   opt_count++;
-//   if (this.length) {
-//     this.shift()(_next_batch.bind(this, _jump));
-//   } else {
-//     _jump();
-//   }
-// };
 
 function parse_bind_exp_string(propertyKey, clean) {
   const matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
@@ -127,174 +90,6 @@ function safe_property_lookup(data, properties) {
   return target === undefined ? null : target;
 }
 
-const dom_manipulation_table = View.DOM_MANIPLATION = {};
-const create_order = [], destroy_order = [];
-let dom_manipulation_order = [];
-let manipulation_done = true, dom_manipulations_dirty = false;
-let diff = 0, preTS = 0, too_many_jumps;
-let create_order_dirty = false, destroy_order_dirty = false;
-let dom_manipulation_update_scheduled = false;
-
-const schedule_microtask = typeof queueMicrotask === "function"
-  ? queueMicrotask
-  : (cb) => Promise.resolve().then(cb);
-console.log(dom_manipulation_table)
-const next_action = function(_jump, dirty) {
-  if (dirty) {
-    return _jump();
-  }
-
-  if (this.length) {
-    this.shift()(next_action.bind(this, _jump));
-  } else {
-    _jump();
-  }
-};
-
-const next_batch_body = function() {
-  if (this.length) {
-    let key = this.shift();
-    let batch = dom_manipulation_table[key];
-    if (!batch.length) {
-      return next_batch.call(this);
-    }
-
-    next_action.call(batch, next_batch.bind(this), dom_manipulations_dirty);
-  } else {
-    manipulation_done = true;
-    preTS = 0;
-    diff = 0;
-  }
-};
-
-const next_batch = function() {
-  if (dom_manipulations_dirty) {
-    dom_manipulations_dirty = false;
-    diff = 0;
-    refresh_dom_manipulation_order();
-    return next_batch.call(dom_manipulation_order);
-  }
-
-  const now = performance.now();
-  preTS = preTS || now;
-  diff = diff + (now - preTS);
-  preTS = now;
-
-  if (diff > 2) {
-    diff = 0;
-    if (too_many_jumps) {
-      clearTimeout(too_many_jumps);
-      too_many_jumps = null;
-    }
-
-    too_many_jumps = setTimeout((ts) => {
-      preTS = ts;
-      next_batch_body.call(this);
-    });
-  } else {
-    next_batch_body.call(this);
-  }
-};
-
-function add_dom_manipulation(index, act, order, mark_order_dirty) {
-  if (index in dom_manipulation_table) {
-    dom_manipulation_table[index].push(act);
-  } else {
-    dom_manipulation_table[index] = [act];
-    order.push(index);
-    mark_order_dirty();
-  }
-}
-
-function refresh_dom_manipulation_order() {
-  if (destroy_order_dirty) {
-    destroy_order.sort((a, b) => (a > b ? -1 : a < b ? 1 : 0));
-    destroy_order_dirty = false;
-  }
-
-  if (create_order_dirty) {
-    create_order.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-    create_order_dirty = false;
-  }
-
-  dom_manipulation_order = arr_concat(destroy_order, create_order);
-}
-
-function update_dom_manipulation_order() {
-  if (dom_manipulation_update_scheduled) {
-    return;
-  }
-
-  dom_manipulation_update_scheduled = true;
-
-  schedule_microtask(() => {
-    dom_manipulation_update_scheduled = false;
-    refresh_dom_manipulation_order();
-
-    if (manipulation_done) {
-      manipulation_done = false;
-      next_batch.call(dom_manipulation_order);
-    }
-  });
-}
-
-// function update_on_timeout() {
-//   if (last_dom_manipulation_id) {
-//     clearTimeout(last_dom_manipulation_id);
-//     last_dom_manipulation_id = null;
-//   }
-//
-//   dom_manipulation_order = arrConcat(destroy_order, create_order);
-//   last_dom_manipulation_id = setTimeout(() => {
-//     if (manipulation_done) {
-//       manipulation_done = false;
-//       next_batch.call(dom_manipulation_order);
-//     }
-//   });
-// }
-//
-// function update_on_animation_frame() {
-//   if (last_dom_manipulation_id) {
-//     cancelAnimationFrame(last_dom_manipulation_id);
-//     last_dom_manipulation_id = null;
-//   }
-//
-//   dom_manipulation_order = arrConcat(destroy_order, create_order);
-//   last_dom_manipulation_id = requestAnimationFrame(() => {
-//     if (manipulation_done) {
-//       manipulation_done = false;
-//       next_batch.call(dom_manipulation_order);
-//     }
-//   });
-// }
-
-/**
- *
- * @param {string} index
- * @param {Function} action
- * @static
- */
-export function destroy_in_next_frame(index, action) {
-  dom_manipulations_dirty = true;
-  add_dom_manipulation("<" + index, action, destroy_order, () => {
-    destroy_order_dirty = true;
-  });
-  update_dom_manipulation_order();
-}
-
-/**
- *
- * @param {string} index
- * @param {Function} action
- * @static
- */
-export function create_in_next_frame(index, action) {
-  dom_manipulations_dirty = true;
-  add_dom_manipulation(">" + index, action, create_order, () => {
-    create_order_dirty = true;
-  });
-  update_dom_manipulation_order();
-}
 
 /**
  *
@@ -311,24 +106,6 @@ export function destroy_nodes(toBeRemoved, hasAnimation) {
   }
 }
 
-/**
- *
- * @param {ViewNode} viewNode
- * @param value
- * @param name
- */
-export function set_attr(viewNode, value, name) {
-  if (value !== null && value !== undefined && value !== false) {
-    viewNode.node.setAttribute(name, value === true ? "" : value);
-  } else {
-    viewNode.node.removeAttribute(name);
-  }
-}
-
-export function set_prop(viewNode, value, name) {
-  viewNode.node[name] = value;
-}
-
 export function create_child_scope(parent) {
   let result = {};
 
@@ -343,55 +120,6 @@ export function create_child_scope(parent) {
   });
 
   return result;
-}
-
-/**
- *
- * @param {string|Array} value
- * @return {{propertyKeys: *[], propertyValues: *[], bindTypes: *[], isExpression: boolean, expressionFn: null}}
- */
-export function get_bindings(value) {
-  let propertyKeys = [];
-  let propertyValues = [];
-  let bindTypes = [];
-  let isExpression = false;
-  const valueType = typeof (value);
-  let expressionFunction = null;
-
-  if (valueType === "string") {
-    const props = value.match(BINDING_RE);
-    if (props) {
-      bindTypes = [props[1]];
-      propertyKeys = [props[2]];
-      propertyValues = [value];
-    }
-  } else if (valueType === "function") {
-    isExpression = true;
-    expressionFunction = value;
-    const matches = value.toString().match(FUNCTION_HEAD_RE);
-    if (matches) {
-      const args = matches[1] || matches [2];
-      propertyValues = args.split(",").map(a => {
-        const argDef = a.indexOf("\"") === -1 ? a.match(ARG_BINDING_SINGLE_QUOTE_RE) : a.match(ARG_BINDING_DOUBLE_QUOTE_RE);
-        if (argDef) {
-          bindTypes.push(argDef[1]);
-          propertyKeys.push(argDef[2]);
-          return "<>" + argDef[2];
-        } else {
-          return undefined;
-        }
-      });
-    }
-  }
-
-  return {
-    propertyKeys: propertyKeys,
-    propertyValues: propertyValues,
-    bindTypes: bindTypes,
-    handler: expressionFunction,
-    isExpression: isExpression,
-    expressionFn: null,
-  };
 }
 
 export function property_lookup(data, key) {

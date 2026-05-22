@@ -1,26 +1,26 @@
-import { set_attr } from '../view.js';
+import { set_attr } from "../dom-apply.js";
 
 /**
  *
  * @type {BlueprintProperty}
  */
 export const disabled_property = {
-  type: 'attr',
-  key: 'disabled',
-  update: function (viewNode, value, attr) {
+  type: "attr",
+  key: "disabled",
+  update: function(viewNode, value, attr) {
     viewNode.rendered.then(() => {
-      if (viewNode.blueprint.tag.toLowerCase() === 'form') {
-        const children = viewNode.node.querySelectorAll('input, textarea, select, button');
+      if (viewNode.blueprint.tag.toLowerCase() === "form") {
+        const children = viewNode.node.querySelectorAll("input, textarea, select, button");
 
         if (value) {
-          Array.prototype.forEach.call(children, input => input.setAttribute('disabled', ''));
+          Array.prototype.forEach.call(children, input => input.setAttribute("disabled", ""));
         } else {
-          Array.prototype.forEach.call(children, input => input.removeAttribute('disabled'));
+          Array.prototype.forEach.call(children, input => input.removeAttribute("disabled"));
         }
       }
     });
 
-    set_attr(viewNode, value ? '' : null, attr);
-  }
+    set_attr(viewNode, value ? "" : null, attr);
+  },
 };
 

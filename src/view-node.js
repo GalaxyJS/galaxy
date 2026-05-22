@@ -2,8 +2,7 @@ import { NODE_BLUEPRINT_PROPERTY_MAP } from "./constants.js";
 import { arr_slice, create_comment, create_elem, create_index, def_prop, EMPTY_CALL } from "./utils.js";
 import {
   activate_property_for_node,
-  create_in_next_frame,
-  destroy_in_next_frame, destroy_nodes,
+  destroy_nodes,
 } from "./view.js";
 import { data_property } from "./properties/data.reactive.js";
 import { text_3_property, text_8_property, text_property } from "./properties/text.property.js";
@@ -20,6 +19,7 @@ import { style_3_property, style_8_property, style_property } from "./properties
 import { value_config_property, value_property } from "./properties/value.property.js";
 import { visible_property } from "./properties/visible.reactive.js";
 import Scope from "./scope.js";
+import { create_in_next_frame, destroy_in_next_frame } from "./dom-scheduler.js";
 
 NODE_BLUEPRINT_PROPERTY_MAP["data"] = data_property;
 NODE_BLUEPRINT_PROPERTY_MAP["text_3"] = text_3_property;

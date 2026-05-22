@@ -1,7 +1,7 @@
 import { EMPTY_CALL } from '../utils.js';
 import GalaxyURI from '../uri.js';
 import Scope from '../scope.js';
-import { create_in_next_frame } from '../view.js';
+import { create_in_next_frame } from "../dom-scheduler.js";
 
 export const module_property = {
   type: 'reactive',

@@ -1,4 +1,4 @@
-import { set_attr } from '../view.js';
+import { set_attr } from "../dom-apply.js";
 
 export default function attr_setter(viewNode, property, expression) {
   const attrName = property.key;

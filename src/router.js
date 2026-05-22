@@ -1,6 +1,5 @@
-import { EMPTY_CALL } from './utils.js';
-import { create_in_next_frame, max_index } from './view.js';
-import Scope from './scope.js';
+import { EMPTY_CALL } from "./utils.js";
+import { create_in_next_frame, max_index } from "./dom-scheduler.js";
 
 function prepare_route(routeConfig, parentScopeRouter, fullPath) {
   if (routeConfig instanceof Array) {
@@ -19,12 +18,12 @@ function prepare_route(routeConfig, parentScopeRouter, fullPath) {
     hidden: routeConfig.hidden || Boolean(routeConfig.redirectTo) || false,
     viewports: routeConfig.viewports || {},
     parent: parentScopeRouter ? parentScopeRouter.activeRoute : null,
-    children: routeConfig.children || []
+    children: routeConfig.children || [],
   };
 }
 
 function extract_dynamic_routes(routesPath) {
-  return routesPath.map(function (route) {
+  return routesPath.map(function(route) {
     const paramsNames = [];
 
     // Find all the parameters names in the route
@@ -38,7 +37,7 @@ function extract_dynamic_routes(routesPath) {
       return {
         id: route,
         paramNames: paramsNames,
-        paramFinderExpression: new RegExp(route.replace(Router.PARAMETER_NAME_REGEX, Router.PARAMETER_NAME_REPLACEMENT))
+        paramFinderExpression: new RegExp(route.replace(Router.PARAMETER_NAME_REGEX, Router.PARAMETER_NAME_REPLACEMENT)),
       };
     }
 
@@ -46,28 +45,28 @@ function extract_dynamic_routes(routesPath) {
   }).filter(Boolean);
 }
 
-Router.TITLE_SEPARATOR = ' • ';
+Router.TITLE_SEPARATOR = " • ";
 Router.PARAMETER_NAME_REGEX = new RegExp(/[:*](\w+)/g);
-Router.PARAMETER_NAME_REPLACEMENT = '([^/]+)';
-Router.BASE_URL = '/';
+Router.PARAMETER_NAME_REPLACEMENT = "([^/]+)";
+Router.BASE_URL = "/";
 Router.currentPath = {
   handlers: [],
-  subscribe: function (handler) {
+  subscribe: function(handler) {
     this.handlers.push(handler);
     handler(location.pathname);
   },
-  update: function () {
+  update: function() {
     this.handlers.forEach((h) => {
       h(location.pathname);
     });
-  }
+  },
 };
 
-Router.mainListener = function (e) {
+Router.mainListener = function() {
   Router.currentPath.update();
 };
 
-window.addEventListener('popstate', Router.mainListener);
+window.addEventListener("popstate", Router.mainListener);
 
 /**
  *
@@ -78,7 +77,7 @@ function Router(scope) {
   const _this = this;
   _this.__singleton__ = true;
   _this.config = {
-    baseURL: Router.BASE_URL
+    baseURL: Router.BASE_URL,
   };
 
   _this.scope = scope;
@@ -101,11 +100,11 @@ function Router(scope) {
   }
 
   const hasParentRouter = _this.parentScope && _this.parentScope.router;
-  _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : '';
-  _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : '/';
-  _this.fullPath = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
+  _this.title = hasParentRouter ? this.parentScope.router.activeRoute.title : "";
+  _this.path = hasParentRouter ? _this.parentScope.router.activeRoute.path : "/";
+  _this.fullPath = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path;
   _this.parentRoute = hasParentRouter ? this.parentScope.router.activeRoute : null;
-  _this.oldURL = '';
+  _this.oldURL = "";
   _this.resolvedRouteValue = null;
   _this.resolvedDynamicRouteValue = null;
   _this.routesMap = null;
@@ -118,33 +117,33 @@ function Router(scope) {
     viewports: {
       main: null,
     },
-    parameters: _this.parentScope && _this.parentScope.router ? _this.parentScope.router.parameters : {}
+    parameters: _this.parentScope && _this.parentScope.router ? _this.parentScope.router.parameters : {},
   };
   _this.onTransitionFn = EMPTY_CALL;
   _this.onInvokeFn = EMPTY_CALL;
   _this.onLoadFn = EMPTY_CALL;
   _this.viewports = {
     main: {
-      tag: 'div',
-      module: '<>router.activeModule'
-    }
+      tag: "div",
+      module: "<>router.activeModule",
+    },
   };
 
-  Object.defineProperty(this, 'urlParts', {
-    get: function () {
-      return _this.oldURL.split('/').slice(1);
+  Object.defineProperty(this, "urlParts", {
+    get: function() {
+      return _this.oldURL.split("/").slice(1);
     },
-    enumerable: true
+    enumerable: true,
   });
 
-  if (scope.moduleId === '@root') {
+  if (scope.moduleId === "@root") {
     Router.currentPath.update();
   }
 }
 
 Router.prototype = {
-  setup: function (routeConfigs) {
-    this.routes = prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === '/' ? '' : this.fullPath);
+  setup: function(routeConfigs) {
+    this.routes = prepare_route(routeConfigs, this.parentScope ? this.parentScope.router : null, this.fullPath === "/" ? "" : this.fullPath);
     // if (this.parentScope && this.parentScope.router) {
     //   this.parentRoute = this.parentScope.router.activeRoute;
     // }
@@ -152,11 +151,11 @@ Router.prototype = {
     this.routes.forEach(route => {
       const viewportNames = route.viewports ? Object.keys(route.viewports) : [];
       viewportNames.forEach(vp => {
-        if (vp === 'main' || this.viewports[vp]) return;
+        if (vp === "main" || this.viewports[vp]) return;
 
         this.viewports[vp] = {
-          tag: 'div',
-          module: '<>router.viewports.' + vp
+          tag: "div",
+          module: "<>router.viewports." + vp,
         };
       });
     });
@@ -167,9 +166,9 @@ Router.prototype = {
     return this;
   },
 
-  start: function () {
+  start: function() {
     this.listener = this.detect.bind(this);
-    window.addEventListener('popstate', this.listener);
+    window.addEventListener("popstate", this.listener);
     this.detect();
   },
 
@@ -218,13 +217,13 @@ Router.prototype = {
    * @param {string} path
    * @param {boolean} replace
    */
-  navigateToPath: function (path, replace) {
-    if (typeof path !== 'string') {
-      throw new Error('Invalid argument(s) for `navigateToPath`: path must be a string. ' + typeof path + ' is given');
+  navigateToPath: function(path, replace) {
+    if (typeof path !== "string") {
+      throw new Error("Invalid argument(s) for `navigateToPath`: path must be a string. " + typeof path + " is given");
     }
 
-    if (path.indexOf('/') !== 0) {
-      throw new Error('Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
+    if (path.indexOf("/") !== 0) {
+      throw new Error("Invalid argument(s) for `navigateToPath`: path must be starting with a `/`\nPlease use `/" + path + "` instead of `" + path + "`");
     }
 
     if (path.indexOf(this.config.baseURL) !== 0) {
@@ -237,21 +236,21 @@ Router.prototype = {
     }
 
     if (replace) {
-      history.replaceState({}, '', path);
+      history.replaceState({}, "", path);
     } else {
-      history.pushState({}, '', path);
+      history.pushState({}, "", path);
     }
 
-    dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    dispatchEvent(new PopStateEvent("popstate", { state: {} }));
   },
 
-  navigate: function (path, replace) {
-    if (typeof path !== 'string') {
-      throw new Error('Invalid argument(s) for `navigate`: path must be a string. ' + typeof path + ' is given');
+  navigate: function(path, replace) {
+    if (typeof path !== "string") {
+      throw new Error("Invalid argument(s) for `navigate`: path must be a string. " + typeof path + " is given");
     }
 
-    if (path.indexOf('/') !== 0) {
-      throw new Error('Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/' + path + '` instead of `' + path + '`');
+    if (path.indexOf("/") !== 0) {
+      throw new Error("Invalid argument(s) for `navigate`: path must be starting with a `/`\nPlease use `/" + path + "` instead of `" + path + "`");
     }
 
     if (path.indexOf(this.path) !== 0) {
@@ -261,7 +260,7 @@ Router.prototype = {
     this.navigateToPath(path, replace);
   },
 
-  navigateToRoute: function (route, replace) {
+  navigateToRoute: function(route, replace) {
     let path = route.path;
     if (route.parent) {
       path = route.parent.path + route.path;
@@ -270,46 +269,46 @@ Router.prototype = {
     this.navigate(path, replace);
   },
 
-  notFound: function () {
+  notFound: function() {
 
   },
 
-  normalizeHash: function (hash) {
-    if (hash.indexOf('#!/') === 0) {
-      throw new Error('Please use `#/` instead of `#!/` for you hash');
+  normalizeHash: function(hash) {
+    if (hash.indexOf("#!/") === 0) {
+      throw new Error("Please use `#/` instead of `#!/` for you hash");
     }
 
     let normalizedHash = hash;
-    if (hash.indexOf('#/') !== 0) {
-      if (hash.indexOf('/') !== 0) {
-        normalizedHash = '/' + hash;
-      } else if (hash.indexOf('#') === 0) {
-        normalizedHash = hash.split('#').join('#/');
+    if (hash.indexOf("#/") !== 0) {
+      if (hash.indexOf("/") !== 0) {
+        normalizedHash = "/" + hash;
+      } else if (hash.indexOf("#") === 0) {
+        normalizedHash = hash.split("#").join("#/");
       }
     }
 
     // if (this.config.baseURL !== '/') {
     //   normalizedHash = normalizedHash.replace(this.config.baseURL, '');
     // }
-    return normalizedHash.replace(this.fullPath, '/').replace('//', '/') || '/';
+    return normalizedHash.replace(this.fullPath, "/").replace("//", "/") || "/";
   },
 
-  onTransition: function (handler) {
+  onTransition: function(handler) {
     this.onTransitionFn = handler;
     return this;
   },
 
-  onInvoke: function (handler) {
+  onInvoke: function(handler) {
     this.onInvokeFn = handler;
     return this;
   },
 
-  onLoad: function (handler) {
+  onLoad: function(handler) {
     this.onLoadFn = handler;
     return this;
   },
 
-  findMatchRoute: function (routes, hash, parentParams) {
+  findMatchRoute: function(routes, hash, parentParams) {
     const _this = this;
     let matchCount = 0;
     const normalizedHash = _this.normalizeHash(hash);
@@ -318,7 +317,7 @@ Router.prototype = {
     const staticRoutes = routes.filter(r => dynamicRoutes.indexOf(r) === -1 && normalizedHash.indexOf(r.path) === 0);
     const targetStaticRoute = staticRoutes.length ? staticRoutes.reduce((a, b) => a.path.length > b.path.length ? a : b) : false;
 
-    if (targetStaticRoute && !(normalizedHash !== '/' && targetStaticRoute.path === '/')) {
+    if (targetStaticRoute && !(normalizedHash !== "/" && targetStaticRoute.path === "/")) {
       const routeValue = normalizedHash.slice(0, targetStaticRoute.path.length);
 
       if (_this.resolvedRouteValue === routeValue) {
@@ -355,17 +354,17 @@ Router.prototype = {
       _this.resolvedDynamicRouteValue = hash;
       _this.resolvedRouteValue = null;
       const routeIndex = routesPath.indexOf(targetDynamicRoute.id);
-      const pathParameterPlaceholder = targetDynamicRoute.id.split('/').filter(t => t.indexOf(':') !== 0).join('/');
-      const parts = hash.replace(pathParameterPlaceholder, '').split('/');
-      return _this.callRoute(routes[routeIndex], parts.join('/'), params, parentParams);
+      const pathParameterPlaceholder = targetDynamicRoute.id.split("/").filter(t => t.indexOf(":") !== 0).join("/");
+      const parts = hash.replace(pathParameterPlaceholder, "").split("/");
+      return _this.callRoute(routes[routeIndex], parts.join("/"), params, parentParams);
     }
 
     if (matchCount === 0) {
-      console.warn('No associated route has been found', hash);
+      console.warn("No associated route has been found", hash);
     }
   },
 
-  callRoute: function (newRoute, hash, params, parentParams) {
+  callRoute: function(newRoute, hash, params, parentParams) {
     const oldRoute = this.data.activeRoute;
     const oldPath = this.data.activePath;
     this.data.activeRoute = newRoute;
@@ -377,7 +376,7 @@ Router.prototype = {
       if (oldRoute && newRoute.path.indexOf(oldPath) !== 0) {
         oldRoute.active = false;
 
-        if (typeof oldRoute.onLeave === 'function') {
+        if (typeof oldRoute.onLeave === "function") {
           oldRoute.onLeave.call(null, oldPath, newRoute.path, oldRoute, newRoute);
         }
       }
@@ -385,12 +384,12 @@ Router.prototype = {
       newRoute.active = true;
     }
 
-    if (typeof newRoute.onEnter === 'function') {
+    if (typeof newRoute.onEnter === "function") {
       newRoute.onEnter.call(null, oldPath, newRoute.path, oldRoute, newRoute);
     }
 
     document.title = this.getTitle(newRoute);
-    if (typeof newRoute.handle === 'function') {
+    if (typeof newRoute.handle === "function") {
       return newRoute.handle.call(this, params, parentParams);
     } else {
       this.populateViewports(newRoute);
@@ -404,7 +403,7 @@ Router.prototype = {
     return false;
   },
 
-  populateViewports: function (route) {
+  populateViewports: function(route) {
     let viewportFound = false;
     const allViewports = this.data.viewports;
     for (const key in allViewports) {
@@ -413,16 +412,16 @@ Router.prototype = {
         continue;
       }
 
-      if (typeof value === 'string') {
+      if (typeof value === "string") {
         value = {
           path: value,
           onInvoke: this.onInvokeFn.bind(this, value, key),
-          onLoad: this.onLoadFn.bind(this, value, key)
+          onLoad: this.onLoadFn.bind(this, value, key),
         };
         viewportFound = true;
       }
 
-      if (key === 'main') {
+      if (key === "main") {
         this.data.activeModule = value;
       }
 
@@ -434,27 +433,27 @@ Router.prototype = {
     }
   },
 
-  createClearParameters: function () {
+  createClearParameters: function() {
     const clearParams = {};
     const keys = Object.keys(this.data.parameters);
     keys.forEach(k => clearParams[k] = undefined);
     return clearParams;
   },
 
-  createParamValueMap: function (names, values) {
+  createParamValueMap: function(names, values) {
     const params = {};
-    names.forEach(function (name, i) {
+    names.forEach(function(name, i) {
       params[name] = values[i];
     });
 
     return params;
   },
 
-  detect: function () {
+  detect: function() {
     const pathname = window.location.pathname;
-    const hash = pathname ? pathname.substring(-1) !== '/' ? pathname + '/' : pathname : '/';
+    const hash = pathname ? pathname.substring(-1) !== "/" ? pathname + "/" : pathname : "/";
     // const hash = pathname || '/';
-    const path = this.config.baseURL === '/' ? this.path : this.config.baseURL + this.path;
+    const path = this.config.baseURL === "/" ? this.path : this.config.baseURL + this.path;
 
     if (hash.indexOf(path) === 0) {
       if (hash !== this.oldURL) {
@@ -464,15 +463,15 @@ Router.prototype = {
     }
   },
 
-  getURLParts: function () {
-    return this.oldURL.split('/').slice(1);
+  getURLParts: function() {
+    return this.oldURL.split("/").slice(1);
   },
 
-  destroy: function () {
+  destroy: function() {
     if (this.parentRoute) {
       this.parentRoute.children = [];
     }
-    window.removeEventListener('popstate', this.listener);
-  }
+    window.removeEventListener("popstate", this.listener);
+  },
 };
 export default Router;
