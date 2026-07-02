@@ -3,16 +3,13 @@ import { arr_concat } from "./utils.js";
 const dom_manipulation_table = {};
 const create_order = [], destroy_order = [];
 let dom_manipulation_order = [];
-let manipulation_done = true, dom_manipulations_dirty = false;
-let diff = 0, preTS = 0, too_many_jumps;
-let create_order_dirty = false, destroy_order_dirty = false;
-let dom_manipulation_update_scheduled = false;
+let manipulation_done = true,
+  dom_manipulations_dirty = false;
+let diff = 0,
+  preTS = 0,
+  too_many_jumps;
 
-const schedule_microtask = typeof queueMicrotask === "function"
-  ? queueMicrotask
-  : (cb) => Promise.resolve().then(cb);
-console.log(dom_manipulation_table);
-const next_action = function(_jump, dirty) {
+const next_action = function (_jump, dirty) {
   if (dirty) {
     return _jump();
   }
@@ -24,7 +21,7 @@ const next_action = function(_jump, dirty) {
   }
 };
 
-const next_batch_body = function() {
+const next_batch_body = function () {
   if (this.length) {
     let key = this.shift();
     let batch = dom_manipulation_table[key];
@@ -40,11 +37,10 @@ const next_batch_body = function() {
   }
 };
 
-const next_batch = function() {
+const next_batch = function () {
   if (dom_manipulations_dirty) {
     dom_manipulations_dirty = false;
     diff = 0;
-    refresh_dom_manipulation_order();
     return next_batch.call(dom_manipulation_order);
   }
 
@@ -69,41 +65,79 @@ const next_batch = function() {
   }
 };
 
-function add_dom_manipulation(index, act, order, mark_order_dirty) {
+function comp_asc(a, b) {
+  return a > b;
+}
+
+function comp_desc(a, b) {
+  return a < b;
+}
+
+function binary_search(array, key, _fn) {
+  let start = 0;
+  let end = array.length - 1;
+  let index = 0;
+
+  while (start <= end) {
+    let middle = Math.floor((start + end) / 2);
+    let midVal = array[middle];
+
+    if (_fn(key, midVal)) {
+      // continue searching to the right
+      index = start = middle + 1;
+    } else {
+      // search searching to the left
+      index = middle;
+      end = middle - 1;
+    }
+  }
+
+  return index;
+}
+
+function pos_asc(array, el) {
+  if (el < array[0]) {
+    return 0;
+  }
+
+  if (el > array[array.length - 1]) {
+    return array.length;
+  }
+
+  return binary_search(array, el, comp_asc);
+}
+
+function pos_desc(array, el) {
+  if (el > array[0]) {
+    return 0;
+  }
+
+  if (el < array[array.length - 1]) {
+    return array.length;
+  }
+
+  return binary_search(array, el, comp_desc);
+}
+
+function add_dom_manipulation(index, act, order, search) {
   if (index in dom_manipulation_table) {
     dom_manipulation_table[index].push(act);
   } else {
     dom_manipulation_table[index] = [act];
-    order.push(index);
-    mark_order_dirty();
+    order.splice(search(order, index), 0, index);
   }
 }
 
-function refresh_dom_manipulation_order() {
-  if (destroy_order_dirty) {
-    destroy_order.sort((a, b) => (a > b ? -1 : a < b ? 1 : 0));
-    destroy_order_dirty = false;
-  }
+let last_dom_manipulation_id = 0;
 
-  if (create_order_dirty) {
-    create_order.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-    create_order_dirty = false;
+function update_dom_manipulation_order() {
+  if (last_dom_manipulation_id !== 0) {
+    clearTimeout(last_dom_manipulation_id);
+    last_dom_manipulation_id = 0;
   }
 
   dom_manipulation_order = arr_concat(destroy_order, create_order);
-}
-
-function update_dom_manipulation_order() {
-  if (dom_manipulation_update_scheduled) {
-    return;
-  }
-
-  dom_manipulation_update_scheduled = true;
-
-  schedule_microtask(() => {
-    dom_manipulation_update_scheduled = false;
-    refresh_dom_manipulation_order();
-
+  last_dom_manipulation_id = setTimeout(() => {
     if (manipulation_done) {
       manipulation_done = false;
       next_batch.call(dom_manipulation_order);
@@ -111,7 +145,7 @@ function update_dom_manipulation_order() {
   });
 }
 
-// function update_on_timeout() {
+// function update_on_animation_frame() {
 //   if (last_dom_manipulation_id) {
 //     clearTimeout(last_dom_manipulation_id);
 //     last_dom_manipulation_id = null;
@@ -126,7 +160,7 @@ function update_dom_manipulation_order() {
 //   });
 // }
 //
-// function update_on_animation_frame() {
+// function update_on_timeout() {
 //   if (last_dom_manipulation_id) {
 //     cancelAnimationFrame(last_dom_manipulation_id);
 //     last_dom_manipulation_id = null;
@@ -149,9 +183,7 @@ function update_dom_manipulation_order() {
  */
 export function destroy_in_next_frame(index, action) {
   dom_manipulations_dirty = true;
-  add_dom_manipulation("<" + index, action, destroy_order, () => {
-    destroy_order_dirty = true;
-  });
+  add_dom_manipulation("<" + index, action, destroy_order, pos_desc);
   update_dom_manipulation_order();
 }
 
@@ -163,9 +195,7 @@ export function destroy_in_next_frame(index, action) {
  */
 export function create_in_next_frame(index, action) {
   dom_manipulations_dirty = true;
-  add_dom_manipulation(">" + index, action, create_order, () => {
-    create_order_dirty = true;
-  });
+  add_dom_manipulation(">" + index, action, create_order, pos_asc);
   update_dom_manipulation_order();
 }
 

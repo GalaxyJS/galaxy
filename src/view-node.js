@@ -199,7 +199,6 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.garbage = [];
   _this.leaveWithParent = false;
   _this.onLeaveComplete = remove_self.bind(_this, true);
-  _this._display = "";
 
   const cache = {};
   def_prop(_this, "cache", {
@@ -212,7 +211,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
     if ("style" in _this.node) {
       _this.hasBeenRendered = function() {
         _this.rendered.resolved = true;
-        _this.node.style.display = _this._display;
+        _this.node.style.removeProperty("display");
 
         if (_this.blueprint._render) {
           _this.blueprint._render.call(_this, _this.data);
@@ -311,7 +310,7 @@ ViewNode.prototype = {
   },
 
   processEnterAnimation: function() {
-    this.node.style.display = this._display;
+    this.node.style.display = null;
   },
 
   processLeaveAnimation: EMPTY_CALL,
@@ -339,8 +338,7 @@ ViewNode.prototype = {
 
     if (flag) {
       if ("style" in this.node) {
-        this._display = this.node.style.display;
-        this.node.style.display = "none";
+        this.node.style.setProperty("display", "none");
       }
 
       if (!this.node.parentNode) {
@@ -384,7 +382,7 @@ ViewNode.prototype = {
 
     if (flag && !this.virtual) {
       create_in_next_frame(this.index, (_next) => {
-        this.node.style.display = this._display;
+        this.node.style.display = null;
         this.processEnterAnimation();
         _next();
       });
