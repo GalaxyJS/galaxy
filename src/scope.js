@@ -1,23 +1,34 @@
-import { def_prop, del_prop, load_module } from "./utils";
+import { def_prop, del_prop } from "./utils";
 import GalaxyURI from "./uri.js";
 import Observer from "./observer.js";
-import View, { bind_subjects_to_data } from "./view.js";
-import Router from "./router.js";
+import { bind_subjects_to_data } from "./view.js";
+import Module from "./module.js";
+import { prepare_module_meta_data } from "./runtime.js";
 
-class Scope {
+/**
+ * @class Scope
+ * @memberOf GalaxyJS
+ */
+export default class Scope {
+  moduleId = null;
+  path = null;
+  source = null;
 
   /**
    *
-   * @param {ModuleMetaData} module
+   * @param {ModuleMetaData} moduleMetaData
    */
-  constructor(module) {
-    this.moduleId = module.id;
-    this.parentScope = module.parentScope || null;
-    this.element = module.element || null;
+  constructor(moduleMetaData) {
+    this.moduleId = moduleMetaData.id;
+    this.parentScope = moduleMetaData.parentScope || null;
+    this.source = typeof moduleMetaData.source === "function" ? moduleMetaData.source : null;
+    this.path = moduleMetaData.path || null;
+    this.element = moduleMetaData.element || null;
     this.export = {};
-    this.uri = new GalaxyURI(module.path);
+    this.uri = new GalaxyURI(moduleMetaData.path);
     this.eventHandlers = {};
     this.observers = [];
+
     const _data = this.element.data
       ? bind_subjects_to_data(
         this.element,
@@ -79,7 +90,11 @@ class Scope {
     }
 
     newModuleMetaData.parentScope = this;
-    return load_module(newModuleMetaData);
+    return prepare_module_meta_data(newModuleMetaData).then(preparedModuleMetaData => {
+      const scope = new Scope(preparedModuleMetaData);
+
+      return new Module(scope).init();
+    });
   }
 
   loadModuleInto(moduleMetaData, viewNode) {
@@ -115,22 +130,5 @@ class Scope {
 
     return observer;
   }
-
-  useView() {
-    return new View(this);
-  }
-
-  useRouter() {
-    const router = new Router(this);
-    if (this.moduleId !== "@root") {
-      this.on("module.destroy", () => router.destroy());
-    }
-
-    this.__router__ = router;
-    this.router = router.data;
-
-    return router;
-  }
 }
 
-export default Scope;

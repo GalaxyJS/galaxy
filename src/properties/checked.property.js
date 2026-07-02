@@ -1,4 +1,4 @@
-import { get_bindings } from '../view.js';
+import { get_bindings } from "../bindings.js";
 
 /**
  *

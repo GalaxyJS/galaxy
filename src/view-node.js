@@ -1,79 +1,79 @@
-import { NODE_BLUEPRINT_PROPERTY_MAP } from './constants.js';
-import { arr_slice, create_comment, create_elem, def_prop, EMPTY_CALL } from './utils.js';
+import { NODE_BLUEPRINT_PROPERTY_MAP } from "./constants.js";
+import { arr_slice, create_comment, create_elem, create_index, def_prop, EMPTY_CALL } from "./utils.js";
 import {
   activate_property_for_node,
-  create_in_next_frame,
-  destroy_in_next_frame, destroy_nodes
-} from './view.js';
-import { data_property } from './properties/data.reactive.js';
-import { text_3_property, text_8_property, text_property } from './properties/text.property.js';
-import { animations_property } from './properties/animations.property.js';
-import { checked_property } from './properties/checked.property.js';
-import { class_property } from './properties/class.reactive.js';
-import { disabled_property } from './properties/disabled.property.js';
-import { if_property } from './properties/if.reactive.js';
-import { module_property } from './properties/module.reactive.js';
-import { on_property } from './properties/on.property.js';
-import { repeat_property } from './properties/repeat.reactive.js';
-import { selected_property } from './properties/selected.property.js';
-import { style_3_property, style_8_property, style_property } from './properties/style.reactive.js';
-import { value_config_property, value_property } from './properties/value.property.js';
-import { visible_property } from './properties/visible.reactive.js';
-import Scope from './scope.js';
+  destroy_nodes,
+} from "./view.js";
+import { data_property } from "./properties/data.reactive.js";
+import { text_3_property, text_8_property, text_property } from "./properties/text.property.js";
+import { animations_property } from "./properties/animations.property.js";
+import { checked_property } from "./properties/checked.property.js";
+import { class_property } from "./properties/class.reactive.js";
+import { disabled_property } from "./properties/disabled.property.js";
+import { if_property } from "./properties/if.reactive.js";
+import { module_property } from "./properties/module.reactive.js";
+import { on_property } from "./properties/on.property.js";
+import { repeat_property } from "./properties/repeat.reactive.js";
+import { selected_property } from "./properties/selected.property.js";
+import { style_3_property, style_8_property, style_property } from "./properties/style.reactive.js";
+import { value_config_property, value_property } from "./properties/value.property.js";
+import { visible_property } from "./properties/visible.reactive.js";
+import Scope from "./scope.js";
+import { create_in_next_frame, destroy_in_next_frame } from "./dom-scheduler.js";
 
-NODE_BLUEPRINT_PROPERTY_MAP['data'] = data_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text_3'] = text_3_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text_8'] = text_8_property;
-NODE_BLUEPRINT_PROPERTY_MAP['text'] = text_property;
-NODE_BLUEPRINT_PROPERTY_MAP['animations'] = animations_property;
-NODE_BLUEPRINT_PROPERTY_MAP['checked'] = checked_property;
-NODE_BLUEPRINT_PROPERTY_MAP['class'] = class_property;
-NODE_BLUEPRINT_PROPERTY_MAP['disabled'] = disabled_property;
-NODE_BLUEPRINT_PROPERTY_MAP['if'] = if_property;
-NODE_BLUEPRINT_PROPERTY_MAP['module'] = module_property;
-NODE_BLUEPRINT_PROPERTY_MAP['on'] = on_property;
-NODE_BLUEPRINT_PROPERTY_MAP['repeat'] = repeat_property;
-NODE_BLUEPRINT_PROPERTY_MAP['selected'] = selected_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style'] = style_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style_3'] = style_3_property;
-NODE_BLUEPRINT_PROPERTY_MAP['style_8'] = style_8_property;
-NODE_BLUEPRINT_PROPERTY_MAP['value.config'] = value_config_property;
-NODE_BLUEPRINT_PROPERTY_MAP['value'] = value_property;
-NODE_BLUEPRINT_PROPERTY_MAP['visible'] = visible_property;
-NODE_BLUEPRINT_PROPERTY_MAP['_create'] = {
-  type: 'prop',
-  key: '_create',
-  getSetter: () => EMPTY_CALL
+NODE_BLUEPRINT_PROPERTY_MAP["data"] = data_property;
+NODE_BLUEPRINT_PROPERTY_MAP["text_3"] = text_3_property;
+NODE_BLUEPRINT_PROPERTY_MAP["text_8"] = text_8_property;
+NODE_BLUEPRINT_PROPERTY_MAP["text"] = text_property;
+NODE_BLUEPRINT_PROPERTY_MAP["animations"] = animations_property;
+NODE_BLUEPRINT_PROPERTY_MAP["checked"] = checked_property;
+NODE_BLUEPRINT_PROPERTY_MAP["class"] = class_property;
+NODE_BLUEPRINT_PROPERTY_MAP["disabled"] = disabled_property;
+NODE_BLUEPRINT_PROPERTY_MAP["if"] = if_property;
+NODE_BLUEPRINT_PROPERTY_MAP["module"] = module_property;
+NODE_BLUEPRINT_PROPERTY_MAP["on"] = on_property;
+NODE_BLUEPRINT_PROPERTY_MAP["repeat"] = repeat_property;
+NODE_BLUEPRINT_PROPERTY_MAP["selected"] = selected_property;
+NODE_BLUEPRINT_PROPERTY_MAP["style"] = style_property;
+NODE_BLUEPRINT_PROPERTY_MAP["style_3"] = style_3_property;
+NODE_BLUEPRINT_PROPERTY_MAP["style_8"] = style_8_property;
+NODE_BLUEPRINT_PROPERTY_MAP["value.config"] = value_config_property;
+NODE_BLUEPRINT_PROPERTY_MAP["value"] = value_property;
+NODE_BLUEPRINT_PROPERTY_MAP["visible"] = visible_property;
+NODE_BLUEPRINT_PROPERTY_MAP["_create"] = {
+  type: "prop",
+  key: "_create",
+  getSetter: () => EMPTY_CALL,
 };
 
-NODE_BLUEPRINT_PROPERTY_MAP['_render'] = {
-  type: 'prop',
-  key: '_render',
-  getSetter: () => EMPTY_CALL
+NODE_BLUEPRINT_PROPERTY_MAP["_render"] = {
+  type: "prop",
+  key: "_render",
+  getSetter: () => EMPTY_CALL,
 };
 
-NODE_BLUEPRINT_PROPERTY_MAP['_destroy'] = {
-  type: 'prop',
-  key: '_destroy',
-  getSetter: () => EMPTY_CALL
+NODE_BLUEPRINT_PROPERTY_MAP["_destroy"] = {
+  type: "prop",
+  key: "_destroy",
+  getSetter: () => EMPTY_CALL,
 };
 
-NODE_BLUEPRINT_PROPERTY_MAP['renderConfig'] = {
-  type: 'prop',
-  key: 'renderConfig'
+NODE_BLUEPRINT_PROPERTY_MAP["renderConfig"] = {
+  type: "prop",
+  key: "renderConfig",
 };
 
 const REFERENCE_TO_THIS = {
   value: this,
   configurable: false,
-  enumerable: false
+  enumerable: false,
 };
 
 const __NODE__ = {
   value: null,
   configurable: false,
   enumerable: false,
-  writable: true
+  writable: true,
 };
 
 function insert_before(parentNode, newNode, referenceNode) {
@@ -91,7 +91,7 @@ function remove_self(destroy) {
     // Destroy
     viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
     viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
-    viewNode.garbage.forEach(function (node) {
+    viewNode.garbage.forEach(function(node) {
       remove_self.call(node, true);
     });
     viewNode.hasBeenDestroyed();
@@ -105,7 +105,7 @@ function remove_self(destroy) {
       remove_child(viewNode.node.parentNode, viewNode.node);
     }
 
-    viewNode.garbage.forEach(function (node) {
+    viewNode.garbage.forEach(function(node) {
       remove_self.call(node, true);
     });
   }
@@ -126,7 +126,7 @@ function remove_self(destroy) {
  */
 ViewNode.GLOBAL_RENDER_CONFIG = {
   applyClassListAfterRender: false,
-  renderDetached: false
+  renderDetached: false,
 };
 
 /**
@@ -134,29 +134,15 @@ ViewNode.GLOBAL_RENDER_CONFIG = {
  * @param blueprints
  * @static
  */
-ViewNode.cleanReferenceNode = function (blueprints) {
+ViewNode.cleanReferenceNode = function(blueprints) {
   if (blueprints instanceof Array) {
-    blueprints.forEach(function (node) {
+    blueprints.forEach(function(node) {
       ViewNode.cleanReferenceNode(node);
     });
   } else if (blueprints instanceof Object) {
     blueprints.node = null;
     ViewNode.cleanReferenceNode(blueprints.children);
   }
-};
-
-ViewNode.createIndex = function (i) {
-  if (i < 0) return '0';
-  if (i < 10) return i + '';
-
-  let r = '9';
-  let res = i - 10;
-  while (res >= 10) {
-    r += '9';
-    res -= 10;
-  }
-
-  return r + res;
 };
 
 /**
@@ -183,11 +169,11 @@ function ViewNode(blueprint, parent, view, nodeData) {
     _this.node = blueprint.tag;
     blueprint.tag = blueprint.tag.tagName;
   } else {
-    _this.node = create_elem(blueprint.tag || 'div', parent);
+    _this.node = create_elem(blueprint.tag || "div", parent);
   }
 
   // if node does not have style property, then it doesn't have processEnterAnimation
-  if (!('style' in _this.node)) {
+  if (!("style" in _this.node)) {
     _this.processEnterAnimation = EMPTY_CALL;
   }
 
@@ -201,7 +187,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.inputs = {};
   _this.virtual = false;
   _this.visible = true;
-  _this.placeholder = create_comment(blueprint.tag || 'div');
+  _this.placeholder = create_comment(blueprint.tag || "div");
   _this.properties = new Set();
   _this.inDOM = false;
   _this.setters = {};
@@ -213,26 +199,28 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.garbage = [];
   _this.leaveWithParent = false;
   _this.onLeaveComplete = remove_self.bind(_this, true);
+  _this._display = "";
 
   const cache = {};
-  def_prop(_this, 'cache', {
+  def_prop(_this, "cache", {
     enumerable: false,
     configurable: false,
-    value: cache
+    value: cache,
   });
 
-  _this.rendered = new Promise(function (done) {
-    if ('style' in _this.node) {
-      _this.hasBeenRendered = function () {
+  _this.rendered = new Promise(function(done) {
+    if ("style" in _this.node) {
+      _this.hasBeenRendered = function() {
         _this.rendered.resolved = true;
-        _this.node.style.removeProperty('display');
+        _this.node.style.display = _this._display;
+
         if (_this.blueprint._render) {
           _this.blueprint._render.call(_this, _this.data);
         }
         done(_this);
       };
     } else {
-      _this.hasBeenRendered = function () {
+      _this.hasBeenRendered = function() {
         _this.rendered.resolved = true;
         done();
       };
@@ -240,8 +228,8 @@ function ViewNode(blueprint, parent, view, nodeData) {
   });
   _this.rendered.resolved = false;
 
-  _this.destroyed = new Promise(function (done) {
-    _this.hasBeenDestroyed = function () {
+  _this.destroyed = new Promise(function(done) {
+    _this.hasBeenDestroyed = function() {
       _this.destroyed.resolved = true;
       if (_this.blueprint._destroy) {
         _this.blueprint._destroy.call(_this, _this.data);
@@ -258,12 +246,12 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.blueprint.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, blueprint.renderConfig || {});
 
   __NODE__.value = this.node;
-  def_prop(_this.blueprint, 'node', __NODE__);
+  def_prop(_this.blueprint, "node", __NODE__);
 
   REFERENCE_TO_THIS.value = this;
   if (!_this.node.__vn__) {
-    def_prop(_this.node, '__vn__', REFERENCE_TO_THIS);
-    def_prop(_this.placeholder, '__vn__', REFERENCE_TO_THIS);
+    def_prop(_this.node, "__vn__", REFERENCE_TO_THIS);
+    def_prop(_this.placeholder, "__vn__", REFERENCE_TO_THIS);
   }
 
   if (_this.blueprint._create) {
@@ -274,12 +262,12 @@ function ViewNode(blueprint, parent, view, nodeData) {
 ViewNode.prototype = {
   onLeaveComplete: null,
 
-  dump: function () {
+  dump: function() {
     let original = this.parent;
     let targetGarbage = this.garbage;
     // Find the garbage of the origin if
     while (original.transitory) {
-      if (original.blueprint.hasOwnProperty('if') && !this.blueprint.hasOwnProperty('if')) {
+      if (original.blueprint.hasOwnProperty("if") && !this.blueprint.hasOwnProperty("if")) {
         targetGarbage = original.garbage;
       }
       if (original.parent && original.parent.transitory) {
@@ -292,122 +280,121 @@ ViewNode.prototype = {
 
     this.garbage = [];
   },
-  query: function (selectors) {
+  query: function(selectors) {
     return this.node.querySelector(selectors);
   },
 
-  dispatchEvent: function (event) {
+  dispatchEvent: function(event) {
     this.node.dispatchEvent(event);
   },
 
-  cloneBlueprint: function () {
+  cloneBlueprint: function() {
     const blueprintClone = Object.assign({}, this.blueprint);
     ViewNode.cleanReferenceNode(blueprintClone);
 
-    def_prop(blueprintClone, 'mother', {
+    def_prop(blueprintClone, "mother", {
       value: this.blueprint,
       writable: false,
       enumerable: false,
-      configurable: false
+      configurable: false,
     });
 
     return blueprintClone;
   },
 
-  virtualize: function () {
+  virtualize: function() {
     this.placeholder.nodeValue = JSON.stringify(this.blueprint, (k, v) => {
-      return k === 'children' ? '<children>' : k === 'animations' ? '<animations>' : v;
+      return k === "children" ? "<children>" : k === "animations" ? "<animations>" : v;
     }, 2);
     this.virtual = true;
     this.setInDOM(false);
   },
 
-  processEnterAnimation: function () {
-    this.node.style.display = null;
+  processEnterAnimation: function() {
+    this.node.style.display = this._display;
   },
 
   processLeaveAnimation: EMPTY_CALL,
 
-  populateHideSequence: function () {
-    this.node.style.display = 'none';
+  populateHideSequence: function() {
+    this.node.style.display = "none";
   },
 
   /**
    *
    * @param {boolean} flag
    */
-  setInDOM: function (flag) {
-    const _this = this;
-    if (_this.blueprint.renderConfig.renderDetached) {
-      create_in_next_frame(_this.index, (_next) => {
-        _this.blueprint.renderConfig.renderDetached = false;
-        _this.hasBeenRendered();
+  setInDOM: function(flag) {
+    if (this.blueprint.renderConfig.renderDetached) {
+      create_in_next_frame(this.index, (_next) => {
+        this.blueprint.renderConfig.renderDetached = false;
+        this.hasBeenRendered();
         _next();
       });
       return;
     }
 
-    _this.inDOM = flag;
-    if (_this.virtual) return;
+    this.inDOM = flag;
+    if (this.virtual) return;
 
     if (flag) {
-      if ('style' in _this.node) {
-        _this.node.style.setProperty('display', 'none');
+      if ("style" in this.node) {
+        this._display = this.node.style.display;
+        this.node.style.display = "none";
       }
 
-      if (!_this.node.parentNode) {
-        insert_before(_this.placeholder.parentNode, _this.node, _this.placeholder.nextSibling);
+      if (!this.node.parentNode) {
+        insert_before(this.placeholder.parentNode, this.node, this.placeholder.nextSibling);
       }
 
-      if (_this.placeholder.parentNode) {
-        remove_child(_this.placeholder.parentNode, _this.placeholder);
+      if (this.placeholder.parentNode) {
+        remove_child(this.placeholder.parentNode, this.placeholder);
       }
 
-      create_in_next_frame(_this.index, (_next) => {
-        _this.hasBeenRendered();
-        _this.processEnterAnimation();
+      create_in_next_frame(this.index, (_next) => {
+        this.hasBeenRendered();
+        this.processEnterAnimation();
         _next();
       });
 
-      const children = _this.getChildNodesAsc();
+      const children = this.getChildNodesAsc();
       const len = children.length;
       for (let i = 0; i < len; i++) {
         // console.log(children[i].node);
         children[i].setInDOM(true);
       }
-    } else if (!flag && _this.node.parentNode) {
-      _this.origin = true;
-      _this.transitory = true;
-      const defaultProcessLeaveAnimation = _this.processLeaveAnimation;
-      const children = _this.getChildNodes();
-      _this.prepareLeaveAnimation(_this.hasAnimation(children), children);
-      destroy_in_next_frame(_this.index, (_next) => {
-        _this.processLeaveAnimation(remove_self.bind(_this, false));
-        _this.origin = false;
-        _this.transitory = false;
-        _this.processLeaveAnimation = defaultProcessLeaveAnimation;
+    } else if (!flag && this.node.parentNode) {
+      this.origin = true;
+      this.transitory = true;
+      const defaultProcessLeaveAnimation = this.processLeaveAnimation;
+      const children = this.getChildNodes();
+      this.prepareLeaveAnimation(this.hasAnimation(children), children);
+      destroy_in_next_frame(this.index, (_next) => {
+        this.processLeaveAnimation(remove_self.bind(this, false));
+        this.origin = false;
+        this.transitory = false;
+        this.processLeaveAnimation = defaultProcessLeaveAnimation;
         _next();
       });
     }
   },
 
-  setVisibility: function (flag) {
-    const _this = this;
-    _this.visible = flag;
+  setVisibility: function(flag) {
+    this.visible = flag;
 
-    if (flag && !_this.virtual) {
-      create_in_next_frame(_this.index, (_next) => {
-        _this.node.style.display = null;
-        _this.processEnterAnimation();
+    if (flag && !this.virtual) {
+      create_in_next_frame(this.index, (_next) => {
+        this.node.style.display = this._display;
+        this.processEnterAnimation();
         _next();
       });
-    } else if (!flag && _this.node.parentNode) {
-      _this.origin = true;
-      _this.transitory = true;
-      destroy_in_next_frame(_this.index, (_next) => {
-        _this.populateHideSequence();
-        _this.origin = false;
-        _this.transitory = false;
+    } else if (!flag && this.node.parentNode) {
+      this.origin = true;
+      this.transitory = true;
+      destroy_in_next_frame(this.index, (_next) => {
+        this.populateHideSequence();
+        this.origin = false;
+        this.transitory = false;
         _next();
       });
     }
@@ -418,11 +405,11 @@ ViewNode.prototype = {
    * @param {ViewNode} childNode
    * @param position
    */
-  registerChild: function (childNode, position) {
+  registerChild: function(childNode, position) {
     this.node.insertBefore(childNode.placeholder, position);
   },
 
-  createNode: function (blueprint, localScope) {
+  createNode: function(blueprint, localScope) {
     this.view.createNode(blueprint, localScope, this);
   },
 
@@ -431,31 +418,31 @@ ViewNode.prototype = {
    * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {Function} expression
    */
-  registerActiveProperty: function (propertyKey, reactiveData, expression) {
+  registerActiveProperty: function(propertyKey, reactiveData, expression) {
     this.properties.add(reactiveData);
     activate_property_for_node(this, propertyKey, reactiveData, expression);
   },
 
-  snapshot: function (animations) {
+  snapshot: function(animations) {
     const rect = this.node.getBoundingClientRect();
     const node = this.node.cloneNode(true);
     const style = {
-      margin: '0',
-      width: rect.width + 'px',
-      height: rect.height + ' px',
-      top: rect.top + 'px',
-      left: rect.left + 'px',
-      position: 'fixed',
+      margin: "0",
+      width: rect.width + "px",
+      height: rect.height + " px",
+      top: rect.top + "px",
+      left: rect.left + "px",
+      position: "fixed",
     };
     Object.assign(node.style, style);
 
     return {
       tag: node,
-      style: style
+      style: style,
     };
   },
 
-  hasAnimation: function (children) {
+  hasAnimation: function(children) {
     if (this.processLeaveAnimation && this.processLeaveAnimation !== EMPTY_CALL) {
       return true;
     }
@@ -470,13 +457,13 @@ ViewNode.prototype = {
     return false;
   },
 
-  prepareLeaveAnimation: function (hasAnimation, children) {
+  prepareLeaveAnimation: function(hasAnimation, children) {
     const _this = this;
 
     if (hasAnimation) {
       if (_this.processLeaveAnimation === EMPTY_CALL) {
         if (_this.origin) {
-          _this.processLeaveAnimation = function () {
+          _this.processLeaveAnimation = function() {
             remove_self.call(_this, false);
           };
         }
@@ -495,13 +482,13 @@ ViewNode.prototype = {
         }
       }
     } else {
-      _this.processLeaveAnimation = function () {
+      _this.processLeaveAnimation = function() {
         remove_self.call(_this, !_this.origin);
       };
     }
   },
 
-  destroy: function (hasAnimation) {
+  destroy: function(hasAnimation) {
     const _this = this;
     _this.transitory = true;
     if (_this.parent.destroyOrigin === 0) {
@@ -534,33 +521,33 @@ ViewNode.prototype = {
       _this.inputs = {};
       _this.view = null;
       _this.parent = null;
-      Reflect.deleteProperty(_this.blueprint, 'node');
+      Reflect.deleteProperty(_this.blueprint, "node");
       _next();
     });
   },
 
-  getChildNodes: function () {
+  getChildNodes: function() {
     const nodes = [];
     const cn = arr_slice.call(this.node.childNodes, 0);
     for (let i = cn.length - 1; i >= 0; i--) {
       // All the nodes that are ViewNode
       const node = cn[i];
-      if ('__vn__' in node) {
-        nodes.push(node['__vn__']);
+      if ("__vn__" in node) {
+        nodes.push(node["__vn__"]);
       }
     }
 
     return nodes;
   },
 
-  getChildNodesAsc: function () {
+  getChildNodesAsc: function() {
     const nodes = [];
     const cn = arr_slice.call(this.node.childNodes, 0);
     for (let i = 0; i < cn.length; i++) {
       // All the nodes that are ViewNode
       const node = cn[i];
-      if ('__vn__' in node) {
-        nodes.push(node['__vn__']);
+      if ("__vn__" in node) {
+        nodes.push(node["__vn__"]);
       }
     }
 
@@ -570,7 +557,7 @@ ViewNode.prototype = {
   /**
    *
    */
-  clean: function (hasAnimation, children) {
+  clean: function(hasAnimation, children) {
     children = children || this.getChildNodes();
     destroy_nodes(children, hasAnimation);
 
@@ -584,7 +571,7 @@ ViewNode.prototype = {
     });
   },
 
-  createNext: function (act) {
+  createNext: function(act) {
     create_in_next_frame(this.index, act);
   },
 
@@ -595,7 +582,7 @@ ViewNode.prototype = {
     if (parent) {
       let prevNode = this.placeholder.parentNode ? this.placeholder.previousSibling : this.node.previousSibling;
       if (prevNode) {
-        if (!prevNode.hasOwnProperty('__index__')) {
+        if (!prevNode.hasOwnProperty("__index__")) {
           let i = 0;
           let node = this.node;
           while ((node = node.previousSibling) !== null) ++i;
@@ -606,10 +593,10 @@ ViewNode.prototype = {
         this.node.__index__ = 0;
       }
 
-      return parent.index + ',' + ViewNode.createIndex(this.node.__index__);
+      return parent.index + " " + create_index(this.node.__index__);
     }
 
-    return '0';
+    return create_index(0);
   },
 
   get anchor() {
@@ -618,7 +605,7 @@ ViewNode.prototype = {
     }
 
     return this.placeholder;
-  }
+  },
 };
 
 export default ViewNode;

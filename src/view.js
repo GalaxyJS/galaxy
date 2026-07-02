@@ -1,4 +1,4 @@
-import { arr_concat, clone, def_prop, EMPTY_CALL, obj_keys } from "./utils.js";
+import { clone, def_prop, EMPTY_CALL, obj_keys } from "./utils.js";
 import Scope from "./scope.js";
 import ViewNode from "./view-node.js";
 import ArrayChange from "./array-change.js";
@@ -6,26 +6,9 @@ import { NODE_BLUEPRINT_PROPERTY_MAP, VALID_TAG_NAMES } from "./constants.js";
 import prop_setter from "./setters/prop.js";
 import attr_setter from "./setters/attr.js";
 import reactive_setter from "./setters/reactive.js";
-import { text_property, text_3_property, text_8_property } from "./properties/text.property.js";
-import { data_property } from "./properties/data.reactive.js";
-import { animations_property } from "./properties/animations.property.js";
-import { checked_property } from "./properties/checked.property.js";
-import { class_property } from "./properties/class.reactive.js";
-import { disabled_property } from "./properties/disabled.property.js";
-import { if_property } from "./properties/if.reactive.js";
-import { module_property } from "./properties/module.reactive.js";
-import { on_property } from "./properties/on.property.js";
-import { repeat_property } from "./properties/repeat.reactive.js";
-import { selected_property } from "./properties/selected.property.js";
-import { style_3_property, style_8_property, style_property } from "./properties/style.reactive.js";
-import { value_config_property, value_property } from "./properties/value.property.js";
-import { visible_property } from "./properties/visible.reactive.js";
 import ReactiveData from "./reactive-data.js";
+import { get_bindings } from "./bindings.js";
 
-const ARG_BINDING_SINGLE_QUOTE_RE = /=\s*'<([^\[\]<>]*)>(.*)'/m;
-const ARG_BINDING_DOUBLE_QUOTE_RE = /=\s*'=\s*"<([^\[\]<>]*)>(.*)"/m;
-const FUNCTION_HEAD_RE = /^\(\s*([^)]+?)\s*\)|^function.*\(\s*([^)]+?)\s*\)/m;
-const BINDING_RE = /^<([^\[\]<>]*)>\s*([^<>]*)\s*$|^=\s*([^\[\]<>]*)\s*$/;
 const PROPERTY_NAME_SPLITTER_RE = /\.|\[([^\[\]\n]+)]|([^.\n\[\]]+)/g;
 
 const REACTIVE_BEHAVIORS = {};
@@ -44,40 +27,6 @@ const PROPERTY_SETTERS = {
   "attr": attr_setter,
   "reactive": reactive_setter,
 };
-
-export function max_index() {
-  return "@" + performance.now();
-}
-
-// let opt_count = 0;
-// const _next_batch = function (_jump, dirty) {
-//   if (dirty) {
-//     return _jump();
-//   }
-//
-//   if (opt_count > 233) {
-//     opt_count = 0;
-//     // console.log(performance.now());
-//     return requestAnimationFrame(() => {
-//       if (dirty) {
-//         return _jump();
-//       }
-//
-//       if (this.length) {
-//         this.shift()(_next_batch.bind(this, _jump));
-//       } else {
-//         _jump();
-//       }
-//     });
-//   }
-//
-//   opt_count++;
-//   if (this.length) {
-//     this.shift()(_next_batch.bind(this, _jump));
-//   } else {
-//     _jump();
-//   }
-// };
 
 function parse_bind_exp_string(propertyKey, clean) {
   const matches = propertyKey.match(PROPERTY_NAME_SPLITTER_RE);
@@ -141,201 +90,6 @@ function safe_property_lookup(data, properties) {
   return target === undefined ? null : target;
 }
 
-const dom_manipulation_table = View.DOM_MANIPLATION = {};
-const create_order = [], destroy_order = [];
-let dom_manipulation_order = [];
-let manipulation_done = true, dom_manipulations_dirty = false;
-let diff = 0, preTS = 0, too_many_jumps;
-
-const next_action = function(_jump, dirty) {
-  if (dirty) {
-    return _jump();
-  }
-
-  if (this.length) {
-    this.shift()(next_action.bind(this, _jump));
-  } else {
-    _jump();
-  }
-};
-
-const next_batch_body = function() {
-  if (this.length) {
-    let key = this.shift();
-    let batch = dom_manipulation_table[key];
-    if (!batch.length) {
-      return next_batch.call(this);
-    }
-
-    next_action.call(batch, next_batch.bind(this), dom_manipulations_dirty);
-  } else {
-    manipulation_done = true;
-    preTS = 0;
-    diff = 0;
-  }
-};
-
-const next_batch = function() {
-  if (dom_manipulations_dirty) {
-    dom_manipulations_dirty = false;
-    diff = 0;
-    return next_batch.call(dom_manipulation_order);
-  }
-
-  const now = performance.now();
-  preTS = preTS || now;
-  diff = diff + (now - preTS);
-  preTS = now;
-
-  if (diff > 2) {
-    diff = 0;
-    if (too_many_jumps) {
-      clearTimeout(too_many_jumps);
-      too_many_jumps = null;
-    }
-
-    too_many_jumps = setTimeout((ts) => {
-      preTS = ts;
-      next_batch_body.call(this);
-    });
-  } else {
-    next_batch_body.call(this);
-  }
-};
-
-function comp_asc(a, b) {
-  return a > b;
-}
-
-function comp_desc(a, b) {
-  return a < b;
-}
-
-function binary_search(array, key, _fn) {
-  let start = 0;
-  let end = array.length - 1;
-  let index = 0;
-
-  while (start <= end) {
-    let middle = Math.floor((start + end) / 2);
-    let midVal = array[middle];
-
-    if (_fn(key, midVal)) {
-      // continue searching to the right
-      index = start = middle + 1;
-    } else {
-      // search searching to the left
-      index = middle;
-      end = middle - 1;
-    }
-  }
-
-  return index;
-}
-
-function pos_asc(array, el) {
-  if (el < array[0]) {
-    return 0;
-  }
-
-  if (el > array[array.length - 1]) {
-    return array.length;
-  }
-
-  return binary_search(array, el, comp_asc);
-}
-
-function pos_desc(array, el) {
-  if (el > array[0]) {
-    return 0;
-  }
-
-  if (el < array[array.length - 1]) {
-    return array.length;
-  }
-
-  return binary_search(array, el, comp_desc);
-}
-
-function add_dom_manipulation(index, act, order, search) {
-  if (index in dom_manipulation_table) {
-    dom_manipulation_table[index].push(act);
-  } else {
-    dom_manipulation_table[index] = [act];
-    order.splice(search(order, index), 0, index);
-  }
-}
-
-let last_dom_manipulation_id = 0;
-
-function update_dom_manipulation_order() {
-  if (last_dom_manipulation_id !== 0) {
-    clearTimeout(last_dom_manipulation_id);
-    last_dom_manipulation_id = 0;
-  }
-
-  dom_manipulation_order = arr_concat(destroy_order, create_order);
-  last_dom_manipulation_id = setTimeout(() => {
-    if (manipulation_done) {
-      manipulation_done = false;
-      next_batch.call(dom_manipulation_order);
-    }
-  });
-}
-
-// function update_on_animation_frame() {
-//   if (last_dom_manipulation_id) {
-//     clearTimeout(last_dom_manipulation_id);
-//     last_dom_manipulation_id = null;
-//   }
-//
-//   dom_manipulation_order = arrConcat(destroy_order, create_order);
-//   last_dom_manipulation_id = setTimeout(() => {
-//     if (manipulation_done) {
-//       manipulation_done = false;
-//       next_batch.call(dom_manipulation_order);
-//     }
-//   });
-// }
-//
-// function update_on_timeout() {
-//   if (last_dom_manipulation_id) {
-//     cancelAnimationFrame(last_dom_manipulation_id);
-//     last_dom_manipulation_id = null;
-//   }
-//
-//   dom_manipulation_order = arrConcat(destroy_order, create_order);
-//   last_dom_manipulation_id = requestAnimationFrame(() => {
-//     if (manipulation_done) {
-//       manipulation_done = false;
-//       next_batch.call(dom_manipulation_order);
-//     }
-//   });
-// }
-
-/**
- *
- * @param {string} index
- * @param {Function} action
- * @static
- */
-export function destroy_in_next_frame(index, action) {
-  dom_manipulations_dirty = true;
-  add_dom_manipulation("<" + index, action, destroy_order, pos_desc);
-  update_dom_manipulation_order();
-}
-
-/**
- *
- * @param {string} index
- * @param {Function} action
- * @static
- */
-export function create_in_next_frame(index, action) {
-  dom_manipulations_dirty = true;
-  add_dom_manipulation(">" + index, action, create_order, pos_asc);
-  update_dom_manipulation_order();
-}
 
 /**
  *
@@ -350,24 +104,6 @@ export function destroy_nodes(toBeRemoved, hasAnimation) {
     remove = toBeRemoved[i];
     remove.destroy(hasAnimation);
   }
-}
-
-/**
- *
- * @param {ViewNode} viewNode
- * @param value
- * @param name
- */
-export function set_attr(viewNode, value, name) {
-  if (value !== null && value !== undefined && value !== false) {
-    viewNode.node.setAttribute(name, value === true ? "" : value);
-  } else {
-    viewNode.node.removeAttribute(name);
-  }
-}
-
-export function set_prop(viewNode, value, name) {
-  viewNode.node[name] = value;
 }
 
 export function create_child_scope(parent) {
@@ -386,86 +122,45 @@ export function create_child_scope(parent) {
   return result;
 }
 
-/**
- *
- * @param {string|Array} value
- * @return {{propertyKeys: *[], propertyValues: *[], bindTypes: *[], isExpression: boolean, expressionFn: null}}
- */
-export function get_bindings(value) {
-  let propertyKeys = [];
-  let propertyValues = [];
-  let bindTypes = [];
-  let isExpression = false;
-  const valueType = typeof (value);
-  let expressionFunction = null;
-
-  if (valueType === "string") {
-    const props = value.match(BINDING_RE);
-    if (props) {
-      bindTypes = [props[1]];
-      propertyKeys = [props[2]];
-      propertyValues = [value];
-    }
-  } else if (valueType === "function") {
-    isExpression = true;
-    expressionFunction = value;
-    const matches = value.toString().match(FUNCTION_HEAD_RE);
-    if (matches) {
-      const args = matches[1] || matches [2];
-      propertyValues = args.split(",").map(a => {
-        const argDef = a.indexOf("\"") === -1 ? a.match(ARG_BINDING_SINGLE_QUOTE_RE) : a.match(ARG_BINDING_DOUBLE_QUOTE_RE);
-        if (argDef) {
-          bindTypes.push(argDef[1]);
-          propertyKeys.push(argDef[2]);
-          return "<>" + argDef[2];
-        } else {
-          return undefined;
-        }
-      });
-    }
-  }
-
-  return {
-    propertyKeys: propertyKeys,
-    propertyValues: propertyValues,
-    bindTypes: bindTypes,
-    handler: expressionFunction,
-    isExpression: isExpression,
-    expressionFn: null,
-  };
-}
-
 export function property_lookup(data, key) {
   const propertiesArr = parse_bind_exp_string(key, true);
-  let firstKey = propertiesArr[0];
+  const firstKey = propertiesArr[0];
+
+  if (!data || typeof data !== "object" || !firstKey) {
+    return data;
+  }
+
   const original = data;
   let target = data;
-  let temp = data;
-  let nestingLevel = 0;
-  let parent;
+  let current = data;
+  const visitedParents = new Set();
+
   if (data[firstKey] === undefined) {
-    while (temp.__parent__) {
-      parent = temp.__parent__;
-      if (parent.hasOwnProperty(firstKey)) {
+    while (current && current.__parent__ && typeof current.__parent__ === "object") {
+      const parent = current.__parent__;
+
+      // Protect against accidental circular __parent__ chains.
+      if (visitedParents.has(parent)) {
+        throw Error("Circular parent chain detected while looking up `" + firstKey + "`.");
+      }
+      visitedParents.add(parent);
+
+      if (Object.prototype.hasOwnProperty.call(parent, firstKey)) {
         target = parent;
         break;
       }
 
-      if (nestingLevel++ >= 1000) {
-        throw Error("Maximum nested property lookup has reached `" + firstKey + "`\n" + data);
-      }
-
-      temp = parent;
+      current = parent;
     }
 
-    // if the property is not found in the parents then return the original object as the context
+    // If the property is not found in the parents then return the original object as the context.
     if (target[firstKey] === undefined) {
       return original;
     }
   }
 
   return target;
-};
+}
 
 /**
  *

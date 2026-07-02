@@ -18,25 +18,30 @@
   },
   "license": "MIT",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "npx vite",
+    "build": "npx vite build",
+    "preview": "npx vite preview",
+    "lint": "npx eslint .",
+    "lint:fix": "npx eslint . --fix",
+    "format": "npx prettier . --write",
+    "format:check": "npx prettier . --check"
   },
   "files": [
     "dist"
   ],
-  "main": "./dist/galaxy.umd.cjs",
+  "main": "./dist/galaxy.js",
   "module": "./dist/galaxy.js",
   "exports": {
     ".": {
-      "import": "./dist/galaxy.js",
-      "require": "./dist/galaxy.umd.cjs"
+      "import": "./dist/galaxy.js"
     }
   },
   "contributors": [],
   "devDependencies": {
-    "eslint": "^8.57.1",
-    "prettier": "3.4.2",
-    "vite": "^5.4.11"
+    "@eslint/js": "^10.0.1",
+    "eslint": "10.4.0",
+    "globals": "^17.6.0",
+    "prettier": "3.8.3",
+    "vite": "^8.0.14"
   }
 }

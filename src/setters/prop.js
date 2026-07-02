@@ -1,4 +1,4 @@
-import { set_prop } from '../view.js';
+import { set_prop } from "../dom-apply.js";
 
 export default function prop_setter(viewNode, property, expression) {
   const propName = property.key;
