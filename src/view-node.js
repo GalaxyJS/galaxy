@@ -1,9 +1,13 @@
 import { NODE_BLUEPRINT_PROPERTY_MAP } from "./constants.js";
-import { arr_slice, create_comment, create_elem, create_index, def_prop, EMPTY_CALL } from "./utils.js";
 import {
-  activate_property_for_node,
-  destroy_nodes,
-} from "./view.js";
+  arr_slice,
+  create_comment,
+  create_elem,
+  create_index,
+  def_prop,
+  EMPTY_CALL,
+} from "./utils.js";
+import { activate_property_for_node, destroy_nodes } from "./view.js";
 import { data_property } from "./properties/data.reactive.js";
 import { text_3_property, text_8_property, text_property } from "./properties/text.property.js";
 import { animations_property } from "./properties/animations.property.js";
@@ -90,8 +94,9 @@ function remove_self(destroy) {
   if (destroy) {
     // Destroy
     viewNode.node.parentNode && remove_child(viewNode.node.parentNode, viewNode.node);
-    viewNode.placeholder.parentNode && remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
-    viewNode.garbage.forEach(function(node) {
+    viewNode.placeholder.parentNode &&
+      remove_child(viewNode.placeholder.parentNode, viewNode.placeholder);
+    viewNode.garbage.forEach(function (node) {
       remove_self.call(node, true);
     });
     viewNode.hasBeenDestroyed();
@@ -105,7 +110,7 @@ function remove_self(destroy) {
       remove_child(viewNode.node.parentNode, viewNode.node);
     }
 
-    viewNode.garbage.forEach(function(node) {
+    viewNode.garbage.forEach(function (node) {
       remove_self.call(node, true);
     });
   }
@@ -134,9 +139,9 @@ ViewNode.GLOBAL_RENDER_CONFIG = {
  * @param blueprints
  * @static
  */
-ViewNode.cleanReferenceNode = function(blueprints) {
+ViewNode.cleanReferenceNode = function (blueprints) {
   if (blueprints instanceof Array) {
-    blueprints.forEach(function(node) {
+    blueprints.forEach(function (node) {
       ViewNode.cleanReferenceNode(node);
     });
   } else if (blueprints instanceof Object) {
@@ -152,6 +157,7 @@ ViewNode.cleanReferenceNode = function(blueprints) {
  * @property {function} [_create]
  * @property {function} [_render]
  * @property {function} [_destroy]
+ * @property {Object} [style]
  */
 
 /**
@@ -199,6 +205,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
   _this.garbage = [];
   _this.leaveWithParent = false;
   _this.onLeaveComplete = remove_self.bind(_this, true);
+  _this._display = null;
 
   const cache = {};
   def_prop(_this, "cache", {
@@ -207,11 +214,11 @@ function ViewNode(blueprint, parent, view, nodeData) {
     value: cache,
   });
 
-  _this.rendered = new Promise(function(done) {
+  _this.rendered = new Promise(function (done) {
     if ("style" in _this.node) {
-      _this.hasBeenRendered = function() {
+      _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
-        _this.node.style.removeProperty("display");
+        _this.node.style.setProperty("display", _this._display);
 
         if (_this.blueprint._render) {
           _this.blueprint._render.call(_this, _this.data);
@@ -219,7 +226,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
         done(_this);
       };
     } else {
-      _this.hasBeenRendered = function() {
+      _this.hasBeenRendered = function () {
         _this.rendered.resolved = true;
         done();
       };
@@ -227,8 +234,8 @@ function ViewNode(blueprint, parent, view, nodeData) {
   });
   _this.rendered.resolved = false;
 
-  _this.destroyed = new Promise(function(done) {
-    _this.hasBeenDestroyed = function() {
+  _this.destroyed = new Promise(function (done) {
+    _this.hasBeenDestroyed = function () {
       _this.destroyed.resolved = true;
       if (_this.blueprint._destroy) {
         _this.blueprint._destroy.call(_this, _this.data);
@@ -242,7 +249,11 @@ function ViewNode(blueprint, parent, view, nodeData) {
    *
    * @type {RenderConfig}
    */
-  _this.blueprint.renderConfig = Object.assign({}, ViewNode.GLOBAL_RENDER_CONFIG, blueprint.renderConfig || {});
+  _this.blueprint.renderConfig = Object.assign(
+    {},
+    ViewNode.GLOBAL_RENDER_CONFIG,
+    blueprint.renderConfig || {},
+  );
 
   __NODE__.value = this.node;
   def_prop(_this.blueprint, "node", __NODE__);
@@ -261,7 +272,7 @@ function ViewNode(blueprint, parent, view, nodeData) {
 ViewNode.prototype = {
   onLeaveComplete: null,
 
-  dump: function() {
+  dump: function () {
     let original = this.parent;
     let targetGarbage = this.garbage;
     // Find the garbage of the origin if
@@ -279,15 +290,15 @@ ViewNode.prototype = {
 
     this.garbage = [];
   },
-  query: function(selectors) {
+  query: function (selectors) {
     return this.node.querySelector(selectors);
   },
 
-  dispatchEvent: function(event) {
+  dispatchEvent: function (event) {
     this.node.dispatchEvent(event);
   },
 
-  cloneBlueprint: function() {
+  cloneBlueprint: function () {
     const blueprintClone = Object.assign({}, this.blueprint);
     ViewNode.cleanReferenceNode(blueprintClone);
 
@@ -301,21 +312,28 @@ ViewNode.prototype = {
     return blueprintClone;
   },
 
-  virtualize: function() {
-    this.placeholder.nodeValue = JSON.stringify(this.blueprint, (k, v) => {
-      return k === "children" ? "<children>" : k === "animations" ? "<animations>" : v;
-    }, 2);
+  virtualize: function () {
+    this.placeholder.nodeValue = JSON.stringify(
+      this.blueprint,
+      (k, v) => {
+        return k === "children" ? "<children>" : k === "animations" ? "<animations>" : v;
+      },
+      2,
+    );
     this.virtual = true;
     this.setInDOM(false);
   },
 
-  processEnterAnimation: function() {
-    this.node.style.display = null;
+  /**
+   *
+   */
+  processEnterAnimation: function () {
+    this.node.style.display = this._display;
   },
 
   processLeaveAnimation: EMPTY_CALL,
 
-  populateHideSequence: function() {
+  populateHideSequence: function () {
     this.node.style.display = "none";
   },
 
@@ -323,7 +341,7 @@ ViewNode.prototype = {
    *
    * @param {boolean} flag
    */
-  setInDOM: function(flag) {
+  setInDOM: function (flag) {
     if (this.blueprint.renderConfig.renderDetached) {
       create_in_next_frame(this.index, (_next) => {
         this.blueprint.renderConfig.renderDetached = false;
@@ -338,6 +356,11 @@ ViewNode.prototype = {
 
     if (flag) {
       if ("style" in this.node) {
+        // This is probably done to prevent any layout jumping or flickering that might occur
+        // when the node is added to the DOM. By storing the original display value and
+        // setting it to "none", the node is effectively hidden until the enter animation
+        // is processed, at which point the display property can be restored to its original value.
+        this._display = this.node.style.display !== "none" ? this.node.style.display : null;
         this.node.style.setProperty("display", "none");
       }
 
@@ -377,7 +400,7 @@ ViewNode.prototype = {
     }
   },
 
-  setVisibility: function(flag) {
+  setVisibility: function (flag) {
     this.visible = flag;
 
     if (flag && !this.virtual) {
@@ -403,11 +426,11 @@ ViewNode.prototype = {
    * @param {ViewNode} childNode
    * @param position
    */
-  registerChild: function(childNode, position) {
+  registerChild: function (childNode, position) {
     this.node.insertBefore(childNode.placeholder, position);
   },
 
-  createNode: function(blueprint, localScope) {
+  createNode: function (blueprint, localScope) {
     this.view.createNode(blueprint, localScope, this);
   },
 
@@ -416,12 +439,12 @@ ViewNode.prototype = {
    * @param {Galaxy.View.ReactiveData} reactiveData
    * @param {Function} expression
    */
-  registerActiveProperty: function(propertyKey, reactiveData, expression) {
+  registerActiveProperty: function (propertyKey, reactiveData, expression) {
     this.properties.add(reactiveData);
     activate_property_for_node(this, propertyKey, reactiveData, expression);
   },
 
-  snapshot: function(animations) {
+  snapshot: function (animations) {
     const rect = this.node.getBoundingClientRect();
     const node = this.node.cloneNode(true);
     const style = {
@@ -440,7 +463,7 @@ ViewNode.prototype = {
     };
   },
 
-  hasAnimation: function(children) {
+  hasAnimation: function (children) {
     if (this.processLeaveAnimation && this.processLeaveAnimation !== EMPTY_CALL) {
       return true;
     }
@@ -455,17 +478,17 @@ ViewNode.prototype = {
     return false;
   },
 
-  prepareLeaveAnimation: function(hasAnimation, children) {
+  prepareLeaveAnimation: function (hasAnimation, children) {
     const _this = this;
 
     if (hasAnimation) {
       if (_this.processLeaveAnimation === EMPTY_CALL) {
         if (_this.origin) {
-          _this.processLeaveAnimation = function() {
+          _this.processLeaveAnimation = function () {
             remove_self.call(_this, false);
           };
         }
-          // if a child has an animation and this node is being removed directly, then we need to remove this node
+        // if a child has an animation and this node is being removed directly, then we need to remove this node
         // in order for element to get removed properly
         else if (_this.destroyOrigin === 1) {
           remove_self.call(_this, true);
@@ -480,13 +503,13 @@ ViewNode.prototype = {
         }
       }
     } else {
-      _this.processLeaveAnimation = function() {
+      _this.processLeaveAnimation = function () {
         remove_self.call(_this, !_this.origin);
       };
     }
   },
 
-  destroy: function(hasAnimation) {
+  destroy: function (hasAnimation) {
     const _this = this;
     _this.transitory = true;
     if (_this.parent.destroyOrigin === 0) {
@@ -524,7 +547,7 @@ ViewNode.prototype = {
     });
   },
 
-  getChildNodes: function() {
+  getChildNodes: function () {
     const nodes = [];
     const cn = arr_slice.call(this.node.childNodes, 0);
     for (let i = cn.length - 1; i >= 0; i--) {
@@ -538,7 +561,7 @@ ViewNode.prototype = {
     return nodes;
   },
 
-  getChildNodesAsc: function() {
+  getChildNodesAsc: function () {
     const nodes = [];
     const cn = arr_slice.call(this.node.childNodes, 0);
     for (let i = 0; i < cn.length; i++) {
@@ -555,7 +578,7 @@ ViewNode.prototype = {
   /**
    *
    */
-  clean: function(hasAnimation, children) {
+  clean: function (hasAnimation, children) {
     children = children || this.getChildNodes();
     destroy_nodes(children, hasAnimation);
 
@@ -569,7 +592,7 @@ ViewNode.prototype = {
     });
   },
 
-  createNext: function(act) {
+  createNext: function (act) {
     create_in_next_frame(this.index, act);
   },
 
@@ -578,7 +601,9 @@ ViewNode.prototype = {
 
     // This solution is very performant but might not be reliable
     if (parent) {
-      let prevNode = this.placeholder.parentNode ? this.placeholder.previousSibling : this.node.previousSibling;
+      let prevNode = this.placeholder.parentNode
+        ? this.placeholder.previousSibling
+        : this.node.previousSibling;
       if (prevNode) {
         if (!prevNode.hasOwnProperty("__index__")) {
           let i = 0;
